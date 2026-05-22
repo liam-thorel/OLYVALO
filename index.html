@@ -1,0 +1,2635 @@
+<!DOCTYPE html>
+<html lang="fr" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>OLYCITY — Valorant Meta Comps</title>
+<link href="https://fonts.googleapis.com/css2?family=Tomorrow:wght@400;500;600;700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+/* ════════════════════════════════════════════════
+   THEME TOKENS
+   ════════════════════════════════════════════════ */
+:root[data-theme="dark"]{
+  --red:#ff4656;--red-low:rgba(255,70,86,.12);--red-mid:rgba(255,70,86,.3);
+  --red-glow:rgba(255,70,86,.5);
+  --bg:#0a0c10;--bg-deep:#070810;
+  --surf:#10131a;--surf2:#171a23;--surf3:#1f2330;--surf4:#272c3c;
+  --border:rgba(255,255,255,.06);--border2:rgba(255,255,255,.12);
+  --text:#e2e5ee;--muted:#666c84;--dim:#3b4058;
+  --gold:#f5c842;--gold-low:rgba(245,200,66,.1);
+  --D:#ff6b7a;--I:#f0a832;--S:#3fcfcf;--C:#a87fff;
+  --shadow-card: 0 20px 60px -20px rgba(0,0,0,.8), 0 8px 20px -10px rgba(255,70,86,.15);
+}
+:root[data-theme="light"]{
+  --red:#e23042;--red-low:rgba(226,48,66,.08);--red-mid:rgba(226,48,66,.25);
+  --red-glow:rgba(226,48,66,.3);
+  --bg:#f4f1ea;--bg-deep:#ebe6db;
+  --surf:#ffffff;--surf2:#f7f3ea;--surf3:#ede7d6;--surf4:#dbd5c2;
+  --border:rgba(20,15,5,.08);--border2:rgba(20,15,5,.16);
+  --text:#1a1815;--muted:#5b5847;--dim:#9e9b89;
+  --gold:#b58800;--gold-low:rgba(181,136,0,.1);
+  --D:#d6394a;--I:#c97a14;--S:#1d8a8a;--C:#7958c4;
+  --shadow-card: 0 20px 50px -25px rgba(0,0,0,.25), 0 4px 12px -6px rgba(226,48,66,.15);
+}
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{
+  background:var(--bg);color:var(--text);
+  font-family:'DM Sans',sans-serif;font-size:14px;
+  min-height:100vh;overflow-x:hidden;
+  transition:background .4s,color .4s;
+}
+
+/* ════════════════════════════════════════════════
+   ATMOSPHERIC BACKGROUND
+   ════════════════════════════════════════════════ */
+.bg-layer{position:fixed;inset:0;pointer-events:none;z-index:0}
+.bg-grid{
+  background-image:
+    linear-gradient(var(--border) 1px,transparent 1px),
+    linear-gradient(90deg,var(--border) 1px,transparent 1px);
+  background-size:60px 60px;
+  mask-image:radial-gradient(ellipse at center,#000 0%,transparent 70%);
+  -webkit-mask-image:radial-gradient(ellipse at center,#000 0%,transparent 70%);
+  opacity:.5;
+}
+.bg-glow-1{
+  position:absolute;top:-200px;left:-200px;
+  width:600px;height:600px;border-radius:50%;
+  background:radial-gradient(circle,var(--red-low),transparent 65%);
+  filter:blur(40px);animation:float1 20s ease-in-out infinite;
+}
+.bg-glow-2{
+  position:absolute;bottom:-200px;right:-200px;
+  width:700px;height:700px;border-radius:50%;
+  background:radial-gradient(circle,rgba(168,127,255,.06),transparent 60%);
+  filter:blur(60px);animation:float2 25s ease-in-out infinite;
+}
+@keyframes float1{0%,100%{transform:translate(0,0)}50%{transform:translate(40px,30px)}}
+@keyframes float2{0%,100%{transform:translate(0,0)}50%{transform:translate(-50px,-40px)}}
+
+/* ════════════════════════════════════════════════
+   HEADER / TOP NAV
+   ════════════════════════════════════════════════ */
+.topbar{
+  position:sticky;top:0;z-index:100;
+  background:rgba(10,12,16,.85);backdrop-filter:blur(20px) saturate(180%);
+  -webkit-backdrop-filter:blur(20px) saturate(180%);
+  border-bottom:1px solid var(--border);
+}
+:root[data-theme="light"] .topbar{background:rgba(244,241,234,.85)}
+
+.topbar-row{
+  display:flex;align-items:center;gap:20px;
+  padding:14px 32px;max-width:1600px;margin:0 auto;
+}
+.brand{display:flex;align-items:center;gap:12px;cursor:pointer;flex-shrink:0}
+.brand-mark{
+  width:38px;height:38px;
+  background:linear-gradient(135deg,var(--red),#c1303d);
+  display:flex;align-items:center;justify-content:center;
+  font-family:'Tomorrow',sans-serif;font-weight:700;font-size:18px;
+  color:#fff;letter-spacing:-1px;
+  clip-path:polygon(15% 0,100% 0,85% 100%,0 100%);
+  box-shadow:0 0 20px var(--red-glow);
+}
+.brand-text{display:flex;flex-direction:column;line-height:1}
+.brand-title{
+  font-family:'Tomorrow',sans-serif;font-size:20px;font-weight:700;
+  color:var(--text);letter-spacing:2px;
+}
+.brand-sub{
+  font-family:'Tomorrow',sans-serif;font-size:9px;font-weight:500;
+  letter-spacing:3.5px;color:var(--red);margin-top:2px;
+}
+
+.nav-maps{display:flex;gap:2px;flex:1;justify-content:center;flex-wrap:wrap}
+.nav-map-btn{
+  position:relative;
+  background:transparent;border:none;cursor:pointer;
+  padding:8px 14px 8px 10px;display:flex;align-items:center;gap:8px;
+  font-family:'Tomorrow',sans-serif;font-size:12px;font-weight:600;
+  letter-spacing:1.5px;text-transform:uppercase;
+  color:var(--muted);transition:color .15s;
+  clip-path:polygon(8px 0,100% 0,calc(100% - 8px) 100%,0 100%);
+}
+.nav-map-btn:hover{color:var(--text);background:var(--surf2)}
+.nav-map-btn.active{
+  background:var(--red-low);color:var(--red);
+}
+.nav-map-icon{
+  width:22px;height:16px;background:var(--surf3);
+  flex-shrink:0;overflow:hidden;
+}
+.nav-map-icon img{width:100%;height:100%;object-fit:cover;display:block}
+
+.topbar-tools{display:flex;align-items:center;gap:6px;flex-shrink:0}
+.tool-btn{
+  background:transparent;border:1px solid var(--border2);
+  color:var(--muted);cursor:pointer;padding:7px 10px;
+  font-family:'Tomorrow',sans-serif;font-size:11px;font-weight:600;
+  letter-spacing:1px;text-transform:uppercase;
+  display:flex;align-items:center;gap:6px;
+  transition:all .15s;
+}
+.tool-btn:hover{color:var(--text);border-color:var(--red-mid);background:var(--red-low)}
+.tool-icon{font-size:14px}
+
+/* Search input */
+.search-wrap{
+  position:relative;display:flex;align-items:center;
+  background:var(--surf2);border:1px solid var(--border2);
+  padding:0 10px;transition:border-color .15s;
+}
+.search-wrap:focus-within{border-color:var(--red)}
+.search-icon{color:var(--muted);font-size:13px}
+.search-input{
+  background:transparent;border:none;outline:none;
+  color:var(--text);font-family:'DM Sans',sans-serif;font-size:13px;
+  padding:8px 6px;width:140px;
+}
+.search-input::placeholder{color:var(--dim)}
+
+/* ════════════════════════════════════════════════
+   HERO TITLE
+   ════════════════════════════════════════════════ */
+.hero{
+  position:relative;text-align:center;
+  padding:60px 32px 40px;
+  z-index:2;
+}
+.hero-eyebrow{
+  display:inline-flex;align-items:center;gap:8px;
+  font-family:'Tomorrow',sans-serif;font-size:10px;font-weight:700;
+  letter-spacing:4px;text-transform:uppercase;color:var(--red);
+  border:1px solid var(--red-mid);padding:5px 18px;
+  margin-bottom:24px;
+}
+.hero-eyebrow::before{
+  content:'';width:5px;height:5px;background:var(--red);border-radius:50%;
+  animation:pulse 2s ease-in-out infinite;
+}
+@keyframes pulse{0%,100%{opacity:1;box-shadow:0 0 0 0 var(--red-glow)}50%{opacity:.4;box-shadow:0 0 0 8px transparent}}
+
+.hero-title{
+  font-family:'Tomorrow',sans-serif;
+  font-size:clamp(60px,9vw,120px);font-weight:700;
+  line-height:.9;letter-spacing:-2px;
+  color:var(--text);position:relative;
+}
+.hero-title-frame{display:inline-block;position:relative;padding:0 8px}
+.hero-title-frame::before,
+.hero-title-frame::after{
+  content:'';position:absolute;width:24px;height:24px;
+  border:2px solid var(--red);
+}
+.hero-title-frame::before{top:-8px;left:-8px;border-right:none;border-bottom:none}
+.hero-title-frame::after{bottom:-8px;right:-8px;border-left:none;border-top:none}
+
+.hero-sub{
+  margin-top:18px;font-family:'Tomorrow',sans-serif;font-size:14px;
+  letter-spacing:6px;text-transform:uppercase;color:var(--muted);
+  font-weight:500;
+}
+.hero-meta{
+  margin-top:16px;display:flex;gap:24px;justify-content:center;flex-wrap:wrap;
+  font-size:11px;color:var(--dim);letter-spacing:1px;
+}
+.hero-meta span{display:flex;align-items:center;gap:6px}
+.hero-meta .dot{width:5px;height:5px;border-radius:50%;background:var(--red)}
+
+/* Parallax tilt setup */
+.parallax-host{transform-style:preserve-3d;perspective:1000px}
+
+/* ════════════════════════════════════════════════
+   MAIN LAYOUT
+   ════════════════════════════════════════════════ */
+.main{position:relative;z-index:2;max-width:1600px;margin:0 auto;padding:0 32px 40px}
+
+/* ════════════════════════════════════════════════
+   MAP HERO
+   ════════════════════════════════════════════════ */
+.map-section{display:none;animation:slideIn .5s cubic-bezier(.22,1,.36,1)}
+.map-section.active{display:block}
+@keyframes slideIn{
+  from{opacity:0;transform:translateX(20px) skewX(-2deg)}
+  to{opacity:1;transform:translateX(0) skewX(0)}
+}
+
+.map-hero{
+  position:relative;height:300px;overflow:hidden;
+  margin-bottom:32px;
+  border:1px solid var(--border);
+  background:var(--surf2);
+}
+.map-hero-img-wrap{
+  position:absolute;inset:0;overflow:hidden;
+}
+.map-hero-img{
+  width:100%;height:100%;object-fit:cover;display:block;
+  filter:brightness(.55) saturate(.85) contrast(1.05);
+  transform:scale(1.05);transition:transform .8s ease;
+}
+.map-hero:hover .map-hero-img{transform:scale(1.08)}
+.map-hero-overlay{
+  position:absolute;inset:0;
+  background:
+    linear-gradient(135deg,rgba(10,12,16,.95) 0%,rgba(10,12,16,.3) 50%,rgba(10,12,16,.1) 100%),
+    linear-gradient(to top,rgba(10,12,16,.95) 0%,transparent 60%);
+}
+:root[data-theme="light"] .map-hero-overlay{
+  background:
+    linear-gradient(135deg,rgba(244,241,234,.95) 0%,rgba(244,241,234,.4) 50%,rgba(244,241,234,.1) 100%),
+    linear-gradient(to top,rgba(244,241,234,.95) 0%,transparent 60%);
+}
+.map-hero-grid{
+  position:absolute;inset:0;
+  background-image:linear-gradient(rgba(255,70,86,.04) 1px,transparent 1px),
+                   linear-gradient(90deg,rgba(255,70,86,.04) 1px,transparent 1px);
+  background-size:40px 40px;
+}
+.map-hero-content{
+  position:absolute;inset:0;
+  display:flex;align-items:flex-end;justify-content:space-between;
+  padding:36px 40px;gap:24px;flex-wrap:wrap;
+}
+.map-hero-left{flex:1;min-width:280px}
+.map-hero-sub{
+  font-family:'Tomorrow',sans-serif;font-size:11px;font-weight:500;
+  letter-spacing:4px;text-transform:uppercase;color:var(--red);
+  margin-bottom:8px;
+}
+.map-hero-title{
+  font-family:'Tomorrow',sans-serif;font-size:64px;font-weight:700;
+  color:var(--text);line-height:.95;letter-spacing:2px;text-transform:uppercase;
+}
+.map-hero-tags{
+  display:flex;gap:6px;margin-top:14px;flex-wrap:wrap;
+}
+.map-tag{
+  font-family:'Tomorrow',sans-serif;font-size:10px;font-weight:600;
+  letter-spacing:2px;text-transform:uppercase;
+  padding:4px 12px;border:1px solid var(--red-mid);color:var(--red);
+  background:var(--red-low);
+}
+.map-hero-stats{
+  display:flex;gap:20px;flex-wrap:wrap;
+}
+.map-stat{
+  display:flex;flex-direction:column;gap:2px;
+}
+.map-stat-val{
+  font-family:'Tomorrow',sans-serif;font-size:28px;font-weight:700;
+  color:var(--text);line-height:1;
+}
+.map-stat-lbl{
+  font-family:'Tomorrow',sans-serif;font-size:9px;font-weight:600;
+  letter-spacing:2px;text-transform:uppercase;color:var(--muted);
+}
+
+/* ════════════════════════════════════════════════
+   COMP TABS + PANELS
+   ════════════════════════════════════════════════ */
+.comp-tabs{display:flex;gap:6px;margin-bottom:24px;flex-wrap:wrap}
+.comp-tab{
+  font-family:'Tomorrow',sans-serif;font-size:11px;font-weight:600;
+  letter-spacing:1.5px;text-transform:uppercase;
+  padding:9px 22px 9px 18px;
+  background:var(--surf2);border:1px solid var(--border2);
+  color:var(--muted);cursor:pointer;transition:all .2s;
+  clip-path:polygon(0 0,calc(100% - 12px) 0,100% 100%,12px 100%);
+}
+.comp-tab:hover{color:var(--text);background:var(--surf3)}
+.comp-tab.active{background:var(--red);border-color:var(--red);color:#fff}
+
+.comp-panel{display:none}
+.comp-panel.active{display:block;animation:fadeUp .35s ease}
+@keyframes fadeUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+
+.comp-card{
+  background:var(--surf);border:1px solid var(--border);
+  padding:24px 28px;margin-bottom:24px;
+  position:relative;overflow:hidden;
+  box-shadow:var(--shadow-card);
+}
+.comp-card::before{
+  content:'';position:absolute;top:0;left:0;width:3px;height:100%;
+  background:linear-gradient(180deg,var(--red),transparent);
+}
+
+.comp-header{
+  display:flex;align-items:center;justify-content:space-between;
+  margin-bottom:20px;flex-wrap:wrap;gap:16px;
+}
+.comp-label-row{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.comp-tier{
+  font-family:'Tomorrow',sans-serif;font-size:10px;font-weight:700;
+  letter-spacing:2.5px;text-transform:uppercase;padding:4px 12px;
+}
+.tier-s{
+  background:var(--gold-low);color:var(--gold);
+  border:1px solid rgba(245,200,66,.4);
+}
+.tier-a{
+  background:rgba(63,207,207,.1);color:var(--S);
+  border:1px solid rgba(63,207,207,.3);
+}
+.comp-name{
+  font-family:'Tomorrow',sans-serif;font-size:18px;font-weight:600;
+  color:var(--text);letter-spacing:1px;text-transform:uppercase;
+}
+.comp-meta{display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+.winrate-pill{
+  display:flex;align-items:center;gap:6px;
+  padding:5px 12px;background:var(--surf3);border:1px solid var(--border2);
+}
+.winrate-bar{
+  width:40px;height:4px;background:var(--surf4);position:relative;overflow:hidden;
+}
+.winrate-bar-fill{
+  position:absolute;left:0;top:0;height:100%;background:var(--red);
+  transition:width 1s cubic-bezier(.22,1,.36,1);
+}
+.winrate-val{
+  font-family:'Tomorrow',sans-serif;font-size:13px;font-weight:700;
+  color:var(--text);letter-spacing:.5px;
+}
+.winrate-lbl{
+  font-family:'Tomorrow',sans-serif;font-size:9px;letter-spacing:1.5px;
+  text-transform:uppercase;color:var(--muted);
+}
+
+.fav-btn{
+  background:transparent;border:1px solid var(--border2);
+  width:36px;height:36px;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;
+  color:var(--muted);transition:all .2s;font-size:16px;
+}
+.fav-btn:hover{color:var(--red);border-color:var(--red-mid)}
+.fav-btn.active{color:var(--red);border-color:var(--red);background:var(--red-low)}
+
+/* ════════════════════════════════════════════════
+   AGENTS GRID — 3D TILT CARDS
+   ════════════════════════════════════════════════ */
+.agents-grid{
+  display:grid;grid-template-columns:repeat(5,1fr);gap:12px;
+}
+@media(max-width:760px){.agents-grid{grid-template-columns:repeat(5,1fr);gap:6px}}
+
+.agent-card{
+  position:relative;cursor:pointer;
+  transform-style:preserve-3d;perspective:800px;
+  transition:transform .4s cubic-bezier(.22,1,.36,1);
+}
+.agent-card-inner{
+  position:relative;
+  transform-style:preserve-3d;
+  transition:transform .15s ease-out;
+}
+.portrait-frame{
+  width:100%;aspect-ratio:3/4;overflow:hidden;position:relative;
+  background:var(--surf3);border:1px solid var(--border2);
+  transition:border-color .25s,box-shadow .25s;
+}
+.agent-card:hover .portrait-frame{
+  box-shadow:0 20px 40px -15px rgba(0,0,0,.5),0 0 0 1px var(--red-mid);
+}
+.agent-card.D:hover .portrait-frame{box-shadow:0 20px 40px -15px rgba(255,107,122,.4),0 0 0 1px var(--D)}
+.agent-card.I:hover .portrait-frame{box-shadow:0 20px 40px -15px rgba(240,168,50,.4),0 0 0 1px var(--I)}
+.agent-card.S:hover .portrait-frame{box-shadow:0 20px 40px -15px rgba(63,207,207,.4),0 0 0 1px var(--S)}
+.agent-card.C:hover .portrait-frame{box-shadow:0 20px 40px -15px rgba(168,127,255,.4),0 0 0 1px var(--C)}
+
+.portrait-frame img{
+  width:100%;height:100%;display:block;
+  object-fit:cover;object-position:top center;
+  transition:transform .4s ease;
+  transform:translateZ(20px);
+}
+.agent-card:hover .portrait-frame img{transform:translateZ(40px) scale(1.05)}
+
+.role-stripe{
+  position:absolute;bottom:0;left:0;right:0;height:3px;
+  transform:scaleX(0);transform-origin:left;transition:transform .3s ease;
+}
+.agent-card:hover .role-stripe{transform:scaleX(1)}
+.agent-card.D .role-stripe{background:var(--D)}
+.agent-card.I .role-stripe{background:var(--I)}
+.agent-card.S .role-stripe{background:var(--S)}
+.agent-card.C .role-stripe{background:var(--C)}
+
+.role-corner{
+  position:absolute;top:6px;left:6px;
+  font-family:'Tomorrow',sans-serif;font-size:9px;font-weight:700;
+  letter-spacing:1px;padding:2px 5px;
+  background:rgba(10,12,16,.8);backdrop-filter:blur(8px);
+  -webkit-backdrop-filter:blur(8px);
+}
+.agent-card.D .role-corner{color:var(--D)}
+.agent-card.I .role-corner{color:var(--I)}
+.agent-card.S .role-corner{color:var(--S)}
+.agent-card.C .role-corner{color:var(--C)}
+
+.agent-footer{
+  width:100%;background:var(--surf2);border:1px solid var(--border);
+  border-top:none;padding:8px 4px;text-align:center;
+}
+.agent-name{
+  font-family:'Tomorrow',sans-serif;font-size:12px;font-weight:600;
+  text-transform:uppercase;letter-spacing:1px;color:var(--text);
+  line-height:1;display:block;
+}
+.agent-role{
+  font-family:'Tomorrow',sans-serif;font-size:9px;letter-spacing:1.5px;
+  text-transform:uppercase;color:var(--muted);
+  display:block;margin-top:3px;
+}
+
+.portrait-ph{
+  width:100%;height:100%;display:flex;align-items:center;justify-content:center;
+  font-family:'Tomorrow',sans-serif;font-size:32px;font-weight:700;color:var(--dim);
+  background:linear-gradient(135deg,var(--surf3),var(--surf4));
+}
+
+/* ════════════════════════════════════════════════
+   5-STACK TIP
+   ════════════════════════════════════════════════ */
+.tip-box{
+  margin-top:20px;
+  background:linear-gradient(135deg,rgba(168,127,255,.08),rgba(168,127,255,.02));
+  border:1px solid rgba(168,127,255,.25);
+  padding:16px 20px;display:flex;align-items:flex-start;gap:14px;
+  position:relative;
+}
+.tip-box::before{
+  content:'';position:absolute;top:0;left:0;width:2px;height:100%;background:var(--C);
+}
+.tip-icon{
+  font-family:'Tomorrow',sans-serif;font-size:9px;font-weight:700;
+  letter-spacing:2px;text-transform:uppercase;color:var(--C);
+  flex-shrink:0;padding:2px 8px;background:rgba(168,127,255,.15);
+}
+.tip-text{font-size:13px;color:var(--text);line-height:1.6;flex:1}
+.tip-text strong{color:var(--C);font-weight:500}
+
+/* ════════════════════════════════════════════════
+   META NOTES PER MAP
+   ════════════════════════════════════════════════ */
+.notes-card{
+  background:var(--surf);border:1px solid var(--border);
+  padding:22px 26px;
+}
+.notes-card-title{
+  font-family:'Tomorrow',sans-serif;font-size:11px;font-weight:700;
+  letter-spacing:3px;text-transform:uppercase;color:var(--red);
+  margin-bottom:16px;display:flex;align-items:center;gap:10px;
+}
+.notes-card-title::after{
+  content:'';flex:1;height:1px;background:linear-gradient(90deg,var(--red-mid),transparent);
+}
+.notes-list{display:flex;flex-direction:column;gap:8px}
+.note-row{
+  display:flex;align-items:flex-start;gap:12px;
+  font-size:13.5px;color:var(--text);line-height:1.55;
+}
+.note-marker{
+  width:6px;height:6px;background:var(--red);border-radius:1px;
+  flex-shrink:0;margin-top:7px;
+  transform:rotate(45deg);
+}
+
+/* ════════════════════════════════════════════════
+   OLYCITY ROSTER SECTION
+   ════════════════════════════════════════════════ */
+.roster-section{
+  position:relative;padding:60px 32px;border-top:1px solid var(--border);
+  background:linear-gradient(180deg,var(--bg),var(--bg-deep));
+}
+.roster-header{
+  display:flex;align-items:baseline;gap:16px;
+  max-width:1600px;margin:0 auto 32px;flex-wrap:wrap;
+}
+.roster-eyebrow{
+  font-family:'Tomorrow',sans-serif;font-size:11px;font-weight:700;
+  letter-spacing:4px;text-transform:uppercase;color:var(--red);
+}
+.roster-title{
+  font-family:'Tomorrow',sans-serif;font-size:42px;font-weight:700;
+  letter-spacing:2px;text-transform:uppercase;color:var(--text);
+  line-height:1;
+}
+.roster-sub{color:var(--muted);font-size:13px;margin-left:auto;letter-spacing:.5px}
+
+.roster-grid{
+  max-width:1600px;margin:0 auto;
+  display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));
+  gap:16px;
+}
+
+.player-card{
+  position:relative;background:var(--surf);
+  border:1px solid var(--border);overflow:hidden;
+  transition:transform .3s cubic-bezier(.22,1,.36,1),box-shadow .3s;
+  cursor:default;
+}
+.player-card:hover{
+  transform:translateY(-6px);
+  box-shadow:var(--shadow-card);
+  border-color:var(--red-mid);
+}
+.player-banner{
+  height:90px;position:relative;overflow:hidden;
+  background:linear-gradient(135deg,var(--surf3),var(--surf2));
+}
+.player-banner-deco{
+  position:absolute;inset:0;
+  background-image:linear-gradient(rgba(255,70,86,.06) 1px,transparent 1px),
+                   linear-gradient(90deg,rgba(255,70,86,.06) 1px,transparent 1px);
+  background-size:20px 20px;
+}
+.player-banner-glow{
+  position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);
+  width:120px;height:120px;border-radius:50%;
+  background:radial-gradient(circle,var(--red-low),transparent 70%);
+}
+.player-tag{
+  position:absolute;top:10px;right:10px;
+  font-family:'Tomorrow',sans-serif;font-size:9px;font-weight:700;
+  letter-spacing:1.5px;color:var(--red);
+  background:rgba(10,12,16,.8);backdrop-filter:blur(8px);
+  -webkit-backdrop-filter:blur(8px);
+  padding:3px 8px;
+}
+:root[data-theme="light"] .player-tag{background:rgba(255,255,255,.8)}
+
+.player-body{padding:16px 18px 18px}
+.player-name{
+  font-family:'Tomorrow',sans-serif;font-size:20px;font-weight:600;
+  color:var(--text);letter-spacing:1px;text-transform:uppercase;
+  line-height:1;margin-bottom:4px;
+}
+.player-role{
+  font-family:'Tomorrow',sans-serif;font-size:10px;font-weight:500;
+  letter-spacing:2px;text-transform:uppercase;color:var(--muted);
+  margin-bottom:14px;
+}
+.player-mains{
+  display:flex;gap:6px;
+}
+.player-main{
+  flex:1;aspect-ratio:1;background:var(--surf3);overflow:hidden;
+  border:1px solid var(--border);position:relative;
+  transition:transform .2s,border-color .2s;
+}
+.player-main:hover{transform:translateY(-2px);border-color:var(--red-mid)}
+.player-main img{width:100%;height:100%;object-fit:cover;display:block}
+.player-main-name{
+  position:absolute;bottom:0;left:0;right:0;
+  background:linear-gradient(to top,rgba(10,12,16,.95),transparent);
+  font-family:'Tomorrow',sans-serif;font-size:8px;font-weight:700;
+  letter-spacing:.5px;color:#fff;text-align:center;
+  padding:6px 2px 4px;
+  text-transform:uppercase;
+}
+
+/* Live stats on player card */
+.player-rank{
+  position:absolute;top:10px;left:10px;
+  display:flex;align-items:center;gap:6px;
+  background:rgba(10,12,16,.85);backdrop-filter:blur(8px);
+  -webkit-backdrop-filter:blur(8px);
+  padding:4px 8px 4px 6px;border:1px solid var(--border2);
+}
+:root[data-theme="light"] .player-rank{background:rgba(255,255,255,.9)}
+.player-rank-icon{width:18px;height:18px;display:block}
+.player-rank-text{
+  font-family:'Tomorrow',sans-serif;font-size:10px;font-weight:700;
+  letter-spacing:.5px;text-transform:uppercase;color:var(--text);
+  line-height:1;
+}
+.player-rank-rr{
+  font-family:'Tomorrow',sans-serif;font-size:8px;letter-spacing:.5px;
+  color:var(--muted);margin-left:4px;
+}
+
+.player-stats-row{
+  display:flex;gap:6px;margin-top:12px;padding-top:12px;
+  border-top:1px dashed var(--border);
+}
+.player-stat{
+  flex:1;text-align:center;
+}
+.player-stat-val{
+  font-family:'Tomorrow',sans-serif;font-size:13px;font-weight:700;
+  color:var(--text);letter-spacing:.5px;line-height:1;display:block;
+}
+.player-stat-lbl{
+  font-family:'Tomorrow',sans-serif;font-size:8px;letter-spacing:1px;
+  text-transform:uppercase;color:var(--muted);margin-top:3px;display:block;
+}
+.player-stat-val.green{color:var(--S)}
+.player-stat-val.red{color:var(--D)}
+.player-stat-val.gold{color:var(--gold)}
+
+.player-sync-btn{
+  width:100%;margin-top:12px;padding:7px 0;
+  background:transparent;border:1px solid var(--border2);
+  color:var(--muted);cursor:pointer;
+  font-family:'Tomorrow',sans-serif;font-size:10px;font-weight:600;
+  letter-spacing:2px;text-transform:uppercase;
+  transition:all .15s;
+  display:flex;align-items:center;justify-content:center;gap:6px;
+}
+.player-sync-btn:hover{
+  color:var(--red);border-color:var(--red-mid);background:var(--red-low);
+}
+.player-sync-btn.syncing{
+  color:var(--gold);border-color:rgba(245,200,66,.3);
+  pointer-events:none;
+}
+.player-sync-btn.syncing .sync-spin{animation:spin .8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.player-sync-btn.error{color:var(--D);border-color:rgba(255,107,122,.3)}
+.player-sync-btn.synced{color:var(--S);border-color:rgba(63,207,207,.3)}
+
+.player-sync-time{
+  font-family:'Tomorrow',sans-serif;font-size:8px;letter-spacing:1px;
+  text-transform:uppercase;color:var(--dim);margin-top:6px;text-align:center;
+  display:block;
+}
+
+/* Sync all button */
+.sync-all-btn{
+  background:var(--red);border:1px solid var(--red);color:#fff;
+  padding:8px 16px;cursor:pointer;
+  font-family:'Tomorrow',sans-serif;font-size:11px;font-weight:600;
+  letter-spacing:2px;text-transform:uppercase;
+  transition:all .15s;
+  display:inline-flex;align-items:center;gap:6px;
+}
+.sync-all-btn:hover{background:#e63a4a;transform:translateY(-1px)}
+.sync-all-btn.syncing{background:var(--gold);border-color:var(--gold);color:#1a1200}
+
+/* Sync status banner */
+.sync-banner{
+  background:var(--surf);border:1px solid var(--border);
+  border-left:2px solid var(--red);
+  padding:12px 16px;margin-bottom:20px;
+  font-size:12.5px;color:var(--text);line-height:1.5;
+  display:flex;align-items:center;gap:12px;flex-wrap:wrap;
+}
+.sync-banner.error{border-left-color:var(--D);background:rgba(255,107,122,.05)}
+.sync-banner.success{border-left-color:var(--S);background:rgba(63,207,207,.05)}
+.sync-banner-icon{
+  font-family:'Tomorrow',sans-serif;font-size:9px;font-weight:700;
+  letter-spacing:1.5px;text-transform:uppercase;
+  padding:3px 8px;background:var(--red-low);color:var(--red);
+}
+.sync-banner.error .sync-banner-icon{background:rgba(255,107,122,.1);color:var(--D)}
+.sync-banner.success .sync-banner-icon{background:rgba(63,207,207,.1);color:var(--S)}
+
+/* ════════════════════════════════════════════════
+   S-TIER SECTION
+   ════════════════════════════════════════════════ */
+.section{padding:48px 32px;border-top:1px solid var(--border)}
+.section-inner{max-width:1600px;margin:0 auto}
+.section-header{
+  display:flex;align-items:baseline;gap:14px;margin-bottom:28px;flex-wrap:wrap;
+}
+.section-tag{
+  font-family:'Tomorrow',sans-serif;font-size:11px;font-weight:700;
+  letter-spacing:3px;text-transform:uppercase;color:var(--red);
+}
+.section-title{
+  font-family:'Tomorrow',sans-serif;font-size:28px;font-weight:600;
+  letter-spacing:1px;text-transform:uppercase;color:var(--text);
+}
+.section-line{flex:1;height:1px;background:linear-gradient(90deg,var(--border2),transparent);min-width:80px}
+
+.stier-row{display:flex;gap:14px;flex-wrap:wrap}
+.stier-card{
+  display:flex;flex-direction:column;align-items:center;gap:8px;
+  cursor:default;
+}
+.stier-frame{
+  width:74px;height:92px;overflow:hidden;
+  border:1px solid rgba(245,200,66,.25);
+  background:var(--surf2);position:relative;
+  transition:border-color .3s,transform .3s,box-shadow .3s;
+}
+.stier-frame img{width:100%;height:100%;object-fit:cover;object-position:top center;display:block}
+.stier-card:hover .stier-frame{
+  border-color:var(--gold);transform:translateY(-6px);
+  box-shadow:0 15px 30px -10px rgba(245,200,66,.3);
+}
+.stier-name{
+  font-family:'Tomorrow',sans-serif;font-size:11px;font-weight:600;
+  text-transform:uppercase;letter-spacing:1.5px;color:var(--text);
+}
+.stier-badge{
+  position:absolute;top:5px;right:5px;
+  background:var(--gold);color:#1a1200;
+  font-family:'Tomorrow',sans-serif;font-size:8px;font-weight:700;
+  letter-spacing:1px;padding:1px 5px;
+}
+
+/* ════════════════════════════════════════════════
+   GLOBAL META NOTES
+   ════════════════════════════════════════════════ */
+.gs-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:12px}
+.gs-card{
+  background:var(--surf);border:1px solid var(--border);
+  border-left:2px solid var(--red);
+  padding:14px 18px;font-size:13px;color:var(--text);line-height:1.55;
+  display:flex;align-items:flex-start;gap:11px;
+  transition:transform .2s,border-color .2s,background .2s;
+}
+.gs-card:hover{
+  background:var(--surf2);border-color:rgba(255,70,86,.4);
+  transform:translateY(-2px);
+}
+.gs-icon{
+  color:var(--red);font-size:14px;flex-shrink:0;margin-top:2px;
+  transform:rotate(45deg);font-weight:700;
+}
+
+/* ════════════════════════════════════════════════
+   SEARCH RESULTS PANEL
+   ════════════════════════════════════════════════ */
+.search-results{
+  display:none;position:absolute;top:100%;right:0;
+  background:var(--surf);border:1px solid var(--border2);
+  min-width:280px;max-height:400px;overflow-y:auto;
+  margin-top:6px;z-index:200;
+  box-shadow:0 20px 40px -10px rgba(0,0,0,.5);
+}
+.search-results.show{display:block}
+.search-result-item{
+  padding:10px 14px;cursor:pointer;display:flex;align-items:center;gap:10px;
+  border-bottom:1px solid var(--border);transition:background .15s;
+}
+.search-result-item:hover{background:var(--surf2)}
+.search-result-item:last-child{border-bottom:none}
+.search-result-thumb{
+  width:32px;height:32px;background:var(--surf3);overflow:hidden;flex-shrink:0;
+}
+.search-result-thumb img{width:100%;height:100%;object-fit:cover;object-position:top center;display:block}
+.search-result-info{display:flex;flex-direction:column;gap:1px;flex:1;min-width:0}
+.search-result-name{
+  font-family:'Tomorrow',sans-serif;font-size:12px;font-weight:600;
+  color:var(--text);text-transform:uppercase;letter-spacing:.5px;
+}
+.search-result-detail{font-size:11px;color:var(--muted)}
+.search-empty{padding:20px;text-align:center;color:var(--dim);font-size:12px}
+
+/* ════════════════════════════════════════════════
+   FOOTER
+   ════════════════════════════════════════════════ */
+.footer{
+  padding:24px 32px;border-top:1px solid var(--border);
+  background:var(--bg-deep);position:relative;z-index:2;
+}
+.footer-inner{
+  max-width:1600px;margin:0 auto;
+  display:flex;align-items:center;justify-content:space-between;
+  flex-wrap:wrap;gap:12px;
+  font-size:11px;color:var(--dim);letter-spacing:.5px;
+}
+.footer a{color:var(--red);text-decoration:none}
+.footer a:hover{text-decoration:underline}
+
+/* ════════════════════════════════════════════════
+   LOADING / EMPTY
+   ════════════════════════════════════════════════ */
+.loading{
+  display:flex;align-items:center;justify-content:center;
+  padding:80px;font-family:'Tomorrow',sans-serif;font-size:12px;
+  letter-spacing:4px;text-transform:uppercase;color:var(--dim);
+}
+
+/* ════════════════════════════════════════════════
+   AGENT PAGE — Immersive full takeover
+   ════════════════════════════════════════════════ */
+.agent-page{
+  display:none;position:relative;z-index:3;
+  animation:agentIn .5s cubic-bezier(.22,1,.36,1);
+}
+.agent-page.active{display:block}
+@keyframes agentIn{
+  from{opacity:0;transform:scale(.98) translateY(20px)}
+  to{opacity:1;transform:scale(1) translateY(0)}
+}
+
+.agent-hero{
+  position:relative;min-height:520px;overflow:hidden;
+  background:var(--surf2);
+  border-bottom:1px solid var(--border);
+}
+.agent-hero-bg{
+  position:absolute;inset:0;
+  background-size:cover;background-position:center;
+  filter:blur(2px) saturate(1.1);
+  opacity:.6;
+  transform:scale(1.1);
+}
+.agent-hero-gradient{
+  position:absolute;inset:0;
+  background:
+    radial-gradient(ellipse at 70% 50%,transparent 0%,rgba(10,12,16,.4) 50%,var(--bg) 90%),
+    linear-gradient(135deg,rgba(10,12,16,.9) 0%,transparent 50%);
+}
+:root[data-theme="light"] .agent-hero-gradient{
+  background:
+    radial-gradient(ellipse at 70% 50%,transparent 0%,rgba(244,241,234,.5) 50%,var(--bg) 90%),
+    linear-gradient(135deg,rgba(244,241,234,.9) 0%,transparent 50%);
+}
+.agent-hero-grid{
+  position:absolute;inset:0;
+  background-image:
+    linear-gradient(rgba(255,70,86,.05) 1px,transparent 1px),
+    linear-gradient(90deg,rgba(255,70,86,.05) 1px,transparent 1px);
+  background-size:50px 50px;
+  mask-image:radial-gradient(ellipse at 30% 50%,#000,transparent 80%);
+  -webkit-mask-image:radial-gradient(ellipse at 30% 50%,#000,transparent 80%);
+}
+
+.agent-hero-content{
+  position:relative;display:grid;
+  grid-template-columns:1.2fr 1fr;
+  max-width:1600px;margin:0 auto;padding:50px 32px;
+  align-items:center;gap:40px;min-height:520px;
+}
+
+.agent-info{position:relative;z-index:2}
+.agent-back-btn{
+  display:inline-flex;align-items:center;gap:8px;
+  background:transparent;border:1px solid var(--border2);
+  padding:8px 16px;color:var(--muted);cursor:pointer;
+  font-family:'Tomorrow',sans-serif;font-size:11px;font-weight:600;
+  letter-spacing:2px;text-transform:uppercase;
+  margin-bottom:28px;transition:all .2s;
+}
+.agent-back-btn:hover{color:var(--text);border-color:var(--red);background:var(--red-low)}
+
+.agent-page-eyebrow{
+  font-family:'Tomorrow',sans-serif;font-size:11px;font-weight:700;
+  letter-spacing:5px;text-transform:uppercase;color:var(--red);
+  margin-bottom:14px;display:flex;align-items:center;gap:10px;
+}
+.agent-page-eyebrow::before{
+  content:'';width:30px;height:1px;background:var(--red);
+}
+.agent-page-name{
+  font-family:'Tomorrow',sans-serif;
+  font-size:clamp(60px,8vw,110px);font-weight:700;
+  line-height:.9;letter-spacing:-1px;
+  color:var(--text);text-transform:uppercase;
+  margin-bottom:8px;
+}
+.agent-page-role-row{
+  display:flex;align-items:center;gap:12px;margin-bottom:24px;flex-wrap:wrap;
+}
+.agent-role-badge{
+  font-family:'Tomorrow',sans-serif;font-size:11px;font-weight:600;
+  letter-spacing:2.5px;text-transform:uppercase;
+  padding:6px 16px;border:1px solid;
+}
+.agent-role-badge.D{color:var(--D);border-color:var(--D);background:rgba(255,107,122,.08)}
+.agent-role-badge.I{color:var(--I);border-color:var(--I);background:rgba(240,168,50,.08)}
+.agent-role-badge.S{color:var(--S);border-color:var(--S);background:rgba(63,207,207,.08)}
+.agent-role-badge.C{color:var(--C);border-color:var(--C);background:rgba(168,127,255,.08)}
+.agent-origin{
+  font-family:'Tomorrow',sans-serif;font-size:11px;letter-spacing:2px;
+  text-transform:uppercase;color:var(--muted);
+}
+.agent-bio{
+  font-size:15px;line-height:1.65;color:var(--text);
+  max-width:560px;margin-bottom:28px;
+}
+
+.agent-quick-stats{
+  display:flex;gap:14px;flex-wrap:wrap;
+}
+.aqs{
+  display:flex;flex-direction:column;gap:3px;
+  padding:10px 16px;background:var(--surf);border:1px solid var(--border);
+  border-left:2px solid var(--red);
+}
+.aqs-val{
+  font-family:'Tomorrow',sans-serif;font-size:18px;font-weight:700;color:var(--text);
+}
+.aqs-lbl{
+  font-family:'Tomorrow',sans-serif;font-size:9px;font-weight:500;
+  letter-spacing:2px;text-transform:uppercase;color:var(--muted);
+}
+
+.agent-portrait-wrap{
+  position:relative;display:flex;justify-content:center;align-items:flex-end;
+  height:100%;min-height:400px;
+}
+.agent-portrait-full{
+  max-height:580px;width:auto;max-width:100%;
+  filter:drop-shadow(0 30px 60px rgba(0,0,0,.6));
+  transition:transform .4s cubic-bezier(.22,1,.36,1);
+  position:relative;z-index:2;
+}
+.agent-portrait-glow{
+  position:absolute;bottom:-40px;left:50%;transform:translateX(-50%);
+  width:80%;height:80%;
+  background:radial-gradient(ellipse at center,var(--red-low),transparent 65%);
+  filter:blur(40px);
+  z-index:1;
+}
+
+/* ── ABILITIES ── */
+.agent-body{
+  max-width:1600px;margin:0 auto;padding:50px 32px;position:relative;z-index:2;
+}
+.abilities-section{margin-bottom:48px}
+.ab-grid{
+  display:grid;grid-template-columns:repeat(4,1fr);gap:14px;
+}
+.ability-card{
+  background:var(--surf);border:1px solid var(--border);
+  padding:20px;position:relative;overflow:hidden;
+  transition:transform .25s,border-color .25s,box-shadow .25s;
+  cursor:default;
+}
+.ability-card::before{
+  content:'';position:absolute;top:0;left:0;width:100%;height:2px;
+  background:linear-gradient(90deg,var(--red),transparent);
+}
+.ability-card:hover{
+  transform:translateY(-4px);
+  border-color:var(--red-mid);
+  box-shadow:0 20px 40px -20px rgba(255,70,86,.25);
+}
+.ability-card.ultimate{
+  background:linear-gradient(135deg,var(--gold-low),transparent);
+  border-color:rgba(245,200,66,.3);
+}
+.ability-card.ultimate::before{background:linear-gradient(90deg,var(--gold),transparent)}
+.ability-card.ultimate:hover{
+  border-color:var(--gold);
+  box-shadow:0 20px 40px -20px rgba(245,200,66,.3);
+}
+
+.ab-header{display:flex;align-items:center;gap:12px;margin-bottom:14px}
+.ab-icon-wrap{
+  width:48px;height:48px;background:var(--surf3);
+  border:1px solid var(--border2);
+  display:flex;align-items:center;justify-content:center;
+  flex-shrink:0;padding:8px;
+}
+.ab-icon-wrap img{
+  width:100%;height:100%;object-fit:contain;
+  filter:invert(.9);
+}
+:root[data-theme="light"] .ab-icon-wrap img{filter:invert(.1)}
+.ab-info{flex:1;min-width:0}
+.ab-slot{
+  font-family:'Tomorrow',sans-serif;font-size:9px;font-weight:600;
+  letter-spacing:2px;text-transform:uppercase;color:var(--red);
+  margin-bottom:3px;
+}
+.ability-card.ultimate .ab-slot{color:var(--gold)}
+.ab-name{
+  font-family:'Tomorrow',sans-serif;font-size:16px;font-weight:600;
+  letter-spacing:.5px;color:var(--text);text-transform:uppercase;
+  line-height:1.1;
+}
+.ab-cost{
+  font-family:'Tomorrow',sans-serif;font-size:11px;font-weight:600;
+  letter-spacing:1px;color:var(--muted);
+  display:flex;align-items:center;gap:5px;margin-top:6px;
+}
+.ab-cost::before{content:'◈';color:var(--red);font-size:10px}
+.ability-card.ultimate .ab-cost::before{color:var(--gold)}
+.ab-desc{
+  font-size:13px;line-height:1.55;color:var(--text);
+}
+
+/* ── COMPS USING THIS AGENT ── */
+.usage-section{margin-bottom:48px}
+.usage-grid{
+  display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:14px;
+}
+.usage-card{
+  background:var(--surf);border:1px solid var(--border);
+  padding:16px 18px;cursor:pointer;
+  transition:transform .2s,border-color .2s,box-shadow .2s;
+  position:relative;overflow:hidden;
+}
+.usage-card:hover{
+  transform:translateY(-3px);border-color:var(--red-mid);
+  box-shadow:var(--shadow-card);
+}
+.usage-map-thumb{
+  position:absolute;top:0;right:0;width:100%;height:100%;
+  opacity:.12;background-size:cover;background-position:center;
+  pointer-events:none;
+}
+.usage-card-inner{position:relative;z-index:1}
+.usage-map{
+  font-family:'Tomorrow',sans-serif;font-size:18px;font-weight:600;
+  letter-spacing:1px;color:var(--text);text-transform:uppercase;
+  margin-bottom:4px;
+}
+.usage-comp-label{
+  font-family:'Tomorrow',sans-serif;font-size:10px;font-weight:600;
+  letter-spacing:1.5px;color:var(--muted);text-transform:uppercase;
+  margin-bottom:12px;
+}
+.usage-meta{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.usage-tier{
+  font-family:'Tomorrow',sans-serif;font-size:9px;font-weight:700;
+  letter-spacing:1.5px;padding:2px 8px;
+}
+.usage-tier.S{background:var(--gold-low);color:var(--gold);border:1px solid rgba(245,200,66,.3)}
+.usage-tier.A{background:rgba(63,207,207,.1);color:var(--S);border:1px solid rgba(63,207,207,.3)}
+.usage-wr{
+  font-family:'Tomorrow',sans-serif;font-size:11px;color:var(--text);
+  font-weight:600;letter-spacing:.5px;
+}
+.usage-go{margin-left:auto;color:var(--muted);font-size:14px}
+.usage-card:hover .usage-go{color:var(--red);transform:translateX(3px);transition:transform .2s,color .2s}
+
+/* ── PLAYED BY OLYCITY ── */
+.played-by{
+  background:var(--surf);border:1px solid var(--border);
+  border-left:2px solid var(--red);padding:18px 22px;
+  display:flex;align-items:center;gap:14px;flex-wrap:wrap;
+}
+.played-by-lbl{
+  font-family:'Tomorrow',sans-serif;font-size:11px;font-weight:600;
+  letter-spacing:2px;text-transform:uppercase;color:var(--red);
+}
+.played-by-pills{display:flex;gap:6px;flex-wrap:wrap}
+.played-pill{
+  font-family:'Tomorrow',sans-serif;font-size:11px;font-weight:600;
+  letter-spacing:1px;text-transform:uppercase;
+  padding:5px 12px;background:var(--surf2);border:1px solid var(--border2);
+  color:var(--text);
+}
+.played-pill .pill-role{color:var(--muted);font-weight:500;margin-left:6px}
+.played-none{font-size:13px;color:var(--muted);font-style:italic}
+
+.section-title-with-tag{
+  display:flex;align-items:baseline;gap:14px;margin-bottom:22px;flex-wrap:wrap;
+}
+.sec-tag{
+  font-family:'Tomorrow',sans-serif;font-size:11px;font-weight:700;
+  letter-spacing:3px;text-transform:uppercase;color:var(--red);
+}
+.sec-title{
+  font-family:'Tomorrow',sans-serif;font-size:24px;font-weight:600;
+  letter-spacing:1px;text-transform:uppercase;color:var(--text);
+}
+.sec-line{flex:1;height:1px;background:linear-gradient(90deg,var(--border2),transparent);min-width:60px}
+
+/* Hide main content when agent page is active */
+body.agent-mode .main,
+body.agent-mode .hero,
+body.agent-mode .roster-section,
+body.agent-mode .section{display:none}
+body.agent-mode .topbar{position:relative}
+
+/* ════════════════════════════════════════════════
+   RESPONSIVE
+   ════════════════════════════════════════════════ */
+@media(max-width:900px){
+  .topbar-row{padding:10px 16px;gap:10px;flex-wrap:wrap}
+  .nav-maps{order:3;width:100%;justify-content:flex-start}
+  .hero-meta{gap:14px}
+  .map-hero-title{font-size:42px}
+  .map-hero-content{padding:24px}
+  .comp-card{padding:18px 20px}
+  .main,.section,.roster-section,.footer{padding-left:16px;padding-right:16px}
+  .search-input{width:100px}
+  .agent-name{font-size:10px}
+  .agent-role{font-size:8px}
+  .role-corner{font-size:8px;padding:1px 4px}
+  .agent-hero-content{grid-template-columns:1fr;padding:30px 16px;gap:20px}
+  .agent-portrait-wrap{order:-1;min-height:280px}
+  .agent-portrait-full{max-height:380px}
+  .agent-body{padding:30px 16px}
+  .ab-grid{grid-template-columns:repeat(2,1fr)}
+}
+@media(max-width:600px){
+  .hero{padding:40px 16px 28px}
+  .hero-title-frame::before,.hero-title-frame::after{width:16px;height:16px}
+  .brand-title{font-size:16px}
+  .brand-sub{font-size:8px;letter-spacing:2.5px}
+  .nav-map-btn{padding:6px 10px;font-size:10px}
+  .map-hero{height:220px}
+  .map-hero-title{font-size:32px}
+  .map-stat-val{font-size:22px}
+  .ab-grid{grid-template-columns:1fr}
+  .agent-page-name{font-size:48px}
+}
+
+/* Scrollbar */
+::-webkit-scrollbar{width:6px;height:6px}
+::-webkit-scrollbar-track{background:var(--bg)}
+::-webkit-scrollbar-thumb{background:var(--surf4);border-radius:3px}
+::-webkit-scrollbar-thumb:hover{background:var(--red-mid)}
+</style>
+</head>
+<body>
+
+<!-- Atmospheric background -->
+<div class="bg-layer bg-grid"></div>
+<div class="bg-layer"><div class="bg-glow-1"></div><div class="bg-glow-2"></div></div>
+
+<!-- ═══════════ TOP BAR ═══════════ -->
+<header class="topbar">
+  <div class="topbar-row">
+    <div class="brand" onclick="closeAgentPage();window.scrollTo({top:0,behavior:'smooth'})">
+      <div class="brand-mark">OC</div>
+      <div class="brand-text">
+        <span class="brand-title">OLYCITY</span>
+        <span class="brand-sub">Valorant · Patch 12.09</span>
+      </div>
+    </div>
+
+    <nav class="nav-maps" id="nav-maps"></nav>
+
+    <div class="topbar-tools" style="position:relative">
+      <div class="search-wrap">
+        <span class="search-icon">⌕</span>
+        <input type="text" class="search-input" id="search-input" placeholder="Agent…" autocomplete="off">
+      </div>
+      <div class="search-results" id="search-results"></div>
+      <button class="tool-btn" id="fav-toggle" title="Mes favoris">
+        <span class="tool-icon">★</span>
+        <span class="fav-count">0</span>
+      </button>
+      <button class="tool-btn" id="theme-toggle" title="Changer le thème">
+        <span class="tool-icon" id="theme-icon">☾</span>
+      </button>
+    </div>
+  </div>
+</header>
+
+<!-- ═══════════ HERO ═══════════ -->
+<section class="hero">
+  <div class="hero-eyebrow">Five Stack · Meta Patch 12.09 · 2026</div>
+  <h1 class="hero-title"><span class="hero-title-frame">OLYCITY</span></h1>
+  <div class="hero-sub">Valorant Meta Comps</div>
+  <div class="hero-meta">
+    <span><span class="dot"></span>7 maps</span>
+    <span><span class="dot"></span>14 comps validées</span>
+    <span><span class="dot"></span>6 joueurs</span>
+    <span><span class="dot"></span>MAJ 22.05.2026</span>
+  </div>
+</section>
+
+<!-- ═══════════ MAIN ═══════════ -->
+<main class="main" id="main">
+  <div class="loading">Chargement des données<span style="margin-left:6px">…</span></div>
+</main>
+
+<!-- ═══════════ OLYCITY ROSTER ═══════════ -->
+<section class="roster-section" id="roster">
+  <div class="roster-header">
+    <span class="roster-eyebrow">Le Roster</span>
+    <h2 class="roster-title">Les joueurs OLYCITY</h2>
+    <span class="roster-sub">Stats récupérées live via HenrikDev API</span>
+    <button class="sync-all-btn" id="sync-all-btn" onclick="syncAllPlayers()">
+      <span class="sync-spin">↻</span> Sync tout
+    </button>
+  </div>
+  <div id="sync-status"></div>
+  <div class="roster-grid" id="roster-grid"></div>
+</section>
+
+<!-- ═══════════ S-TIER ═══════════ -->
+<section class="section">
+  <div class="section-inner">
+    <div class="section-header">
+      <span class="section-tag">S-Tier</span>
+      <h2 class="section-title">Priorité absolue en pick</h2>
+      <div class="section-line"></div>
+    </div>
+    <div class="stier-row" id="stier-row"></div>
+  </div>
+</section>
+
+<!-- ═══════════ GLOBAL META NOTES ═══════════ -->
+<section class="section">
+  <div class="section-inner">
+    <div class="section-header">
+      <span class="section-tag">Meta Notes</span>
+      <h2 class="section-title">Tendances Patch 12.09</h2>
+      <div class="section-line"></div>
+    </div>
+    <div class="gs-grid" id="gs-grid"></div>
+  </div>
+</section>
+
+<!-- ═══════════ AGENT PAGE (immersive) ═══════════ -->
+<div class="agent-page" id="agent-page"></div>
+
+<!-- ═══════════ FOOTER ═══════════ -->
+<footer class="footer">
+  <div class="footer-inner">
+    <span>OLYCITY · Sources : <a href="https://vlr.gg" target="_blank">VLR.gg</a> · <a href="https://www.hotspawn.com/valorant/guide/valorant-best-team-comps" target="_blank">Hotspawn</a> · <a href="https://reddit.com/r/ValorantCompetitive" target="_blank">Reddit</a> · <a href="https://dak.gg/valorant" target="_blank">dak.gg</a> · <a href="https://valohub.co" target="_blank">ValoHub</a></span>
+    <span>Assets : <a href="https://valorant-api.com" target="_blank">valorant-api.com</a> · © Riot Games</span>
+  </div>
+</footer>
+
+<script>
+/* ════════════════════════════════════════════════
+   FRENCH TRANSLATIONS — abilities, bios, costs
+   ════════════════════════════════════════════════ */
+const AGENT_FR = {
+  Raze:{
+    bio:'Originaire du Brésil, Raze fait sortir l\'artillerie lourde — sa créativité explosive lui permet de prendre tous les angles. Aucun camper ne survit à ses gadgets.',
+    origin:'Brésil',role:'D',
+    abilities:{
+      'Boom Bot':{name:'Boom Bot',cost:'300',desc:'Déploie un robot qui parcourt la ligne droite, rebondit sur les murs, puis se verrouille sur les ennemis en ligne de vue et explose en infligeant de gros dégâts.'},
+      'Blast Pack':{name:'Sachet Explosif',cost:'200',desc:'Lance un sachet explosif qui colle aux surfaces. Réutilise pour le faire détoner, infligeant des dégâts et propulsant tout joueur à proximité.'},
+      'Paint Shells':{name:'Bombe à Sous-Munitions',cost:'200',desc:'Lance une grenade à sous-munitions qui inflige des dégâts puis se sépare en petites grenades qui infligent à nouveau des dégâts.'},
+      'Showstopper':{name:'Showstopper',cost:'7 orbes',desc:'Équipe un lance-roquettes qui inflige d\'énormes dégâts à tout ce qu\'il touche et bouscule les ennemis pris dans l\'explosion.'},
+    },
+  },
+  Jett:{
+    bio:'Représentant son pays natal de Corée du Sud, l\'agile Jett joue avec un style à part — elle se faufile à travers les terrains, prend les angles, danse autour des fights, et frappe vite avant que l\'ennemi ne réagisse.',
+    origin:'Corée du Sud',role:'D',
+    abilities:{
+      'Cloudburst':{name:'Nuée',cost:'200',desc:'Lance un projectile qui se déploie en une nuée de fumée à l\'impact, obstruant la vue. Maintien pour orienter la trajectoire en vol.'},
+      'Updraft':{name:'Courant Ascendant',cost:'150',desc:'Bondit dans les airs.'},
+      'Tailwind':{name:'Vent Arrière',cost:'Gratuit (2 kills)',desc:'Se prépare à dasher. Réutilise pour dasher rapidement dans la direction du mouvement. Si tu ne bouges pas, dash vers l\'avant.'},
+      'Blade Storm':{name:'Tempête de Lames',cost:'8 orbes',desc:'Équipe un set de couteaux hautement précis. Tir simple lance un couteau unique, restaure tous les couteaux sur un kill. Tir alternatif lance tous les couteaux restants mais ne restaure pas en cas de kill.'},
+    },
+  },
+  Neon:{
+    bio:'Issue des Philippines, Neon avance à des vitesses incroyables, libérant des éclats d\'énergie biologique entièrement chargée. Elle court en avant pour piéger ses ennemis, et les frappe d\'un tir précis qui les terrasse pour de bon.',
+    origin:'Philippines',role:'D',
+    abilities:{
+      'Fast Lane':{name:'Voie Rapide',cost:'300',desc:'Lance deux lignes d\'énergie électrique qui bloquent la vision et infligent des dégâts à tout joueur qui les traverse.'},
+      'Relay Bolt':{name:'Décharge',cost:'200',desc:'Lance instantanément une décharge d\'énergie qui rebondit une fois. Au point d\'arrivée et au rebond, libère un éclair concussif.'},
+      'High Gear':{name:'Surrégime',cost:'Gratuit',desc:'Canalise du courant à travers ses jambes, courant à vitesse incroyable. Tir alternatif pendant le sprint pour glisser. Recharge la jauge sur deux kills.'},
+      'Overdrive':{name:'Overdrive',cost:'7 orbes',desc:'Libère pleinement sa puissance et sa vitesse pour un temps limité. Tir avec son courant électrique mortel et hautement précis pour anéantir les ennemis.'},
+    },
+  },
+  Phoenix:{
+    bio:'Originaire du Royaume-Uni, son style se passe d\'explication — flammes et flair en quantité égale. Avec ses pouvoirs de feu et ses braves attaques, il brille seul dans une bagarre, ses propres soins.',
+    origin:'Royaume-Uni',role:'D',
+    abilities:{
+      'Blaze':{name:'Embrasement',cost:'200',desc:'Équipe un mur enflammé. Tir pour créer une ligne de feu dans la direction visée. Tir alternatif pour courber le mur. Le mur bloque la vue et inflige des dégâts.'},
+      'Curveball':{name:'Effet Boomerang',cost:'250',desc:'Équipe un éclat de flammes incurvé. Tir pour le courber à gauche, tir alternatif pour le courber à droite. L\'éclat aveugle les joueurs qui le voient.'},
+      'Hot Hands':{name:'Cocktail Molotov',cost:'200',desc:'Équipe une boule de feu. Tir pour la lancer en parabole, créant une zone enflammée qui inflige des dégâts. Soigne Phoenix s\'il se tient dedans.'},
+      'Run It Back':{name:'Recommence',cost:'6 orbes',desc:'Marque l\'emplacement actuel. Si tu meurs ou si le timer expire, tu reviens à cet emplacement avec ta santé complète.'},
+    },
+  },
+  Reyna:{
+    bio:'Pour Reyna, mexicaine d\'origine, chaque kill est une opportunité — pour soi ou pour son équipe. Mortelle dans un duel, elle réclame une chasse silencieuse, dans l\'éclat de ses victimes.',
+    origin:'Mexique',role:'D',
+    abilities:{
+      'Leer':{name:'Regard',cost:'250',desc:'Équipe un œil d\'éther. Tir pour le lancer. L\'œil aveugle tous les ennemis qui le regardent.'},
+      'Devour':{name:'Dévorer',cost:'Gratuit (orbe)',desc:'Consomme instantanément une orbe proche, soignant rapidement pour un temps limité. Si tu fais une charge ulti, ce buff dure tout le round et tu ne peux pas mourir pendant ce temps.'},
+      'Dismiss':{name:'Renvoi',cost:'Gratuit (orbe)',desc:'Consomme instantanément une orbe proche, devenant intangible pour un temps limité. Si tu fais une charge ulti, tu deviens aussi invisible.'},
+      'Empress':{name:'Impératrice',cost:'6 orbes',desc:'Entre en frénésie, augmentant la vitesse de tir, d\'équipement et de rechargement. Les kills réinitialisent la durée.'},
+    },
+  },
+  Yoru:{
+    bio:'Yoru, japonais d\'origine, déchire des trous dimensionnels pour traverser la réalité sans se faire remarquer. Utilisant des leurres et des distractions, il prend l\'ennemi à découvert pour les éliminations.',
+    origin:'Japon',role:'D',
+    abilities:{
+      'Blindside':{name:'Aveuglement',cost:'250',desc:'Équipe un fragment dimensionnel. Tir alternatif pour le déchirer, créant un éclat aveuglant après un court délai.'},
+      'Gatecrash':{name:'Effraction',cost:'200',desc:'Équipe un fragment dimensionnel. Tir pour envoyer un leurre. Réutilise pour téléporter à sa position.'},
+      'Fakeout':{name:'Bluff',cost:'200',desc:'Équipe un masque de leurre. Tir pour le déployer comme une copie de Yoru qui se déplace en ligne droite. Si shot, explose en cécité ; sinon disparaît.'},
+      'Dimensional Drift':{name:'Drift Dimensionnel',cost:'7 orbes',desc:'Équipe un masque dimensionnel. Tir pour entrer dans une autre dimension, devenant indétectable depuis le monde réel.'},
+    },
+  },
+  Iso:{
+    bio:'Iso, mercenaire chinois, encaisse les attaques tout en gardant son calme — déplaçant son corps en harmonie avec les dimensions parallèles. Quand il faut éliminer une cible, son focus pénètre toutes les défenses.',
+    origin:'Chine',role:'D',
+    abilities:{
+      'Contingency':{name:'Imprévu',cost:'300',desc:'Lance un projectile énergétique qui se déploie en mur d\'énergie indestructible, bloquant les balles.'},
+      'Undercut':{name:'Coup Bas',cost:'200',desc:'Lance un projectile éthéré qui traverse les murs et frappe les ennemis avec une rafale d\'énergie qui les rend Vulnérables.'},
+      'Double Tap':{name:'Double Tap',cost:'Gratuit',desc:'Entre dans un état de concentration. Crée un flux qui invoque un bouclier qui absorbe une instance de dégâts. Tuer un ennemi recharge.'},
+      'Kill Contract':{name:'Contrat de Mort',cost:'7 orbes',desc:'Tire un faisceau qui aspire l\'ennemi le plus proche dans une dimension parallèle, où ils s\'affrontent dans un 1v1 mortel.'},
+    },
+  },
+  Breach:{
+    bio:'Le suédois bionique Breach utilise des explosions cinétiques puissantes et ciblées pour ouvrir agressivement un chemin à travers le terrain ennemi. Les dégâts et la perturbation qu\'il inflige garantissent qu\'aucun combat n\'est jamais équitable.',
+    origin:'Suède',role:'I',
+    abilities:{
+      'Aftershock':{name:'Réplique',cost:'200',desc:'Équipe un explosif sismique fusionné. Tir pour activer une explosion lente à travers le mur, infligeant des dégâts importants à tous les joueurs touchés.'},
+      'Flashpoint':{name:'Flash',cost:'250 (×2)',desc:'Équipe une charge flash aveuglante. Tir pour activer la charge à travers le mur, aveuglant rapidement tous les joueurs qui la regardent.'},
+      'Fault Line':{name:'Faille',cost:'Gratuit',desc:'Équipe une explosion sismique. Maintien le tir pour augmenter la distance. Relâche pour déclencher l\'explosion, étourdissant tous les joueurs dans sa zone et dans une ligne jusqu\'à la zone.'},
+      'Rolling Thunder':{name:'Tonnerre Roulant',cost:'9 orbes',desc:'Équipe un explosif sismique. Tir pour envoyer une cascade d\'explosions sismiques à travers tout le terrain. L\'explosion étourdit tous les joueurs pris et les renverse.'},
+    },
+  },
+  Fade:{
+    bio:'La chasseuse de primes turque Fade libère la puissance du cauchemar brut pour saisir les secrets ennemis. Liée à la terreur elle-même, elle traque ses cibles et révèle leurs peurs les plus profondes — avant de les écraser dans le noir.',
+    origin:'Turquie',role:'I',
+    abilities:{
+      'Seize':{name:'Emprise',cost:'200',desc:'Lance un nœud de peur brute. Le nœud descend après un temps défini. Au sol, il se rompt et retient les ennemis proches en place. Les ennemis retenus sont Assourdis et Dépérissent.'},
+      'Haunt':{name:'Hantise',cost:'250',desc:'Lance un guetteur hanté. Au sol, le guetteur révèle les ennemis dans sa ligne de vue et crée des traces de terreur menant à eux. Les ennemis peuvent détruire le guetteur.'},
+      'Prowler':{name:'Rôdeur',cost:'300',desc:'Lance un rôdeur. Maintien le tir pour le diriger vers ton viseur. Le rôdeur chasse le premier ennemi ou trace de terreur qu\'il voit, et applique Myopie sur impact.'},
+      'Nightfall':{name:'Crépuscule',cost:'7 orbes',desc:'Libère la puissance du cauchemar lui-même. Tir pour déchaîner une vague d\'énergie cauchemardesque imparable. Les ennemis pris sont Marqués, Assourdis, et Dépérissent.'},
+    },
+  },
+  Sova:{
+    bio:'Né du froid éternel de la toundra russe, Sova traque, trouve, et élimine les ennemis avec une efficacité et une précision impeccables. Son arc personnalisé et ses compétences de reconnaissance incomparables garantissent que même s\'il court, il ne peut pas se cacher.',
+    origin:'Russie',role:'I',
+    abilities:{
+      'Shock Bolt':{name:'Flèche-Choc',cost:'150',desc:'Équipe une flèche-choc. Tir pour lancer la flèche, déclenchant une explosion électrique qui inflige des dégâts à tous les joueurs proches.'},
+      'Recon Bolt':{name:'Flèche Reconnaissance',cost:'250',desc:'Équipe une flèche de reconnaissance. Tir pour lancer la flèche, déployant un capteur qui révèle l\'emplacement des ennemis pris dans sa ligne de vue.'},
+      'Owl Drone':{name:'Drone Hibou',cost:'300',desc:'Équipe un drone hibou. Tir pour le déployer et le contrôler. Le drone peut tirer un dard qui marque les ennemis touchés.'},
+      'Hunter\'s Fury':{name:'Fureur du Chasseur',cost:'8 orbes',desc:'Équipe son arc avec trois traits cinétiques mortels à longue portée. Tir pour libérer un trait en ligne droite à travers les murs, infligeant des dégâts importants et révélant les ennemis touchés.'},
+    },
+  },
+  Skye:{
+    bio:'Originaire des étendues sauvages d\'Australie, Skye et ses bêtes ouvrent la voie. Avec sa horde d\'animaux pour distraire les ennemis et sa magie de guérison pour aider ses alliés, l\'équipe de Skye est plus forte et plus en sécurité avec elle.',
+    origin:'Australie',role:'I',
+    abilities:{
+      'Regrowth':{name:'Régénération',cost:'Gratuit',desc:'Équipe un sort de soin. Maintien le tir pour canaliser, soignant les alliés en ligne de vue et à portée. Ne peut pas se soigner elle-même. Régénère avec le temps.'},
+      'Trailblazer':{name:'Pisteur',cost:'300',desc:'Équipe un tasmanien tigre. Tir pour le contrôler. Réutilise pour le faire bondir en avant, étourdissant et infligeant des dégâts à tous les ennemis touchés.'},
+      'Guiding Light':{name:'Lumière Guide',cost:'250',desc:'Équipe un faucon. Tir pour l\'envoyer vers l\'avant. Maintien le tir pour le contrôler. Réutilise pour exploser en lumière aveuglante.'},
+      'Seekers':{name:'Limiers',cost:'7 orbes',desc:'Équipe un Seeker. Tir pour envoyer trois Seekers traquer les trois ennemis les plus proches. Si un Seeker atteint sa cible, il applique Myopie.'},
+    },
+  },
+  Gekko:{
+    bio:'Gekko l\'Angelino mène un équipage soudé de créatures calamiteuses. Ses copains bondissent vers l\'avant, dispersant les ennemis hors du chemin, avec Gekko qui les pourchasse pour les rassembler et recommencer.',
+    origin:'États-Unis (Los Angeles)',role:'I',
+    abilities:{
+      'Wingman':{name:'Wingman',cost:'250',desc:'Équipe Wingman. Tir pour l\'envoyer chercher les ennemis. Wingman libère une explosion concussive vers le premier ennemi qu\'il voit. Tir alt pour planter/désamorcer la Spike.'},
+      'Dizzy':{name:'Dizzy',cost:'250',desc:'Équipe Dizzy. Tir pour l\'envoyer dans les airs. Dizzy charge puis libère des éclats de plasma vers les ennemis en ligne de vue, les Aveuglant.'},
+      'Mosh Pit':{name:'Mosh Pit',cost:'200',desc:'Équipe Mosh. Tir pour le lancer comme une grenade. À l\'atterrissage, Mosh se duplique sur une grande zone qui inflige des dégâts au fil du temps puis explose.'},
+      'Thrash':{name:'Thrash',cost:'7 orbes',desc:'Équipe Thrash. Tir pour se lier avec son esprit et la diriger en territoire ennemi. Active pour bondir en avant et exploser, Détenant tous les joueurs dans un petit rayon.'},
+    },
+  },
+  'KAY/O':{
+    bio:'KAY/O est une machine de guerre conçue dans un seul but : neutraliser les radiants. Sa capacité à supprimer les compétences ennemies décline les chances en faveur de son équipe pour démanteler ses adversaires.',
+    origin:'Indéfini (futur)',role:'I',
+    abilities:{
+      'FRAG/ment':{name:'FRAG/ment',cost:'200',desc:'Équipe un fragment explosif. Tir pour le lancer. Le fragment colle au sol et explose plusieurs fois, infligeant des dégâts au centre.'},
+      'FLASH/drive':{name:'FLASH/drive',cost:'250 (×2)',desc:'Équipe une grenade flash. Tir pour la lancer, explosant après un court délai et aveuglant tous ceux qui la voient.'},
+      'ZERO/point':{name:'ZERO/point',cost:'400',desc:'Équipe un couteau suppresseur. Tir pour le lancer. Le couteau colle à la première surface qu\'il touche, charge brièvement, puis supprime tous les ennemis dans son rayon.'},
+      'NULL/cmd':{name:'NULL/cmd',cost:'8 orbes',desc:'Surcharge instantanément KAY/O avec un radianite polarisé, lui permettant d\'EMP puissamment depuis sa position. Les ennemis pris dans la zone sont supprimés.'},
+    },
+  },
+  Cypher:{
+    bio:'L\'agent de renseignement marocain Cypher est un filet d\'espionnage à un seul homme. Il garde un œil constant sur le mouvement de l\'ennemi, surveillant chacun de ses pas. Aucun secret n\'est en sécurité. Aucune manœuvre n\'est inaperçue. Cypher est toujours en train de regarder.',
+    origin:'Maroc',role:'S',
+    abilities:{
+      'Trapwire':{name:'Câble-Piège',cost:'200',desc:'Place un câble-piège invisible entre deux murs. Les ennemis qui le déclenchent sont retenus, révélés, et étourdis brièvement.'},
+      'Cyber Cage':{name:'Cage Cybernétique',cost:'100',desc:'Lance un piège qui peut être activé pour créer une cage qui ralentit et émet du bruit quand traversée par les ennemis. Tir alternatif pour le placer immédiatement.'},
+      'Spycam':{name:'Caméra Espionne',cost:'200',desc:'Place une caméra espionne. Réactive pour prendre le contrôle de la vue de la caméra. Tir avec la caméra pour tirer un dard de tracking révélant les ennemis.'},
+      'Neural Theft':{name:'Vol Neural',cost:'7 orbes',desc:'Cible un cadavre ennemi dans la ligne de vue de Cypher. L\'emplacement de tous les ennemis vivants restants est révélé.'},
+    },
+  },
+  Killjoy:{
+    bio:'Le génie allemand Killjoy sécurise le terrain avec aisance grâce à son arsenal d\'inventions. Si les dégâts de ses gadgets ne s\'occupent pas de ses ennemis, sa configuration de piège leur fera certainement payer le prix.',
+    origin:'Allemagne',role:'S',
+    abilities:{
+      'Alarmbot':{name:'Robot Alarme',cost:'200',desc:'Équipe un Alarmbot. Tir pour le déployer, qui chasse les ennemis dans son rayon et explose, les rendant Vulnérables.'},
+      'Turret':{name:'Tourelle',cost:'200',desc:'Équipe une tourelle. Tir pour la déployer, tirant sur les ennemis dans son cône de 180°.'},
+      'Nanoswarm':{name:'Nano-Essaim',cost:'200',desc:'Équipe une grenade Nano-Essaim. Tir pour la lancer. Elle reste furtivement au sol après l\'atterrissage. Réactive pour libérer un essaim qui inflige des dégâts.'},
+      'Lockdown':{name:'Confinement',cost:'8 orbes',desc:'Équipe le dispositif Lockdown. Tir pour le déployer. Le dispositif compte le temps puis Détient tous les ennemis dans le rayon. Les ennemis peuvent détruire le dispositif.'},
+    },
+  },
+  Sage:{
+    bio:'L\'attache du Sage chinoise crée la sécurité pour elle-même et ses copains où qu\'elle aille. Capable de réanimer ses camarades tombés et de retenir l\'avancée des ennemis, elle fournit un calme dans la tempête.',
+    origin:'Chine',role:'S',
+    abilities:{
+      'Slow Orb':{name:'Orbe de Ralentissement',cost:'200',desc:'Équipe une orbe lente. Tir pour la lancer. Au sol, l\'orbe crée un champ qui ralentit et étouffe le bruit des ennemis dedans.'},
+      'Healing Orb':{name:'Orbe de Soin',cost:'300',desc:'Équipe une orbe de soin. Tir pour cibler un allié en ligne de vue, le soignant au fil du temps. Tir alternatif pour se soigner elle-même.'},
+      'Barrier Orb':{name:'Mur de Barrière',cost:'400',desc:'Équipe une orbe de barrière. Tir pour la placer, formant un grand mur solide. Tir alternatif pour faire pivoter avant placement.'},
+      'Resurrection':{name:'Résurrection',cost:'9 orbes',desc:'Équipe un pouvoir de résurrection. Tir avec un copain mort en ligne de vue pour commencer à le réanimer. Une fois canalisé, il revient à la vie avec pleine santé.'},
+    },
+  },
+  Chamber:{
+    bio:'Designer d\'armes français de renommée mondiale, Chamber chasse ses proies avec un style impeccable. Il piège l\'ennemi avec un soin précis, et abat ceux qui osent l\'approcher avec ses pistolets de luxe.',
+    origin:'France',role:'S',
+    abilities:{
+      'Trademark':{name:'Marque de Fabrique',cost:'200',desc:'Place un piège qui scanne les ennemis. Quand un ennemi visible entre dans son rayon, le piège commence à compter le temps puis explose en ralentissant ceux dans le rayon.'},
+      'Headhunter':{name:'Chasseur de Têtes',cost:'150 (×8)',desc:'Active pour équiper un pistolet lourd. Tir alternatif avec le pistolet pour viser avec précision.'},
+      'Rendezvous':{name:'Rendez-vous',cost:'Gratuit',desc:'Place une ancre de téléportation. Tant que sur le terrain et à portée, réutilise pour téléporter rapidement vers l\'autre ancre. Les ancres peuvent être ramassées pour être redéployées.'},
+      'Tour de Force':{name:'Tour de Force',cost:'8 orbes',desc:'Active pour invoquer un puissant fusil de précision personnalisé qui tue net un ennemi avec n\'importe quel coup direct. Tuer un ennemi crée un champ ralentissant.'},
+    },
+  },
+  Deadlock:{
+    bio:'L\'agente norvégienne Deadlock déploie un arsenal de nanofils de pointe pour garder n\'importe quel coin du terrain. Personne n\'échappe à son regard vigilant, et personne ne survit à son éclat brutal.',
+    origin:'Norvège',role:'S',
+    abilities:{
+      'GravNet':{name:'GravNet',cost:'200',desc:'Équipe une grenade GravNet. Tir pour la lancer, ou tir alternatif pour la lober. Détone et force les ennemis pris dans le rayon à s\'accroupir et se déplacer lentement.'},
+      'Sonic Sensor':{name:'Capteur Sonore',cost:'200',desc:'Équipe un capteur sonore. Tir pour le placer. Le capteur surveille un secteur pour les bruits de pas, de tir ou autres et étourdit tout le monde dans le rayon.'},
+      'Barrier Mesh':{name:'Maille de Barrière',cost:'400',desc:'Équipe un émetteur de maille. Tir pour lancer le disque qui crée des barrières bloquant les ennemis. Les barrières sont destructibles.'},
+      'Annihilation':{name:'Annihilation',cost:'7 orbes',desc:'Équipe un cocon de nanofils. Tir pour libérer une impulsion. Les ennemis pris dans l\'impulsion sont capturés et tirés le long d\'une piste de nanofils. Les ennemis morts si livrés à la fin.'},
+    },
+  },
+  Vyse:{
+    bio:'Vyse manipule les composants ferreux dans l\'environnement, prenant l\'avantage avec ses pièges psy de métal liquide. Les ennemis qui osent l\'approcher se retrouvent désarmés et désorientés.',
+    origin:'Indéfini',role:'S',
+    abilities:{
+      'Razorvine':{name:'Vigne Tranchante',cost:'150',desc:'Lance des vignes métalliques qui se déploient au sol, créant un terrain difficile qui ralentit et endommage les ennemis qui le traversent.'},
+      'Shear':{name:'Cisaille',cost:'200',desc:'Place un mur de métal qui s\'élève quand un ennemi le déclenche, bloquant la ligne de vue.'},
+      'Arc Rose':{name:'Rose d\'Arc',cost:'150',desc:'Place une rose métallique cachée qui peut être détonée à distance, aveuglant tous les ennemis qui la voient.'},
+      'Steel Garden':{name:'Jardin d\'Acier',cost:'7 orbes',desc:'Libère une vague qui désarme toutes les armes ennemies à portée pour un temps limité.'},
+    },
+  },
+  Omen:{
+    bio:'Une ombre fantomatique, Omen chasse dans le royaume entre les mondes. Il aveugle ses ennemis, se téléporte autour du terrain, puis laisse leur paranoïa faire le reste — surgir d\'où qu\'il choisisse.',
+    origin:'Inconnu',role:'C',
+    abilities:{
+      'Shrouded Step':{name:'Pas Voilé',cost:'150',desc:'Équipe un sort de téléportation à courte portée. Tir pour commencer à canaliser puis téléporter à l\'emplacement marqué.'},
+      'Paranoia':{name:'Paranoïa',cost:'300',desc:'Équipe une vague ténébreuse. Tir pour envoyer une vague qui traverse les murs et applique Cécité à tous les joueurs touchés.'},
+      'Dark Cover':{name:'Couverture Sombre',cost:'150',desc:'Équipe une sphère ténébreuse. Tir pour lancer une sphère qui éclate en une grande sphère de ténèbres à un emplacement marqué.'},
+      'From the Shadows':{name:'Des Ombres',cost:'7 orbes',desc:'Équipe une carte tactique. Tir pour commencer à se téléporter à l\'emplacement choisi. Pendant la téléportation, Omen apparaît comme une ombre que les ennemis peuvent tuer pour annuler.'},
+    },
+  },
+  Viper:{
+    bio:'La chimiste américaine Viper déploie un éventail d\'options d\'équipement empoisonnées pour contrôler le champ de bataille et défavoriser ses ennemis. Si la toxine ne les achève pas, ses jeux d\'esprit le feront.',
+    origin:'États-Unis',role:'C',
+    abilities:{
+      'Snake Bite':{name:'Morsure de Serpent',cost:'200 (×2)',desc:'Équipe un lance-chimie. Tir pour lancer un récipient qui éclate à l\'impact, créant une zone de liquide acide qui inflige des dégâts et Vulnérabilité.'},
+      'Poison Cloud':{name:'Nuage Toxique',cost:'200',desc:'Équipe un émetteur de gaz. Tir pour le lancer. Réactive pour créer un nuage toxique au coût de carburant. Peut être ramassé pour être redéployé.'},
+      'Toxic Screen':{name:'Écran Toxique',cost:'Gratuit',desc:'Équipe un lance-émetteurs de gaz. Tir pour déployer une longue ligne d\'émetteurs. Réutilise pour créer un haut mur de gaz toxique au coût de carburant.'},
+      'Viper\'s Pit':{name:'Fosse de Viper',cost:'8 orbes',desc:'Équipe un éjecteur chimique. Tir pour libérer un grand nuage toxique qui réduit la vue et la portée de la vue maximale des ennemis dedans.'},
+    },
+  },
+  Astra:{
+    bio:'L\'agente ghanéenne Astra exploite les énergies du cosmos pour remodeler les champs de bataille à sa guise. Avec un contrôle total, ses jeux d\'esprit complets garantissent qu\'elle a toujours l\'avantage tactique.',
+    origin:'Ghana',role:'C',
+    abilities:{
+      'Gravity Well':{name:'Puits de Gravité',cost:'150',desc:'Place une étoile en mode astral et active pour former un puits de gravité. Les joueurs dans la zone sont attirés et rendus Vulnérables.'},
+      'Nova Pulse':{name:'Impulsion Nova',cost:'150',desc:'Place une étoile et active pour qu\'elle se charge brièvement avant de pulser, Étourdissant tous les joueurs dans son rayon.'},
+      'Nebula/Dissipate':{name:'Nébuleuse/Dissipation',cost:'150',desc:'Place une étoile et active pour transformer en nébuleuse (smoke). Réutilise pour Dissiper, devenant brièvement un leurre avant de récupérer l\'étoile.'},
+      'Cosmic Divide':{name:'Division Cosmique',cost:'7 orbes',desc:'Quand chargé, utilise la carte tactique pour choisir deux emplacements et confirmer pour former une Division Cosmique infinie. Bloque les balles et étouffe le son.'},
+    },
+  },
+  Brimstone:{
+    bio:'L\'agent américain Brimstone fournit à son équipage avec un arsenal sans pareil. Avec ses fumées à pointer-cliquer, ses molotovs, et son orbital ulti, il garantit que son équipe a toujours l\'avantage tactique.',
+    origin:'États-Unis',role:'C',
+    abilities:{
+      'Stim Beacon':{name:'Balise de Stim',cost:'100',desc:'Équipe une balise de stim. Tir pour lancer la balise vers l\'avant qui crée une zone de RapidFire pour les joueurs dedans.'},
+      'Incendiary':{name:'Incendiaire',cost:'250',desc:'Équipe un lance-grenade incendiaire. Tir pour lancer la grenade qui détone en zone enflammée durable infligeant des dégâts.'},
+      'Sky Smoke':{name:'Fumées Aériennes',cost:'100 (×3)',desc:'Équipe une carte tactique. Tir pour placer des fumées qui obstruent la vue de manière persistante.'},
+      'Orbital Strike':{name:'Frappe Orbitale',cost:'7 orbes',desc:'Équipe une carte tactique. Tir pour lancer une frappe laser orbitale d\'une durée définie infligeant des dégâts considérables.'},
+    },
+  },
+  Harbor:{
+    bio:'Venu des côtes d\'Inde, Harbor entre en bataille avec des artéfacts d\'ancienne technologie commandant l\'eau. Il déchaîne le débit ancien et la fureur pour blinder ses alliés et écraser ses opposants.',
+    origin:'Inde',role:'C',
+    abilities:{
+      'Cascade':{name:'Cascade',cost:'150',desc:'Équipe un mur d\'eau. Tir pour envoyer le mur en avant, suivant la cible. Réactive pour l\'arrêter.'},
+      'Cove':{name:'Anse',cost:'350',desc:'Équipe une orbe d\'eau. Tir/tir alt pour la lancer et invoquer un bouclier sphérique d\'eau qui bloque les balles.'},
+      'High Tide':{name:'Marée Haute',cost:'Gratuit',desc:'Équipe une vague d\'eau. Tir pour envoyer un long mur d\'eau le long du sol dans la direction visée. Le mur ralentit les joueurs.'},
+      'Reckoning':{name:'Châtiment',cost:'7 orbes',desc:'Équipe le pouvoir total des artéfacts. Tir pour invoquer une zone géante d\'eau. Des poolings ciblent les joueurs ennemis, leur étourdissant si touchés.'},
+    },
+  },
+  Clove:{
+    bio:'Le clandestin écossais Clove sème la confusion sur le terrain avec ses fumées impossibles à percer. Décédée mais non-éteinte, elle réémerge après chaque mort, prête à frapper de nouveau.',
+    origin:'Écosse',role:'C',
+    abilities:{
+      'Pick-me-up':{name:'Remontant',cost:'100',desc:'Drain l\'essence d\'un cadavre ennemi pour gagner un boost de vitesse et de PV temporaires.'},
+      'Meddle':{name:'Méfait',cost:'200',desc:'Lance un fragment d\'entropie qui éclate après un court délai, infligeant Dépérir aux ennemis pris dans la zone.'},
+      'Ruse':{name:'Ruse',cost:'100 (×2)',desc:'Équipe une carte tactique. Tir pour placer des fumées qui obstruent la vue. Utilisable même mort.'},
+      'Not Dead Yet':{name:'Pas Encore Morte',cost:'7 orbes',desc:'Une fois morte, active pour revenir à la vie. Doit obtenir un kill ou un assist avant de revenir pour rester en vie.'},
+    },
+  },
+  Miks:{
+    bio:'Contrôleuse polyvalente arrivée sur la scène en début 2026, Miks combine smokes lourdes et utilités défensives. Sa kit est conçu pour ralentir les pushs adverses et donner à son équipe le temps de retake.',
+    origin:'Indéfini',role:'C',
+    abilities:{
+      'Smoke Drop':{name:'Largage de Fumée',cost:'200 (×2)',desc:'Lance une fumée durable qui bloque la vision sur une grande zone. Idéal pour exécutes ou défense de sites.'},
+      'Slow Field':{name:'Champ Ralentisseur',cost:'200',desc:'Déploie un champ qui ralentit tous les ennemis traversant la zone et émet du bruit.'},
+      'Recall Beacon':{name:'Balise de Rappel',cost:'Gratuit',desc:'Place une balise. Réutilise pour téléporter rapidement à l\'emplacement, idéal pour les rotations.'},
+      'Veil of Mist':{name:'Voile de Brume',cost:'7 orbes',desc:'Libère une brume géante sur une large zone qui désoriente et ralentit tous les ennemis pris dedans pour quelques secondes.'},
+    },
+  },
+  Tejo:{
+    bio:'Tejo est un agent colombien qui apporte un punch tactique avec ses missiles guidés et son arsenal explosif. Précis et méthodique, il décompose les défenses adverses pièce par pièce.',
+    origin:'Colombie',role:'I',
+    abilities:{
+      'Stealth Drone':{name:'Drone Furtif',cost:'250',desc:'Déploie un drone qui peut tirer un dard suppresseur sur les ennemis.'},
+      'Special Delivery':{name:'Livraison Spéciale',cost:'200',desc:'Lance une grenade collante qui étourdit les ennemis dans son rayon à la détonation.'},
+      'Guided Salvo':{name:'Salve Guidée',cost:'400',desc:'Sélectionne deux emplacements sur la carte tactique pour bombarder de missiles qui frappent les zones après un délai.'},
+      'Armageddon':{name:'Armageddon',cost:'7 orbes',desc:'Marque une large zone sur la carte qui sera bombardée d\'explosifs incendiaires durables.'},
+    },
+  },
+  Waylay:{
+    bio:'Waylay, duelliste thaïlandaise, glisse à travers la lumière pour des prises de site éclair. Ses pouvoirs prismatiques lui permettent de se positionner pour des angles imprévisibles.',
+    origin:'Thaïlande',role:'D',
+    abilities:{
+      'Refract':{name:'Réfraction',cost:'Gratuit',desc:'Place une marque. Réutilise pour téléporter rapidement à la marque, devenant invulnérable brièvement.'},
+      'Lightspeed':{name:'Vitesse Lumière',cost:'250',desc:'Dash en avant à grande vitesse, traversant la lumière.'},
+      'Saturate':{name:'Saturer',cost:'200',desc:'Lance un projectile lumineux qui ralentit les ennemis dans une zone.'},
+      'Convergent Paths':{name:'Chemins Convergents',cost:'7 orbes',desc:'Crée une zone géante où tous les ennemis pris dedans sont ralentis et leur déplacement est restreint.'},
+    },
+  },
+};
+
+
+const COMPS_DATA = [
+  {
+    map:'Fracture',region:'Two-site · Double spawn défenseur',
+    tags:['Breach obligatoire','Raze domine','Exécutes coordonnés'],
+    stats:{difficulty:'4.2/5',sides:'A-favored'},
+    comps:[
+      {
+        label:'Meta principale',tier:'S',tierLabel:'S-TIER',winrate:54.8,
+        agents:['Raze','Breach','Fade','Miks','Cypher'],
+        source:'VLR.gg · High Elo',
+        tip:'Coordonnez les <strong>Fault Line de Breach</strong> avec les Satchels de Raze pour rentrer simultanément des deux côtés. Miks smoke le spawn défenseur central pour couper les rotations.',
+      },
+      {
+        label:'Double initiateur',tier:'A',tierLabel:'A-TIER',winrate:52.1,
+        agents:['Raze','Breach','Skye','Viper','Killjoy'],
+        source:'Reddit r/ValorantCompetitive',
+        tip:'<strong>Skye + Breach</strong> = inarrêtable sur Fracture. Skye flash-clear, Breach stun le site, Raze entre. Killjoy anchor seul pendant que les 4 autres exécutent.',
+      },
+    ],
+    notes:[
+      'Breach quasi-obligatoire — ses stuns traversent tous les murs de Fracture',
+      'Raze satchels permettent d\'abuser les angles fermés et les ziplines',
+      'Fade Haunt pour surveiller les deux spawns simultanément',
+      'Miks coupe les rotations du spawn défenseur central',
+      'Map qui favorise fortement les attaquants — profitez des exécutes rapides',
+    ],
+  },
+  {
+    map:'Haven',region:'Three-site · Rotation intensive',
+    tags:['3 sites','Rotation vitale','Double duelist viable'],
+    stats:{difficulty:'3.8/5',sides:'Balanced'},
+    comps:[
+      {
+        label:'Meta principale',tier:'S',tierLabel:'S-TIER',winrate:55.3,
+        agents:['Jett','Sova','Breach','Omen','Cypher'],
+        source:'VLR.gg · Hotspawn',
+        tip:'Omen teleport sur les angles imprévus entre les 3 sites. <strong>Cypher cam sur B</strong> peut surveiller A et C en même temps. En five stack, appelez les rotations à voix haute — Haven se gagne à la communication.',
+      },
+      {
+        label:'Double duelist agressif',tier:'A',tierLabel:'A-TIER',winrate:51.7,
+        agents:['Neon','Phoenix','Sova','Omen','Killjoy'],
+        source:'Esports Insider 2026',
+        tip:'<strong>Neon + Phoenix</strong> créent une pression simultanée sur deux sites. Envoyez Neon sur A et Phoenix sur C avec Sova recon pour split la défense.',
+      },
+    ],
+    notes:[
+      '3 sites = pression sur toute la map, les rotations défensives sont longues',
+      'Omen est le meilleur controller ici — smokes rechargeables sur 3 sites',
+      'Cypher one-way cage sur B est particulièrement violent',
+      'Sova drone peut lock A Long et C Long simultanément',
+      'Double duelist très fort si votre équipe est bien coordonnée',
+    ],
+  },
+  {
+    map:'Breeze',region:'Open map · Longue portée',
+    tags:['Viper indispensable','Operator dominant','Longs angles'],
+    stats:{difficulty:'4.5/5',sides:'B-favored'},
+    comps:[
+      {
+        label:'Meta principale',tier:'S',tierLabel:'S-TIER',winrate:56.2,
+        agents:['Jett','Sova','KAY/O','Viper','Cypher'],
+        source:'VLR.gg · Rework 12.00',
+        tip:'<strong>Viper wall coupe B Main</strong> en deux — un joueur doit main Viper. Jett Operator sur A Hall. KAY/O ZERO/POINT supprime les ultis défensifs sur les exécutes.',
+      },
+      {
+        label:'Longue portée',tier:'A',tierLabel:'A-TIER',winrate:52.8,
+        agents:['Chamber','Jett','Sova','Viper','Fade'],
+        source:'gamer.org · dak.gg meta',
+        tip:'<strong>Chamber + Jett</strong> = domination totale à l\'Operator. Fade remplace Cypher pour plus de recon actif. Évitez les agents sans mobilité.',
+      },
+    ],
+    notes:[
+      'Viper reste le pick le plus important — son wall coupe A Hall et B Main',
+      'Jett ou Chamber au Operator sur les longues sightlines',
+      'KAY/O ZERO/POINT supprime les abilities défensives lors des exécutes',
+      'Sova recon dart traverse les espaces ouverts avec de nombreux lineups',
+      'Évitez les agents sans mobilité — les rotations sont très longues',
+    ],
+  },
+  {
+    map:'Lotus',region:'Three-site · Rotations complexes',
+    tags:['Double controller','3 sites','Portes pivotantes'],
+    stats:{difficulty:'4.7/5',sides:'Defender-favored'},
+    comps:[
+      {
+        label:'Meta principale',tier:'S',tierLabel:'S-TIER',winrate:53.6,
+        agents:['Raze','Fade','Omen','Miks','Killjoy'],
+        source:'VLR.gg · High Elo',
+        tip:'<strong>Miks + Omen</strong> = double controller le plus efficace. Killjoy anchor C site seul pendant que les 4 autres exécutent A ou B. Fade isole le C site entier avec son ulti.',
+      },
+      {
+        label:'Variante Hotspawn',tier:'A',tierLabel:'A-TIER',winrate:51.4,
+        agents:['Raze','Viper','Fade','Omen','Vyse'],
+        source:'Hotspawn · Mai 2026',
+        tip:'<strong>Vyse</strong> remplace Killjoy et offre un wall pour stopper les retakes sur C. Viper wall coupe Rubble. En five stack, assignez des rôles fixes sur chacun des 3 sites.',
+      },
+    ],
+    notes:[
+      'Double controller obligatoire — Lotus a trop d\'entrées pour un seul',
+      'Fade > Sova sur Lotus — ses Haunts ont des lineups exceptionnels',
+      'Les portes pivotantes créent des timings imprévisibles',
+      'Raze satchels pour naviguer entre les 3 sites à toute vitesse',
+      'C site peut être anchor par une seule sentinelle',
+    ],
+  },
+  {
+    map:'Bind',region:'Teleporters · Angles serrés',
+    tags:['Teleporters','Double initiateur','Raze abuse'],
+    stats:{difficulty:'3.5/5',sides:'A-favored'},
+    comps:[
+      {
+        label:'Meta principale',tier:'S',tierLabel:'S-TIER',winrate:55.0,
+        agents:['Raze','Skye','Gekko','Miks','Cypher'],
+        source:'VLR.gg · High Elo',
+        tip:'Les teleporters permettent à Raze de se retrouver partout. <strong>Skye + Gekko</strong> double-initiate sur le même site. Miks smoke le teleporter entrant pour bloquer les flanks.',
+      },
+      {
+        label:'Variante structurée',tier:'A',tierLabel:'A-TIER',winrate:52.4,
+        agents:['Raze','Skye','Sova','Brimstone','Cypher'],
+        source:'Reddit · dak.gg',
+        tip:'<strong>Brimstone molotov post-plant</strong> dévastateur grâce aux angles. Sova dart traverse les murs pour recon B Hookah. Cypher trip sur les teleporters = info gratuite.',
+      },
+    ],
+    notes:[
+      'Les teleporters sont des outils d\'information — Cypher cam en face donne l\'usage ennemi',
+      'Raze satchels + teleporter = rotations ultra-rapides entre A et B',
+      'Double initiateur très fort — Bind a de nombreux angles à nettoyer',
+      'Miks smoke le teleporter entrant coupe un vecteur de flanc entier',
+      'Hookah B est un bottleneck parfait pour les flashes de Skye',
+    ],
+  },
+  {
+    map:'Split',region:'Verticale · Angles mid',
+    tags:['Verticale','Breach essentiel','Mid control'],
+    stats:{difficulty:'4.1/5',sides:'Defender-favored'},
+    comps:[
+      {
+        label:'Meta principale',tier:'S',tierLabel:'S-TIER',winrate:54.5,
+        agents:['Raze','Breach','Skye','Miks','Cypher'],
+        source:'VLR.gg',
+        tip:'<strong>Breach stun dans Ramp</strong> permet à Raze de satchel direct sur A Site. Skye flash B Heaven depuis Mid, Miks smoke le defender spawn. Pressez mid pour couper les rotations.',
+      },
+      {
+        label:'Défensive solide',tier:'A',tierLabel:'A-TIER',winrate:51.9,
+        agents:['Raze','Breach','Sage','Omen','Cypher'],
+        source:'High Elo · Reddit',
+        tip:'<strong>Sage wall</strong> sur Ramp ou B Heaven crée des 1v1 forcés. Omen phantom smokes sur mid, Breach stun. En five stack, Sage resurrecte le joueur le plus impactful.',
+      },
+    ],
+    notes:[
+      'Breach quasi-obligatoire — ses stuns traversent tous les murs de Split',
+      'Mid control est le game-winner — qui contrôle mid contrôle les rotations',
+      'Raze satchels sur les escaliers sont difficiles à contester',
+      'Sage wall B Heaven force des rotations longues',
+      'Cypher one-way cages sur B Site parmi les plus efficaces du jeu',
+    ],
+  },
+  {
+    map:'Pearl',region:'Ouverte · Couloirs longs',
+    tags:['Double recon','Astra globes','Long range'],
+    stats:{difficulty:'4.3/5',sides:'Balanced'},
+    comps:[
+      {
+        label:'Meta principale',tier:'S',tierLabel:'S-TIER',winrate:54.1,
+        agents:['Neon','Fade','Sova','Astra','Cypher'],
+        source:'VLR.gg · High Elo',
+        tip:'<strong>Astra globes sur mid Street</strong> = contrôle permanent de la zone centrale. Fade + Sova = double recon qui nettoie tous les angles. Neon rush dans les smokes.',
+      },
+      {
+        label:'Longue portée',tier:'A',tierLabel:'A-TIER',winrate:52.5,
+        agents:['Jett','Chamber','Sova','Astra','Killjoy'],
+        source:'dak.gg · High Elo',
+        tip:'<strong>Jett + Chamber double Operator</strong> sur les longs couloirs. Killjoy turret sur B Site donne l\'info sur les pushs. Astra retire des globes pour bloquer les flancs.',
+      },
+    ],
+    notes:[
+      'Astra est la meilleure controller sur Pearl — ses globes couvrent Mid Street parfaitement',
+      'Double recon (Fade + Sova) permet de nettoyer tous les angles',
+      'Les longs couloirs favorisent l\'Operator',
+      'Cypher cam sur Mid offre les informations les plus précieuses',
+      'Neon Fast Lane dans les smokes d\'Astra est quasi-inarrêtable',
+    ],
+  },
+];
+
+const S_TIER = ['Cypher','Raze','Sova','Omen','Viper','Miks'];
+
+const ROLES = {
+  Raze:'D',Jett:'D',Neon:'D',Phoenix:'D',Reyna:'D',Yoru:'D',Iso:'D',Waylay:'D',
+  Breach:'I',Fade:'I',Sova:'I',Skye:'I',Gekko:'I','KAY/O':'I',Tejo:'I',
+  Cypher:'S',Killjoy:'S',Sage:'S',Chamber:'S',Deadlock:'S',Vyse:'S',
+  Omen:'C',Viper:'C',Astra:'C',Brimstone:'C',Harbor:'C',Clove:'C',Miks:'C',
+};
+const ROLE_LABEL = {D:'Duelliste',I:'Initiateur',S:'Sentinelle',C:'Contrôleur'};
+const ROLE_FULL = {D:'Duelist',I:'Initiator',S:'Sentinel',C:'Controller'};
+
+const ROSTER = [
+  {name:'Nico',role:'IGL · Controller',mains:['Omen','Miks','Brimstone'],tag:'CAPTAIN',
+    riot:{name:'Drew A Picasso',tag:'XOOO',region:'eu'}},
+  {name:'Liam',role:'Entry Duelist',mains:['Raze','Jett','Neon'],tag:'ENTRY',
+    riot:{name:'Wong Chi Ming',tag:'2046',region:'eu'}},
+  {name:'Rayhan',role:'Initiator',mains:['Sova','Fade','Breach'],tag:'INIT',
+    riot:{name:'RayBaz',tag:'OLY',region:'eu'}},
+  {name:'Mathis',role:'Duelist',mains:['Raze','Jett','Phoenix'],tag:'DUEL',
+    riot:{name:'MrScooby',tag:'MYSTR',region:'eu'}},
+  {name:'Noé',role:'Flex',mains:['Skye','KAY/O','Gekko'],tag:'FLEX',
+    riot:{name:'baby hayabusa',tag:'NoWaY',region:'eu'}},
+  {name:'Random',role:'Fill · Discord',mains:['Reyna','Phoenix','Yoru'],tag:'FILL'},
+];
+
+const GLOBAL_NOTES = [
+  'Cypher domine presque toute la rotation — pick him first sur 6/7 maps',
+  'Miks devient un excellent controller ranked — remplace Omen sur plusieurs maps',
+  'Breach reste obligatoire sur Fracture et Split — ses stuns traversent les murs',
+  'Viper reste indispensable sur Breeze et Lotus — double controller obligatoire',
+  'Raze domine les maps fermées — Bind, Split, Fracture, Lotus',
+  'Double initiateur très fort actuellement — Skye + Breach, Fade + Sova',
+  'Double controller surtout viable sur Lotus — Miks + Omen ou Viper + Omen',
+  'En five stack, assignez des rôles fixes en début de session',
+  'La communication change tout — announcez ulti et eco chaque round',
+];
+
+/* ════════════════════════════════════════════════
+   STATE
+   ════════════════════════════════════════════════ */
+let AGENTS = {};
+let MAPS = {};
+let currentMap = 0;
+let FAVS = loadFavs();
+let PLAYER_STATS = loadPlayerStats();
+
+function loadPlayerStats(){
+  try{
+    const raw = localStorage.getItem('olycity-player-stats');
+    return raw ? JSON.parse(raw) : {};
+  }catch{return {};}
+}
+function savePlayerStats(){
+  try{localStorage.setItem('olycity-player-stats',JSON.stringify(PLAYER_STATS));}catch{}
+}
+
+function formatRelTime(ts){
+  const diff = (Date.now() - ts)/1000;
+  if(diff < 60) return 'à l\'instant';
+  if(diff < 3600) return `il y a ${Math.floor(diff/60)}min`;
+  if(diff < 86400) return `il y a ${Math.floor(diff/3600)}h`;
+  return `il y a ${Math.floor(diff/86400)}j`;
+}
+
+function loadFavs(){
+  try{
+    const raw = localStorage.getItem('olycity-favs');
+    return raw ? JSON.parse(raw) : [];
+  }catch{return [];}
+}
+function saveFavs(){
+  try{localStorage.setItem('olycity-favs',JSON.stringify(FAVS));}catch{}
+}
+function toggleFav(id){
+  const i = FAVS.indexOf(id);
+  if(i>=0) FAVS.splice(i,1); else FAVS.push(id);
+  saveFavs();
+  updateFavCount();
+  document.querySelectorAll(`.fav-btn[data-fav="${id}"]`).forEach(b=>{
+    b.classList.toggle('active',FAVS.includes(id));
+  });
+}
+function updateFavCount(){
+  document.querySelectorAll('.fav-count').forEach(el=>el.textContent=FAVS.length);
+}
+
+/* ════════════════════════════════════════════════
+   THEME TOGGLE
+   ════════════════════════════════════════════════ */
+function initTheme(){
+  const saved = localStorage.getItem('olycity-theme') || 'dark';
+  document.documentElement.setAttribute('data-theme',saved);
+  document.getElementById('theme-icon').textContent = saved==='dark' ? '☾' : '☀';
+}
+document.getElementById('theme-toggle').addEventListener('click',()=>{
+  const cur = document.documentElement.getAttribute('data-theme');
+  const next = cur==='dark' ? 'light' : 'dark';
+  document.documentElement.setAttribute('data-theme',next);
+  document.getElementById('theme-icon').textContent = next==='dark' ? '☾' : '☀';
+  try{localStorage.setItem('olycity-theme',next);}catch{}
+});
+initTheme();
+
+/* ════════════════════════════════════════════════
+   API LOAD
+   ════════════════════════════════════════════════ */
+async function boot(){
+  try{
+    const [aR,mR] = await Promise.all([
+      fetch('https://valorant-api.com/v1/agents?isPlayableCharacter=true'),
+      fetch('https://valorant-api.com/v1/maps'),
+    ]);
+    const [aJ,mJ] = await Promise.all([aR.json(),mR.json()]);
+    aJ.data.forEach(a=>{
+      AGENTS[a.displayName]={
+        portrait:a.bustPortrait||a.fullPortrait||a.displayIcon,
+        icon:a.displayIcon,
+        role:a.role?.displayName,
+        desc:a.description,
+      };
+    });
+    mJ.data.forEach(m=>{MAPS[m.displayName]={splash:m.splash,icon:m.displayIcon};});
+    render();
+  }catch(e){
+    document.getElementById('main').innerHTML = `<div class="loading">Erreur de chargement — vérifie ta connexion.</div>`;
+  }
+}
+
+function agentImg(name){return AGENTS[name]?.portrait||AGENTS[name]?.icon||null;}
+function mapImg(name){return MAPS[name]?.splash||null;}
+function mapIcon(name){return MAPS[name]?.icon||null;}
+
+/* ════════════════════════════════════════════════
+   RENDERERS
+   ════════════════════════════════════════════════ */
+function agentCardHTML(name){
+  const r = ROLES[name]||'D';
+  const rl = ROLE_LABEL[r]||'';
+  const portrait = agentImg(name);
+  const display = name==='KAY/O' ? 'KAYO' : name;
+  const imgEl = portrait
+    ? `<img src="${portrait}" alt="${display}" loading="lazy">`
+    : `<div class="portrait-ph">${display[0]}</div>`;
+  return `<div class="agent-card ${r}" data-agent="${name}" onclick="showAgentPage('${name}')">
+    <div class="agent-card-inner">
+      <div class="portrait-frame">
+        ${imgEl}
+        <div class="role-corner">${ROLE_FULL[r]}</div>
+        <div class="role-stripe"></div>
+      </div>
+      <div class="agent-footer">
+        <span class="agent-name">${display}</span>
+        <span class="agent-role">${rl}</span>
+      </div>
+    </div>
+  </div>`;
+}
+
+function compHTML(comp,mapIdx,compIdx){
+  const cid = `comp-${mapIdx}-${compIdx}`;
+  const agents = comp.agents.map(n=>agentCardHTML(n)).join('');
+  const tierCls = comp.tier==='S' ? 'tier-s' : 'tier-a';
+  const isFav = FAVS.includes(cid);
+  return `
+    <div class="comp-panel ${compIdx===0?'active':''}" id="panel-${mapIdx}-${compIdx}">
+      <div class="comp-card">
+        <div class="comp-header">
+          <div class="comp-label-row">
+            <span class="comp-tier ${tierCls}">${comp.tierLabel}</span>
+            <span class="comp-name">${comp.label}</span>
+          </div>
+          <div class="comp-meta">
+            <div class="winrate-pill">
+              <div class="winrate-bar"><div class="winrate-bar-fill" style="width:${comp.winrate}%"></div></div>
+              <span class="winrate-val">${comp.winrate.toFixed(1)}%</span>
+              <span class="winrate-lbl">WR</span>
+            </div>
+            <button class="fav-btn ${isFav?'active':''}" data-fav="${cid}" onclick="toggleFav('${cid}')">★</button>
+          </div>
+        </div>
+        <div class="agents-grid">${agents}</div>
+        <div class="tip-box">
+          <span class="tip-icon">5-STACK</span>
+          <span class="tip-text">${comp.tip}</span>
+        </div>
+        <div style="margin-top:14px;font-size:11px;color:var(--dim);letter-spacing:.5px">Source : ${comp.source}</div>
+      </div>
+    </div>`;
+}
+
+function mapSectionHTML(data,idx){
+  const splash = mapImg(data.map);
+  const splashEl = splash
+    ? `<img class="map-hero-img" src="${splash}" alt="${data.map}" loading="lazy">`
+    : `<div class="map-hero-img" style="background:var(--surf3)"></div>`;
+  const tags = data.tags.map(t=>`<span class="map-tag">${t}</span>`).join('');
+  const tabs = data.comps.map((c,ci)=>
+    `<button class="comp-tab ${ci===0?'active':''}" onclick="switchComp(${idx},${ci},this)">${c.label}</button>`
+  ).join('');
+  const panels = data.comps.map((c,ci)=>compHTML(c,idx,ci)).join('');
+  const notes = data.notes.map(n=>`<div class="note-row"><span class="note-marker"></span>${n}</div>`).join('');
+  return `
+    <section class="map-section ${idx===0?'active':''}" id="map-${idx}">
+      <div class="map-hero">
+        <div class="map-hero-img-wrap">${splashEl}</div>
+        <div class="map-hero-grid"></div>
+        <div class="map-hero-overlay"></div>
+        <div class="map-hero-content">
+          <div class="map-hero-left">
+            <div class="map-hero-sub">${data.region}</div>
+            <div class="map-hero-title">${data.map}</div>
+            <div class="map-hero-tags">${tags}</div>
+          </div>
+          <div class="map-hero-stats">
+            <div class="map-stat">
+              <div class="map-stat-val">${data.comps.length}</div>
+              <div class="map-stat-lbl">Comps</div>
+            </div>
+            <div class="map-stat">
+              <div class="map-stat-val">${data.stats.difficulty}</div>
+              <div class="map-stat-lbl">Difficulté</div>
+            </div>
+            <div class="map-stat">
+              <div class="map-stat-val">${data.stats.sides}</div>
+              <div class="map-stat-lbl">Côté favorisé</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="comp-tabs">${tabs}</div>
+      ${panels}
+      <div class="notes-card">
+        <div class="notes-card-title">Notes Meta — ${data.map}</div>
+        <div class="notes-list">${notes}</div>
+      </div>
+    </section>`;
+}
+
+function rankIcon(tierName){
+  if(!tierName) return '';
+  // Valorant rank tier icons from valorant-api.com competitive tier endpoint
+  // We'll use a simple color-coded badge for now
+  const colors = {
+    'iron':'#4a4a4a','bronze':'#a55a2e','silver':'#888',
+    'gold':'#dba03b','platinum':'#3d9999','diamond':'#b16fd6',
+    'ascendant':'#3fa05a','immortal':'#a32d2d','radiant':'#fff5a8',
+    'unrated':'#666',
+  };
+  const lowerName = tierName.toLowerCase();
+  const tier = Object.keys(colors).find(t=>lowerName.includes(t)) || 'unrated';
+  return `<span style="display:inline-block;width:10px;height:10px;background:${colors[tier]};border-radius:50%;flex-shrink:0"></span>`;
+}
+
+function rosterHTML(){
+  return ROSTER.map((p,i)=>{
+    const mains = p.mains.map(name=>{
+      const img = agentImg(name);
+      const display = name==='KAY/O' ? 'KAYO' : name;
+      const imgEl = img ? `<img src="${img}" alt="${display}" loading="lazy">` : `<div class="portrait-ph" style="font-size:18px">${display[0]}</div>`;
+      return `<div class="player-main" onclick="showAgentPage('${name}')" title="${display}">
+        ${imgEl}
+        <div class="player-main-name">${display}</div>
+      </div>`;
+    }).join('');
+
+    // Live stats (filled by sync, default placeholders)
+    const stats = PLAYER_STATS[p.name] || {};
+    const rankDisplay = stats.rank ? `
+      <div class="player-rank">
+        ${rankIcon(stats.rank)}
+        <span class="player-rank-text">${stats.rank}</span>
+        ${stats.rr!=null?`<span class="player-rank-rr">${stats.rr}rr</span>`:''}
+      </div>` : '';
+
+    const liveStatsRow = stats.wr!=null ? `
+      <div class="player-stats-row">
+        <div class="player-stat">
+          <span class="player-stat-val ${stats.wr>=50?'green':'red'}">${stats.wr}%</span>
+          <span class="player-stat-lbl">Win rate</span>
+        </div>
+        <div class="player-stat">
+          <span class="player-stat-val ${stats.kda>=1?'green':'red'}">${stats.kda}</span>
+          <span class="player-stat-lbl">KDA</span>
+        </div>
+        <div class="player-stat">
+          <span class="player-stat-val">${stats.games||0}</span>
+          <span class="player-stat-lbl">Games</span>
+        </div>
+      </div>` : '';
+
+    const syncTime = stats.syncedAt ? `<span class="player-sync-time">Sync · ${formatRelTime(stats.syncedAt)}</span>` : '';
+
+    const syncBtn = p.riot ? `
+      <button class="player-sync-btn" data-player="${p.name}" onclick="syncPlayer('${p.name}')">
+        <span class="sync-spin">↻</span> Sync stats
+      </button>
+      ${syncTime}
+    ` : '';
+
+    return `<div class="player-card" data-player-name="${p.name}">
+      <div class="player-banner">
+        <div class="player-banner-deco"></div>
+        <div class="player-banner-glow"></div>
+        ${rankDisplay}
+        <span class="player-tag">${p.tag}</span>
+      </div>
+      <div class="player-body">
+        <div class="player-name">${p.name}</div>
+        <div class="player-role">${p.role}</div>
+        <div class="player-mains">${mains}</div>
+        ${liveStatsRow}
+        ${syncBtn}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function stierHTML(){
+  return S_TIER.map(name=>{
+    const img = agentImg(name);
+    const imgEl = img ? `<img src="${img}" alt="${name}" loading="lazy">` : `<div class="portrait-ph" style="font-size:22px">${name[0]}</div>`;
+    return `<div class="stier-card" title="${name}" onclick="showAgentPage('${name}')">
+      <div class="stier-frame">${imgEl}<span class="stier-badge">S-TIER</span></div>
+      <span class="stier-name">${name}</span>
+    </div>`;
+  }).join('');
+}
+
+function globalNotesHTML(){
+  return GLOBAL_NOTES.map(n=>`<div class="gs-card"><span class="gs-icon">◆</span>${n}</div>`).join('');
+}
+
+function navMapsHTML(){
+  return COMPS_DATA.map((d,i)=>{
+    const icon = mapIcon(d.map);
+    const iconEl = icon ? `<img src="${icon}" alt="">` : '';
+    return `<button class="nav-map-btn ${i===0?'active':''}" onclick="showMap(${i},this)" data-map-idx="${i}">
+      <div class="nav-map-icon">${iconEl}</div>${d.map}
+    </button>`;
+  }).join('');
+}
+
+function render(){
+  document.getElementById('main').innerHTML = COMPS_DATA.map((d,i)=>mapSectionHTML(d,i)).join('');
+  document.getElementById('nav-maps').innerHTML = navMapsHTML();
+  document.getElementById('roster-grid').innerHTML = rosterHTML();
+  document.getElementById('stier-row').innerHTML = stierHTML();
+  document.getElementById('gs-grid').innerHTML = globalNotesHTML();
+  updateFavCount();
+  initTilt();
+}
+
+/* ════════════════════════════════════════════════
+   INTERACTIONS
+   ════════════════════════════════════════════════ */
+function showMap(idx,btn){
+  if(document.body.classList.contains('agent-mode')){
+    closeAgentPage();
+  }
+  document.querySelectorAll('.map-section').forEach(s=>s.classList.remove('active'));
+  document.querySelectorAll('.nav-map-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById(`map-${idx}`)?.classList.add('active');
+  btn?.classList.add('active');
+  currentMap = idx;
+  setTimeout(initTilt,50);
+  document.getElementById('main').scrollIntoView({behavior:'smooth',block:'start'});
+}
+
+function switchComp(mapIdx,compIdx,btn){
+  const tabs = btn.parentElement.querySelectorAll('.comp-tab');
+  tabs.forEach(t=>t.classList.remove('active'));
+  btn.classList.add('active');
+  const n = COMPS_DATA[mapIdx].comps.length;
+  for(let i=0;i<n;i++){
+    document.getElementById(`panel-${mapIdx}-${i}`)?.classList.toggle('active',i===compIdx);
+  }
+  setTimeout(initTilt,50);
+}
+
+/* ════════════════════════════════════════════════
+   HENRIKDEV API — Live player stats sync
+   ════════════════════════════════════════════════ */
+const HENRIK_BASE = 'https://api.henrikdev.xyz/valorant';
+
+function setSyncStatus(html,type='info'){
+  const el = document.getElementById('sync-status');
+  if(!el) return;
+  if(!html){el.innerHTML='';return;}
+  el.innerHTML = `<div class="sync-banner ${type}">
+    <span class="sync-banner-icon">${type==='error'?'Erreur':type==='success'?'OK':'Info'}</span>
+    ${html}
+  </div>`;
+}
+
+function setBtnState(playerName,state,label){
+  const btn = document.querySelector(`.player-sync-btn[data-player="${playerName}"]`);
+  if(!btn) return;
+  btn.classList.remove('syncing','error','synced');
+  if(state) btn.classList.add(state);
+  if(label){
+    btn.innerHTML = state==='syncing'
+      ? `<span class="sync-spin">↻</span> ${label}`
+      : `<span>${state==='error'?'✕':state==='synced'?'✓':'↻'}</span> ${label}`;
+  }
+}
+
+/* Tries HenrikDev account+MMR+matches without API key.
+   If 401/403 (auth required) → falls back gracefully. */
+async function fetchHenrik(path){
+  const url = `${HENRIK_BASE}${path}`;
+  let res;
+  try{ res = await fetch(url); }
+  catch(e){ throw new Error('NETWORK'); }
+  if(res.status === 429) throw new Error('RATE_LIMIT');
+  if(res.status === 401 || res.status === 403) throw new Error('AUTH_REQUIRED');
+  if(res.status === 404) throw new Error('NOT_FOUND');
+  if(!res.ok) throw new Error('HTTP_'+res.status);
+  return res.json();
+}
+
+/* Returns top N agents from match list, with per-agent stats */
+function aggregateAgents(matches){
+  const map = {};
+  matches.forEach(m=>{
+    const player = m.players?.find(p=>p.puuid===matches[0]?._self?.puuid) || m._self_player;
+    if(!player) return;
+    const a = player.agent?.name || player.character;
+    if(!a) return;
+    if(!map[a]) map[a] = {name:a,games:0,kills:0,deaths:0,assists:0,wins:0};
+    map[a].games++;
+    map[a].kills += player.stats?.kills || 0;
+    map[a].deaths += player.stats?.deaths || 0;
+    map[a].assists += player.stats?.assists || 0;
+    if(player.team?.won) map[a].wins++;
+  });
+  return Object.values(map).sort((a,b)=>b.games-a.games);
+}
+
+async function syncPlayer(playerName){
+  const player = ROSTER.find(p=>p.name===playerName);
+  if(!player || !player.riot) return;
+
+  const {name:rName,tag:rTag,region} = player.riot;
+  setBtnState(playerName,'syncing','Sync en cours…');
+
+  try{
+    // 1. MMR (rank actuel)
+    const mmr = await fetchHenrik(`/v3/mmr/${region}/pc/${encodeURIComponent(rName)}/${encodeURIComponent(rTag)}`);
+    const tier = mmr?.data?.current?.tier?.name || 'Unrated';
+    const rr = mmr?.data?.current?.rr;
+
+    // 2. Matchs récents (compétitif)
+    let topAgents = [];
+    let wr = null, kda = null, games = 0;
+    try{
+      const matches = await fetchHenrik(`/v4/matches/${region}/pc/${encodeURIComponent(rName)}/${encodeURIComponent(rTag)}?mode=competitive&size=10`);
+      const ml = matches?.data || [];
+      games = ml.length;
+      // Aggregate per agent
+      const agentMap = {};
+      let totK=0,totD=0,totW=0;
+      ml.forEach(m=>{
+        const me = m.players?.find(p=>p.puuid===mmr?.data?.account?.puuid);
+        if(!me) return;
+        const a = me.agent?.name;
+        if(!a) return;
+        if(!agentMap[a]) agentMap[a] = {games:0,kills:0,deaths:0,assists:0,wins:0};
+        agentMap[a].games++;
+        agentMap[a].kills += me.stats?.kills || 0;
+        agentMap[a].deaths += me.stats?.deaths || 0;
+        agentMap[a].assists += me.stats?.assists || 0;
+        const won = me.team_id ? (m.teams?.find(t=>t.team_id===me.team_id)?.won) : false;
+        if(won){ agentMap[a].wins++; totW++; }
+        totK += me.stats?.kills || 0;
+        totD += me.stats?.deaths || 0;
+      });
+      topAgents = Object.entries(agentMap)
+        .map(([n,s])=>({name:n,...s}))
+        .sort((a,b)=>b.games-a.games)
+        .slice(0,3);
+      if(games > 0){
+        wr = Math.round((totW/games)*100);
+        kda = totD > 0 ? (totK/totD).toFixed(2) : totK.toFixed(2);
+      }
+    }catch(e){
+      // Si les matchs échouent, on garde quand même le rank
+      console.warn('Matches fetch failed for',playerName,e.message);
+    }
+
+    PLAYER_STATS[playerName] = {
+      rank: tier, rr,
+      wr, kda, games,
+      topAgents: topAgents.map(a=>a.name),
+      syncedAt: Date.now(),
+    };
+    // If we got real top agents, update the roster mains in memory
+    if(topAgents.length >= 3){
+      const realMains = topAgents.slice(0,3).map(a=>a.name);
+      const playerObj = ROSTER.find(p=>p.name===playerName);
+      if(playerObj) playerObj.mains = realMains;
+    }
+    savePlayerStats();
+    document.getElementById('roster-grid').innerHTML = rosterHTML();
+    setBtnState(playerName,'synced','Synced ✓');
+    return true;
+
+  }catch(err){
+    const msg = err.message;
+    if(msg==='AUTH_REQUIRED'){
+      setBtnState(playerName,'error','Clé API requise');
+      throw err;
+    }else if(msg==='RATE_LIMIT'){
+      setBtnState(playerName,'error','Rate limit, attends 1min');
+      throw err;
+    }else if(msg==='NOT_FOUND'){
+      setBtnState(playerName,'error','Compte introuvable');
+    }else if(msg==='NETWORK'){
+      setBtnState(playerName,'error','Pas de réseau');
+    }else{
+      setBtnState(playerName,'error','Erreur '+msg);
+    }
+    throw err;
+  }
+}
+
+async function syncAllPlayers(){
+  const btn = document.getElementById('sync-all-btn');
+  if(!btn) return;
+  btn.classList.add('syncing');
+  btn.innerHTML = `<span class="sync-spin">↻</span> Sync en cours…`;
+  setSyncStatus(`Récupération des stats live de l'équipe via HenrikDev API. Si une clé API est requise, on te le dira.`,'info');
+
+  const playersWithRiot = ROSTER.filter(p=>p.riot);
+  let successCount = 0;
+  let firstError = null;
+
+  for(const p of playersWithRiot){
+    try{
+      await syncPlayer(p.name);
+      successCount++;
+      // Rate limit gentle delay
+      await new Promise(r=>setTimeout(r,800));
+    }catch(e){
+      if(!firstError) firstError = e.message;
+      // Si AUTH_REQUIRED dès le premier joueur, on arrête tout
+      if(e.message==='AUTH_REQUIRED'){
+        setSyncStatus(`L'API HenrikDev exige désormais une clé API pour les requêtes de stats. Tu peux en obtenir une gratuite sur leur Discord : <a href="https://discord.com/invite/X3GaVkX2YN" target="_blank">discord.gg/X3GaVkX2YN</a>. En attendant, je peux mettre les stats à la main si tu me les donnes.`,'error');
+        break;
+      }
+      if(e.message==='RATE_LIMIT'){
+        setSyncStatus(`Rate limit atteint sur HenrikDev. Attends ~2 minutes puis re-essaye.`,'error');
+        break;
+      }
+    }
+  }
+
+  btn.classList.remove('syncing');
+  btn.innerHTML = `<span class="sync-spin">↻</span> Sync tout`;
+
+  if(successCount === playersWithRiot.length){
+    setSyncStatus(`<strong>${successCount}/${playersWithRiot.length}</strong> joueurs synchronisés avec succès. Stats live depuis HenrikDev.`,'success');
+    setTimeout(()=>setSyncStatus(''),5000);
+  }else if(successCount > 0){
+    setSyncStatus(`<strong>${successCount}/${playersWithRiot.length}</strong> synchronisés. Certains ont échoué — vérifie les comptes ou re-essaye plus tard.`,'info');
+  }
+}
+
+
+function findAgentApiData(name){
+  // valorant-api uses displayName, but KAY/O in our data, KAY/O in api too
+  return AGENTS[name] || AGENTS[name.replace('/','')];
+}
+
+function getCompsUsingAgent(name){
+  const usage = [];
+  COMPS_DATA.forEach((map,mi)=>{
+    map.comps.forEach((comp,ci)=>{
+      if(comp.agents.includes(name)){
+        usage.push({map:map.map,mapIdx:mi,compIdx:ci,label:comp.label,tier:comp.tier,winrate:comp.winrate});
+      }
+    });
+  });
+  return usage;
+}
+
+function getPlayersUsingAgent(name){
+  return ROSTER.filter(p=>p.mains.includes(name));
+}
+
+function abilityCardHTML(slot,key,frData,apiAbility,isUlt){
+  const apiName = apiAbility?.displayName || key;
+  const apiIcon = apiAbility?.displayIcon;
+  const frName = frData?.name || apiName;
+  const cost = frData?.cost || '—';
+  const desc = frData?.desc || apiAbility?.description || 'Description indisponible.';
+  const iconEl = apiIcon ? `<img src="${apiIcon}" alt="${frName}">` : '';
+  return `<div class="ability-card ${isUlt?'ultimate':''}">
+    <div class="ab-header">
+      <div class="ab-icon-wrap">${iconEl}</div>
+      <div class="ab-info">
+        <div class="ab-slot">${slot}</div>
+        <div class="ab-name">${frName}</div>
+        <div class="ab-cost">${cost}</div>
+      </div>
+    </div>
+    <div class="ab-desc">${desc}</div>
+  </div>`;
+}
+
+function showAgentPage(name){
+  const apiData = findAgentApiData(name);
+  const frData = AGENT_FR[name] || {};
+  const role = frData.role || ROLES[name] || 'D';
+  const roleLabel = ROLE_LABEL[role];
+  const display = name==='KAY/O' ? 'KAYO' : name;
+  const bgImg = apiData?.portrait || '';
+  const fullPortrait = apiData?.portrait || '';
+
+  // Build abilities cards using API data + FR translations
+  const apiAbilities = (apiData?.abilities) || [];
+  const SLOTS_FR = {'Ability1':'Compétence 1','Ability2':'Compétence 2','Grenade':'Signature','Ultimate':'Ulti'};
+
+  // Try to find FR ability matching the API ability name
+  const abilitiesHTML = ['Ability1','Ability2','Grenade','Ultimate'].map(slot=>{
+    const apiAb = apiAbilities.find(a=>a.slot===slot);
+    if(!apiAb && !frData.abilities) return '';
+    const apiName = apiAb?.displayName || '';
+    // Find FR translation by exact key match
+    let frAb = null;
+    if(frData.abilities){
+      // try exact match on api name
+      if(frData.abilities[apiName]) frAb = frData.abilities[apiName];
+      else {
+        // fallback : find by index
+        const frKeys = Object.keys(frData.abilities);
+        const slotIndex = ['Ability1','Ability2','Grenade','Ultimate'].indexOf(slot);
+        if(frKeys[slotIndex]) frAb = frData.abilities[frKeys[slotIndex]];
+      }
+    }
+    return abilityCardHTML(SLOTS_FR[slot],apiName,frAb,apiAb,slot==='Ultimate');
+  }).filter(Boolean).join('');
+
+  // Comps using this agent
+  const usage = getCompsUsingAgent(name);
+  const usageHTML = usage.length>0
+    ? usage.map(u=>{
+        const mapBg = mapImg(u.map);
+        const bgStyle = mapBg ? `background-image:url(${mapBg})` : '';
+        return `<div class="usage-card" onclick="goToComp(${u.mapIdx},${u.compIdx})">
+          <div class="usage-map-thumb" style="${bgStyle}"></div>
+          <div class="usage-card-inner">
+            <div class="usage-map">${u.map}</div>
+            <div class="usage-comp-label">${u.label}</div>
+            <div class="usage-meta">
+              <span class="usage-tier ${u.tier}">${u.tier}-TIER</span>
+              <span class="usage-wr">${u.winrate.toFixed(1)}% WR</span>
+              <span class="usage-go">→</span>
+            </div>
+          </div>
+        </div>`;
+      }).join('')
+    : `<div style="color:var(--muted);font-size:13px">Aucune comp OLYCITY n\'utilise actuellement cet agent. Découvre les agents de la rotation actuelle dans les comps.</div>`;
+
+  // Players using this agent
+  const players = getPlayersUsingAgent(name);
+  const playersHTML = players.length>0
+    ? players.map(p=>`<span class="played-pill">${p.name}<span class="pill-role">${p.tag}</span></span>`).join('')
+    : `<span class="played-none">Aucun joueur OLYCITY n\'a cet agent en main pour le moment.</span>`;
+
+  // Pick rate approximate (count of usage)
+  const pickCount = usage.length;
+  const avgWR = usage.length>0 ? (usage.reduce((s,u)=>s+u.winrate,0)/usage.length).toFixed(1) : '—';
+
+  const fullEl = fullPortrait
+    ? `<img class="agent-portrait-full" src="${fullPortrait}" alt="${display}" id="agent-portrait-tilt">`
+    : '';
+
+  const bgEl = bgImg ? `<div class="agent-hero-bg" style="background-image:url(${bgImg})"></div>` : '';
+
+  const pageHTML = `
+    <div class="agent-hero">
+      ${bgEl}
+      <div class="agent-hero-gradient"></div>
+      <div class="agent-hero-grid"></div>
+      <div class="agent-hero-content">
+        <div class="agent-info">
+          <button class="agent-back-btn" onclick="closeAgentPage()">← Retour</button>
+          <div class="agent-page-eyebrow">Agent · OLYCITY Codex</div>
+          <h1 class="agent-page-name">${display}</h1>
+          <div class="agent-page-role-row">
+            <span class="agent-role-badge ${role}">${roleLabel}</span>
+            ${frData.origin?`<span class="agent-origin">Origine : ${frData.origin}</span>`:''}
+          </div>
+          <p class="agent-bio">${frData.bio || apiData?.desc || 'Biographie en cours de traduction.'}</p>
+          <div class="agent-quick-stats">
+            <div class="aqs"><div class="aqs-val">${pickCount}</div><div class="aqs-lbl">Comp${pickCount>1?'s':''} OLYCITY</div></div>
+            <div class="aqs"><div class="aqs-val">${avgWR}${avgWR!=='—'?'%':''}</div><div class="aqs-lbl">WR moyen</div></div>
+            <div class="aqs"><div class="aqs-val">${players.length}</div><div class="aqs-lbl">Joueur${players.length>1?'s':''}</div></div>
+          </div>
+        </div>
+        <div class="agent-portrait-wrap">
+          <div class="agent-portrait-glow"></div>
+          ${fullEl}
+        </div>
+      </div>
+    </div>
+
+    <div class="agent-body">
+      <div class="abilities-section">
+        <div class="section-title-with-tag">
+          <span class="sec-tag">Compétences</span>
+          <h2 class="sec-title">Kit complet</h2>
+          <div class="sec-line"></div>
+        </div>
+        <div class="ab-grid">${abilitiesHTML}</div>
+      </div>
+
+      <div class="usage-section">
+        <div class="section-title-with-tag">
+          <span class="sec-tag">Comps OLYCITY</span>
+          <h2 class="sec-title">Dans quelles compos il joue</h2>
+          <div class="sec-line"></div>
+        </div>
+        <div class="usage-grid">${usageHTML}</div>
+      </div>
+
+      <div class="usage-section">
+        <div class="section-title-with-tag">
+          <span class="sec-tag">Le Roster</span>
+          <h2 class="sec-title">Joueurs OLYCITY qui le main</h2>
+          <div class="sec-line"></div>
+        </div>
+        <div class="played-by">
+          <span class="played-by-lbl">Mains :</span>
+          <div class="played-by-pills">${playersHTML}</div>
+        </div>
+      </div>
+    </div>
+  `;
+
+  const page = document.getElementById('agent-page');
+  page.innerHTML = pageHTML;
+  page.classList.add('active');
+  document.body.classList.add('agent-mode');
+  window.scrollTo({top:0,behavior:'smooth'});
+
+  // Subtle 3D parallax on portrait
+  const portrait = document.getElementById('agent-portrait-tilt');
+  if(portrait){
+    const wrap = portrait.parentElement;
+    wrap.addEventListener('mousemove',(e)=>{
+      const r = wrap.getBoundingClientRect();
+      const x = (e.clientX-r.left)/r.width - .5;
+      const y = (e.clientY-r.top)/r.height - .5;
+      portrait.style.transform = `translate(${x*15}px,${y*15}px) scale(1.02)`;
+    });
+    wrap.addEventListener('mouseleave',()=>{
+      portrait.style.transform = '';
+    });
+  }
+}
+
+function closeAgentPage(){
+  const page = document.getElementById('agent-page');
+  page.classList.remove('active');
+  document.body.classList.remove('agent-mode');
+  setTimeout(()=>{page.innerHTML=''},400);
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+
+function goToComp(mapIdx,compIdx){
+  closeAgentPage();
+  setTimeout(()=>{
+    const btn = document.querySelector(`[data-map-idx="${mapIdx}"]`);
+    if(btn) showMap(mapIdx,btn);
+    const tabBtns = document.querySelectorAll(`#map-${mapIdx} .comp-tab`);
+    if(tabBtns[compIdx]) switchComp(mapIdx,compIdx,tabBtns[compIdx]);
+    setTimeout(()=>{
+      document.getElementById(`map-${mapIdx}`)?.scrollIntoView({behavior:'smooth',block:'start'});
+    },200);
+  },300);
+}
+
+/* Keyboard shortcut : Escape closes agent page */
+document.addEventListener('keydown',(e)=>{
+  if(e.key==='Escape' && document.body.classList.contains('agent-mode')){
+    closeAgentPage();
+  }
+});
+
+
+function initTilt(){
+  document.querySelectorAll('.agent-card').forEach(card=>{
+    if(card.dataset.tiltBound) return;
+    card.dataset.tiltBound='1';
+    const inner = card.querySelector('.agent-card-inner');
+    card.addEventListener('mousemove',(e)=>{
+      const r = card.getBoundingClientRect();
+      const x = (e.clientX-r.left)/r.width;
+      const y = (e.clientY-r.top)/r.height;
+      const rx = (y-.5)*-14;
+      const ry = (x-.5)*14;
+      inner.style.transform = `rotateX(${rx}deg) rotateY(${ry}deg)`;
+    });
+    card.addEventListener('mouseleave',()=>{
+      inner.style.transform = 'rotateX(0) rotateY(0)';
+    });
+  });
+}
+
+/* ════════════════════════════════════════════════
+   PARALLAX on hero (cursor-follow)
+   ════════════════════════════════════════════════ */
+const hero = document.querySelector('.hero');
+if(hero){
+  document.addEventListener('mousemove',(e)=>{
+    const x = (e.clientX/window.innerWidth - .5)*20;
+    const y = (e.clientY/window.innerHeight - .5)*20;
+    const frame = document.querySelector('.hero-title-frame');
+    if(frame) frame.style.transform = `translate(${x*.3}px,${y*.3}px)`;
+    const g1 = document.querySelector('.bg-glow-1');
+    const g2 = document.querySelector('.bg-glow-2');
+    if(g1) g1.style.transform = `translate(${x}px,${y}px)`;
+    if(g2) g2.style.transform = `translate(${-x}px,${-y}px)`;
+  });
+}
+
+/* ════════════════════════════════════════════════
+   SEARCH (by agent name)
+   ════════════════════════════════════════════════ */
+const searchInput = document.getElementById('search-input');
+const searchResults = document.getElementById('search-results');
+
+function buildAgentIndex(){
+  // ALL agents available from API, with their map appearances
+  const idx = {};
+  // start with all known agents from API
+  Object.keys(AGENTS).forEach(name=>{idx[name] = [];});
+  // add comp occurrences
+  COMPS_DATA.forEach((mapData,mi)=>{
+    mapData.comps.forEach((comp,ci)=>{
+      comp.agents.forEach(name=>{
+        if(!idx[name]) idx[name] = [];
+        idx[name].push({map:mapData.map,mapIdx:mi,compIdx:ci,compLabel:comp.label});
+      });
+    });
+  });
+  return idx;
+}
+
+function performSearch(q){
+  if(!q || q.length<1){
+    searchResults.classList.remove('show');
+    searchResults.innerHTML = '';
+    return;
+  }
+  const idx = buildAgentIndex();
+  const qLower = q.toLowerCase();
+  const matches = Object.keys(idx).filter(name=>name.toLowerCase().includes(qLower));
+  if(matches.length===0){
+    searchResults.innerHTML = `<div class="search-empty">Aucun agent trouvé</div>`;
+    searchResults.classList.add('show');
+    return;
+  }
+  searchResults.innerHTML = matches.slice(0,8).map(name=>{
+    const img = agentImg(name);
+    const display = name==='KAY/O' ? 'KAYO' : name;
+    const occurrences = idx[name];
+    const r = ROLES[name]||'D';
+    const roleLabel = ROLE_LABEL[r];
+    const imgEl = img ? `<img src="${img}" alt="${display}">` : `<div class="portrait-ph" style="font-size:14px">${display[0]}</div>`;
+    const detailText = occurrences.length>0
+      ? `${roleLabel} · ${occurrences.length} comp${occurrences.length>1?'s':''}`
+      : `${roleLabel} · Hors meta`;
+    return `<div class="search-result-item" onclick="searchAndShow('${name}')">
+      <div class="search-result-thumb">${imgEl}</div>
+      <div class="search-result-info">
+        <span class="search-result-name">${display}</span>
+        <span class="search-result-detail">${detailText}</span>
+      </div>
+    </div>`;
+  }).join('');
+  searchResults.classList.add('show');
+}
+
+function searchAndShow(agentName){
+  searchInput.value = '';
+  searchResults.classList.remove('show');
+  showAgentPage(agentName);
+}
+
+searchInput.addEventListener('input',(e)=>performSearch(e.target.value));
+searchInput.addEventListener('focus',(e)=>{if(e.target.value) performSearch(e.target.value);});
+document.addEventListener('click',(e)=>{
+  if(!e.target.closest('.search-wrap') && !e.target.closest('.search-results')){
+    searchResults.classList.remove('show');
+  }
+});
+
+/* ════════════════════════════════════════════════
+   FAVORITES TOGGLE (filter compatible later)
+   ════════════════════════════════════════════════ */
+document.getElementById('fav-toggle').addEventListener('click',()=>{
+  if(FAVS.length===0){
+    alert('Aucun favori encore — clique sur ★ à côté d\'une comp pour la sauvegarder.');
+    return;
+  }
+  // Jump to first fav
+  const [first] = FAVS;
+  const match = first.match(/comp-(\d+)-(\d+)/);
+  if(match){
+    const mi=+match[1],ci=+match[2];
+    const btn=document.querySelector(`[data-map-idx="${mi}"]`);
+    showMap(mi,btn);
+    const tabBtns=document.querySelectorAll(`#map-${mi} .comp-tab`);
+    if(tabBtns[ci]) switchComp(mi,ci,tabBtns[ci]);
+  }
+});
+
+boot();
+</script>
+</body>
+</html>
