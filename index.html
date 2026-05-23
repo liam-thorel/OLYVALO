@@ -74,6 +74,24 @@
     <!-- populated by main.js -->
   </main>
 
+  <!-- ROSTER -->
+  <section class="roster-section" id="roster">
+    <div class="roster-header">
+      <span class="roster-eyebrow">Le Roster</span>
+      <h2 class="roster-title">Les joueurs OLYCITY</h2>
+      <span class="roster-sub">Stats live · HenrikDev API</span>
+      <button class="sync-all-btn" id="sync-all-btn" onclick="window.OLYCITY.syncAllPlayers()">
+        <span class="sync-spin">↻</span> Sync tout
+      </button>
+    </div>
+    <div style="max-width:1600px;margin:0 auto;padding:0 32px">
+      <div id="sync-status"></div>
+    </div>
+    <div class="roster-grid" id="roster-grid">
+      <!-- populated by main.js -->
+    </div>
+  </section>
+
   <!-- S-TIER SECTION -->
   <section class="section">
     <div class="section-inner">
@@ -99,24 +117,6 @@
       <div class="gs-grid" id="global-notes-grid">
         <!-- populated by main.js -->
       </div>
-    </div>
-  </section>
-
-  <!-- ROSTER (en bas) -->
-  <section class="roster-section" id="roster">
-    <div class="roster-header">
-      <span class="roster-eyebrow">Le Roster</span>
-      <h2 class="roster-title">Les joueurs OLYCITY</h2>
-      <span class="roster-sub">Stats live · HenrikDev API</span>
-      <button class="sync-all-btn" id="sync-all-btn" onclick="window.OLYCITY.syncAllPlayers()">
-        <span class="sync-spin">↻</span> Sync tout
-      </button>
-    </div>
-    <div style="max-width:1600px;margin:0 auto;padding:0 32px">
-      <div id="sync-status"></div>
-    </div>
-    <div class="roster-grid" id="roster-grid">
-      <!-- populated by main.js -->
     </div>
   </section>
 

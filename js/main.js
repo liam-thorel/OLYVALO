@@ -149,8 +149,9 @@ window.OLYCITY = {
       // Update mains from real data
       if (stats.topAgents?.length >= 1) {
         const realMains = stats.topAgents.slice(0, 3);
-        while (realMains.length < 3 && player.mains[realMains.length]) {
-          realMains.push(player.mains[realMains.length]);
+        const originalMains = Array.isArray(player.mains) ? player.mains : [];
+        while (realMains.length < 3 && originalMains[realMains.length]) {
+          realMains.push(originalMains[realMains.length]);
         }
         player.mains = realMains;
       }
@@ -184,8 +185,9 @@ window.OLYCITY = {
         const player = state.ROSTER.find(p => p.name === playerName);
         if (player && stats.topAgents?.length >= 1) {
           const realMains = stats.topAgents.slice(0, 3);
-          while (realMains.length < 3 && player.mains[realMains.length]) {
-            realMains.push(player.mains[realMains.length]);
+          const originalMains = Array.isArray(player.mains) ? player.mains : [];
+          while (realMains.length < 3 && originalMains[realMains.length]) {
+            realMains.push(originalMains[realMains.length]);
           }
           player.mains = realMains;
         }

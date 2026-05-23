@@ -104,6 +104,7 @@ export async function syncPlayer(player) {
     let totK = 0, totD = 0, totA = 0, totW = 0, counted = 0;
 
     ml.forEach(m => {
+      try {
       const allPlayers = m.players?.all_players || [];
       const me = allPlayers.find(p => p.puuid === playerPuuid)
               || allPlayers.find(p =>
@@ -138,6 +139,9 @@ export async function syncPlayer(player) {
       totD += deaths;
       totA += assists;
       counted++;
+      } catch(matchErr) {
+        console.warn('[HenrikDev] Error parsing match:', matchErr.message);
+      }
     });
 
     // Réassigne games au nombre de matchs réellement parsés
