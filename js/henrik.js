@@ -65,74 +65,74 @@ export async function syncPlayer(player) {
   const peak = mmr?.data?.peak?.tier?.name ?? null;
   const playerPuuid = mmr?.data?.account?.puuid;
 
-  // Win rate officiel depuis seasonal[] (acte en cours)
-  let seasonWr = null, seasonGames = null, seasonWins = null;
+  // Win rate + season ID depuis seasonal[] (acte en cours)
+  let seasonWr = null, seasonGames = null, seasonWins = null, currentSeasonId = null;
   const seasonal = mmr?.data?.seasonal || [];
   if (seasonal.length > 0) {
     const currentAct = seasonal[seasonal.length - 1];
-    seasonGames = currentAct.games ?? null;
-    seasonWins  = currentAct.wins  ?? null;
+    seasonGames     = currentAct.games ?? null;
+    seasonWins      = currentAct.wins  ?? null;
+    currentSeasonId = currentAct.season?.id ?? null;
     if (seasonGames > 0) seasonWr = Math.round((seasonWins / seasonGames) * 100);
     console.log(`[HenrikDev] ${name}: ${currentAct.season?.short} — ${seasonWins}W/${seasonGames}G = ${seasonWr}%WR`);
   }
 
-  // 2. Matchs récents — 10 derniers pour agents joués + KDA
+  // 2. Matchs de l'acte en cours — on fetch 50 et on filtre par season_id
   let topAgents = [];
   let kda = null, games = 0;
 
   try {
     const matches = await fetchHenrik(
-      `/v3/matches/${region}/${encodeURIComponent(name)}/${encodeURIComponent(tag)}?filter=competitive&size=10`
+      `/v3/matches/${region}/${encodeURIComponent(name)}/${encodeURIComponent(tag)}?filter=competitive&size=50`
     );
-    const ml = matches?.data || [];
+    const allMatches = matches?.data || [];
+
+    // Filtre sur la saison en cours via metadata.season_id
+    const ml = currentSeasonId
+      ? allMatches.filter(m => m.metadata?.season_id === currentSeasonId)
+      : allMatches.slice(0, 10); // fallback si pas de season_id
+
+    console.log(`[HenrikDev] ${name}: ${allMatches.length} total → ${ml.length} matchs acte en cours`);
     games = ml.length;
-    console.log(`[HenrikDev] ${name}: ${games} matchs pour agents/KDA`);
 
     const agentMap = {};
-    let totK = 0, totD = 0, totA = 0, totW = 0, counted = 0;
+    let totK = 0, totD = 0, totA = 0, counted = 0;
 
     ml.forEach(m => {
       try {
-      const allPlayers = m.players?.all_players || [];
-      const me = allPlayers.find(p => p.puuid === playerPuuid)
-              || allPlayers.find(p =>
-                  p.name?.toLowerCase() === name.toLowerCase() &&
-                  p.tag?.toLowerCase()  === tag.toLowerCase()
-                );
-      if (!me) return;
+        const allPlayers = m.players?.all_players || [];
+        const me = allPlayers.find(p => p.puuid === playerPuuid)
+                || allPlayers.find(p =>
+                    p.name?.toLowerCase() === name.toLowerCase() &&
+                    p.tag?.toLowerCase()  === tag.toLowerCase()
+                  );
+        if (!me) return;
 
-      const rawAgent = me.character;
-      const agentName = normalizeAgentName(rawAgent);
-      if (!agentName) return;
+        const agentName = normalizeAgentName(me.character);
+        if (!agentName) return;
 
-      if (!agentMap[agentName]) {
-        agentMap[agentName] = { games: 0, kills: 0, deaths: 0, assists: 0, wins: 0 };
-      }
-      agentMap[agentName].games++;
+        if (!agentMap[agentName]) {
+          agentMap[agentName] = { games: 0, kills: 0, deaths: 0, assists: 0 };
+        }
+        agentMap[agentName].games++;
 
-      const kills   = me.stats?.kills   || 0;
-      const deaths  = me.stats?.deaths  || 0;
-      const assists = me.stats?.assists || 0;
+        const kills   = me.stats?.kills   || 0;
+        const deaths  = me.stats?.deaths  || 0;
+        const assists = me.stats?.assists || 0;
 
-      agentMap[agentName].kills   += kills;
-      agentMap[agentName].deaths  += deaths;
-      agentMap[agentName].assists += assists;
+        agentMap[agentName].kills   += kills;
+        agentMap[agentName].deaths  += deaths;
+        agentMap[agentName].assists += assists;
 
-      // Win check : teams.red.has_won / teams.blue.has_won
-      const myTeam = (me.team || '').toLowerCase();
-      const won = m.teams?.[myTeam]?.has_won === true;
-      if (won) { agentMap[agentName].wins++; totW++; }
-
-      totK += kills;
-      totD += deaths;
-      totA += assists;
-      counted++;
+        totK += kills;
+        totD += deaths;
+        totA += assists;
+        counted++;
       } catch(matchErr) {
         console.warn('[HenrikDev] Error parsing match:', matchErr.message);
       }
     });
 
-    // Réassigne games au nombre de matchs réellement parsés
     games = counted;
 
     topAgents = Object.values(agentMap)
@@ -140,7 +140,6 @@ export async function syncPlayer(player) {
       .slice(0, 3);
 
     if (games > 0) {
-      // KDA uniquement — le WR vient de seasonal[]
       kda = totD > 0
         ? ((totK + totA) / totD).toFixed(2)
         : (totK + totA).toFixed(2);
