@@ -43,8 +43,8 @@ const AGENT_TRAILERS = {
 
 function trailerSrc(t) {
   if (!t) return null;
-  const start = t.start ? \`&start=\${t.start}\` : '';
-  return \`https://www.youtube.com/embed/\${t.id}?autoplay=1&mute=1&loop=1&playlist=\${t.id}&controls=0&showinfo=0&rel=0&modestbranding=1&iv_load_policy=3&disablekb=1&fs=0\${start}\`;
+  const start = t.start ? ('&start=' + t.start) : '';
+  return 'https://www.youtube.com/embed/' + t.id + '?autoplay=1&mute=1&loop=1&playlist=' + t.id + '&controls=0&showinfo=0&rel=0&modestbranding=1&iv_load_policy=3&disablekb=1&fs=0' + start;
 }
 
 // ─── helpers ─────────────────────────────────────
