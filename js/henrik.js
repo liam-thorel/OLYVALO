@@ -8,11 +8,6 @@ import { storage } from './storage.js';
 
 const BASE = 'https://api.henrikdev.xyz/valorant';
 
-// Saison actuelle : Episode 10 Act 1 (2026)
-// On filtre les matchs des 120 derniers jours (~une saison complète)
-const SEASON_DAYS = 120;
-const SEASON_MS = SEASON_DAYS * 24 * 60 * 60 * 1000;
-
 async function fetchHenrik(path) {
   const url = `${BASE}${path}`;
   console.log('[HenrikDev] Fetch', url);
@@ -76,29 +71,11 @@ export async function syncPlayer(player) {
 
   try {
     const matches = await fetchHenrik(
-      `/v3/matches/${region}/${encodeURIComponent(name)}/${encodeURIComponent(tag)}?filter=competitive&size=100`
+      `/v3/matches/${region}/${encodeURIComponent(name)}/${encodeURIComponent(tag)}?filter=competitive&size=10`
     );
-    const allMatches = matches?.data || [];
-
-    // Filtre sur la saison actuelle (SEASON_DAYS jours)
-    const cutoff = Date.now() - SEASON_MS;
-    const ml = allMatches.filter(m => {
-      const ts = m.metadata?.game_start_patched
-        ? new Date(m.metadata.game_start_patched).getTime()
-        : (m.metadata?.game_start || 0) * 1000;
-      return ts >= cutoff;
-    });
-
+    const ml = matches?.data || [];
     games = ml.length;
-    console.log(`[HenrikDev] ${name}: ${allMatches.length} total → ${games} cette saison`);
-
-    if (games === 0) {
-      // Fallback: utilise tous les matchs si aucun dans la fenêtre saison
-      // (compte inactif ou début de saison)
-      games = Math.min(allMatches.length, 30);
-      ml.push(...allMatches.slice(0, games));
-      console.log(`[HenrikDev] ${name}: fallback sur ${games} derniers matchs`);
-    }
+    console.log(`[HenrikDev] ${name}: ${games} matchs récupérés`);
 
     const agentMap = {};
     let totK = 0, totD = 0, totA = 0, totW = 0, counted = 0;
