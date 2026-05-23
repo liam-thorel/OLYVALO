@@ -14,8 +14,33 @@
 
 .agent-hero{
   position:relative; min-height:520px; overflow:hidden;
-  background:var(--surf2);
+  background:var(--bg-deep);
   border-bottom:1px solid var(--border);
+}
+
+/* YouTube video background */
+.agent-hero-video-wrap{
+  position:absolute; inset:0; z-index:0;
+  overflow:hidden; pointer-events:none;
+}
+.agent-hero-video{
+  /* Scale up to cover the hero area — video is 16:9 */
+  position:absolute;
+  top:50%; left:50%;
+  transform:translate(-50%,-50%);
+  width:177.78vh;   /* 16/9 * 100vh */
+  height:100vh;
+  min-width:100%;
+  min-height:100%;
+  filter:brightness(.45) saturate(1.2);
+  pointer-events:none;
+}
+
+/* When video is present, fade the bg art */
+.agent-hero-bg.has-video{
+  opacity:.15;
+  animation:none;
+  filter:blur(4px) saturate(1);
 }
 .agent-hero-bg{
   position:absolute; inset:-8%;

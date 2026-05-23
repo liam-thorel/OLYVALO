@@ -7,6 +7,39 @@ import { valorantApi } from './api.js';
 import { state } from './main.js';
 import { formatRelTime } from './storage.js';
 
+// ─── Agent YouTube trailers (IDs officiels Riot) ──
+// Fallback sur background art si YouTube bloque l'embed
+const AGENT_TRAILERS = {
+  'Jett':      'jGVAILACiMk',
+  'Raze':      'EVyXT6RcFTM',
+  'Viper':     '9dOSy0EhLfQ',
+  'Skye':      'C3QTyMXi-WE',
+  'KAY/O':     'eU1l7eBy2_Y',
+  'Chamber':   'FUoqAn5T4h4',
+  'Killjoy':   'ua-iIRQDY8g',
+  'Yoru':      'GdOEQv-zQVw',
+  'Astra':     '-ylVnuPWlJM',
+  'Gekko':     'lLHBF24FciI',
+  'Clove':     'GMUMNyoHAug',
+  'Neon':      '1CdS3f28JaA',
+  'Fade':      'ZCjJJPEhUkw',
+  'Deadlock':  'jSTRw4bByJk',
+  'Iso':       'lETDDgFnNtA',
+  'Harbor':    'aJPMKlZT_BY',
+  'Sage':      'WhHNMPiGAzE',
+  'Omen':      'q5pCn72r4Qs',
+  'Cypher':    '7TNavET4WUI',
+  'Sova':      'IXLdrGXj4p0',
+  'Breach':    'E5v7-s7TYYE',
+  'Reyna':     'RXY6PjCvgYU',
+  'Phoenix':   '6xCh2TqXzWM',
+  'Brimstone': 'mBZB0oFHJjA',
+  'Waylay':    'aJPMKlZT_BY',
+  'Tejo':      'jSTRw4bByJk',
+  'Miks':      '0K4BhoKYVHs',
+  'Vyse':      'jSTRw4bByJk',
+};
+
 // ─── helpers ─────────────────────────────────────
 function displayName(name) {
   return name === 'KAY/O' ? 'KAYO' : name;
@@ -475,20 +508,38 @@ export function agentPageHTML(name) {
     ? (usage.reduce((s, u) => s + u.winrate, 0) / usage.length).toFixed(1) : '—';
   const fullEl = fullPortrait
     ? `<img class="agent-portrait-full" src="${fullPortrait}" alt="${display}">`  : '';
-  // Background cinématique : background art de l'agent + gradient de ses couleurs
+  // Background cinématique : vidéo YouTube en loop si dispo, sinon background art
   const bgArt = valorantApi.agentBackground(name);
   const gradient = valorantApi.agentGradient(name);
+  const trailerId = AGENT_TRAILERS[name] || AGENT_TRAILERS[displayName(name)];
+
+  // YouTube embed : muted autoplay loop, pas de contrôles, pas de suggestions
+  const videoEl = trailerId ? `
+    <div class="agent-hero-video-wrap">
+      <iframe
+        class="agent-hero-video"
+        src="https://www.youtube.com/embed/${trailerId}?autoplay=1&mute=1&loop=1&playlist=${trailerId}&controls=0&showinfo=0&rel=0&modestbranding=1&iv_load_policy=3&disablekb=1&fs=0&start=0"
+        allow="autoplay; encrypted-media"
+        frameborder="0"
+        loading="lazy"
+        title="${displayName(name)} cinematic"
+      ></iframe>
+    </div>` : '';
+
+  // Fallback visible si la vidéo ne charge pas
   const bgEl = bgArt
-    ? `<div class="agent-hero-bg" style="background-image:url(${bgArt})"></div>`
+    ? `<div class="agent-hero-bg ${trailerId ? 'has-video' : ''}" style="background-image:url(${bgArt})"></div>`
     : fullPortrait
-      ? `<div class="agent-hero-bg" style="background-image:url(${fullPortrait});background-size:contain;background-repeat:no-repeat;background-position:80% center;"></div>`
+      ? `<div class="agent-hero-bg ${trailerId ? 'has-video' : ''}" style="background-image:url(${fullPortrait});background-size:contain;background-repeat:no-repeat;background-position:80% center;"></div>`
       : '';
+
   const gradientOverlay = gradient
-    ? `<div style="position:absolute;inset:0;background:${gradient};opacity:.35;pointer-events:none;z-index:1;mix-blend-mode:screen"></div>`
+    ? `<div style="position:absolute;inset:0;background:${gradient};opacity:.25;pointer-events:none;z-index:4;mix-blend-mode:screen"></div>`
     : '';
 
   return `
     <div class="agent-hero">
+      ${videoEl}
       ${bgEl}
       ${gradientOverlay}
       <div class="agent-hero-grain"></div>
