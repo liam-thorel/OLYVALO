@@ -43,11 +43,19 @@
 }
 .agent-hero-video-cover.loaded{ opacity:0; }
 
+/* Transparent overlay to block YouTube hover controls */
+.agent-hero-video-block{
+  position:absolute; inset:0; z-index:2;
+  background:transparent;
+  pointer-events:all; /* intercepts mouse = no YouTube controls */
+  cursor:default;
+}
+
 /* When video is present, fade the bg art */
 .agent-hero-bg.has-video{
-  opacity:.15;
+  opacity:.12;
   animation:none;
-  filter:blur(4px) saturate(1);
+  filter:blur(6px) saturate(.8);
 }
 .agent-hero-bg{
   position:absolute; inset:-8%;

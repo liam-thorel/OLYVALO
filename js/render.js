@@ -10,35 +10,42 @@ import { formatRelTime } from './storage.js';
 // ─── Agent YouTube trailers (IDs officiels Riot) ──
 // Fallback sur background art si YouTube bloque l'embed
 const AGENT_TRAILERS = {
-  'Jett':      'jGVAILACiMk',
-  'Raze':      'EVyXT6RcFTM',
-  'Viper':     '9dOSy0EhLfQ',
-  'Skye':      'C3QTyMXi-WE',
-  'KAY/O':     'eU1l7eBy2_Y',
-  'Chamber':   'FUoqAn5T4h4',
-  'Killjoy':   'ua-iIRQDY8g',
-  'Yoru':      'GdOEQv-zQVw',
-  'Astra':     '-ylVnuPWlJM',
-  'Gekko':     'lLHBF24FciI',
-  'Clove':     'GMUMNyoHAug',
-  'Neon':      '1CdS3f28JaA',
-  'Fade':      'ZCjJJPEhUkw',
-  'Deadlock':  'jSTRw4bByJk',
-  'Iso':       'lETDDgFnNtA',
-  'Harbor':    'aJPMKlZT_BY',
-  'Sage':      'WhHNMPiGAzE',
-  'Omen':      'q5pCn72r4Qs',
-  'Cypher':    '7TNavET4WUI',
-  'Sova':      'IXLdrGXj4p0',
-  'Breach':    'E5v7-s7TYYE',
-  'Reyna':     'RXY6PjCvgYU',
-  'Phoenix':   '6xCh2TqXzWM',
-  'Brimstone': 'mBZB0oFHJjA',
-  'Waylay':    'aJPMKlZT_BY',
-  'Tejo':      'jSTRw4bByJk',
-  'Miks':      '0K4BhoKYVHs',
-  'Vyse':      'jSTRw4bByJk',
+  'Jett':      { id:'jGVAILACiMk' },
+  'Raze':      { id:'EVyXT6RcFTM' },
+  'Viper':     { id:'9dOSy0EhLfQ' },
+  'Skye':      { id:'C3QTyMXi-WE' },
+  'KAY/O':     { id:'eU1l7eBy2_Y' },
+  'Chamber':   { id:'FUoqAn5T4h4' },
+  'Killjoy':   { id:'ua-iIRQDY8g' },
+  'Yoru':      { id:'GdOEQv-zQVw' },
+  'Astra':     { id:'-ylVnuPWlJM' },
+  'Gekko':     { id:'lLHBF24FciI' },
+  'Clove':     { id:'GMUMNyoHAug' },
+  'Sage':      { id:'WhHNMPiGAzE' },
+  'Miks':      { id:'0K4BhoKYVHs' },
+  // IDs confirmés
+  'Omen':      { id:'_jJdWy6bDj4' },
+  'Cypher':    { id:'9N_iC-Yc0FA' },
+  'Sova':      { id:'OZ76UP-c8Ao' },
+  'Breach':    { id:'Rux0HjzKQbw' },
+  'Reyna':     { id:'PlpqhZiumDM' },
+  'Phoenix':   { id:'ttJMFW2wUQM' },
+  'Brimstone': { id:'7yHnJ_oNxTI' },
+  'Neon':      { id:'dtx8CgjRmqE' },
+  'Fade':      { id:'e7VOQ1l20eo' },
+  'Harbor':    { id:'qRao6FARFRo', start:57 },
+  'Deadlock':  { id:'UK7Tdob8HQw' },
+  'Iso':       { id:'8OgcHAv6Jvk' },
+  'Waylay':    { id:'njK6KgRNr2k' },
+  'Tejo':      { id:'dRuRID5JoQY' },
+  'Vyse':      { id:'BEpcN-eE8ms' },
 };
+
+function trailerSrc(t) {
+  if (!t) return null;
+  const start = t.start ? \`&start=\${t.start}\` : '';
+  return \`https://www.youtube.com/embed/\${t.id}?autoplay=1&mute=1&loop=1&playlist=\${t.id}&controls=0&showinfo=0&rel=0&modestbranding=1&iv_load_policy=3&disablekb=1&fs=0\${start}\`;
+}
 
 // ─── helpers ─────────────────────────────────────
 function displayName(name) {
@@ -511,28 +518,31 @@ export function agentPageHTML(name) {
   // Background cinématique : vidéo YouTube en loop si dispo, sinon background art
   const bgArt = valorantApi.agentBackground(name);
   const gradient = valorantApi.agentGradient(name);
-  const trailerId = AGENT_TRAILERS[name] || AGENT_TRAILERS[displayName(name)];
+  // trailerId replaced by trailer object above
 
-  // YouTube embed : muted autoplay loop, pas de contrôles, pas de suggestions
-  // cover = overlay sombre qui se retire après chargement pour éviter le thumbnail/play bouton
-  const videoEl = trailerId ? `
+  // YouTube embed : muted autoplay loop, sans contrôles
+  const trailer = AGENT_TRAILERS[name] || AGENT_TRAILERS[displayName(name)];
+  const src = trailerSrc(trailer);
+  const videoEl = src ? `
     <div class="agent-hero-video-wrap">
       <div class="agent-hero-video-cover" id="agent-video-cover"></div>
       <iframe
         class="agent-hero-video"
-        src="https://www.youtube.com/embed/${trailerId}?autoplay=1&mute=1&loop=1&playlist=${trailerId}&controls=0&showinfo=0&rel=0&modestbranding=1&iv_load_policy=3&disablekb=1&fs=0&start=0&enablejsapi=0&origin=${encodeURIComponent(window.location.origin)}"
-        allow="autoplay; encrypted-media; picture-in-picture"
+        src="${src}"
+        allow="autoplay; encrypted-media"
         frameborder="0"
         title="${displayName(name)} cinematic"
-        onload="setTimeout(()=>{const c=document.getElementById('agent-video-cover');if(c)c.classList.add('loaded')},800)"
+        onload="setTimeout(()=>{const c=document.getElementById('agent-video-cover');if(c)c.classList.add('loaded')},1200)"
       ></iframe>
+      <div class="agent-hero-video-block"></div>
     </div>` : '';
 
   // Fallback visible si la vidéo ne charge pas
+  const hasVideo = !!trailer;
   const bgEl = bgArt
-    ? `<div class="agent-hero-bg ${trailerId ? 'has-video' : ''}" style="background-image:url(${bgArt})"></div>`
+    ? `<div class="agent-hero-bg ${hasVideo ? 'has-video' : ''}" style="background-image:url(${bgArt})"></div>`
     : fullPortrait
-      ? `<div class="agent-hero-bg ${trailerId ? 'has-video' : ''}" style="background-image:url(${fullPortrait});background-size:contain;background-repeat:no-repeat;background-position:80% center;"></div>`
+      ? `<div class="agent-hero-bg ${hasVideo ? 'has-video' : ''}" style="background-image:url(${fullPortrait});background-size:contain;background-repeat:no-repeat;background-position:80% center;"></div>`
       : '';
 
   const gradientOverlay = gradient
