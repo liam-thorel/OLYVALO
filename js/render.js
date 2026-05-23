@@ -278,19 +278,22 @@ export function rosterHTML() {
         ${stats.rr != null ? `<span class="player-rank-rr">${stats.rr}rr</span>` : ''}
       </div>` : '';
 
-    const liveStatsRow = stats.wr != null ? `
+    const hasStats = stats.wr != null || stats.kda != null;
+    const wrLabel = stats.wrGames != null ? `WR · ${stats.wrGins ?? stats.wrGames}G saison` : 'Win rate';
+    const kdaLabel = stats.games > 0 ? `KDA · ${stats.games}G récents` : 'KDA';
+    const liveStatsRow = hasStats ? `
       <div class="player-stats-row">
         <div class="player-stat">
-          <span class="player-stat-val ${stats.wr >= 50 ? 'green' : 'red'}">${stats.wr}%</span>
-          <span class="player-stat-lbl">Win rate</span>
+          <span class="player-stat-val ${(stats.wr ?? 0) >= 50 ? 'green' : 'red'}">${stats.wr != null ? stats.wr + '%' : '—'}</span>
+          <span class="player-stat-lbl">${stats.wrGames != null ? `WR (${stats.wrGames}G)` : 'Win rate'}</span>
         </div>
         <div class="player-stat">
-          <span class="player-stat-val ${parseFloat(stats.kda) >= 1 ? 'green' : 'red'}">${stats.kda}</span>
-          <span class="player-stat-lbl">KDA</span>
+          <span class="player-stat-val ${parseFloat(stats.kda) >= 1 ? 'green' : 'red'}">${stats.kda ?? '—'}</span>
+          <span class="player-stat-lbl">${stats.games > 0 ? `KDA (${stats.games}G)` : 'KDA'}</span>
         </div>
         <div class="player-stat">
-          <span class="player-stat-val gold">${stats.games ?? 0}</span>
-          <span class="player-stat-lbl">Games</span>
+          <span class="player-stat-val gold">${stats.wrWins != null ? stats.wrWins : (stats.games ?? 0)}</span>
+          <span class="player-stat-lbl">${stats.wrWins != null ? 'Wins saison' : 'Wins récents'}</span>
         </div>
       </div>` : '';
 

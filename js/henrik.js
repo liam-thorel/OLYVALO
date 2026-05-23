@@ -56,7 +56,7 @@ export async function syncPlayer(player) {
   if (!player.riot) throw new Error('NO_RIOT_ID');
   const { name, tag, region } = player.riot;
 
-  // 1. MMR — rank actuel + peak
+  // 1. MMR — rank actuel + peak + stats de saison
   const mmr = await fetchHenrik(
     `/v3/mmr/${region}/pc/${encodeURIComponent(name)}/${encodeURIComponent(tag)}`
   );
@@ -65,9 +65,20 @@ export async function syncPlayer(player) {
   const peak = mmr?.data?.peak?.tier?.name ?? null;
   const playerPuuid = mmr?.data?.account?.puuid;
 
-  // 2. Matchs compétitifs — on fetch 100 pour avoir la saison entière
+  // Win rate officiel depuis seasonal[] (acte en cours)
+  let seasonWr = null, seasonGames = null, seasonWins = null;
+  const seasonal = mmr?.data?.seasonal || [];
+  if (seasonal.length > 0) {
+    const currentAct = seasonal[seasonal.length - 1];
+    seasonGames = currentAct.games ?? null;
+    seasonWins  = currentAct.wins  ?? null;
+    if (seasonGames > 0) seasonWr = Math.round((seasonWins / seasonGames) * 100);
+    console.log(`[HenrikDev] ${name}: ${currentAct.season?.short} — ${seasonWins}W/${seasonGames}G = ${seasonWr}%WR`);
+  }
+
+  // 2. Matchs récents — 10 derniers pour agents joués + KDA
   let topAgents = [];
-  let wr = null, kda = null, games = 0;
+  let kda = null, games = 0;
 
   try {
     const matches = await fetchHenrik(
@@ -75,7 +86,7 @@ export async function syncPlayer(player) {
     );
     const ml = matches?.data || [];
     games = ml.length;
-    console.log(`[HenrikDev] ${name}: ${games} matchs récupérés`);
+    console.log(`[HenrikDev] ${name}: ${games} matchs pour agents/KDA`);
 
     const agentMap = {};
     let totK = 0, totD = 0, totA = 0, totW = 0, counted = 0;
@@ -129,7 +140,7 @@ export async function syncPlayer(player) {
       .slice(0, 3);
 
     if (games > 0) {
-      wr  = Math.round((totW / games) * 100);
+      // KDA uniquement — le WR vient de seasonal[]
       kda = totD > 0
         ? ((totK + totA) / totD).toFixed(2)
         : (totK + totA).toFixed(2);
@@ -142,7 +153,11 @@ export async function syncPlayer(player) {
 
   return {
     rank: tier, rr, peak,
-    wr, kda, games,
+    // Priorité au winrate de saison, fallback sur les 10 derniers matchs
+    wr: seasonWr,
+    wrGames: seasonGames,
+    wrWins: seasonWins,
+    kda, games,
     topAgents: topAgents.map(a => a.name),
     syncedAt: Date.now(),
   };
