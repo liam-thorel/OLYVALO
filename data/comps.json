@@ -133,6 +133,26 @@
       "Fade Haunt pour surveiller les deux spawns simultanément",
       "Miks coupe les rotations du spawn défenseur central",
       "Map qui favorise fortement les attaquants — profitez des exécutes rapides"
+    ],
+    "lineups": [
+      {
+        "agent": "Sova",
+        "ability": "Flèche Reconnaissance",
+        "tip": "Lineups post-plant depuis spawn ATK couvrant A et B",
+        "count": 8
+      },
+      {
+        "agent": "Fade",
+        "ability": "Hantise",
+        "tip": "Haunts depuis mid zipline pour surveiller les deux spawns DEF",
+        "count": 6
+      },
+      {
+        "agent": "Breach",
+        "ability": "Réplique",
+        "tip": "Aftershock à travers les murs pour clear corners A Drop",
+        "count": 5
+      }
     ]
   },
   {
@@ -269,6 +289,26 @@
       "Cypher one-way cage sur B est particulièrement violent",
       "Sova drone peut lock A Long et C Long simultanément",
       "Double duelist très fort si votre équipe est bien coordonnée"
+    ],
+    "lineups": [
+      {
+        "agent": "Sova",
+        "ability": "Flèche Reconnaissance",
+        "tip": "Lineups recon sur A Long, B Mid et C Long depuis spawn",
+        "count": 12
+      },
+      {
+        "agent": "Cypher",
+        "ability": "Caméra Espionne",
+        "tip": "Positions cam B Site pour cover A et C simultanément",
+        "count": 7
+      },
+      {
+        "agent": "Omen",
+        "ability": "Couverture Sombre",
+        "tip": "One-way smokes sur B et CT depuis différents angles",
+        "count": 5
+      }
     ]
   },
   {
@@ -405,6 +445,26 @@
       "KAY/O ZERO/POINT supprime les abilities défensives lors des exécutes",
       "Sova recon dart traverse les espaces ouverts avec de nombreux lineups",
       "Évitez les agents sans mobilité — les rotations sont très longues"
+    ],
+    "lineups": [
+      {
+        "agent": "Sova",
+        "ability": "Flèche Reconnaissance",
+        "tip": "Recon darts sur les longs espaces ouverts A et B",
+        "count": 15
+      },
+      {
+        "agent": "Viper",
+        "ability": "Morsure de Serpent",
+        "tip": "Post-plant molly lineups B Site et A Site depuis l'extérieur",
+        "count": 9
+      },
+      {
+        "agent": "KAY/O",
+        "ability": "FRAG/ment",
+        "tip": "Grenades post-plant sur les positions défensives courantes",
+        "count": 6
+      }
     ]
   },
   {
@@ -541,6 +601,26 @@
       "Les portes pivotantes créent des timings imprévisibles",
       "Raze satchels pour naviguer entre les 3 sites à toute vitesse",
       "C site peut être anchor par une seule sentinelle"
+    ],
+    "lineups": [
+      {
+        "agent": "Fade",
+        "ability": "Hantise",
+        "tip": "Haunts pour isoler C pendant une execute A ou B",
+        "count": 8
+      },
+      {
+        "agent": "Sova",
+        "ability": "Flèche Reconnaissance",
+        "tip": "Recon darts à travers les portes pivotantes",
+        "count": 7
+      },
+      {
+        "agent": "Killjoy",
+        "ability": "Nano-Essaim",
+        "tip": "Nanoswarm post-plant C Site — positions standards DEF",
+        "count": 6
+      }
     ]
   },
   {
@@ -677,6 +757,26 @@
       "Double initiateur très fort — Bind a de nombreux angles à clear",
       "Miks smoke le teleporter entrant coupe un vecteur de flanc entier",
       "Hookah B est un bottleneck parfait pour les flashes de Skye"
+    ],
+    "lineups": [
+      {
+        "agent": "Sova",
+        "ability": "Flèche Choc",
+        "tip": "Shock bolt post-plant B Site depuis le téléporteur",
+        "count": 7
+      },
+      {
+        "agent": "Cypher",
+        "ability": "Câble-Piège",
+        "tip": "Setups tripwire sur les deux téléporteurs pour info passive",
+        "count": 8
+      },
+      {
+        "agent": "Skye",
+        "ability": "Lumière Guide",
+        "tip": "Flash lineups pour B Hookah et A Showers à travers les murs",
+        "count": 6
+      }
     ]
   },
   {
@@ -813,6 +913,26 @@
       "Raze satchels sur les escaliers sont difficiles à contester",
       "Sage wall B Heaven force des rotations longues",
       "Cypher one-way cages sur B Site parmi les plus efficaces du jeu"
+    ],
+    "lineups": [
+      {
+        "agent": "Sova",
+        "ability": "Flèche Reconnaissance",
+        "tip": "Recon dart depuis mid pour illuminer A et B Heaven",
+        "count": 9
+      },
+      {
+        "agent": "Cypher",
+        "ability": "Cage Cybernétique",
+        "tip": "One-way cages B Site parmi les meilleures du jeu",
+        "count": 8
+      },
+      {
+        "agent": "Breach",
+        "ability": "Faille",
+        "tip": "Fault Line à travers les murs Ramp pour entrée A garantie",
+        "count": 5
+      }
     ]
   },
   {
@@ -949,6 +1069,26 @@
       "Les longs couloirs favorisent l'Operator",
       "Cypher cam sur Mid offre les informations les plus précieuses",
       "Neon Fast Lane dans les smokes d'Astra est quasi-inarrêtable"
+    ],
+    "lineups": [
+      {
+        "agent": "Sova",
+        "ability": "Flèche Reconnaissance",
+        "tip": "Recon darts sur Mid Street et B Hall depuis spawn ATK",
+        "count": 13
+      },
+      {
+        "agent": "Fade",
+        "ability": "Hantise",
+        "tip": "Haunts pour detect les positions A Art et B Link",
+        "count": 7
+      },
+      {
+        "agent": "Astra",
+        "ability": "Impulsion Nova",
+        "tip": "Nova pulse Mid Street pour ouvrir l'accès central",
+        "count": 5
+      }
     ]
   }
 ]

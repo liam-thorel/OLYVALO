@@ -1148,3 +1148,59 @@
 }
 .cba-val.green { color:var(--S); }
 .cba-val.red   { color:var(--D); }
+
+/* ════════════════════════════════════════════════
+   LINEUPS SECTION
+   ════════════════════════════════════════════════ */
+.lineups-section {
+  margin-top:32px; padding-top:32px;
+  border-top:1px solid var(--border);
+}
+.lineups-grid {
+  display:grid; grid-template-columns:repeat(auto-fit, minmax(280px, 1fr));
+  gap:14px;
+}
+.lineup-card {
+  background:var(--surf); border:1px solid var(--border);
+  padding:18px 20px; display:flex; flex-direction:column; gap:10px;
+  transition:transform .2s, border-color .2s;
+}
+.lineup-card:hover { transform:translateY(-2px); border-color:var(--border2); }
+.lineup-card-header {
+  display:flex; align-items:center; gap:12px;
+}
+.lineup-agent-img {
+  width:48px; height:60px; object-fit:cover; object-position:top center;
+  border:1px solid var(--border2); flex-shrink:0;
+}
+.lineup-agent-info { flex:1; min-width:0; }
+.lineup-agent-name {
+  font-family:'Tomorrow',sans-serif; font-size:14px; font-weight:700;
+  text-transform:uppercase; letter-spacing:.5px; color:var(--text);
+  line-height:1; margin-bottom:3px;
+}
+.lineup-ability {
+  font-family:'Tomorrow',sans-serif; font-size:9px; letter-spacing:1.5px;
+  text-transform:uppercase; color:var(--red); margin-bottom:2px;
+}
+.lineup-count {
+  font-family:'Tomorrow',sans-serif; font-size:9px; letter-spacing:1px;
+  color:var(--muted); text-transform:uppercase;
+}
+.lineup-tip {
+  font-size:12.5px; line-height:1.55; color:var(--muted);
+  padding-top:8px; border-top:1px dashed var(--border);
+}
+.lineup-link {
+  display:inline-flex; align-items:center; gap:6px;
+  padding:7px 14px; margin-top:4px;
+  background:transparent; border:1px solid var(--border2);
+  color:var(--muted); text-decoration:none;
+  font-family:'Tomorrow',sans-serif; font-size:10px; font-weight:600;
+  letter-spacing:1.5px; text-transform:uppercase;
+  transition:all .15s; align-self:flex-start;
+}
+.lineup-link:hover {
+  color:var(--S); border-color:rgba(63,207,207,.4);
+  background:rgba(63,207,207,.08);
+}

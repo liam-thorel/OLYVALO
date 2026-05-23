@@ -129,6 +129,9 @@ function agilityHTML(agility) {
   return `<div class="agility-box">
     <div class="agility-title">Efficacité de la comp</div>
     ${bars}
+    <div style="font-family:'Tomorrow',sans-serif;font-size:8px;letter-spacing:1px;text-transform:uppercase;color:var(--dim);margin-top:10px;text-align:right">
+      ★ Estimation OLYCITY
+    </div>
   </div>`;
 }
 
@@ -184,6 +187,38 @@ export function compHTML(comp, mapIdx, compIdx) {
         </div>
       </div>
     </div>`;
+}
+
+// ─── LINEUPS SECTION ─────────────────────────────
+function lineupsHTML(lineups, mapName) {
+  if (!lineups?.length) return '';
+  const cards = lineups.map(l => {
+    const img = valorantApi.agentImg(l.agent);
+    const trackerUrl = `https://tracker.gg/valorant/guides/clips?map=${encodeURIComponent(mapName)}&agent=${encodeURIComponent(l.agent)}`;
+    return `<div class="lineup-card">
+      <div class="lineup-card-header">
+        ${img ? `<img class="lineup-agent-img" src="${img}" alt="${l.agent}">` : ''}
+        <div class="lineup-agent-info">
+          <div class="lineup-agent-name">${l.agent}</div>
+          <div class="lineup-ability">${l.ability}</div>
+          <div class="lineup-count">~${l.count} lineups disponibles</div>
+        </div>
+      </div>
+      <div class="lineup-tip">${l.tip}</div>
+      <a class="lineup-link" href="${trackerUrl}" target="_blank" rel="noopener">
+        ↗ Voir les lineups sur Tracker.gg
+      </a>
+    </div>`;
+  }).join('');
+
+  return `<div class="lineups-section">
+    <div class="sub-section-title">
+      <span class="sub-tag">Lineups</span>
+      <span class="sub-title">Positions clés</span>
+      <div class="sub-line"></div>
+    </div>
+    <div class="lineups-grid">${cards}</div>
+  </div>`;
 }
 
 // ─── STRATEGIES SECTION ──────────────────────────
@@ -295,6 +330,7 @@ export function mapSectionHTML(data, idx) {
 
       ${strategyHTML(data.strategies)}
       ${ecoHTML(data.eco)}
+      ${lineupsHTML(data.lineups, data.map)}
 
       <div class="notes-card">
         <div class="notes-card-title">Notes Meta — ${data.map}</div>
