@@ -514,15 +514,17 @@ export function agentPageHTML(name) {
   const trailerId = AGENT_TRAILERS[name] || AGENT_TRAILERS[displayName(name)];
 
   // YouTube embed : muted autoplay loop, pas de contrôles, pas de suggestions
+  // cover = overlay sombre qui se retire après chargement pour éviter le thumbnail/play bouton
   const videoEl = trailerId ? `
     <div class="agent-hero-video-wrap">
+      <div class="agent-hero-video-cover" id="agent-video-cover"></div>
       <iframe
         class="agent-hero-video"
-        src="https://www.youtube.com/embed/${trailerId}?autoplay=1&mute=1&loop=1&playlist=${trailerId}&controls=0&showinfo=0&rel=0&modestbranding=1&iv_load_policy=3&disablekb=1&fs=0&start=0"
-        allow="autoplay; encrypted-media"
+        src="https://www.youtube.com/embed/${trailerId}?autoplay=1&mute=1&loop=1&playlist=${trailerId}&controls=0&showinfo=0&rel=0&modestbranding=1&iv_load_policy=3&disablekb=1&fs=0&start=0&enablejsapi=0&origin=${encodeURIComponent(window.location.origin)}"
+        allow="autoplay; encrypted-media; picture-in-picture"
         frameborder="0"
-        loading="lazy"
         title="${displayName(name)} cinematic"
+        onload="setTimeout(()=>{const c=document.getElementById('agent-video-cover');if(c)c.classList.add('loaded')},800)"
       ></iframe>
     </div>` : '';
 
