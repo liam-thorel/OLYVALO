@@ -5,7 +5,7 @@
 
 import { valorantApi } from './api.js';
 import { syncPlayer as henrikSyncPlayer, syncAllPlayers as henrikSyncAll, persistPlayerStats } from './henrik.js';
-import { rosterHTML, mapSectionHTML, stierHTML, globalNotesHTML, navMapsHTML, agentPageHTML, miniRosterHTML, agentsFiltersHTML, agentsGridHTML } from './render.js';
+import { rosterHTML, mapSectionHTML, stierHTML, globalNotesHTML, navMapsHTML, agentPageHTML, miniRosterHTML, agentsFiltersHTML, agentsGridHTML, compCompareHTML, compBuilderHTML } from './render.js';
 import { initTheme, initTilt, initParallax, initSearch, initKeyboard, updateFavCount } from './interactions.js';
 import { storage } from './storage.js';
 
@@ -23,6 +23,9 @@ export const state = {
   PLAYER_STATS: {},
   currentAgentFilter: 'all',
   currentPage: 'home',
+  compareSelections: [],
+  builderSlots: [null,null,null,null,null],
+  builderFocusSlot: 0,
 };
 
 // ─── LOAD JSON DATA ───────────────────────────────
@@ -181,6 +184,107 @@ window.OLYCITY = {
     }, 100);
   },
 
+  // ─── SHARE COMP ──────────────────────────────
+  shareComp(mapIdx, compIdx, btn) {
+    const hash = `comp-${mapIdx}-${compIdx}`;
+    const url = `${window.location.origin}${window.location.pathname}#${hash}`;
+    navigator.clipboard.writeText(url).then(() => {
+      if (btn) {
+        btn.textContent = '✓ Copié !';
+        btn.classList.add('copied');
+        setTimeout(() => { btn.innerHTML = '↗ Partager'; btn.classList.remove('copied'); }, 2000);
+      }
+    }).catch(() => {
+      prompt('Copie ce lien :', url);
+    });
+  },
+
+  // ─── COMPARE COMP ────────────────────────────
+  selectCompare(mapIdx, compIdx, btn) {
+    const existing = state.compareSelections.findIndex(s => s.mapIdx === mapIdx && s.compIdx === compIdx);
+    if (existing >= 0) {
+      state.compareSelections.splice(existing, 1);
+      if (btn) btn.classList.remove('selected');
+    } else {
+      if (state.compareSelections.length >= 2) {
+        // Reset old selection
+        document.querySelectorAll('.compare-btn.selected').forEach(b => b.classList.remove('selected'));
+        state.compareSelections = [];
+      }
+      state.compareSelections.push({ mapIdx, compIdx });
+      if (btn) btn.classList.add('selected');
+    }
+    if (state.compareSelections.length === 2) {
+      const [a, b] = state.compareSelections;
+      const compA = state.COMPS_DATA[a.mapIdx].comps[a.compIdx];
+      const compB = state.COMPS_DATA[b.mapIdx].comps[b.compIdx];
+      const wrap = document.getElementById('compare-panel-wrap');
+      const inner = document.getElementById('compare-panel-content');
+      if (wrap && inner) {
+        inner.innerHTML = compCompareHTML(compA, compB, a.mapIdx, a.compIdx, b.mapIdx, b.compIdx);
+        wrap.style.display = 'block';
+        wrap.scrollTo(0,0);
+      }
+    }
+  },
+
+  closeCompare() {
+    const wrap = document.getElementById('compare-panel-wrap');
+    if (wrap) wrap.style.display = 'none';
+    document.querySelectorAll('.compare-btn.selected').forEach(b => b.classList.remove('selected'));
+    state.compareSelections = [];
+  },
+
+  // ─── COMP BUILDER ────────────────────────────
+  _renderBuilder() {
+    const wrap = document.getElementById('comp-builder-wrap');
+    if (wrap) wrap.innerHTML = compBuilderHTML(state.builderSlots);
+  },
+
+  builderFocusSlot(i) {
+    state.builderFocusSlot = i;
+    document.querySelectorAll('.comp-builder-slot').forEach((el, idx) => {
+      el.style.borderColor = idx === i ? 'var(--red)' : '';
+    });
+  },
+
+  builderAddAgent(name) {
+    const slot = state.builderFocusSlot;
+    if (state.builderSlots[slot] === null || state.builderSlots[slot] !== name) {
+      state.builderSlots[slot] = name;
+      // Advance to next empty slot
+      const next = state.builderSlots.findIndex((s, i) => i > slot && s === null);
+      state.builderFocusSlot = next >= 0 ? next : slot;
+    }
+    window.OLYCITY._renderBuilder();
+    storage.setPlayerStats && localStorage.setItem('olycity-builder', JSON.stringify(state.builderSlots));
+  },
+
+  builderRemove(i) {
+    state.builderSlots[i] = null;
+    state.builderFocusSlot = i;
+    window.OLYCITY._renderBuilder();
+    localStorage.setItem('olycity-builder', JSON.stringify(state.builderSlots));
+  },
+
+  builderClear() {
+    state.builderSlots = [null,null,null,null,null];
+    state.builderFocusSlot = 0;
+    window.OLYCITY._renderBuilder();
+    localStorage.removeItem('olycity-builder');
+  },
+
+  builderSave() {
+    const filled = state.builderSlots.filter(Boolean);
+    if (filled.length < 2) { alert('Ajoute au moins 2 agents avant de sauvegarder.'); return; }
+    const name = prompt('Nom de cette comp :', 'Ma Comp Custom');
+    if (!name) return;
+    const saved = JSON.parse(localStorage.getItem('olycity-saved-comps') || '[]');
+    saved.push({ name, agents: filled, createdAt: Date.now() });
+    localStorage.setItem('olycity-saved-comps', JSON.stringify(saved));
+    alert('Comp sauvegardée !');
+  },
+
   filterAgents(role, btn) {
     // Update active button
     document.querySelectorAll('.agent-filter-btn').forEach(b => b.classList.remove('active'));
@@ -280,6 +384,12 @@ function renderAll() {
   // Agents page
   document.getElementById('agents-filters').innerHTML = agentsFiltersHTML();
   document.getElementById('agents-full-grid').innerHTML = agentsGridHTML();
+  // Comp builder
+  try {
+    const savedBuilder = localStorage.getItem('olycity-builder');
+    if (savedBuilder) state.builderSlots = JSON.parse(savedBuilder);
+  } catch(e) {}
+  window.OLYCITY._renderBuilder();
   // S-Tier
   document.getElementById('stier-row').innerHTML = stierHTML();
   // Global notes
@@ -346,6 +456,18 @@ async function boot() {
     }
   }
 
+  // URL hash — shared comp link
+  if (window.location.hash) {
+    const m = window.location.hash.replace('#','').match(/comp-(\d+)-(\d+)/);
+    if (m) {
+      const mi = +m[1], ci = +m[2];
+      window.OLYCITY.nav('maps');
+      const mapBtn = document.querySelector(`[data-map-idx="${mi}"]`);
+      window.OLYCITY.showMap(mi, mapBtn);
+      const tabBtns = document.querySelectorAll(`#map-${mi} .comp-tab`);
+      if (tabBtns[ci]) window.OLYCITY.switchComp(mi, ci, tabBtns[ci]);
+    }
+  }
   console.log('[OLYCITY] Ready ✓');
 }
 

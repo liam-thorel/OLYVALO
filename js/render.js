@@ -174,7 +174,17 @@ export function compHTML(comp, mapIdx, compIdx) {
           </div>
           ${agilityHTML(comp.agility)}
         </div>
-        <div class="comp-source">Source : ${comp.source}</div>
+        <div class="comp-card-footer">
+          <span class="comp-source">Source : ${comp.source}</span>
+          <div style="display:flex;gap:6px;flex-wrap:wrap;">
+            <button class="share-comp-btn" onclick="window.OLYCITY.shareComp(${mapIdx},${compIdx},this)" title="Copier le lien vers cette comp">
+              ↗ Partager
+            </button>
+            <button class="compare-btn" data-cid="${cid}" onclick="window.OLYCITY.selectCompare(${mapIdx},${compIdx},this)" title="Comparer cette comp">
+              ⇄ Comparer
+            </button>
+          </div>
+        </div>
       </div>
     </div>`;
 }
@@ -672,4 +682,123 @@ export function agentsGridHTML(filter = 'all', search = '') {
   }
 
   return filtered.map(name => agentCardHTML(name)).join('');
+}
+
+// ─── COMP COMPARISON ─────────────────────────────
+export function compCompareHTML(compA, compB, mapIdxA, compIdxA, mapIdxB, compIdxB) {
+  const metrics = [
+    { key:'antiRush', label:'Anti-Rush', icon:'⚡' },
+    { key:'postPlant', label:'Post-Plant', icon:'◆' },
+    { key:'retake',   label:'Retake',    icon:'↩' },
+    { key:'split',    label:'Split',     icon:'↔' },
+  ];
+  const colors = { 5:'var(--S)', 4:'var(--S)', 3:'var(--gold)', 2:'var(--D)', 1:'var(--D)' };
+
+  function colHTML(comp, mapIdx, compIdx) {
+    const agents = (comp.agents || []).map(name => {
+      const img = valorantApi.agentImg(name);
+      return `<div class="comp-compare-agent" onclick="window.OLYCITY.showAgentPage('${name}')">
+        ${img ? `<img src="${img}" alt="${name}">` : ''}
+        <span>${displayName(name)}</span>
+      </div>`;
+    }).join('');
+    const agility = metrics.map(m => {
+      const val = comp.agility?.[m.key] || 0;
+      const pct = (val/5)*100;
+      const color = colors[val] || 'var(--muted)';
+      return `<div class="comp-compare-metric">
+        <span style="width:14px">${m.icon}</span>
+        <span style="width:72px">${m.label}</span>
+        <div class="comp-compare-bar"><div class="comp-compare-fill" style="width:${pct}%;background:${color}"></div></div>
+        <span class="comp-compare-num">${val}/5</span>
+      </div>`;
+    }).join('');
+    const tierCls = comp.tier === 'S' ? 'tier-s' : 'tier-a';
+    return `<div class="comp-compare-col">
+      <div class="comp-compare-col-title">
+        <span class="comp-tier ${tierCls}" style="font-size:9px;padding:2px 8px">${comp.tierLabel}</span>
+        ${comp.label}
+      </div>
+      <div class="comp-compare-agents">${agents}</div>
+      <div class="comp-compare-agility">${agility}</div>
+    </div>`;
+  }
+
+  return `<div class="comp-compare-panel active" id="compare-panel">
+    <div class="comp-compare-header">
+      <span class="comp-compare-title">⇄ Comparaison</span>
+      <button class="comp-compare-close" onclick="window.OLYCITY.closeCompare()">✕</button>
+    </div>
+    <div class="comp-compare-grid">
+      ${colHTML(compA, mapIdxA, compIdxA)}
+      ${colHTML(compB, mapIdxB, compIdxB)}
+    </div>
+  </div>`;
+}
+
+// ─── COMP BUILDER ────────────────────────────────
+export function compBuilderHTML(slots = [null,null,null,null,null]) {
+  const roleLabels = { D:'Duelliste', I:'Initiateur', S:'Sentinelle', C:'Contrôleur' };
+  const slotsHTML = slots.map((agent, i) => {
+    if (agent) {
+      const img = valorantApi.agentImg(agent);
+      const role = state.ROLES[agent] || 'D';
+      return `<div class="comp-builder-slot filled">
+        ${img ? `<img src="${img}" alt="${agent}">` : ''}
+        <span class="comp-builder-slot-name">${displayName(agent)}</span>
+        <span class="comp-builder-slot-role">${roleLabels[role] || ''}</span>
+        <button class="comp-builder-slot-remove" onclick="window.OLYCITY.builderRemove(${i})">✕</button>
+      </div>`;
+    }
+    return `<div class="comp-builder-slot" onclick="window.OLYCITY.builderFocusSlot(${i})" id="builder-slot-${i}">
+      <span class="comp-builder-slot-empty">Slot ${i+1}<br>Cliquer pour<br>assigner</span>
+    </div>`;
+  }).join('');
+
+  // All agents sorted
+  const allAgents = Object.keys(valorantApi.agents).sort();
+  const usedSet = new Set(slots.filter(Boolean));
+  const agentsHTML = allAgents.map(name => {
+    const img = valorantApi.agentImg(name);
+    const used = usedSet.has(name) ? 'used' : '';
+    return `<div class="comp-builder-agent ${used}" data-agent="${name}" onclick="window.OLYCITY.builderAddAgent('${name}')">
+      ${img ? `<img src="${img}" alt="${name}">` : ''}
+      <span class="comp-builder-agent-name">${displayName(name)}</span>
+    </div>`;
+  }).join('');
+
+  // Agility preview
+  const agilityKeys = ['antiRush','postPlant','retake','split'];
+  const agilityLabels = ['Anti-Rush','Post-Plant','Retake','Split'];
+  const roleScores = {
+    D: { antiRush:2, postPlant:2, retake:3, split:4 },
+    I: { antiRush:4, postPlant:3, retake:3, split:3 },
+    S: { antiRush:4, postPlant:4, retake:2, split:2 },
+    C: { antiRush:3, postPlant:5, retake:3, split:3 },
+  };
+  const filled = slots.filter(Boolean);
+  const agilityHTML = agilityKeys.map((k, idx) => {
+    let score = 0;
+    filled.forEach(a => { const r = state.ROLES[a]||'D'; score += (roleScores[r]?.[k] || 3); });
+    const avg = filled.length > 0 ? Math.min(5, Math.round(score / filled.length)) : 0;
+    const color = avg >= 4 ? 'green' : avg <= 2 ? 'red' : '';
+    return `<div class="cba-stat">
+      <span class="cba-val ${color}">${avg > 0 ? avg+'/5' : '—'}</span>
+      <span class="cba-lbl">${agilityLabels[idx]}</span>
+    </div>`;
+  }).join('');
+
+  return `<div class="comp-builder-section">
+    <div class="comp-builder-title">Comp Builder</div>
+    <div class="comp-builder-slots">${slotsHTML}</div>
+    <div style="font-family:'Tomorrow',sans-serif;font-size:9px;letter-spacing:2px;text-transform:uppercase;color:var(--muted);margin-bottom:10px">
+      Choisir les agents :
+    </div>
+    <div class="comp-builder-agents">${agentsHTML}</div>
+    <div class="comp-builder-footer">
+      <button class="comp-builder-clear" onclick="window.OLYCITY.builderClear()">✕ Reset</button>
+      <button class="comp-builder-save" onclick="window.OLYCITY.builderSave()">★ Sauvegarder</button>
+      <div class="comp-builder-agility">${agilityHTML}</div>
+    </div>
+  </div>`;
 }
