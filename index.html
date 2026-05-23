@@ -158,6 +158,20 @@
     </div>
   </div>
 
+  <!-- VIDEO MODAL — lineup lightbox -->
+  <div id="video-modal" style="display:none;position:fixed;inset:0;z-index:500;background:rgba(6,8,12,.92);backdrop-filter:blur(12px);cursor:pointer" onclick="window.OLYCITY.closeVideoModal(event)">
+    <div style="position:absolute;top:16px;right:24px">
+      <button onclick="window.OLYCITY.closeVideoModal()" style="background:transparent;border:1px solid rgba(255,255,255,.2);color:#fff;cursor:pointer;padding:8px 16px;font-family:Tomorrow,sans-serif;font-size:11px;font-weight:600;letter-spacing:2px;text-transform:uppercase;transition:all .15s" onmouseover="this.style.borderColor='rgba(255,70,86,.6)'" onmouseout="this.style.borderColor='rgba(255,255,255,.2)'">✕ Fermer</button>
+    </div>
+    <div id="video-modal-inner" style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:min(90vw,1100px);cursor:default">
+      <div id="video-modal-title" style="font-family:Tomorrow,sans-serif;font-size:12px;font-weight:600;letter-spacing:2px;text-transform:uppercase;color:rgba(255,255,255,.5);margin-bottom:10px;display:flex;align-items:center;gap:10px"></div>
+      <div style="position:relative;width:100%;padding-top:56.25%;background:#0a0c10;border:1px solid rgba(255,255,255,.1)">
+        <div id="video-modal-frame" style="position:absolute;inset:0"></div>
+      </div>
+      <div id="video-modal-desc" style="font-size:13px;color:rgba(255,255,255,.5);margin-top:12px;line-height:1.6;padding:0 2px"></div>
+    </div>
+  </div>
+
   <!-- Comp compare panel (overlay dans page maps) -->
   <div id="compare-panel-wrap" style="display:none;position:fixed;inset:0;z-index:200;background:rgba(10,12,16,.85);backdrop-filter:blur(8px);overflow-y:auto;padding:60px 32px">
     <div id="compare-panel-content" style="max-width:1000px;margin:0 auto"></div>

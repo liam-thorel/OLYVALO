@@ -216,9 +216,15 @@ function lineupsHTML(legacyData, mapName) {
       const src = 'https://www.youtube.com/embed/' + l.videoId
         + '?start=' + (l.start || 0)
         + '&autoplay=0&rel=0&modestbranding=1&controls=1';
-      return `<div class="lineup-v2-card">
-        <div class="lineup-embed-wrap">
-          <iframe id="${embedId}" src="${src}" allow="autoplay; encrypted-media" loading="lazy" title="${l.name}"></iframe>
+      // Build data attrs for modal (escape single quotes)
+      const safeDesc = l.desc.replace(/'/g, '&#39;');
+      const safeName = l.name.replace(/'/g, '&#39;');
+      return `<div class="lineup-v2-card" style="cursor:pointer" onclick="window.OLYCITY.openVideoModal('${l.videoId}',${l.start||0},'${safeName}','${l.type}','${l.diff}','${safeDesc}')">
+        <div class="lineup-embed-wrap" style="pointer-events:none">
+          <iframe src="${src}" loading="lazy" title="${l.name}" style="position:absolute;inset:0;width:100%;height:100%;border:none;pointer-events:none"></iframe>
+          <div style="position:absolute;inset:0;background:rgba(10,12,16,.3);display:flex;align-items:center;justify-content:center;transition:background .2s">
+            <div style="width:48px;height:48px;background:var(--red);clip-path:polygon(20% 0%,100% 50%,20% 100%);padding-left:4px"></div>
+          </div>
         </div>
         <div class="lineup-v2-info">
           <div class="lineup-v2-header">

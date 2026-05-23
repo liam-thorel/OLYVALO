@@ -344,6 +344,35 @@ window.OLYCITY = {
     }
   },
 
+  openVideoModal(videoId, start, name, type, diff, desc) {
+    const modal = document.getElementById('video-modal');
+    const frame = document.getElementById('video-modal-frame');
+    const title = document.getElementById('video-modal-title');
+    const descEl = document.getElementById('video-modal-desc');
+    if (!modal || !frame) return;
+
+    const src = 'https://www.youtube.com/embed/' + videoId
+      + '?start=' + (start || 0)
+      + '&autoplay=1&mute=0&rel=0&modestbranding=1&controls=1';
+
+    title.innerHTML = `<span style="color:var(--text)">${name}</span>
+      <span class="lineup-type-badge ${type}" style="font-size:9px">${type}</span>
+      <span class="lineup-diff-badge" style="font-size:9px">${diff}</span>`;
+    frame.innerHTML = `<iframe src="${src}" allow="autoplay; encrypted-media" style="position:absolute;inset:0;width:100%;height:100%;border:none" title="${name}"></iframe>`;
+    descEl.textContent = desc;
+    modal.style.display = 'block';
+    document.body.style.overflow = 'hidden';
+  },
+
+  closeVideoModal(e) {
+    if (e && e.target !== e.currentTarget) return;
+    const modal = document.getElementById('video-modal');
+    const frame = document.getElementById('video-modal-frame');
+    if (modal) modal.style.display = 'none';
+    if (frame) frame.innerHTML = '';
+    document.body.style.overflow = '';
+  },
+
   switchMapTab(mapIdx, tab, btn) {
     const prefix = `maptab-${mapIdx}-`;
     document.querySelectorAll(`[id^="${prefix}"]`).forEach(el => el.classList.remove('active'));
@@ -567,6 +596,10 @@ async function boot() {
       if (tabBtns[ci]) window.OLYCITY.switchComp(mi, ci, tabBtns[ci]);
     }
   }
+  // Close video modal on Escape
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape') window.OLYCITY.closeVideoModal();
+  });
   console.log('[OLYCITY] Ready ✓');
 }
 
