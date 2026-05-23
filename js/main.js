@@ -105,6 +105,11 @@ window.OLYCITY = {
     // Show target page
     const pageEl = document.getElementById(`page-${page}`);
     if (pageEl) pageEl.classList.add('active');
+    // Lazy render builder
+    if (page === 'builder') {
+      const wrap = document.getElementById('comp-builder-wrap');
+      if (wrap && !wrap.hasChildNodes()) window.OLYCITY._renderBuilder();
+    }
     const navBtn = document.querySelector(`.page-nav-btn[data-page="${page}"]`);
     if (navBtn) navBtn.classList.add('active');
 
@@ -288,6 +293,35 @@ window.OLYCITY = {
     alert('Comp sauvegardée !');
   },
 
+  switchMapTab(mapIdx, tab, btn) {
+    const prefix = `maptab-${mapIdx}-`;
+    document.querySelectorAll(`[id^="${prefix}"]`).forEach(el => el.classList.remove('active'));
+    document.querySelectorAll(`#map-${mapIdx} .map-section-tab`).forEach(b => b.classList.remove('active'));
+    const panel = document.getElementById(`${prefix}${tab}`);
+    if (panel) panel.classList.add('active');
+    if (btn) btn.classList.add('active');
+    if (tab === 'comps') setTimeout(() => initTilt(), 50);
+  },
+
+  goToLineups(mapIdx, agentName) {
+    window.OLYCITY.closeAgentPage();
+    setTimeout(() => {
+      window.OLYCITY.nav('maps');
+      const mapBtn = document.querySelector(`[data-map-idx="${mapIdx}"]`);
+      window.OLYCITY.showMap(mapIdx, mapBtn);
+      // Switch to lineups tab
+      const lineupsTabBtn = document.querySelector(`#map-${mapIdx} .map-section-tab:nth-child(3)`);
+      window.OLYCITY.switchMapTab(mapIdx, 'lineups', lineupsTabBtn);
+      // Switch to the right agent
+      setTimeout(() => {
+        const agentTab = document.querySelector(`[data-map="${state.COMPS_DATA[mapIdx]?.map}"][data-agent="${agentName}"]`);
+        if (agentTab) {
+          window.OLYCITY.switchLineupAgent(state.COMPS_DATA[mapIdx]?.map, agentName, agentTab);
+        }
+      }, 100);
+    }, 50);
+  },
+
   switchLineupAgent(mapName, agent, btn) {
     // Switch active tab
     document.querySelectorAll(`.lineup-agent-tab[data-map="${mapName}"]`)
@@ -398,12 +432,11 @@ function renderAll() {
   // Agents page
   document.getElementById('agents-filters').innerHTML = agentsFiltersHTML();
   document.getElementById('agents-full-grid').innerHTML = agentsGridHTML();
-  // Comp builder
+  // Comp builder — lazy, loaded on first nav to builder page
   try {
     const savedBuilder = localStorage.getItem('olycity-builder');
     if (savedBuilder) state.builderSlots = JSON.parse(savedBuilder);
   } catch(e) {}
-  window.OLYCITY._renderBuilder();
   // S-Tier
   document.getElementById('stier-row').innerHTML = stierHTML();
   // Global notes

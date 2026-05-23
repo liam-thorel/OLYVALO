@@ -47,6 +47,9 @@
         <button class="page-nav-btn" data-page="agents" onclick="window.OLYCITY?.nav('agents')">
           <span class="page-nav-icon">◈</span> Agents
         </button>
+        <button class="page-nav-btn" data-page="builder" onclick="window.OLYCITY?.nav('builder')">
+          <span class="page-nav-icon">⊕</span> Builder
+        </button>
       </div>
 
       <!-- MAP SELECTOR (visible only on maps page) -->
@@ -139,9 +142,6 @@
     <main id="main" class="main"></main>
   </div>
 
-  <!-- COMP BUILDER (dans page maps) -->
-  <div id="comp-builder-wrap" style="max-width:1600px;margin:0 auto;padding:0 32px 48px"></div>
-
   <!-- ═══════════ PAGE ROSTER ═══════════ -->
   <div id="page-roster" class="spa-page">
     <div class="roster-page-inner">
@@ -182,6 +182,18 @@
       <div class="agents-full-grid" id="agents-full-grid">
         <!-- populated by main.js -->
       </div>
+    </div>
+  </div>
+
+  <!-- ═══════════ PAGE BUILDER ═══════════ -->
+  <div id="page-builder" class="spa-page">
+    <div class="builder-page-inner">
+      <div class="roster-header">
+        <span class="roster-eyebrow">Créer</span>
+        <h2 class="roster-title">Comp Builder</h2>
+        <span class="roster-sub">Compose ta propre comp · Analyse l'agility</span>
+      </div>
+      <div id="comp-builder-wrap"></div>
     </div>
   </div>
 

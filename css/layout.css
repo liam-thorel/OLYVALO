@@ -133,6 +133,28 @@
   color:var(--red); letter-spacing:.5px; text-align:right;
 }
 
+/* BUILDER PAGE */
+.builder-page-inner{
+  max-width:1600px; margin:0 auto; padding:48px 32px;
+}
+
+/* MAP SECTION TABS (Comps / Strats & Éco / Lineups) */
+.map-section-tabs{
+  display:flex; gap:0; margin-bottom:0;
+  border-bottom:1px solid var(--border);
+}
+.map-section-tab{
+  background:transparent; border:none; border-bottom:2px solid transparent;
+  color:var(--muted); cursor:pointer; padding:12px 22px;
+  font-family:'Tomorrow',sans-serif; font-size:11px; font-weight:600;
+  letter-spacing:2px; text-transform:uppercase; transition:all .15s;
+  margin-bottom:-1px;
+}
+.map-section-tab:hover{ color:var(--text); }
+.map-section-tab.active{ color:var(--red); border-bottom-color:var(--red); }
+.map-section-panel{ display:none; padding-top:24px; }
+.map-section-panel.active{ display:block; }
+
 /* ROSTER PAGE */
 .roster-page-inner{
   max-width:1600px; margin:0 auto; padding:48px 32px;

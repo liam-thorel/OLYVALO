@@ -333,6 +333,11 @@ export function mapSectionHTML(data, idx) {
     `<div class="note-row"><span class="note-marker"></span>${n}</div>`
   ).join('');
 
+  const hasLineups = !!(state.LINEUPS?.[data.map] && Object.keys(state.LINEUPS[data.map]).length > 0);
+  const lineupsTabLabel = hasLineups
+    ? `📹 Lineups <span style="font-size:9px;opacity:.7">(${Object.keys(state.LINEUPS[data.map]).join(', ')})</span>`
+    : '📹 Lineups';
+
   return `
     <section class="map-section ${idx === 0 ? 'active' : ''}" id="map-${idx}">
       <div class="map-hero">
@@ -354,17 +359,39 @@ export function mapSectionHTML(data, idx) {
         </div>
       </div>
 
-      <div class="comp-tabs">${tabs}</div>
-      ${panels}
-
-      ${strategyHTML(data.strategies)}
-      ${ecoHTML(data.eco)}
-      ${lineupsHTML(data.lineups, data.map)}
-
-      <div class="notes-card">
-        <div class="notes-card-title">Notes Meta — ${data.map}</div>
-        <div class="notes-list">${notes}</div>
+      <!-- Section tabs: Comps / Strats & Éco / Lineups -->
+      <div class="map-section-tabs">
+        <button class="map-section-tab active" onclick="window.OLYCITY.switchMapTab('${idx}','comps',this)">◈ Comps</button>
+        <button class="map-section-tab" onclick="window.OLYCITY.switchMapTab('${idx}','strats',this)">◆ Strats & Éco</button>
+        ${hasLineups ? `<button class="map-section-tab" onclick="window.OLYCITY.switchMapTab('${idx}','lineups',this)">📹 Lineups</button>` : ''}
+        <button class="map-section-tab" onclick="window.OLYCITY.switchMapTab('${idx}','notes',this)">★ Notes</button>
       </div>
+
+      <!-- COMPS TAB -->
+      <div class="map-section-panel active" id="maptab-${idx}-comps">
+        <div class="comp-tabs">${tabs}</div>
+        ${panels}
+      </div>
+
+      <!-- STRATS & ÉCO TAB -->
+      <div class="map-section-panel" id="maptab-${idx}-strats">
+        ${strategyHTML(data.strategies)}
+        ${ecoHTML(data.eco)}
+      </div>
+
+      <!-- LINEUPS TAB -->
+      ${hasLineups ? `<div class="map-section-panel" id="maptab-${idx}-lineups">
+        ${lineupsHTML(data.lineups, data.map)}
+      </div>` : ''}
+
+      <!-- NOTES TAB -->
+      <div class="map-section-panel" id="maptab-${idx}-notes">
+        <div class="notes-card" style="margin-top:0;border-top:none">
+          <div class="notes-card-title">Notes Meta — ${data.map}</div>
+          <div class="notes-list">${notes}</div>
+        </div>
+      </div>
+
     </section>`;
 }
 
@@ -651,6 +678,16 @@ export function agentPageHTML(name) {
             <div class="aqs"><div class="aqs-val">${avgWR}${avgWR!=='—'?'%':''}</div><div class="aqs-lbl">WR moyen</div></div>
             <div class="aqs"><div class="aqs-val">${players.length}</div><div class="aqs-lbl">Joueur${players.length>1?'s':''}</div></div>
           </div>
+          ${(()=>{
+            const lmaps=Object.entries(state.LINEUPS||{}).filter(([m,ag])=>ag[name]).map(([m])=>m);
+            if(!lmaps.length) return '';
+            return `<div style='display:flex;gap:8px;flex-wrap:wrap;margin-top:16px'>`
+              +lmaps.map(m=>{
+                const mi=state.COMPS_DATA.findIndex(d=>d.map===m);
+                return `<button style='background:transparent;border:1px solid rgba(63,207,207,.3);color:var(--S);cursor:pointer;padding:5px 12px;font-family:Tomorrow,sans-serif;font-size:9px;font-weight:600;letter-spacing:1.5px;text-transform:uppercase;transition:all .15s' onclick='window.OLYCITY.goToLineups(${mi},\"${name}\")'>📹 Lineups ${m}</button>`;
+              }).join('')
+              +'</div>';
+          })()}
         </div>
         <div class="agent-portrait-wrap">
           <div class="agent-portrait-glow"></div>
