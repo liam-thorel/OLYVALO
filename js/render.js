@@ -258,7 +258,7 @@ export function mapSectionHTML(data, idx) {
 // ─── ROSTER ──────────────────────────────────────
 export function rosterHTML() {
   return state.ROSTER.map((p) => {
-    const mains = p.mains.map(name => {
+    const mains = (p.mains || []).filter(Boolean).map(name => {
       const img = valorantApi.agentImg(name);
       const display = displayName(name);
       const imgEl = img

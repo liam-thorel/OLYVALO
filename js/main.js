@@ -45,13 +45,15 @@ async function loadData() {
 
   // Restore mains from last sync if available
   state.ROSTER.forEach(p => {
+    if (!Array.isArray(p.mains)) p.mains = [];
     const ps = state.PLAYER_STATS[p.name];
-    if (ps?.topAgents?.length >= 1) {
-      const realMains = ps.topAgents.slice(0, 3);
-      while (realMains.length < 3 && p.mains[realMains.length]) {
-        realMains.push(p.mains[realMains.length]);
+    if (Array.isArray(ps?.topAgents) && ps.topAgents.length >= 1) {
+      const realMains = ps.topAgents.filter(Boolean).slice(0, 3);
+      const originalMains = Array.isArray(p.mains) ? p.mains : [];
+      while (realMains.length < 3 && originalMains[realMains.length]) {
+        realMains.push(originalMains[realMains.length]);
       }
-      p.mains = realMains;
+      if (realMains.length > 0) p.mains = realMains;
     }
   });
 }
@@ -147,13 +149,13 @@ window.OLYCITY = {
       persistPlayerStats(playerName, stats);
 
       // Update mains from real data
-      if (stats.topAgents?.length >= 1) {
-        const realMains = stats.topAgents.slice(0, 3);
-        const originalMains = Array.isArray(player.mains) ? player.mains : [];
+      if (Array.isArray(stats.topAgents) && stats.topAgents.length >= 1) {
+        const realMains = stats.topAgents.filter(Boolean).slice(0, 3);
+        const originalMains = Array.isArray(player.mains) ? [...player.mains] : [];
         while (realMains.length < 3 && originalMains[realMains.length]) {
           realMains.push(originalMains[realMains.length]);
         }
-        player.mains = realMains;
+        if (realMains.length > 0) player.mains = realMains;
       }
 
       document.getElementById('roster-grid').innerHTML = rosterHTML();
@@ -183,13 +185,13 @@ window.OLYCITY = {
         state.PLAYER_STATS[playerName] = stats;
         persistPlayerStats(playerName, stats);
         const player = state.ROSTER.find(p => p.name === playerName);
-        if (player && stats.topAgents?.length >= 1) {
-          const realMains = stats.topAgents.slice(0, 3);
-          const originalMains = Array.isArray(player.mains) ? player.mains : [];
+        if (player && Array.isArray(stats.topAgents) && stats.topAgents.length >= 1) {
+          const realMains = stats.topAgents.filter(Boolean).slice(0, 3);
+          const originalMains = Array.isArray(player.mains) ? [...player.mains] : [];
           while (realMains.length < 3 && originalMains[realMains.length]) {
             realMains.push(originalMains[realMains.length]);
           }
-          player.mains = realMains;
+          if (realMains.length > 0) player.mains = realMains;
         }
         document.getElementById('roster-grid').innerHTML = rosterHTML();
       },
@@ -233,6 +235,22 @@ async function boot() {
   initTheme();
   initParallax();
   initKeyboard(() => window.OLYCITY.closeAgentPage());
+
+  // Clear stale localStorage from old versions (different data format)
+  try {
+    const raw = localStorage.getItem('olycity-player-stats');
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      const firstVal = Object.values(parsed)[0];
+      // If topAgents is not an array of strings, nuke it
+      if (firstVal && !Array.isArray(firstVal.topAgents)) {
+        localStorage.removeItem('olycity-player-stats');
+        console.log('[OLYCITY] Cleared stale player stats from localStorage');
+      }
+    }
+  } catch(e) {
+    localStorage.removeItem('olycity-player-stats');
+  }
 
   // Loading indicator
   document.getElementById('main').innerHTML = `<div class="loading">Chargement des données…</div>`;
