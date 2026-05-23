@@ -5,7 +5,7 @@
 
 import { valorantApi } from './api.js';
 import { syncPlayer as henrikSyncPlayer, syncAllPlayers as henrikSyncAll, persistPlayerStats } from './henrik.js';
-import { rosterHTML, mapSectionHTML, stierHTML, globalNotesHTML, navMapsHTML, agentPageHTML, miniRosterHTML } from './render.js';
+import { rosterHTML, mapSectionHTML, stierHTML, globalNotesHTML, navMapsHTML, agentPageHTML, miniRosterHTML, agentsFiltersHTML, agentsGridHTML } from './render.js';
 import { initTheme, initTilt, initParallax, initSearch, initKeyboard, updateFavCount } from './interactions.js';
 import { storage } from './storage.js';
 
@@ -21,6 +21,8 @@ export const state = {
   AGENT_FR: {},
   FAVS: [],
   PLAYER_STATS: {},
+  currentAgentFilter: 'all',
+  currentPage: 'home',
 };
 
 // ─── LOAD JSON DATA ───────────────────────────────
@@ -179,6 +181,16 @@ window.OLYCITY = {
     }, 100);
   },
 
+  filterAgents(role, btn) {
+    // Update active button
+    document.querySelectorAll('.agent-filter-btn').forEach(b => b.classList.remove('active'));
+    if (btn) btn.classList.add('active');
+    state.currentAgentFilter = role;
+    const search = document.getElementById('agents-search-input')?.value || '';
+    document.getElementById('agents-full-grid').innerHTML = agentsGridHTML(role, search);
+    setTimeout(() => initTilt(), 50);
+  },
+
   async syncPlayer(playerName) {
     const player = state.ROSTER.find(p => p.name === playerName);
     if (!player) return;
@@ -265,6 +277,9 @@ function renderAll() {
   // Roster (full + mini)
   document.getElementById('roster-grid').innerHTML = rosterHTML();
   document.getElementById('mini-roster').innerHTML = miniRosterHTML();
+  // Agents page
+  document.getElementById('agents-filters').innerHTML = agentsFiltersHTML();
+  document.getElementById('agents-full-grid').innerHTML = agentsGridHTML();
   // S-Tier
   document.getElementById('stier-row').innerHTML = stierHTML();
   // Global notes
@@ -306,6 +321,16 @@ async function boot() {
 
   renderAll();
   initSearch((name) => window.OLYCITY.showAgentPage(name));
+
+  // Agents page search
+  const agentsInput = document.getElementById('agents-search-input');
+  if (agentsInput) {
+    agentsInput.addEventListener('input', (e) => {
+      const role = state.currentAgentFilter || 'all';
+      document.getElementById('agents-full-grid').innerHTML = agentsGridHTML(role, e.target.value);
+      setTimeout(() => initTilt(), 50);
+    });
+  }
   setTimeout(() => initTilt(), 200);
 
   // Restore last fav comp

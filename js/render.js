@@ -141,7 +141,7 @@ export function compHTML(comp, mapIdx, compIdx) {
 
   const vodsHTML = comp.vods?.length
     ? `<div class="comp-vods">${comp.vods.map(v =>
-        `<a href="${v.url}" target="_blank" rel="noopener" class="vod-link">▶ ${v.label}</a>`
+        `<a href="${v.url}" target="_blank" rel="noopener" class="vod-link" title="Voir les stats pick/winrate des agents en pro sur VLR.gg">↗ ${v.label}</a>`
       ).join('')}</div>`
     : '';
 
@@ -631,4 +631,40 @@ export function miniRosterHTML() {
       ${rankEl}
     </div>`;
   }).join('');
+}
+
+// ─── AGENTS PAGE ──────────────────────────────────
+export function agentsFiltersHTML() {
+  const roles = [
+    { key: 'all', label: 'Tous' },
+    { key: 'D',   label: 'Duelliste' },
+    { key: 'I',   label: 'Initiateur' },
+    { key: 'S',   label: 'Sentinelle' },
+    { key: 'C',   label: 'Contrôleur' },
+  ];
+  return roles.map(r =>
+    `<button class="agent-filter-btn ${r.key !== 'all' ? r.key : ''} ${r.key === 'all' ? 'active' : ''}"
+      data-role="${r.key}"
+      onclick="window.OLYCITY.filterAgents('${r.key}', this)">
+      ${r.label}
+    </button>`
+  ).join('');
+}
+
+export function agentsGridHTML(filter = 'all', search = '') {
+  const allAgents = Object.keys(valorantApi.agents).sort();
+  const q = search.toLowerCase().trim();
+
+  const filtered = allAgents.filter(name => {
+    const role = state.ROLES[name] || 'D';
+    const matchRole = filter === 'all' || role === filter;
+    const matchSearch = !q || name.toLowerCase().includes(q);
+    return matchRole && matchSearch;
+  });
+
+  if (filtered.length === 0) {
+    return `<div class="agents-empty">Aucun agent trouvé</div>`;
+  }
+
+  return filtered.map(name => agentCardHTML(name)).join('');
 }

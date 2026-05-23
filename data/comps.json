@@ -2,54 +2,127 @@
   {
     "map": "Fracture",
     "region": "Two-site · Double spawn défenseur",
-    "tags": ["Breach obligatoire", "Raze domine", "Exécutes coordonnés"],
-    "stats": { "difficulty": "4.2/5", "sides": "A-favored" },
+    "tags": [
+      "Breach obligatoire",
+      "Raze domine",
+      "Exécutes coordonnés"
+    ],
+    "stats": {
+      "difficulty": "4.2/5",
+      "sides": "A-favored"
+    },
     "strategies": [
       {
         "name": "Default A",
         "type": "default",
         "icon": "▶",
         "desc": "Breach stun Arcade + Raze satchel sur A drop simultanément. Fade Haunt couvre le spawn défenseur pendant que Miks smoke le connector central.",
-        "steps": ["Breach stun Arcade dès 20s", "Raze push A drop sous le stun", "Miks smoke CT + connector", "Fade Haunt spam sur spawn", "Cypher trip sur B pour info"]
+        "steps": [
+          "Breach stun Arcade dès 20s",
+          "Raze push A drop sous le stun",
+          "Miks smoke CT + connector",
+          "Fade Haunt spam sur spawn",
+          "Cypher trip sur B pour info"
+        ]
       },
       {
         "name": "Fast B Exec",
         "type": "fast",
         "icon": "⚡",
         "desc": "Rush B en 15 secondes avec double flash Breach + Raze satchel en premier. L'objectif est d'arriver sur site avant que la défense ne puisse réagir.",
-        "steps": ["Breach Flash B main à 20s", "Raze satchel dans la flash", "Fade Seize sur le premier défenseur", "Miks smoke back site", "Plant immédiat, pas de cleanup"]
+        "steps": [
+          "Breach Flash B main à 20s",
+          "Raze satchel dans la flash",
+          "Fade Seize sur le premier défenseur",
+          "Miks smoke back site",
+          "Plant immédiat, pas de cleanup"
+        ]
       },
       {
         "name": "Mid Control",
         "type": "mid",
         "icon": "◆",
         "desc": "Contrôler le zipline central coupe les rotations entre A et B. Cypher cam sur le zipline donne l'info permanente sur les rotations défensives.",
-        "steps": ["Cypher cam zipline dès le début", "Miks smoke les deux côtés du mid", "Breach stun mid si défense agressive", "Split A+B une fois mid pris", "Info Cypher décide le site final"]
+        "steps": [
+          "Cypher cam zipline dès le début",
+          "Miks smoke les deux côtés du mid",
+          "Breach stun mid si défense agressive",
+          "Split A+B une fois mid pris",
+          "Info Cypher décide le site final"
+        ]
       }
     ],
     "eco": {
-      "pistol": { "tip": "Breach Flash gratuite est puissante au pistolet. Rush A avec double flash, Cypher trap B pour info.", "agents": ["Breach", "Cypher"] },
-      "eco": { "tip": "Jouez pour les picks et économisez. Cypher trips sur les deux sites, retraite dès le premier contact.", "buy": "Shields + Ghost si possible" },
-      "force": { "tip": "Spectre sur Raze et Breach. Rush B rapide, pas de setup, juste de la vitesse.", "buy": "Spectre + Flash Breach" },
-      "full": { "tip": "Setup standard. Breach garde ses stuns pour l'exécute. Ne gaspillez pas les flashes en défense.", "buy": "Vandal/Phantom + Full util" }
+      "pistol": {
+        "tip": "Breach Flash gratuite est puissante au pistolet. Rush A avec double flash, Cypher trap B pour info.",
+        "agents": [
+          "Breach",
+          "Cypher"
+        ]
+      },
+      "eco": {
+        "tip": "Jouez pour les picks et économisez. Cypher trips sur les deux sites, retraite dès le premier contact.",
+        "buy": "Shields + Ghost si possible"
+      },
+      "force": {
+        "tip": "Spectre sur Raze et Breach. Rush B rapide, pas de setup, juste de la vitesse.",
+        "buy": "Spectre + Flash Breach"
+      },
+      "full": {
+        "tip": "Setup standard. Breach garde ses stuns pour l'exécute. Ne gaspillez pas les flashes en défense.",
+        "buy": "Vandal/Phantom + Full util"
+      }
     },
     "comps": [
       {
-        "label": "Meta principale", "tier": "S", "tierLabel": "S-TIER", "winrate": 54.8,
+        "label": "Meta principale",
+        "tier": "S",
+        "tierLabel": "S-TIER",
+        "winrate": 54.8,
         "updatedAt": "Mai 2026",
-        "agents": ["Raze", "Breach", "Fade", "Miks", "Cypher"],
+        "agents": [
+          "Raze",
+          "Breach",
+          "Fade",
+          "Miks",
+          "Cypher"
+        ],
         "source": "VLR.gg · High Elo",
         "tip": "Coordonnez les <strong>Fault Line de Breach</strong> avec les Satchels de Raze pour rentrer simultanément des deux côtés. Miks smoke le spawn défenseur central pour couper les rotations.",
-        "agility": { "antiRush": 3, "postPlant": 4, "retake": 3, "split": 5 },
-        "vods": [{ "label": "VLR · Exemple pro", "url": "https://www.vlr.gg/matches/results" }]
+        "agility": {
+          "antiRush": 3,
+          "postPlant": 4,
+          "retake": 3,
+          "split": 5
+        },
+        "vods": [
+          {
+            "label": "Stats pro · Fracture",
+            "url": "https://www.vlr.gg/stats?type=agents&map=fracture&act="
+          }
+        ]
       },
       {
-        "label": "Double initiateur", "tier": "A", "tierLabel": "A-TIER", "winrate": 52.1,
+        "label": "Double initiateur",
+        "tier": "A",
+        "tierLabel": "A-TIER",
+        "winrate": 52.1,
         "updatedAt": "Avril 2026",
-        "agents": ["Raze", "Breach", "Skye", "Viper", "Killjoy"],
+        "agents": [
+          "Raze",
+          "Breach",
+          "Skye",
+          "Viper",
+          "Killjoy"
+        ],
         "source": "Reddit r/ValorantCompetitive",
         "tip": "<strong>Skye + Breach</strong> = inarrêtable sur Fracture. Skye flash-clear, Breach stun le site, Raze entre. Killjoy anchor seul pendant que les 4 autres exécutent.",
-        "agility": { "antiRush": 2, "postPlant": 3, "retake": 4, "split": 4 },
+        "agility": {
+          "antiRush": 2,
+          "postPlant": 3,
+          "retake": 4,
+          "split": 4
+        },
         "vods": []
       }
     ],
@@ -64,54 +137,127 @@
   {
     "map": "Haven",
     "region": "Three-site · Rotation intensive",
-    "tags": ["3 sites", "Rotation vitale", "Double duelist viable"],
-    "stats": { "difficulty": "3.8/5", "sides": "Balanced" },
+    "tags": [
+      "3 sites",
+      "Rotation vitale",
+      "Double duelist viable"
+    ],
+    "stats": {
+      "difficulty": "3.8/5",
+      "sides": "Balanced"
+    },
     "strategies": [
       {
         "name": "Default A Split",
         "type": "default",
         "icon": "▶",
         "desc": "Split A Long + A Short avec Sova recon dart pour savoir si A Long est tenu. Omen teleport surprise sur A Short si A Long est heavy.",
-        "steps": ["Sova dart A Long dès spawn", "Si Long vide : push direct", "Si Long tenu : Omen teleport A Short", "Cypher cam surveille B pendant l'action", "Breach stun A final si résistance"]
+        "steps": [
+          "Sova dart A Long dès spawn",
+          "Si Long vide : push direct",
+          "Si Long tenu : Omen teleport A Short",
+          "Cypher cam surveille B pendant l'action",
+          "Breach stun A final si résistance"
+        ]
       },
       {
         "name": "Fast C Exec",
         "type": "fast",
         "icon": "⚡",
         "desc": "C est souvent le site le moins défendu. Rush C Garage en 12 secondes avec smoke + flash. La surprise est l'arme principale.",
-        "steps": ["Fake A Long avec bruit de pas", "Pivot rapide vers C à 20s", "Omen smoke C Long + CT", "Jett dash en premier", "Plant rapide long CT"]
+        "steps": [
+          "Fake A Long avec bruit de pas",
+          "Pivot rapide vers C à 20s",
+          "Omen smoke C Long + CT",
+          "Jett dash en premier",
+          "Plant rapide long CT"
+        ]
       },
       {
         "name": "Mid Control",
         "type": "mid",
         "icon": "◆",
         "desc": "Mid control sur Haven ouvre A Short ET C depuis le même angle. Omen blind dans Mid Courtyard, Cypher cam pour bloquer les rotations B.",
-        "steps": ["Cypher cam Mid dès le début", "Omen smoke Mid à travers les murs", "Sova dart B pour distraire", "Push Mid Courtyard à 3", "Split vers A ou C selon info"]
+        "steps": [
+          "Cypher cam Mid dès le début",
+          "Omen smoke Mid à travers les murs",
+          "Sova dart B pour distraire",
+          "Push Mid Courtyard à 3",
+          "Split vers A ou C selon info"
+        ]
       }
     ],
     "eco": {
-      "pistol": { "tip": "3 sites = difficile en pistolet. Focalisez-vous sur B ou C, pas de split. Omen smoke gratuit est crucial.", "agents": ["Omen", "Cypher"] },
-      "eco": { "tip": "Allez à 5 sur B, smoke Omen, rush. Sur 3 sites un rush coordonné peut surprendre même avec eco.", "buy": "Shields + Ghost" },
-      "force": { "tip": "Spectre sur les entry fraggers. Jouez B ou C, pas A Long qui est dur à prendre sans util.", "buy": "Spectre + Util partielle" },
-      "full": { "tip": "Assignez un rôle par site en défense. Cypher cam B, Omen smokes A, Sova dart C. Communication essentielle.", "buy": "Vandal/Phantom + Full util" }
+      "pistol": {
+        "tip": "3 sites = difficile en pistolet. Focalisez-vous sur B ou C, pas de split. Omen smoke gratuit est crucial.",
+        "agents": [
+          "Omen",
+          "Cypher"
+        ]
+      },
+      "eco": {
+        "tip": "Allez à 5 sur B, smoke Omen, rush. Sur 3 sites un rush coordonné peut surprendre même avec eco.",
+        "buy": "Shields + Ghost"
+      },
+      "force": {
+        "tip": "Spectre sur les entry fraggers. Jouez B ou C, pas A Long qui est dur à prendre sans util.",
+        "buy": "Spectre + Util partielle"
+      },
+      "full": {
+        "tip": "Assignez un rôle par site en défense. Cypher cam B, Omen smokes A, Sova dart C. Communication essentielle.",
+        "buy": "Vandal/Phantom + Full util"
+      }
     },
     "comps": [
       {
-        "label": "Meta principale", "tier": "S", "tierLabel": "S-TIER", "winrate": 55.3,
+        "label": "Meta principale",
+        "tier": "S",
+        "tierLabel": "S-TIER",
+        "winrate": 55.3,
         "updatedAt": "Mai 2026",
-        "agents": ["Jett", "Sova", "Breach", "Omen", "Cypher"],
+        "agents": [
+          "Jett",
+          "Sova",
+          "Breach",
+          "Omen",
+          "Cypher"
+        ],
         "source": "VLR.gg · Hotspawn",
         "tip": "Omen teleport sur les angles imprévus entre les 3 sites. <strong>Cypher cam sur B</strong> peut surveiller A et C en même temps. En five stack, appelez les rotations à voix haute — Haven se gagne à la communication.",
-        "agility": { "antiRush": 4, "postPlant": 3, "retake": 4, "split": 3 },
-        "vods": [{ "label": "VLR · Exemple pro", "url": "https://www.vlr.gg/matches/results" }]
+        "agility": {
+          "antiRush": 4,
+          "postPlant": 3,
+          "retake": 4,
+          "split": 3
+        },
+        "vods": [
+          {
+            "label": "Stats pro · Haven",
+            "url": "https://www.vlr.gg/stats?type=agents&map=haven&act="
+          }
+        ]
       },
       {
-        "label": "Double duelist agressif", "tier": "A", "tierLabel": "A-TIER", "winrate": 51.7,
+        "label": "Double duelist agressif",
+        "tier": "A",
+        "tierLabel": "A-TIER",
+        "winrate": 51.7,
         "updatedAt": "Avril 2026",
-        "agents": ["Neon", "Phoenix", "Sova", "Omen", "Killjoy"],
+        "agents": [
+          "Neon",
+          "Phoenix",
+          "Sova",
+          "Omen",
+          "Killjoy"
+        ],
         "source": "Esports Insider 2026",
         "tip": "<strong>Neon + Phoenix</strong> créent une pression simultanée sur deux sites. Envoyez Neon sur A et Phoenix sur C avec Sova recon pour split la défense.",
-        "agility": { "antiRush": 3, "postPlant": 2, "retake": 3, "split": 5 },
+        "agility": {
+          "antiRush": 3,
+          "postPlant": 2,
+          "retake": 3,
+          "split": 5
+        },
         "vods": []
       }
     ],
@@ -126,54 +272,127 @@
   {
     "map": "Breeze",
     "region": "Open map · Longue portée",
-    "tags": ["Viper indispensable", "Operator dominant", "Longs angles"],
-    "stats": { "difficulty": "4.5/5", "sides": "B-favored" },
+    "tags": [
+      "Viper indispensable",
+      "Operator dominant",
+      "Longs angles"
+    ],
+    "stats": {
+      "difficulty": "4.5/5",
+      "sides": "B-favored"
+    },
     "strategies": [
       {
         "name": "Default B Wall",
         "type": "default",
         "icon": "▶",
         "desc": "Viper wall coupe B Main en deux. 3 joueurs B, 2 sur A pour info. Le wall force la défense à jouer dans le gaz ou à flanker — Cypher cam détecte le flank.",
-        "steps": ["Viper wall B Main immédiatement", "KAY/O knife B pour supprimer", "Jett op' A Hall pour pressure", "Cypher cam cave B pour info rotation", "Execute B quand wall est en place"]
+        "steps": [
+          "Viper wall B Main immédiatement",
+          "KAY/O knife B pour supprimer",
+          "Jett op' A Hall pour pressure",
+          "Cypher cam cave B pour info rotation",
+          "Execute B quand wall est en place"
+        ]
       },
       {
         "name": "Fast A Exec",
         "type": "fast",
         "icon": "⚡",
         "desc": "A est souvent sous-défendu car B est la priorité sur Breeze. KAY/O ZERO/POINT supprime les abilities défensives, Jett dash en premier.",
-        "steps": ["KAY/O knife A dès 20s", "Viper smoke A Hall court", "Jett op' ou dash en premier sous knife", "Cypher trip post-plant", "Plant default, pas de corners bizarres"]
+        "steps": [
+          "KAY/O knife A dès 20s",
+          "Viper smoke A Hall court",
+          "Jett op' ou dash en premier sous knife",
+          "Cypher trip post-plant",
+          "Plant default, pas de corners bizarres"
+        ]
       },
       {
         "name": "Mid Control",
         "type": "mid",
         "icon": "◆",
         "desc": "Mid control sur Breeze est risqué mais ouvre les deux sites. KAY/O et Jett peuvent prendre mid rapidement. Viper wall coupe le retour défenseur.",
-        "steps": ["KAY/O flash mid hall", "Jett dash pour prendre l'angle", "Viper wall coupe defender side", "Split A ou B selon position défense", "Sova dart pour confirmer positions"]
+        "steps": [
+          "KAY/O flash mid hall",
+          "Jett dash pour prendre l'angle",
+          "Viper wall coupe defender side",
+          "Split A ou B selon position défense",
+          "Sova dart pour confirmer positions"
+        ]
       }
     ],
     "eco": {
-      "pistol": { "tip": "Breeze est difficile au pistolet à cause des distances. Jouez regroupés B avec Viper wall — pas de duels longue portée.", "agents": ["Viper", "Cypher"] },
-      "eco": { "tip": "Restez ensemble, jouez B short, pas de A Hall en eco. Les longues sightlines tuent les eco rounds.", "buy": "Shields uniquement" },
-      "force": { "tip": "Spectre marche bien en B court. Viper wall pour masquer l'approche. Évitez A Hall absolument.", "buy": "Spectre + Viper Wall" },
-      "full": { "tip": "Jett ou Chamber au Vandal/Op sur A. Viper wall B. KAY/O garde ses knives pour l'execute. Sova lineup B.", "buy": "Vandal + Op + Full util" }
+      "pistol": {
+        "tip": "Breeze est difficile au pistolet à cause des distances. Jouez regroupés B avec Viper wall — pas de duels longue portée.",
+        "agents": [
+          "Viper",
+          "Cypher"
+        ]
+      },
+      "eco": {
+        "tip": "Restez ensemble, jouez B short, pas de A Hall en eco. Les longues sightlines tuent les eco rounds.",
+        "buy": "Shields uniquement"
+      },
+      "force": {
+        "tip": "Spectre marche bien en B court. Viper wall pour masquer l'approche. Évitez A Hall absolument.",
+        "buy": "Spectre + Viper Wall"
+      },
+      "full": {
+        "tip": "Jett ou Chamber au Vandal/Op sur A. Viper wall B. KAY/O garde ses knives pour l'execute. Sova lineup B.",
+        "buy": "Vandal + Op + Full util"
+      }
     },
     "comps": [
       {
-        "label": "Meta principale", "tier": "S", "tierLabel": "S-TIER", "winrate": 56.2,
+        "label": "Meta principale",
+        "tier": "S",
+        "tierLabel": "S-TIER",
+        "winrate": 56.2,
         "updatedAt": "Mai 2026",
-        "agents": ["Jett", "Sova", "KAY/O", "Viper", "Cypher"],
+        "agents": [
+          "Jett",
+          "Sova",
+          "KAY/O",
+          "Viper",
+          "Cypher"
+        ],
         "source": "VLR.gg · Rework 12.00",
         "tip": "<strong>Viper wall coupe B Main</strong> en deux — un joueur doit main Viper. Jett Operator sur A Hall. KAY/O ZERO/POINT supprime les ultis défensifs sur les exécutes.",
-        "agility": { "antiRush": 3, "postPlant": 5, "retake": 2, "split": 3 },
-        "vods": [{ "label": "VLR · Exemple pro", "url": "https://www.vlr.gg/matches/results" }]
+        "agility": {
+          "antiRush": 3,
+          "postPlant": 5,
+          "retake": 2,
+          "split": 3
+        },
+        "vods": [
+          {
+            "label": "Stats pro · Breeze",
+            "url": "https://www.vlr.gg/stats?type=agents&map=breeze&act="
+          }
+        ]
       },
       {
-        "label": "Longue portée", "tier": "A", "tierLabel": "A-TIER", "winrate": 52.8,
+        "label": "Longue portée",
+        "tier": "A",
+        "tierLabel": "A-TIER",
+        "winrate": 52.8,
         "updatedAt": "Mars 2026",
-        "agents": ["Chamber", "Jett", "Sova", "Viper", "Fade"],
+        "agents": [
+          "Chamber",
+          "Jett",
+          "Sova",
+          "Viper",
+          "Fade"
+        ],
         "source": "gamer.org · dak.gg meta",
         "tip": "<strong>Chamber + Jett</strong> = domination totale à l'Operator. Fade remplace Cypher pour plus de recon actif. Évitez les agents sans mobilité.",
-        "agility": { "antiRush": 2, "postPlant": 4, "retake": 2, "split": 2 },
+        "agility": {
+          "antiRush": 2,
+          "postPlant": 4,
+          "retake": 2,
+          "split": 2
+        },
         "vods": []
       }
     ],
@@ -188,54 +407,127 @@
   {
     "map": "Lotus",
     "region": "Three-site · Rotations complexes",
-    "tags": ["Double controller", "3 sites", "Portes pivotantes"],
-    "stats": { "difficulty": "4.7/5", "sides": "Defender-favored" },
+    "tags": [
+      "Double controller",
+      "3 sites",
+      "Portes pivotantes"
+    ],
+    "stats": {
+      "difficulty": "4.7/5",
+      "sides": "Defender-favored"
+    },
     "strategies": [
       {
         "name": "Default A Split",
         "type": "default",
         "icon": "▶",
         "desc": "A est le site le plus accessible. Fade Haunt couvre C depuis A main, Miks smoke le connector. La porte pivotante entre A et B peut être utilisée pour fake.",
-        "steps": ["Fade Haunt couvre C early", "Miks smoke A Main + connector", "Raze satchel pour prendre angles A", "Killjoy setup C seule", "Pivot vers B si A trop résistant"]
+        "steps": [
+          "Fade Haunt couvre C early",
+          "Miks smoke A Main + connector",
+          "Raze satchel pour prendre angles A",
+          "Killjoy setup C seule",
+          "Pivot vers B si A trop résistant"
+        ]
       },
       {
         "name": "Fast B Exec",
         "type": "fast",
         "icon": "⚡",
         "desc": "B est le site le plus difficile mais le plus récompensant. Double smoke Miks+Omen couvre toutes les lignes. Raze satchel pour entrer vite avant le setup défenseur.",
-        "steps": ["Miks smoke B Main", "Omen smoke tree + CT", "Raze satchel en premier", "Fade Haunt pour detect retake A", "Plant default B, watch portes"]
+        "steps": [
+          "Miks smoke B Main",
+          "Omen smoke tree + CT",
+          "Raze satchel en premier",
+          "Fade Haunt pour detect retake A",
+          "Plant default B, watch portes"
+        ]
       },
       {
         "name": "C Default",
         "type": "mid",
         "icon": "◆",
         "desc": "C est souvent le site le moins préparé. Killjoy nanoswarm post-plant est dévastateur sur C. La porte entre B et C peut être utilisée pour entrer en surprise.",
-        "steps": ["Fake B avec noise", "Pivot rapide C par la porte", "Miks smoke C ct + back", "Killjoy nanoswarm post-plant", "Raze satchel pour exit après plant"]
+        "steps": [
+          "Fake B avec noise",
+          "Pivot rapide C par la porte",
+          "Miks smoke C ct + back",
+          "Killjoy nanoswarm post-plant",
+          "Raze satchel pour exit après plant"
+        ]
       }
     ],
     "eco": {
-      "pistol": { "tip": "Jouez A ou C, pas B au pistolet. Miks smoke + rush rapide. Killjoy turret pour info passive.", "agents": ["Miks", "Killjoy"] },
-      "eco": { "tip": "Rush C avec smoke Miks. C est le site le plus accessible en eco — moins d'angles à clear.", "buy": "Shields + Ghost" },
-      "force": { "tip": "Spectre + Miks smokes sur A. Le double smoke masque l'approche même sans util complète.", "buy": "Spectre + Miks smokes" },
-      "full": { "tip": "Double controller obligatoire. Killjoy anchor C. Fade Haunt pour isoler les sites. Raze pour entrer vite.", "buy": "Full util · Vandal/Phantom partout" }
+      "pistol": {
+        "tip": "Jouez A ou C, pas B au pistolet. Miks smoke + rush rapide. Killjoy turret pour info passive.",
+        "agents": [
+          "Miks",
+          "Killjoy"
+        ]
+      },
+      "eco": {
+        "tip": "Rush C avec smoke Miks. C est le site le plus accessible en eco — moins d'angles à clear.",
+        "buy": "Shields + Ghost"
+      },
+      "force": {
+        "tip": "Spectre + Miks smokes sur A. Le double smoke masque l'approche même sans util complète.",
+        "buy": "Spectre + Miks smokes"
+      },
+      "full": {
+        "tip": "Double controller obligatoire. Killjoy anchor C. Fade Haunt pour isoler les sites. Raze pour entrer vite.",
+        "buy": "Full util · Vandal/Phantom partout"
+      }
     },
     "comps": [
       {
-        "label": "Meta principale", "tier": "S", "tierLabel": "S-TIER", "winrate": 53.6,
+        "label": "Meta principale",
+        "tier": "S",
+        "tierLabel": "S-TIER",
+        "winrate": 53.6,
         "updatedAt": "Mai 2026",
-        "agents": ["Raze", "Fade", "Omen", "Miks", "Killjoy"],
+        "agents": [
+          "Raze",
+          "Fade",
+          "Omen",
+          "Miks",
+          "Killjoy"
+        ],
         "source": "VLR.gg · High Elo",
         "tip": "<strong>Miks + Omen</strong> = double controller le plus efficace. Killjoy anchor C site seul pendant que les 4 autres exécutent A ou B. Fade isole le C site entier avec son ulti.",
-        "agility": { "antiRush": 4, "postPlant": 5, "retake": 3, "split": 4 },
-        "vods": [{ "label": "VLR · Exemple pro", "url": "https://www.vlr.gg/matches/results" }]
+        "agility": {
+          "antiRush": 4,
+          "postPlant": 5,
+          "retake": 3,
+          "split": 4
+        },
+        "vods": [
+          {
+            "label": "Stats pro · Lotus",
+            "url": "https://www.vlr.gg/stats?type=agents&map=lotus&act="
+          }
+        ]
       },
       {
-        "label": "Variante Hotspawn", "tier": "A", "tierLabel": "A-TIER", "winrate": 51.4,
+        "label": "Variante Hotspawn",
+        "tier": "A",
+        "tierLabel": "A-TIER",
+        "winrate": 51.4,
         "updatedAt": "Avril 2026",
-        "agents": ["Raze", "Viper", "Fade", "Omen", "Vyse"],
+        "agents": [
+          "Raze",
+          "Viper",
+          "Fade",
+          "Omen",
+          "Vyse"
+        ],
         "source": "Hotspawn · Mai 2026",
         "tip": "<strong>Vyse</strong> remplace Killjoy et offre un wall pour stopper les retakes sur C. Viper wall coupe Rubble. En five stack, assignez des rôles fixes sur chacun des 3 sites.",
-        "agility": { "antiRush": 3, "postPlant": 4, "retake": 4, "split": 3 },
+        "agility": {
+          "antiRush": 3,
+          "postPlant": 4,
+          "retake": 4,
+          "split": 3
+        },
         "vods": []
       }
     ],
@@ -250,54 +542,127 @@
   {
     "map": "Bind",
     "region": "Teleporters · Angles serrés",
-    "tags": ["Teleporters", "Double initiateur", "Raze abuse"],
-    "stats": { "difficulty": "3.5/5", "sides": "A-favored" },
+    "tags": [
+      "Teleporters",
+      "Double initiateur",
+      "Raze abuse"
+    ],
+    "stats": {
+      "difficulty": "3.5/5",
+      "sides": "A-favored"
+    },
     "strategies": [
       {
         "name": "Default A Exec",
         "type": "default",
         "icon": "▶",
         "desc": "A Showers est le bottleneck principal. Skye flash-clear + Raze satchel pour passer vite. Gekko Wingman peut planter pendant que l'équipe clear.",
-        "steps": ["Miks smoke A Showers exit", "Skye flash A Short", "Raze satchel dans la flash", "Gekko Wingman direct sur spike", "Cypher trip A site pour retake"]
+        "steps": [
+          "Miks smoke A Showers exit",
+          "Skye flash A Short",
+          "Raze satchel dans la flash",
+          "Gekko Wingman direct sur spike",
+          "Cypher trip A site pour retake"
+        ]
       },
       {
         "name": "B Teleporter Abuse",
         "type": "fast",
         "icon": "⚡",
         "desc": "Le téléporteur B est sous-utilisé en attaque. Envoyer un joueur par le téléporteur pendant que les 4 autres pushent B Main crée une confusion totale.",
-        "steps": ["4 joueurs B main dès 20s", "1 joueur rush téléporteur B", "Skye flash B Hookah", "Miks smoke B site back", "Split instantané avec le téléporteur"]
+        "steps": [
+          "4 joueurs B main dès 20s",
+          "1 joueur rush téléporteur B",
+          "Skye flash B Hookah",
+          "Miks smoke B site back",
+          "Split instantané avec le téléporteur"
+        ]
       },
       {
         "name": "Mid Control",
         "type": "mid",
         "icon": "◆",
         "desc": "Mid n'existe pas vraiment sur Bind — le contrôle se fait par les téléporteurs. Cypher cam face au téléporteur A donne l'info sur qui rentre.",
-        "steps": ["Cypher cam sur téléporteur A", "Miks smoke téléporteur entrant", "Skye flash B Hookah pour info", "Décidez le site selon positions", "Teleporteur peut être utilisé en retake aussi"]
+        "steps": [
+          "Cypher cam sur téléporteur A",
+          "Miks smoke téléporteur entrant",
+          "Skye flash B Hookah pour info",
+          "Décidez le site selon positions",
+          "Teleporteur peut être utilisé en retake aussi"
+        ]
       }
     ],
     "eco": {
-      "pistol": { "tip": "Rush B Hookah au pistolet — l'angle serré favorise le close range. Skye flash obligatoire.", "agents": ["Skye", "Cypher"] },
-      "eco": { "tip": "Rush B Hookah à 5. Angle serré = avantage eco. Cypher trap A pour info passive.", "buy": "Shields + Ghost" },
-      "force": { "tip": "Spectre sur Hookah est dévastateur. Miks smoke + rush. Le téléporteur peut surprendre en force.", "buy": "Spectre + Miks smoke" },
-      "full": { "tip": "Double initiateur en full buy est très fort. Skye + Gekko sur A, Raze + Cypher sur B. Miks smoke téléporteurs.", "buy": "Full util · Vandal/Phantom" }
+      "pistol": {
+        "tip": "Rush B Hookah au pistolet — l'angle serré favorise le close range. Skye flash obligatoire.",
+        "agents": [
+          "Skye",
+          "Cypher"
+        ]
+      },
+      "eco": {
+        "tip": "Rush B Hookah à 5. Angle serré = avantage eco. Cypher trap A pour info passive.",
+        "buy": "Shields + Ghost"
+      },
+      "force": {
+        "tip": "Spectre sur Hookah est dévastateur. Miks smoke + rush. Le téléporteur peut surprendre en force.",
+        "buy": "Spectre + Miks smoke"
+      },
+      "full": {
+        "tip": "Double initiateur en full buy est très fort. Skye + Gekko sur A, Raze + Cypher sur B. Miks smoke téléporteurs.",
+        "buy": "Full util · Vandal/Phantom"
+      }
     },
     "comps": [
       {
-        "label": "Meta principale", "tier": "S", "tierLabel": "S-TIER", "winrate": 55.0,
+        "label": "Meta principale",
+        "tier": "S",
+        "tierLabel": "S-TIER",
+        "winrate": 55.0,
         "updatedAt": "Mai 2026",
-        "agents": ["Raze", "Skye", "Gekko", "Miks", "Cypher"],
+        "agents": [
+          "Raze",
+          "Skye",
+          "Gekko",
+          "Miks",
+          "Cypher"
+        ],
         "source": "VLR.gg · High Elo",
         "tip": "Les teleporters permettent à Raze de se retrouver partout. <strong>Skye + Gekko</strong> double-initiate sur le même site. Miks smoke le teleporter entrant pour bloquer les flanks.",
-        "agility": { "antiRush": 3, "postPlant": 4, "retake": 4, "split": 4 },
-        "vods": [{ "label": "VLR · Exemple pro", "url": "https://www.vlr.gg/matches/results" }]
+        "agility": {
+          "antiRush": 3,
+          "postPlant": 4,
+          "retake": 4,
+          "split": 4
+        },
+        "vods": [
+          {
+            "label": "Stats pro · Bind",
+            "url": "https://www.vlr.gg/stats?type=agents&map=bind&act="
+          }
+        ]
       },
       {
-        "label": "Variante structurée", "tier": "A", "tierLabel": "A-TIER", "winrate": 52.4,
+        "label": "Variante structurée",
+        "tier": "A",
+        "tierLabel": "A-TIER",
+        "winrate": 52.4,
         "updatedAt": "Mars 2026",
-        "agents": ["Raze", "Skye", "Sova", "Brimstone", "Cypher"],
+        "agents": [
+          "Raze",
+          "Skye",
+          "Sova",
+          "Brimstone",
+          "Cypher"
+        ],
         "source": "Reddit · dak.gg",
         "tip": "<strong>Brimstone molotov post-plant</strong> dévastateur grâce aux angles. Sova dart traverse les murs pour recon B Hookah. Cypher trip sur les teleporters = info gratuite.",
-        "agility": { "antiRush": 4, "postPlant": 5, "retake": 3, "split": 3 },
+        "agility": {
+          "antiRush": 4,
+          "postPlant": 5,
+          "retake": 3,
+          "split": 3
+        },
         "vods": []
       }
     ],
@@ -312,54 +677,127 @@
   {
     "map": "Split",
     "region": "Verticale · Angles mid",
-    "tags": ["Verticale", "Breach essentiel", "Mid control"],
-    "stats": { "difficulty": "4.1/5", "sides": "Defender-favored" },
+    "tags": [
+      "Verticale",
+      "Breach essentiel",
+      "Mid control"
+    ],
+    "stats": {
+      "difficulty": "4.1/5",
+      "sides": "Defender-favored"
+    },
     "strategies": [
       {
         "name": "Default A Ramp",
         "type": "default",
         "icon": "▶",
         "desc": "A Ramp + A Main en split avec Breach stun Ramp. Miks smoke Heaven + CT. C'est l'exécute la plus fiable sur Split.",
-        "steps": ["Breach stun Ramp dès 25s", "Raze satchel sous le stun", "Miks smoke A Heaven + CT", "Skye flash A short", "Plant default A, watch Heaven"]
+        "steps": [
+          "Breach stun Ramp dès 25s",
+          "Raze satchel sous le stun",
+          "Miks smoke A Heaven + CT",
+          "Skye flash A short",
+          "Plant default A, watch Heaven"
+        ]
       },
       {
         "name": "Fast B Heaven",
         "type": "fast",
         "icon": "⚡",
         "desc": "Prendre B Heaven rapidement donne le contrôle total de B. Breach stun B Main + Raze satchel. L'objectif est de prendre Heaven avant que le défenseur ne s'y installe.",
-        "steps": ["Breach stun B Main à 20s", "Raze satchel Heaven sous le stun", "Miks smoke B back + CT", "Skye flash depuis mid", "Plant rapide, exit par Heaven"]
+        "steps": [
+          "Breach stun B Main à 20s",
+          "Raze satchel Heaven sous le stun",
+          "Miks smoke B back + CT",
+          "Skye flash depuis mid",
+          "Plant rapide, exit par Heaven"
+        ]
       },
       {
         "name": "Mid Control",
         "type": "mid",
         "icon": "◆",
         "desc": "Contrôler mid sur Split ouvre A Short ET B Heaven. Miks smoke mid top + bottom, Breach stun pour clear. Cypher one-way après.",
-        "steps": ["Miks smoke mid top + bottom", "Breach stun mid si défense", "2 joueurs prennent mid", "Split vers A Short ou B Heaven", "Cypher one-way pour hold si on défend"]
+        "steps": [
+          "Miks smoke mid top + bottom",
+          "Breach stun mid si défense",
+          "2 joueurs prennent mid",
+          "Split vers A Short ou B Heaven",
+          "Cypher one-way pour hold si on défend"
+        ]
       }
     ],
     "eco": {
-      "pistol": { "tip": "Rush A Ramp avec Breach flash. Les angles serrés de Ramp favorisent le close range. Miks smoke Heaven.", "agents": ["Breach", "Miks"] },
-      "eco": { "tip": "Rush B Heaven à 5 avec smoke Miks. B Heaven donne tellement d'avantage qu'un eco peut gagner si on le prend.", "buy": "Shields + Ghost" },
-      "force": { "tip": "Spectre sur Ramp. Breach conserve ses stuns. Rush A direct sans setup — la vitesse est la clé.", "buy": "Spectre + Breach util" },
-      "full": { "tip": "Breach est le MVP en full buy. Ses stuns à travers les murs sont incontestables. Raze + Breach = A exec garantie.", "buy": "Full util · Vandal/Phantom" }
+      "pistol": {
+        "tip": "Rush A Ramp avec Breach flash. Les angles serrés de Ramp favorisent le close range. Miks smoke Heaven.",
+        "agents": [
+          "Breach",
+          "Miks"
+        ]
+      },
+      "eco": {
+        "tip": "Rush B Heaven à 5 avec smoke Miks. B Heaven donne tellement d'avantage qu'un eco peut gagner si on le prend.",
+        "buy": "Shields + Ghost"
+      },
+      "force": {
+        "tip": "Spectre sur Ramp. Breach conserve ses stuns. Rush A direct sans setup — la vitesse est la clé.",
+        "buy": "Spectre + Breach util"
+      },
+      "full": {
+        "tip": "Breach est le MVP en full buy. Ses stuns à travers les murs sont incontestables. Raze + Breach = A exec garantie.",
+        "buy": "Full util · Vandal/Phantom"
+      }
     },
     "comps": [
       {
-        "label": "Meta principale", "tier": "S", "tierLabel": "S-TIER", "winrate": 54.5,
+        "label": "Meta principale",
+        "tier": "S",
+        "tierLabel": "S-TIER",
+        "winrate": 54.5,
         "updatedAt": "Mai 2026",
-        "agents": ["Raze", "Breach", "Skye", "Miks", "Cypher"],
+        "agents": [
+          "Raze",
+          "Breach",
+          "Skye",
+          "Miks",
+          "Cypher"
+        ],
         "source": "VLR.gg",
         "tip": "<strong>Breach stun dans Ramp</strong> permet à Raze de satchel direct sur A Site. Skye flash B Heaven depuis Mid, Miks smoke le defender spawn. Pressez mid pour couper les rotations.",
-        "agility": { "antiRush": 4, "postPlant": 4, "retake": 3, "split": 5 },
-        "vods": [{ "label": "VLR · Exemple pro", "url": "https://www.vlr.gg/matches/results" }]
+        "agility": {
+          "antiRush": 4,
+          "postPlant": 4,
+          "retake": 3,
+          "split": 5
+        },
+        "vods": [
+          {
+            "label": "Stats pro · Split",
+            "url": "https://www.vlr.gg/stats?type=agents&map=split&act="
+          }
+        ]
       },
       {
-        "label": "Défensive solide", "tier": "A", "tierLabel": "A-TIER", "winrate": 51.9,
+        "label": "Défensive solide",
+        "tier": "A",
+        "tierLabel": "A-TIER",
+        "winrate": 51.9,
         "updatedAt": "Avril 2026",
-        "agents": ["Raze", "Breach", "Sage", "Omen", "Cypher"],
+        "agents": [
+          "Raze",
+          "Breach",
+          "Sage",
+          "Omen",
+          "Cypher"
+        ],
         "source": "High Elo · Reddit",
         "tip": "<strong>Sage wall</strong> sur Ramp ou B Heaven crée des 1v1 forcés. Omen phantom smokes sur mid, Breach stun. En five stack, Sage resurrecte le joueur le plus impactful.",
-        "agility": { "antiRush": 5, "postPlant": 3, "retake": 4, "split": 3 },
+        "agility": {
+          "antiRush": 5,
+          "postPlant": 3,
+          "retake": 4,
+          "split": 3
+        },
         "vods": []
       }
     ],
@@ -374,54 +812,127 @@
   {
     "map": "Pearl",
     "region": "Ouverte · Couloirs longs",
-    "tags": ["Double recon", "Astra globes", "Long range"],
-    "stats": { "difficulty": "4.3/5", "sides": "Balanced" },
+    "tags": [
+      "Double recon",
+      "Astra globes",
+      "Long range"
+    ],
+    "stats": {
+      "difficulty": "4.3/5",
+      "sides": "Balanced"
+    },
     "strategies": [
       {
         "name": "Default Mid Street",
         "type": "default",
         "icon": "▶",
         "desc": "Mid Street est la clé de Pearl. Astra globe + Neon rush mid donne le contrôle. Depuis mid vous pouvez split A Art ou B Link.",
-        "steps": ["Astra globe mid street dès spawn", "Neon rush mid sous le globe", "Fade Haunt couvre A Art", "Sova dart B pour info", "Split selon info : A Art ou B Link"]
+        "steps": [
+          "Astra globe mid street dès spawn",
+          "Neon rush mid sous le globe",
+          "Fade Haunt couvre A Art",
+          "Sova dart B pour info",
+          "Split selon info : A Art ou B Link"
+        ]
       },
       {
         "name": "Fast A Art",
         "type": "fast",
         "icon": "⚡",
         "desc": "A Art est la route la plus rapide. Fade Haunt clear les angles, Neon Fast Lane masque l'entrée. L'objectif est d'arriver avant le setup défenseur.",
-        "steps": ["Fade Haunt A Art à 20s", "Neon Fast Lane dans A Art", "Astra smoke A CT + back", "Sova shock dart post-plant lineup", "Plant default, watch B pour rotate"]
+        "steps": [
+          "Fade Haunt A Art à 20s",
+          "Neon Fast Lane dans A Art",
+          "Astra smoke A CT + back",
+          "Sova shock dart post-plant lineup",
+          "Plant default, watch B pour rotate"
+        ]
       },
       {
         "name": "B Link Control",
         "type": "mid",
         "icon": "◆",
         "desc": "B Link donne accès direct à B site. Cypher cam B Hall pour info, Astra globe couvre l'approche. Sova dart à travers les murs pour confirmer.",
-        "steps": ["Cypher cam B Hall dès début", "Astra globe B Link", "Sova dart B site pour detect", "3 joueurs B + 2 joueurs fake A", "Execute B quand info confirme"]
+        "steps": [
+          "Cypher cam B Hall dès début",
+          "Astra globe B Link",
+          "Sova dart B site pour detect",
+          "3 joueurs B + 2 joueurs fake A",
+          "Execute B quand info confirme"
+        ]
       }
     ],
     "eco": {
-      "pistol": { "tip": "Restez groupés sur A Art au pistolet. Astra globe pour couvrir l'entrée. Neon sprint pour prendre l'angle premier.", "agents": ["Astra", "Neon"] },
-      "eco": { "tip": "Rush A Art à 5 avec globe Astra. A Art est le chemin le plus court = avantage en temps sur eco.", "buy": "Shields + Ghost" },
-      "force": { "tip": "Spectre sur Neon en mid. Astra globe mid + Spectre rush = très difficile à tenir même pour un défenseur full.", "buy": "Spectre + Astra globes" },
-      "full": { "tip": "Double recon Fade + Sova est inarrêtable en full buy. Astra couvre mid. Cypher anchor B seul. Neon entry.", "buy": "Full util · Vandal/Phantom" }
+      "pistol": {
+        "tip": "Restez groupés sur A Art au pistolet. Astra globe pour couvrir l'entrée. Neon sprint pour prendre l'angle premier.",
+        "agents": [
+          "Astra",
+          "Neon"
+        ]
+      },
+      "eco": {
+        "tip": "Rush A Art à 5 avec globe Astra. A Art est le chemin le plus court = avantage en temps sur eco.",
+        "buy": "Shields + Ghost"
+      },
+      "force": {
+        "tip": "Spectre sur Neon en mid. Astra globe mid + Spectre rush = très difficile à tenir même pour un défenseur full.",
+        "buy": "Spectre + Astra globes"
+      },
+      "full": {
+        "tip": "Double recon Fade + Sova est inarrêtable en full buy. Astra couvre mid. Cypher anchor B seul. Neon entry.",
+        "buy": "Full util · Vandal/Phantom"
+      }
     },
     "comps": [
       {
-        "label": "Meta principale", "tier": "S", "tierLabel": "S-TIER", "winrate": 54.1,
+        "label": "Meta principale",
+        "tier": "S",
+        "tierLabel": "S-TIER",
+        "winrate": 54.1,
         "updatedAt": "Mai 2026",
-        "agents": ["Neon", "Fade", "Sova", "Astra", "Cypher"],
+        "agents": [
+          "Neon",
+          "Fade",
+          "Sova",
+          "Astra",
+          "Cypher"
+        ],
         "source": "VLR.gg · High Elo",
         "tip": "<strong>Astra globes sur mid Street</strong> = contrôle permanent de la zone centrale. Fade + Sova = double recon qui nettoie tous les angles. Neon rush dans les smokes.",
-        "agility": { "antiRush": 4, "postPlant": 4, "retake": 3, "split": 4 },
-        "vods": [{ "label": "VLR · Exemple pro", "url": "https://www.vlr.gg/matches/results" }]
+        "agility": {
+          "antiRush": 4,
+          "postPlant": 4,
+          "retake": 3,
+          "split": 4
+        },
+        "vods": [
+          {
+            "label": "Stats pro · Pearl",
+            "url": "https://www.vlr.gg/stats?type=agents&map=pearl&act="
+          }
+        ]
       },
       {
-        "label": "Longue portée", "tier": "A", "tierLabel": "A-TIER", "winrate": 52.5,
+        "label": "Longue portée",
+        "tier": "A",
+        "tierLabel": "A-TIER",
+        "winrate": 52.5,
         "updatedAt": "Mars 2026",
-        "agents": ["Jett", "Chamber", "Sova", "Astra", "Killjoy"],
+        "agents": [
+          "Jett",
+          "Chamber",
+          "Sova",
+          "Astra",
+          "Killjoy"
+        ],
         "source": "dak.gg · High Elo",
         "tip": "<strong>Jett + Chamber double Operator</strong> sur les longs couloirs. Killjoy turret sur B Site donne l'info sur les pushs. Astra retire des globes pour bloquer les flancs.",
-        "agility": { "antiRush": 3, "postPlant": 5, "retake": 2, "split": 2 },
+        "agility": {
+          "antiRush": 3,
+          "postPlant": 5,
+          "retake": 2,
+          "split": 2
+        },
         "vods": []
       }
     ],

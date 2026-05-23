@@ -846,3 +846,57 @@
   border-color: rgba(245,200,66,.4);
   background: var(--gold-low);
 }
+
+/* ════════════════════════════════════════════════
+   PAGE AGENTS — Grid + filtres
+   ════════════════════════════════════════════════ */
+.agents-page-inner{
+  max-width:1600px; margin:0 auto; padding:48px 32px;
+}
+.agents-page-header{
+  display:flex; align-items:center; gap:20px;
+  margin-bottom:32px; flex-wrap:wrap;
+}
+.agents-page-header .roster-title{ font-size:36px; line-height:1; }
+
+.agents-filters{
+  display:flex; gap:6px; flex-wrap:wrap;
+}
+.agent-filter-btn{
+  background:var(--surf2); border:1px solid var(--border2);
+  color:var(--muted); cursor:pointer;
+  padding:7px 16px;
+  font-family:'Tomorrow',sans-serif; font-size:10px; font-weight:600;
+  letter-spacing:2px; text-transform:uppercase;
+  transition:all .15s;
+  clip-path:polygon(6px 0, 100% 0, calc(100% - 6px) 100%, 0 100%);
+}
+.agent-filter-btn:hover{ color:var(--text); border-color:var(--border2); background:var(--surf3); }
+.agent-filter-btn.active{ background:var(--red); border-color:var(--red); color:#fff; }
+.agent-filter-btn.D.active{ background:var(--D); border-color:var(--D); color:#fff; }
+.agent-filter-btn.I.active{ background:var(--I); border-color:var(--I); color:#1a0a00; }
+.agent-filter-btn.S.active{ background:var(--S); border-color:var(--S); color:#001a1a; }
+.agent-filter-btn.C.active{ background:var(--C); border-color:var(--C); color:#fff; }
+
+.agents-search{ margin-left:auto; }
+
+.agents-full-grid{
+  display:grid;
+  grid-template-columns:repeat(auto-fill, minmax(150px, 1fr));
+  gap:12px;
+}
+
+/* Agent card in full grid — bigger version */
+.agents-full-grid .agent-card{ cursor:pointer; }
+.agents-full-grid .portrait-frame{ aspect-ratio:3/4; }
+.agents-full-grid .agent-footer{ padding:10px 6px; }
+.agents-full-grid .agent-name{ font-size:13px; }
+.agents-full-grid .agent-role{ font-size:9px; }
+
+/* No results state */
+.agents-empty{
+  grid-column: 1 / -1;
+  padding:60px; text-align:center;
+  font-family:'Tomorrow',sans-serif; font-size:13px;
+  letter-spacing:2px; text-transform:uppercase; color:var(--dim);
+}

@@ -44,6 +44,9 @@
         <button class="page-nav-btn" data-page="roster" onclick="window.OLYCITY?.nav('roster')">
           <span class="page-nav-icon">◉</span> Roster
         </button>
+        <button class="page-nav-btn" data-page="agents" onclick="window.OLYCITY?.nav('agents')">
+          <span class="page-nav-icon">◈</span> Agents
+        </button>
       </div>
 
       <!-- MAP SELECTOR (visible only on maps page) -->
@@ -149,6 +152,28 @@
       </div>
       <div id="sync-status"></div>
       <div class="roster-grid" id="roster-grid"></div>
+    </div>
+  </div>
+
+  <!-- ═══════════ PAGE AGENTS ═══════════ -->
+  <div id="page-agents" class="spa-page">
+    <div class="agents-page-inner">
+      <div class="agents-page-header">
+        <div>
+          <span class="roster-eyebrow">Codex</span>
+          <h2 class="roster-title">Tous les agents</h2>
+        </div>
+        <div class="agents-filters" id="agents-filters">
+          <!-- populated by main.js -->
+        </div>
+        <div class="search-wrap agents-search">
+          <span class="search-icon">⌕</span>
+          <input type="text" id="agents-search-input" class="search-input" placeholder="Rechercher…" autocomplete="off" style="width:180px">
+        </div>
+      </div>
+      <div class="agents-full-grid" id="agents-full-grid">
+        <!-- populated by main.js -->
+      </div>
     </div>
   </div>
 
