@@ -19,9 +19,9 @@
 }
 .agent-hero-bg{
   position:absolute; inset:0;
-  background-size:cover; background-position:center;
-  filter:blur(2px) saturate(1.1);
-  opacity:.6; transform:scale(1.1);
+  background-size:cover; background-position:top center;
+  filter:blur(0px) saturate(1.4) brightness(.7);
+  opacity:.45; transform:scale(1.05);
 }
 .agent-hero-gradient{
   position:absolute; inset:0;
@@ -161,13 +161,17 @@
 
 .ab-header{ display:flex; align-items:center; gap:12px; margin-bottom:14px; }
 .ab-icon-wrap{
-  width:48px; height:48px; background:var(--surf3);
-  border:1px solid var(--border2);
+  width:48px; height:48px; background:var(--red-low);
+  border:1px solid var(--red-mid);
   display:flex; align-items:center; justify-content:center;
   flex-shrink:0; padding:8px;
 }
-.ab-icon-wrap img{ width:100%; height:100%; object-fit:contain; filter:invert(.9); }
-:root[data-theme="light"] .ab-icon-wrap img{ filter:invert(.1); }
+.ability-card.ultimate .ab-icon-wrap{
+  background:var(--gold-low);
+  border-color:rgba(245,200,66,.4);
+}
+.ab-icon-wrap img{ width:100%; height:100%; object-fit:contain; filter:brightness(0) invert(1); }
+:root[data-theme="light"] .ab-icon-wrap img{ filter:brightness(0); }
 .ab-info{ flex:1; min-width:0; }
 .ab-slot{
   font-family:'Tomorrow',sans-serif; font-size:9px; font-weight:600;

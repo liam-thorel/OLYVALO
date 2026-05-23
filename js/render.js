@@ -459,8 +459,13 @@ export function agentPageHTML(name) {
     ? (usage.reduce((s, u) => s + u.winrate, 0) / usage.length).toFixed(1) : '—';
   const fullEl = fullPortrait
     ? `<img class="agent-portrait-full" src="${fullPortrait}" alt="${display}">`  : '';
-  const bgEl = bgImg
-    ? `<div class="agent-hero-bg" style="background-image:url(${bgImg})"></div>` : '';
+  // Use fullPortrait for bg (more colorful, unique per agent)
+  const heroBg = fullPortrait || bgImg;
+  const roleGlow = { D:'rgba(255,107,122,.15)', I:'rgba(240,168,50,.15)', S:'rgba(63,207,207,.15)', C:'rgba(168,127,255,.15)' }[role] || 'transparent';
+  const bgEl = heroBg
+    ? `<div class="agent-hero-bg" style="background-image:url(${heroBg})"></div>
+       <div style="position:absolute;inset:0;background:radial-gradient(ellipse at 70% 30%,${roleGlow},transparent 60%);pointer-events:none;z-index:1"></div>`
+    : '';
 
   return `
     <div class="agent-hero">

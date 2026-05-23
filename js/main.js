@@ -160,11 +160,13 @@ window.OLYCITY = {
     } catch (e) {
       const msgs = {
         AUTH_REQUIRED: 'Clé invalide',
-        RATE_LIMIT: 'Rate limit',
-        NOT_FOUND: 'Profil introuvable',
+        RATE_LIMIT: 'Rate limit — attends 1min',
+        NOT_FOUND: 'Compte privé ou introuvable',
         NETWORK: 'Pas de réseau',
+        NO_RIOT_ID: 'Pas de Riot ID',
       };
-      setBtnState(playerName, 'error', msgs[e.message] || 'Erreur');
+      setBtnState(playerName, 'error', msgs[e.message] || ('Err: ' + e.message));
+      console.error('[OLYCITY] Sync error for', playerName, e.message);
     }
   },
 
