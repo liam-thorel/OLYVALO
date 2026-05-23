@@ -1,0 +1,36 @@
+{
+  "roles": {
+    "Raze": "D", "Jett": "D", "Neon": "D", "Phoenix": "D",
+    "Reyna": "D", "Yoru": "D", "Iso": "D", "Waylay": "D",
+    "Breach": "I", "Fade": "I", "Sova": "I", "Skye": "I",
+    "Gekko": "I", "KAY/O": "I", "Tejo": "I",
+    "Cypher": "S", "Killjoy": "S", "Sage": "S",
+    "Chamber": "S", "Deadlock": "S", "Vyse": "S",
+    "Omen": "C", "Viper": "C", "Astra": "C", "Brimstone": "C",
+    "Harbor": "C", "Clove": "C", "Miks": "C"
+  },
+  "labels": {
+    "D": "Duelliste",
+    "I": "Initiateur",
+    "S": "Sentinelle",
+    "C": "Contrôleur"
+  },
+  "labelsEn": {
+    "D": "Duelist",
+    "I": "Initiator",
+    "S": "Sentinel",
+    "C": "Controller"
+  },
+  "sTier": ["Cypher", "Raze", "Sova", "Omen", "Viper", "Miks"],
+  "globalNotes": [
+    "Cypher domine presque toute la rotation — pick him first sur 6/7 maps",
+    "Miks devient un excellent controller ranked — remplace Omen sur plusieurs maps",
+    "Breach reste obligatoire sur Fracture et Split — ses stuns traversent les murs",
+    "Viper reste indispensable sur Breeze et Lotus — double controller obligatoire",
+    "Raze domine les maps fermées — Bind, Split, Fracture, Lotus",
+    "Double initiateur très fort actuellement — Skye + Breach, Fade + Sova",
+    "Double controller surtout viable sur Lotus — Miks + Omen ou Viper + Omen",
+    "En five stack, assignez des rôles fixes en début de session",
+    "La communication change tout — announcez ulti et eco chaque round"
+  ]
+}

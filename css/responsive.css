@@ -1,0 +1,36 @@
+/* ════════════════════════════════════════════════
+   OLYCITY · Responsive
+   ════════════════════════════════════════════════ */
+
+@media (max-width: 900px) {
+  .topbar-row{ padding:10px 16px; gap:10px; flex-wrap:wrap; }
+  .nav-maps{ order:3; width:100%; justify-content:flex-start; }
+  .hero-meta{ gap:14px; }
+  .map-hero-title{ font-size:42px; }
+  .map-hero-content{ padding:24px; }
+  .comp-card{ padding:18px 20px; }
+  .main, .section, .roster-section, .footer{ padding-left:16px; padding-right:16px; }
+  .search-input{ width:100px; }
+  .agent-name{ font-size:10px; }
+  .agent-role{ font-size:8px; }
+  .role-corner{ font-size:8px; padding:1px 4px; }
+  .agent-hero-content{ grid-template-columns:1fr; padding:30px 16px; gap:20px; }
+  .agent-portrait-wrap{ order:-1; min-height:280px; }
+  .agent-portrait-full{ max-height:380px; }
+  .agent-body{ padding:30px 16px; }
+  .ab-grid{ grid-template-columns:repeat(2, 1fr); }
+}
+
+@media (max-width: 600px) {
+  .hero{ padding:40px 16px 28px; }
+  .hero-title-frame::before, .hero-title-frame::after{ width:16px; height:16px; }
+  .brand-title{ font-size:16px; }
+  .brand-sub{ font-size:8px; letter-spacing:2.5px; }
+  .nav-map-btn{ padding:6px 10px; font-size:10px; }
+  .map-hero{ height:220px; }
+  .map-hero-title{ font-size:32px; }
+  .map-stat-val{ font-size:22px; }
+  .ab-grid{ grid-template-columns:1fr; }
+  .agent-page-name{ font-size:48px; }
+  .agents-grid{ gap:6px; }
+}

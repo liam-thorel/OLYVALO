@@ -1,0 +1,424 @@
+/* ════════════════════════════════════════════════
+   OLYCITY · Components
+   Comp cards, agent cards, player cards, S-tier, notes
+   ════════════════════════════════════════════════ */
+
+/* COMP TABS */
+.comp-tabs{ display:flex; gap:6px; margin-bottom:24px; flex-wrap:wrap; }
+.comp-tab{
+  font-family:'Tomorrow',sans-serif; font-size:11px; font-weight:600;
+  letter-spacing:1.5px; text-transform:uppercase;
+  padding:9px 22px 9px 18px;
+  background:var(--surf2); border:1px solid var(--border2); color:var(--muted);
+  cursor:pointer; transition:all .2s;
+  clip-path:polygon(0 0, calc(100% - 12px) 0, 100% 100%, 12px 100%);
+}
+.comp-tab:hover{ color:var(--text); background:var(--surf3); }
+.comp-tab.active{ background:var(--red); border-color:var(--red); color:#fff; }
+
+.comp-panel{ display:none; }
+.comp-panel.active{ display:block; animation:fadeUp .35s ease; }
+@keyframes fadeUp{ from{ opacity:0; transform:translateY(10px); } to{ opacity:1; transform:translateY(0); } }
+
+.comp-card{
+  background:var(--surf); border:1px solid var(--border);
+  padding:24px 28px; margin-bottom:24px;
+  position:relative; overflow:hidden;
+  box-shadow:var(--shadow-card);
+}
+.comp-card::before{
+  content:''; position:absolute; top:0; left:0; width:3px; height:100%;
+  background:linear-gradient(180deg, var(--red), transparent);
+}
+
+.comp-header{
+  display:flex; align-items:center; justify-content:space-between;
+  margin-bottom:20px; flex-wrap:wrap; gap:16px;
+}
+.comp-label-row{ display:flex; align-items:center; gap:12px; flex-wrap:wrap; }
+.comp-tier{
+  font-family:'Tomorrow',sans-serif; font-size:10px; font-weight:700;
+  letter-spacing:2.5px; text-transform:uppercase; padding:4px 12px;
+}
+.tier-s{ background:var(--gold-low); color:var(--gold); border:1px solid rgba(245,200,66,.4); }
+.tier-a{ background:rgba(63,207,207,.1); color:var(--S); border:1px solid rgba(63,207,207,.3); }
+.comp-name{
+  font-family:'Tomorrow',sans-serif; font-size:18px; font-weight:600;
+  color:var(--text); letter-spacing:1px; text-transform:uppercase;
+}
+.comp-meta{ display:flex; align-items:center; gap:14px; flex-wrap:wrap; }
+.winrate-pill{
+  display:flex; align-items:center; gap:6px;
+  padding:5px 12px; background:var(--surf3); border:1px solid var(--border2);
+}
+.winrate-bar{
+  width:40px; height:4px; background:var(--surf4); position:relative; overflow:hidden;
+}
+.winrate-bar-fill{
+  position:absolute; left:0; top:0; height:100%; background:var(--red);
+  transition:width 1s cubic-bezier(.22,1,.36,1);
+}
+.winrate-val{
+  font-family:'Tomorrow',sans-serif; font-size:13px; font-weight:700;
+  color:var(--text); letter-spacing:.5px;
+}
+.winrate-lbl{
+  font-family:'Tomorrow',sans-serif; font-size:9px; letter-spacing:1.5px;
+  text-transform:uppercase; color:var(--muted);
+}
+.fav-btn{
+  background:transparent; border:1px solid var(--border2);
+  width:36px; height:36px; cursor:pointer;
+  display:flex; align-items:center; justify-content:center;
+  color:var(--muted); transition:all .2s; font-size:16px;
+}
+.fav-btn:hover{ color:var(--red); border-color:var(--red-mid); }
+.fav-btn.active{ color:var(--red); border-color:var(--red); background:var(--red-low); }
+
+/* AGENT CARDS (3D tilt) */
+.agents-grid{ display:grid; grid-template-columns:repeat(5, 1fr); gap:12px; }
+
+.agent-card{
+  position:relative; cursor:pointer;
+  transform-style:preserve-3d; perspective:800px;
+  transition:transform .4s cubic-bezier(.22,1,.36,1);
+}
+.agent-card-inner{
+  position:relative; transform-style:preserve-3d;
+  transition:transform .15s ease-out;
+}
+.portrait-frame{
+  width:100%; aspect-ratio:3/4; overflow:hidden; position:relative;
+  background:var(--surf3); border:1px solid var(--border2);
+  transition:border-color .25s, box-shadow .25s;
+}
+.agent-card:hover .portrait-frame{
+  box-shadow:0 20px 40px -15px rgba(0,0,0,.5), 0 0 0 1px var(--red-mid);
+}
+.agent-card.D:hover .portrait-frame{ box-shadow:0 20px 40px -15px rgba(255,107,122,.4), 0 0 0 1px var(--D); }
+.agent-card.I:hover .portrait-frame{ box-shadow:0 20px 40px -15px rgba(240,168,50,.4), 0 0 0 1px var(--I); }
+.agent-card.S:hover .portrait-frame{ box-shadow:0 20px 40px -15px rgba(63,207,207,.4), 0 0 0 1px var(--S); }
+.agent-card.C:hover .portrait-frame{ box-shadow:0 20px 40px -15px rgba(168,127,255,.4), 0 0 0 1px var(--C); }
+
+.portrait-frame img{
+  width:100%; height:100%; display:block;
+  object-fit:cover; object-position:top center;
+  transition:transform .4s ease;
+  transform:translateZ(20px);
+}
+.agent-card:hover .portrait-frame img{ transform:translateZ(40px) scale(1.05); }
+
+.role-stripe{
+  position:absolute; bottom:0; left:0; right:0; height:3px;
+  transform:scaleX(0); transform-origin:left; transition:transform .3s ease;
+}
+.agent-card:hover .role-stripe{ transform:scaleX(1); }
+.agent-card.D .role-stripe{ background:var(--D); }
+.agent-card.I .role-stripe{ background:var(--I); }
+.agent-card.S .role-stripe{ background:var(--S); }
+.agent-card.C .role-stripe{ background:var(--C); }
+
+.role-corner{
+  position:absolute; top:6px; left:6px;
+  font-family:'Tomorrow',sans-serif; font-size:9px; font-weight:700;
+  letter-spacing:1px; padding:2px 5px;
+  background:rgba(10,12,16,.8); backdrop-filter:blur(8px);
+  -webkit-backdrop-filter:blur(8px);
+}
+.agent-card.D .role-corner{ color:var(--D); }
+.agent-card.I .role-corner{ color:var(--I); }
+.agent-card.S .role-corner{ color:var(--S); }
+.agent-card.C .role-corner{ color:var(--C); }
+
+.agent-footer{
+  width:100%; background:var(--surf2); border:1px solid var(--border);
+  border-top:none; padding:8px 4px; text-align:center;
+}
+.agent-name{
+  font-family:'Tomorrow',sans-serif; font-size:12px; font-weight:600;
+  text-transform:uppercase; letter-spacing:1px; color:var(--text);
+  line-height:1; display:block;
+}
+.agent-role{
+  font-family:'Tomorrow',sans-serif; font-size:9px; letter-spacing:1.5px;
+  text-transform:uppercase; color:var(--muted);
+  display:block; margin-top:3px;
+}
+
+.portrait-ph{
+  width:100%; height:100%; display:flex; align-items:center; justify-content:center;
+  font-family:'Tomorrow',sans-serif; font-size:32px; font-weight:700; color:var(--dim);
+  background:linear-gradient(135deg, var(--surf3), var(--surf4));
+}
+
+/* 5-STACK TIP BOX */
+.tip-box{
+  margin-top:20px;
+  background:linear-gradient(135deg, rgba(168,127,255,.08), rgba(168,127,255,.02));
+  border:1px solid rgba(168,127,255,.25);
+  padding:16px 20px; display:flex; align-items:flex-start; gap:14px;
+  position:relative;
+}
+.tip-box::before{
+  content:''; position:absolute; top:0; left:0; width:2px; height:100%; background:var(--C);
+}
+.tip-icon{
+  font-family:'Tomorrow',sans-serif; font-size:9px; font-weight:700;
+  letter-spacing:2px; text-transform:uppercase; color:var(--C);
+  flex-shrink:0; padding:2px 8px; background:rgba(168,127,255,.15);
+}
+.tip-text{ font-size:13px; color:var(--text); line-height:1.6; flex:1; }
+.tip-text strong{ color:var(--C); font-weight:500; }
+
+/* META NOTES PER MAP */
+.notes-card{
+  background:var(--surf); border:1px solid var(--border);
+  padding:22px 26px;
+}
+.notes-card-title{
+  font-family:'Tomorrow',sans-serif; font-size:11px; font-weight:700;
+  letter-spacing:3px; text-transform:uppercase; color:var(--red);
+  margin-bottom:16px; display:flex; align-items:center; gap:10px;
+}
+.notes-card-title::after{
+  content:''; flex:1; height:1px; background:linear-gradient(90deg, var(--red-mid), transparent);
+}
+.notes-list{ display:flex; flex-direction:column; gap:8px; }
+.note-row{
+  display:flex; align-items:flex-start; gap:12px;
+  font-size:13.5px; color:var(--text); line-height:1.55;
+}
+.note-marker{
+  width:6px; height:6px; background:var(--red); border-radius:1px;
+  flex-shrink:0; margin-top:7px; transform:rotate(45deg);
+}
+
+/* PLAYER CARDS (ROSTER) */
+.player-card{
+  position:relative; background:var(--surf);
+  border:1px solid var(--border); overflow:hidden;
+  transition:transform .3s cubic-bezier(.22,1,.36,1), box-shadow .3s;
+  cursor:default;
+}
+.player-card:hover{
+  transform:translateY(-6px);
+  box-shadow:var(--shadow-card);
+  border-color:var(--red-mid);
+}
+.player-banner{
+  height:90px; position:relative; overflow:hidden;
+  background:linear-gradient(135deg, var(--surf3), var(--surf2));
+}
+.player-banner-deco{
+  position:absolute; inset:0;
+  background-image:
+    linear-gradient(rgba(255,70,86,.06) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,70,86,.06) 1px, transparent 1px);
+  background-size:20px 20px;
+}
+.player-banner-glow{
+  position:absolute; top:50%; left:50%; transform:translate(-50%,-50%);
+  width:120px; height:120px; border-radius:50%;
+  background:radial-gradient(circle, var(--red-low), transparent 70%);
+}
+.player-tag{
+  position:absolute; top:10px; right:10px;
+  font-family:'Tomorrow',sans-serif; font-size:9px; font-weight:700;
+  letter-spacing:1.5px; color:var(--red);
+  background:rgba(10,12,16,.8); backdrop-filter:blur(8px);
+  -webkit-backdrop-filter:blur(8px);
+  padding:3px 8px;
+}
+:root[data-theme="light"] .player-tag{ background:rgba(255,255,255,.8); }
+
+.player-rank{
+  position:absolute; top:10px; left:10px;
+  display:flex; align-items:center; gap:6px;
+  background:rgba(10,12,16,.85); backdrop-filter:blur(8px);
+  -webkit-backdrop-filter:blur(8px);
+  padding:4px 8px 4px 6px; border:1px solid var(--border2);
+}
+:root[data-theme="light"] .player-rank{ background:rgba(255,255,255,.9); }
+.player-rank-text{
+  font-family:'Tomorrow',sans-serif; font-size:10px; font-weight:700;
+  letter-spacing:.5px; text-transform:uppercase; color:var(--text);
+  line-height:1;
+}
+.player-rank-rr{
+  font-family:'Tomorrow',sans-serif; font-size:8px; letter-spacing:.5px;
+  color:var(--muted); margin-left:4px;
+}
+
+.player-body{ padding:16px 18px 18px; }
+.player-name{
+  font-family:'Tomorrow',sans-serif; font-size:20px; font-weight:600;
+  color:var(--text); letter-spacing:1px; text-transform:uppercase;
+  line-height:1; margin-bottom:4px;
+}
+.player-role{
+  font-family:'Tomorrow',sans-serif; font-size:10px; font-weight:500;
+  letter-spacing:2px; text-transform:uppercase; color:var(--muted);
+  margin-bottom:14px;
+}
+.player-mains{ display:flex; gap:6px; }
+.player-main{
+  flex:1; aspect-ratio:1; background:var(--surf3); overflow:hidden;
+  border:1px solid var(--border); position:relative;
+  transition:transform .2s, border-color .2s; cursor:pointer;
+}
+.player-main:hover{ transform:translateY(-2px); border-color:var(--red-mid); }
+.player-main img{ width:100%; height:100%; object-fit:cover; display:block; }
+.player-main-name{
+  position:absolute; bottom:0; left:0; right:0;
+  background:linear-gradient(to top, rgba(10,12,16,.95), transparent);
+  font-family:'Tomorrow',sans-serif; font-size:8px; font-weight:700;
+  letter-spacing:.5px; color:#fff; text-align:center;
+  padding:6px 2px 4px; text-transform:uppercase;
+}
+
+.player-stats-row{
+  display:flex; gap:6px; margin-top:12px; padding-top:12px;
+  border-top:1px dashed var(--border);
+}
+.player-stat{ flex:1; text-align:center; }
+.player-stat-val{
+  font-family:'Tomorrow',sans-serif; font-size:13px; font-weight:700;
+  color:var(--text); letter-spacing:.5px; line-height:1; display:block;
+}
+.player-stat-lbl{
+  font-family:'Tomorrow',sans-serif; font-size:8px; letter-spacing:1px;
+  text-transform:uppercase; color:var(--muted); margin-top:3px; display:block;
+}
+.player-stat-val.green{ color:var(--S); }
+.player-stat-val.red{ color:var(--D); }
+.player-stat-val.gold{ color:var(--gold); }
+
+.player-sync-btn{
+  width:100%; margin-top:12px; padding:7px 0;
+  background:transparent; border:1px solid var(--border2);
+  color:var(--muted); cursor:pointer;
+  font-family:'Tomorrow',sans-serif; font-size:10px; font-weight:600;
+  letter-spacing:2px; text-transform:uppercase; transition:all .15s;
+  display:flex; align-items:center; justify-content:center; gap:6px;
+}
+.player-sync-btn:hover{ color:var(--red); border-color:var(--red-mid); background:var(--red-low); }
+.player-sync-btn.syncing{ color:var(--gold); border-color:rgba(245,200,66,.3); pointer-events:none; }
+.player-sync-btn.syncing .sync-spin{ animation:spin .8s linear infinite; }
+.player-sync-btn.error{ color:var(--D); border-color:rgba(255,107,122,.3); }
+.player-sync-btn.synced{ color:var(--S); border-color:rgba(63,207,207,.3); }
+
+.player-sync-time{
+  font-family:'Tomorrow',sans-serif; font-size:8px; letter-spacing:1px;
+  text-transform:uppercase; color:var(--dim); margin-top:6px; text-align:center;
+  display:block;
+}
+
+/* SYNC ALL BUTTON & BANNER */
+.sync-all-btn{
+  background:var(--red); border:1px solid var(--red); color:#fff;
+  padding:8px 16px; cursor:pointer;
+  font-family:'Tomorrow',sans-serif; font-size:11px; font-weight:600;
+  letter-spacing:2px; text-transform:uppercase; transition:all .15s;
+  display:inline-flex; align-items:center; gap:6px;
+}
+.sync-all-btn:hover{ background:#e63a4a; transform:translateY(-1px); }
+.sync-all-btn.syncing{ background:var(--gold); border-color:var(--gold); color:#1a1200; }
+.sync-all-btn.syncing .sync-spin{ animation:spin .8s linear infinite; }
+
+.sync-banner{
+  background:var(--surf); border:1px solid var(--border);
+  border-left:2px solid var(--red);
+  padding:12px 16px; margin-bottom:20px;
+  font-size:12.5px; color:var(--text); line-height:1.5;
+  display:flex; align-items:center; gap:12px; flex-wrap:wrap;
+}
+.sync-banner.error{ border-left-color:var(--D); background:rgba(255,107,122,.05); }
+.sync-banner.success{ border-left-color:var(--S); background:rgba(63,207,207,.05); }
+.sync-banner-icon{
+  font-family:'Tomorrow',sans-serif; font-size:9px; font-weight:700;
+  letter-spacing:1.5px; text-transform:uppercase;
+  padding:3px 8px; background:var(--red-low); color:var(--red);
+}
+.sync-banner.error .sync-banner-icon{ background:rgba(255,107,122,.1); color:var(--D); }
+.sync-banner.success .sync-banner-icon{ background:rgba(63,207,207,.1); color:var(--S); }
+
+/* S-TIER ROW */
+.stier-row{ display:flex; gap:14px; flex-wrap:wrap; }
+.stier-card{
+  display:flex; flex-direction:column; align-items:center; gap:8px;
+  cursor:pointer;
+}
+.stier-frame{
+  width:74px; height:92px; overflow:hidden;
+  border:1px solid rgba(245,200,66,.25);
+  background:var(--surf2); position:relative;
+  transition:border-color .3s, transform .3s, box-shadow .3s;
+}
+.stier-frame img{ width:100%; height:100%; object-fit:cover; object-position:top center; display:block; }
+.stier-card:hover .stier-frame{
+  border-color:var(--gold); transform:translateY(-6px);
+  box-shadow:0 15px 30px -10px rgba(245,200,66,.3);
+}
+.stier-name{
+  font-family:'Tomorrow',sans-serif; font-size:11px; font-weight:600;
+  text-transform:uppercase; letter-spacing:1.5px; color:var(--text);
+}
+.stier-badge{
+  position:absolute; top:5px; right:5px;
+  background:var(--gold); color:#1a1200;
+  font-family:'Tomorrow',sans-serif; font-size:8px; font-weight:700;
+  letter-spacing:1px; padding:1px 5px;
+}
+
+/* GLOBAL NOTES */
+.gs-grid{ display:grid; grid-template-columns:repeat(auto-fill, minmax(260px, 1fr)); gap:12px; }
+.gs-card{
+  background:var(--surf); border:1px solid var(--border);
+  border-left:2px solid var(--red);
+  padding:14px 18px; font-size:13px; color:var(--text); line-height:1.55;
+  display:flex; align-items:flex-start; gap:11px;
+  transition:transform .2s, border-color .2s, background .2s;
+}
+.gs-card:hover{
+  background:var(--surf2); border-color:rgba(255,70,86,.4);
+  transform:translateY(-2px);
+}
+.gs-icon{
+  color:var(--red); font-size:14px; flex-shrink:0; margin-top:2px;
+  transform:rotate(45deg); font-weight:700;
+}
+
+/* PLAYER ACTIONS ROW (sync + tracker) */
+.player-actions {
+  display: flex;
+  gap: 6px;
+  margin-top: 12px;
+}
+.player-actions .player-sync-btn {
+  flex: 1;
+  margin-top: 0;
+}
+.tracker-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  padding: 7px 12px;
+  background: transparent;
+  border: 1px solid var(--border2);
+  color: var(--muted);
+  text-decoration: none;
+  font-family: 'Tomorrow', sans-serif;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  transition: all .15s;
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+.tracker-btn:hover {
+  color: var(--gold);
+  border-color: rgba(245,200,66,.4);
+  background: var(--gold-low);
+}

@@ -1,0 +1,260 @@
+/* ════════════════════════════════════════════════
+   OLYCITY · Agent Page (immersive)
+   ════════════════════════════════════════════════ */
+
+.agent-page{
+  display:none; position:relative; z-index:3;
+  animation:agentIn .5s cubic-bezier(.22,1,.36,1);
+}
+.agent-page.active{ display:block; }
+@keyframes agentIn{
+  from{ opacity:0; transform:scale(.98) translateY(20px); }
+  to{ opacity:1; transform:scale(1) translateY(0); }
+}
+
+.agent-hero{
+  position:relative; min-height:520px; overflow:hidden;
+  background:var(--surf2);
+  border-bottom:1px solid var(--border);
+}
+.agent-hero-bg{
+  position:absolute; inset:0;
+  background-size:cover; background-position:center;
+  filter:blur(2px) saturate(1.1);
+  opacity:.6; transform:scale(1.1);
+}
+.agent-hero-gradient{
+  position:absolute; inset:0;
+  background:
+    radial-gradient(ellipse at 70% 50%, transparent 0%, rgba(10,12,16,.4) 50%, var(--bg) 90%),
+    linear-gradient(135deg, rgba(10,12,16,.9) 0%, transparent 50%);
+}
+:root[data-theme="light"] .agent-hero-gradient{
+  background:
+    radial-gradient(ellipse at 70% 50%, transparent 0%, rgba(244,241,234,.5) 50%, var(--bg) 90%),
+    linear-gradient(135deg, rgba(244,241,234,.9) 0%, transparent 50%);
+}
+.agent-hero-grid{
+  position:absolute; inset:0;
+  background-image:
+    linear-gradient(rgba(255,70,86,.05) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,70,86,.05) 1px, transparent 1px);
+  background-size:50px 50px;
+  mask-image:radial-gradient(ellipse at 30% 50%, #000, transparent 80%);
+  -webkit-mask-image:radial-gradient(ellipse at 30% 50%, #000, transparent 80%);
+}
+
+.agent-hero-content{
+  position:relative; display:grid;
+  grid-template-columns:1.2fr 1fr;
+  max-width:1600px; margin:0 auto; padding:50px 32px;
+  align-items:center; gap:40px; min-height:520px;
+}
+
+.agent-info{ position:relative; z-index:2; }
+.agent-back-btn{
+  display:inline-flex; align-items:center; gap:8px;
+  background:transparent; border:1px solid var(--border2);
+  padding:8px 16px; color:var(--muted); cursor:pointer;
+  font-family:'Tomorrow',sans-serif; font-size:11px; font-weight:600;
+  letter-spacing:2px; text-transform:uppercase;
+  margin-bottom:28px; transition:all .2s;
+}
+.agent-back-btn:hover{ color:var(--text); border-color:var(--red); background:var(--red-low); }
+
+.agent-page-eyebrow{
+  font-family:'Tomorrow',sans-serif; font-size:11px; font-weight:700;
+  letter-spacing:5px; text-transform:uppercase; color:var(--red);
+  margin-bottom:14px; display:flex; align-items:center; gap:10px;
+}
+.agent-page-eyebrow::before{
+  content:''; width:30px; height:1px; background:var(--red);
+}
+.agent-page-name{
+  font-family:'Tomorrow',sans-serif;
+  font-size:clamp(60px, 8vw, 110px); font-weight:700;
+  line-height:.9; letter-spacing:-1px;
+  color:var(--text); text-transform:uppercase;
+  margin-bottom:8px;
+}
+.agent-page-role-row{
+  display:flex; align-items:center; gap:12px; margin-bottom:24px; flex-wrap:wrap;
+}
+.agent-role-badge{
+  font-family:'Tomorrow',sans-serif; font-size:11px; font-weight:600;
+  letter-spacing:2.5px; text-transform:uppercase;
+  padding:6px 16px; border:1px solid;
+}
+.agent-role-badge.D{ color:var(--D); border-color:var(--D); background:rgba(255,107,122,.08); }
+.agent-role-badge.I{ color:var(--I); border-color:var(--I); background:rgba(240,168,50,.08); }
+.agent-role-badge.S{ color:var(--S); border-color:var(--S); background:rgba(63,207,207,.08); }
+.agent-role-badge.C{ color:var(--C); border-color:var(--C); background:rgba(168,127,255,.08); }
+.agent-origin{
+  font-family:'Tomorrow',sans-serif; font-size:11px; letter-spacing:2px;
+  text-transform:uppercase; color:var(--muted);
+}
+.agent-bio{
+  font-size:15px; line-height:1.65; color:var(--text);
+  max-width:560px; margin-bottom:28px;
+}
+
+.agent-quick-stats{ display:flex; gap:14px; flex-wrap:wrap; }
+.aqs{
+  display:flex; flex-direction:column; gap:3px;
+  padding:10px 16px; background:var(--surf); border:1px solid var(--border);
+  border-left:2px solid var(--red);
+}
+.aqs-val{
+  font-family:'Tomorrow',sans-serif; font-size:18px; font-weight:700; color:var(--text);
+}
+.aqs-lbl{
+  font-family:'Tomorrow',sans-serif; font-size:9px; font-weight:500;
+  letter-spacing:2px; text-transform:uppercase; color:var(--muted);
+}
+
+.agent-portrait-wrap{
+  position:relative; display:flex; justify-content:center; align-items:flex-end;
+  height:100%; min-height:400px;
+}
+.agent-portrait-full{
+  max-height:580px; width:auto; max-width:100%;
+  filter:drop-shadow(0 30px 60px rgba(0,0,0,.6));
+  transition:transform .4s cubic-bezier(.22,1,.36,1);
+  position:relative; z-index:2;
+}
+.agent-portrait-glow{
+  position:absolute; bottom:-40px; left:50%; transform:translateX(-50%);
+  width:80%; height:80%;
+  background:radial-gradient(ellipse at center, var(--red-low), transparent 65%);
+  filter:blur(40px); z-index:1;
+}
+
+/* ABILITIES */
+.agent-body{
+  max-width:1600px; margin:0 auto; padding:50px 32px; position:relative; z-index:2;
+}
+.abilities-section{ margin-bottom:48px; }
+.ab-grid{ display:grid; grid-template-columns:repeat(4, 1fr); gap:14px; }
+.ability-card{
+  background:var(--surf); border:1px solid var(--border);
+  padding:20px; position:relative; overflow:hidden;
+  transition:transform .25s, border-color .25s, box-shadow .25s;
+  cursor:default;
+}
+.ability-card::before{
+  content:''; position:absolute; top:0; left:0; width:100%; height:2px;
+  background:linear-gradient(90deg, var(--red), transparent);
+}
+.ability-card:hover{
+  transform:translateY(-4px); border-color:var(--red-mid);
+  box-shadow:0 20px 40px -20px rgba(255,70,86,.25);
+}
+.ability-card.ultimate{
+  background:linear-gradient(135deg, var(--gold-low), transparent);
+  border-color:rgba(245,200,66,.3);
+}
+.ability-card.ultimate::before{ background:linear-gradient(90deg, var(--gold), transparent); }
+.ability-card.ultimate:hover{
+  border-color:var(--gold);
+  box-shadow:0 20px 40px -20px rgba(245,200,66,.3);
+}
+
+.ab-header{ display:flex; align-items:center; gap:12px; margin-bottom:14px; }
+.ab-icon-wrap{
+  width:48px; height:48px; background:var(--surf3);
+  border:1px solid var(--border2);
+  display:flex; align-items:center; justify-content:center;
+  flex-shrink:0; padding:8px;
+}
+.ab-icon-wrap img{ width:100%; height:100%; object-fit:contain; filter:invert(.9); }
+:root[data-theme="light"] .ab-icon-wrap img{ filter:invert(.1); }
+.ab-info{ flex:1; min-width:0; }
+.ab-slot{
+  font-family:'Tomorrow',sans-serif; font-size:9px; font-weight:600;
+  letter-spacing:2px; text-transform:uppercase; color:var(--red); margin-bottom:3px;
+}
+.ability-card.ultimate .ab-slot{ color:var(--gold); }
+.ab-name{
+  font-family:'Tomorrow',sans-serif; font-size:16px; font-weight:600;
+  letter-spacing:.5px; color:var(--text); text-transform:uppercase; line-height:1.1;
+}
+.ab-cost{
+  font-family:'Tomorrow',sans-serif; font-size:11px; font-weight:600;
+  letter-spacing:1px; color:var(--muted);
+  display:flex; align-items:center; gap:5px; margin-top:6px;
+}
+.ab-cost::before{ content:'◈'; color:var(--red); font-size:10px; }
+.ability-card.ultimate .ab-cost::before{ color:var(--gold); }
+.ab-desc{ font-size:13px; line-height:1.55; color:var(--text); }
+
+/* USAGE — comps where this agent appears */
+.usage-section{ margin-bottom:48px; }
+.usage-grid{ display:grid; grid-template-columns:repeat(auto-fit, minmax(260px, 1fr)); gap:14px; }
+.usage-card{
+  background:var(--surf); border:1px solid var(--border);
+  padding:16px 18px; cursor:pointer;
+  transition:transform .2s, border-color .2s, box-shadow .2s;
+  position:relative; overflow:hidden;
+}
+.usage-card:hover{
+  transform:translateY(-3px); border-color:var(--red-mid);
+  box-shadow:var(--shadow-card);
+}
+.usage-map-thumb{
+  position:absolute; top:0; right:0; width:100%; height:100%;
+  opacity:.12; background-size:cover; background-position:center; pointer-events:none;
+}
+.usage-card-inner{ position:relative; z-index:1; }
+.usage-map{
+  font-family:'Tomorrow',sans-serif; font-size:18px; font-weight:600;
+  letter-spacing:1px; color:var(--text); text-transform:uppercase; margin-bottom:4px;
+}
+.usage-comp-label{
+  font-family:'Tomorrow',sans-serif; font-size:10px; font-weight:600;
+  letter-spacing:1.5px; color:var(--muted); text-transform:uppercase; margin-bottom:12px;
+}
+.usage-meta{ display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
+.usage-tier{
+  font-family:'Tomorrow',sans-serif; font-size:9px; font-weight:700;
+  letter-spacing:1.5px; padding:2px 8px;
+}
+.usage-tier.S{ background:var(--gold-low); color:var(--gold); border:1px solid rgba(245,200,66,.3); }
+.usage-tier.A{ background:rgba(63,207,207,.1); color:var(--S); border:1px solid rgba(63,207,207,.3); }
+.usage-wr{
+  font-family:'Tomorrow',sans-serif; font-size:11px; color:var(--text);
+  font-weight:600; letter-spacing:.5px;
+}
+.usage-go{ margin-left:auto; color:var(--muted); font-size:14px; }
+.usage-card:hover .usage-go{ color:var(--red); transform:translateX(3px); transition:transform .2s, color .2s; }
+
+/* PLAYED BY OLYCITY */
+.played-by{
+  background:var(--surf); border:1px solid var(--border);
+  border-left:2px solid var(--red); padding:18px 22px;
+  display:flex; align-items:center; gap:14px; flex-wrap:wrap;
+}
+.played-by-lbl{
+  font-family:'Tomorrow',sans-serif; font-size:11px; font-weight:600;
+  letter-spacing:2px; text-transform:uppercase; color:var(--red);
+}
+.played-by-pills{ display:flex; gap:6px; flex-wrap:wrap; }
+.played-pill{
+  font-family:'Tomorrow',sans-serif; font-size:11px; font-weight:600;
+  letter-spacing:1px; text-transform:uppercase;
+  padding:5px 12px; background:var(--surf2); border:1px solid var(--border2); color:var(--text);
+}
+.played-pill .pill-role{ color:var(--muted); font-weight:500; margin-left:6px; }
+.played-none{ font-size:13px; color:var(--muted); font-style:italic; }
+
+.section-title-with-tag{
+  display:flex; align-items:baseline; gap:14px; margin-bottom:22px; flex-wrap:wrap;
+}
+.sec-tag{
+  font-family:'Tomorrow',sans-serif; font-size:11px; font-weight:700;
+  letter-spacing:3px; text-transform:uppercase; color:var(--red);
+}
+.sec-title{
+  font-family:'Tomorrow',sans-serif; font-size:24px; font-weight:600;
+  letter-spacing:1px; text-transform:uppercase; color:var(--text);
+}
+.sec-line{ flex:1; height:1px; background:linear-gradient(90deg, var(--border2), transparent); min-width:60px; }

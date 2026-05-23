@@ -1,0 +1,191 @@
+[
+  {
+    "map": "Fracture",
+    "region": "Two-site · Double spawn défenseur",
+    "tags": ["Breach obligatoire", "Raze domine", "Exécutes coordonnés"],
+    "stats": { "difficulty": "4.2/5", "sides": "A-favored" },
+    "comps": [
+      {
+        "label": "Meta principale", "tier": "S", "tierLabel": "S-TIER", "winrate": 54.8,
+        "agents": ["Raze", "Breach", "Fade", "Miks", "Cypher"],
+        "source": "VLR.gg · High Elo",
+        "tip": "Coordonnez les <strong>Fault Line de Breach</strong> avec les Satchels de Raze pour rentrer simultanément des deux côtés. Miks smoke le spawn défenseur central pour couper les rotations."
+      },
+      {
+        "label": "Double initiateur", "tier": "A", "tierLabel": "A-TIER", "winrate": 52.1,
+        "agents": ["Raze", "Breach", "Skye", "Viper", "Killjoy"],
+        "source": "Reddit r/ValorantCompetitive",
+        "tip": "<strong>Skye + Breach</strong> = inarrêtable sur Fracture. Skye flash-clear, Breach stun le site, Raze entre. Killjoy anchor seul pendant que les 4 autres exécutent."
+      }
+    ],
+    "notes": [
+      "Breach quasi-obligatoire — ses stuns traversent tous les murs de Fracture",
+      "Raze satchels permettent d'abuser les angles fermés et les ziplines",
+      "Fade Haunt pour surveiller les deux spawns simultanément",
+      "Miks coupe les rotations du spawn défenseur central",
+      "Map qui favorise fortement les attaquants — profitez des exécutes rapides"
+    ]
+  },
+  {
+    "map": "Haven",
+    "region": "Three-site · Rotation intensive",
+    "tags": ["3 sites", "Rotation vitale", "Double duelist viable"],
+    "stats": { "difficulty": "3.8/5", "sides": "Balanced" },
+    "comps": [
+      {
+        "label": "Meta principale", "tier": "S", "tierLabel": "S-TIER", "winrate": 55.3,
+        "agents": ["Jett", "Sova", "Breach", "Omen", "Cypher"],
+        "source": "VLR.gg · Hotspawn",
+        "tip": "Omen teleport sur les angles imprévus entre les 3 sites. <strong>Cypher cam sur B</strong> peut surveiller A et C en même temps. En five stack, appelez les rotations à voix haute — Haven se gagne à la communication."
+      },
+      {
+        "label": "Double duelist agressif", "tier": "A", "tierLabel": "A-TIER", "winrate": 51.7,
+        "agents": ["Neon", "Phoenix", "Sova", "Omen", "Killjoy"],
+        "source": "Esports Insider 2026",
+        "tip": "<strong>Neon + Phoenix</strong> créent une pression simultanée sur deux sites. Envoyez Neon sur A et Phoenix sur C avec Sova recon pour split la défense."
+      }
+    ],
+    "notes": [
+      "3 sites = pression sur toute la map, les rotations défensives sont longues",
+      "Omen est le meilleur controller ici — smokes rechargeables sur 3 sites",
+      "Cypher one-way cage sur B est particulièrement violent",
+      "Sova drone peut lock A Long et C Long simultanément",
+      "Double duelist très fort si votre équipe est bien coordonnée"
+    ]
+  },
+  {
+    "map": "Breeze",
+    "region": "Open map · Longue portée",
+    "tags": ["Viper indispensable", "Operator dominant", "Longs angles"],
+    "stats": { "difficulty": "4.5/5", "sides": "B-favored" },
+    "comps": [
+      {
+        "label": "Meta principale", "tier": "S", "tierLabel": "S-TIER", "winrate": 56.2,
+        "agents": ["Jett", "Sova", "KAY/O", "Viper", "Cypher"],
+        "source": "VLR.gg · Rework 12.00",
+        "tip": "<strong>Viper wall coupe B Main</strong> en deux — un joueur doit main Viper. Jett Operator sur A Hall. KAY/O ZERO/POINT supprime les ultis défensifs sur les exécutes."
+      },
+      {
+        "label": "Longue portée", "tier": "A", "tierLabel": "A-TIER", "winrate": 52.8,
+        "agents": ["Chamber", "Jett", "Sova", "Viper", "Fade"],
+        "source": "gamer.org · dak.gg meta",
+        "tip": "<strong>Chamber + Jett</strong> = domination totale à l'Operator. Fade remplace Cypher pour plus de recon actif. Évitez les agents sans mobilité."
+      }
+    ],
+    "notes": [
+      "Viper reste le pick le plus important — son wall coupe A Hall et B Main",
+      "Jett ou Chamber au Operator sur les longues sightlines",
+      "KAY/O ZERO/POINT supprime les abilities défensives lors des exécutes",
+      "Sova recon dart traverse les espaces ouverts avec de nombreux lineups",
+      "Évitez les agents sans mobilité — les rotations sont très longues"
+    ]
+  },
+  {
+    "map": "Lotus",
+    "region": "Three-site · Rotations complexes",
+    "tags": ["Double controller", "3 sites", "Portes pivotantes"],
+    "stats": { "difficulty": "4.7/5", "sides": "Defender-favored" },
+    "comps": [
+      {
+        "label": "Meta principale", "tier": "S", "tierLabel": "S-TIER", "winrate": 53.6,
+        "agents": ["Raze", "Fade", "Omen", "Miks", "Killjoy"],
+        "source": "VLR.gg · High Elo",
+        "tip": "<strong>Miks + Omen</strong> = double controller le plus efficace. Killjoy anchor C site seul pendant que les 4 autres exécutent A ou B. Fade isole le C site entier avec son ulti."
+      },
+      {
+        "label": "Variante Hotspawn", "tier": "A", "tierLabel": "A-TIER", "winrate": 51.4,
+        "agents": ["Raze", "Viper", "Fade", "Omen", "Vyse"],
+        "source": "Hotspawn · Mai 2026",
+        "tip": "<strong>Vyse</strong> remplace Killjoy et offre un wall pour stopper les retakes sur C. Viper wall coupe Rubble. En five stack, assignez des rôles fixes sur chacun des 3 sites."
+      }
+    ],
+    "notes": [
+      "Double controller obligatoire — Lotus a trop d'entrées pour un seul",
+      "Fade > Sova sur Lotus — ses Haunts ont des lineups exceptionnels",
+      "Les portes pivotantes créent des timings imprévisibles",
+      "Raze satchels pour naviguer entre les 3 sites à toute vitesse",
+      "C site peut être anchor par une seule sentinelle"
+    ]
+  },
+  {
+    "map": "Bind",
+    "region": "Teleporters · Angles serrés",
+    "tags": ["Teleporters", "Double initiateur", "Raze abuse"],
+    "stats": { "difficulty": "3.5/5", "sides": "A-favored" },
+    "comps": [
+      {
+        "label": "Meta principale", "tier": "S", "tierLabel": "S-TIER", "winrate": 55.0,
+        "agents": ["Raze", "Skye", "Gekko", "Miks", "Cypher"],
+        "source": "VLR.gg · High Elo",
+        "tip": "Les teleporters permettent à Raze de se retrouver partout. <strong>Skye + Gekko</strong> double-initiate sur le même site. Miks smoke le teleporter entrant pour bloquer les flanks."
+      },
+      {
+        "label": "Variante structurée", "tier": "A", "tierLabel": "A-TIER", "winrate": 52.4,
+        "agents": ["Raze", "Skye", "Sova", "Brimstone", "Cypher"],
+        "source": "Reddit · dak.gg",
+        "tip": "<strong>Brimstone molotov post-plant</strong> dévastateur grâce aux angles. Sova dart traverse les murs pour recon B Hookah. Cypher trip sur les teleporters = info gratuite."
+      }
+    ],
+    "notes": [
+      "Les teleporters sont des outils d'information — Cypher cam en face donne l'usage ennemi",
+      "Raze satchels + teleporter = rotations ultra-rapides entre A et B",
+      "Double initiateur très fort — Bind a de nombreux angles à nettoyer",
+      "Miks smoke le teleporter entrant coupe un vecteur de flanc entier",
+      "Hookah B est un bottleneck parfait pour les flashes de Skye"
+    ]
+  },
+  {
+    "map": "Split",
+    "region": "Verticale · Angles mid",
+    "tags": ["Verticale", "Breach essentiel", "Mid control"],
+    "stats": { "difficulty": "4.1/5", "sides": "Defender-favored" },
+    "comps": [
+      {
+        "label": "Meta principale", "tier": "S", "tierLabel": "S-TIER", "winrate": 54.5,
+        "agents": ["Raze", "Breach", "Skye", "Miks", "Cypher"],
+        "source": "VLR.gg",
+        "tip": "<strong>Breach stun dans Ramp</strong> permet à Raze de satchel direct sur A Site. Skye flash B Heaven depuis Mid, Miks smoke le defender spawn. Pressez mid pour couper les rotations."
+      },
+      {
+        "label": "Défensive solide", "tier": "A", "tierLabel": "A-TIER", "winrate": 51.9,
+        "agents": ["Raze", "Breach", "Sage", "Omen", "Cypher"],
+        "source": "High Elo · Reddit",
+        "tip": "<strong>Sage wall</strong> sur Ramp ou B Heaven crée des 1v1 forcés. Omen phantom smokes sur mid, Breach stun. En five stack, Sage resurrecte le joueur le plus impactful."
+      }
+    ],
+    "notes": [
+      "Breach quasi-obligatoire — ses stuns traversent tous les murs de Split",
+      "Mid control est le game-winner — qui contrôle mid contrôle les rotations",
+      "Raze satchels sur les escaliers sont difficiles à contester",
+      "Sage wall B Heaven force des rotations longues",
+      "Cypher one-way cages sur B Site parmi les plus efficaces du jeu"
+    ]
+  },
+  {
+    "map": "Pearl",
+    "region": "Ouverte · Couloirs longs",
+    "tags": ["Double recon", "Astra globes", "Long range"],
+    "stats": { "difficulty": "4.3/5", "sides": "Balanced" },
+    "comps": [
+      {
+        "label": "Meta principale", "tier": "S", "tierLabel": "S-TIER", "winrate": 54.1,
+        "agents": ["Neon", "Fade", "Sova", "Astra", "Cypher"],
+        "source": "VLR.gg · High Elo",
+        "tip": "<strong>Astra globes sur mid Street</strong> = contrôle permanent de la zone centrale. Fade + Sova = double recon qui nettoie tous les angles. Neon rush dans les smokes."
+      },
+      {
+        "label": "Longue portée", "tier": "A", "tierLabel": "A-TIER", "winrate": 52.5,
+        "agents": ["Jett", "Chamber", "Sova", "Astra", "Killjoy"],
+        "source": "dak.gg · High Elo",
+        "tip": "<strong>Jett + Chamber double Operator</strong> sur les longs couloirs. Killjoy turret sur B Site donne l'info sur les pushs. Astra retire des globes pour bloquer les flancs."
+      }
+    ],
+    "notes": [
+      "Astra est la meilleure controller sur Pearl — ses globes couvrent Mid Street parfaitement",
+      "Double recon (Fade + Sova) permet de nettoyer tous les angles",
+      "Les longs couloirs favorisent l'Operator",
+      "Cypher cam sur Mid offre les informations les plus précieuses",
+      "Neon Fast Lane dans les smokes d'Astra est quasi-inarrêtable"
+    ]
+  }
+]
