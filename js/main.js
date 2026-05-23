@@ -26,15 +26,17 @@ export const state = {
   compareSelections: [],
   builderSlots: [null,null,null,null,null],
   builderFocusSlot: 0,
+  LINEUPS: {},
 };
 
 // ─── LOAD JSON DATA ───────────────────────────────
 async function loadData() {
-  const [comps, roster, roles, agentsFr] = await Promise.all([
+  const [comps, roster, roles, agentsFr, lineups] = await Promise.all([
     fetch('./data/comps.json').then(r => r.json()),
     fetch('./data/roster.json').then(r => r.json()),
     fetch('./data/roles.json').then(r => r.json()),
     fetch('./data/agents-fr.json').then(r => r.json()),
+    fetch('./data/lineups.json').then(r => r.json()),
   ]);
 
   state.COMPS_DATA = comps;
@@ -45,6 +47,7 @@ async function loadData() {
   state.S_TIER = roles.sTier;
   state.GLOBAL_NOTES = roles.globalNotes;
   state.AGENT_FR = agentsFr;
+  state.LINEUPS = lineups;
   state.FAVS = storage.getFavs();
   state.PLAYER_STATS = storage.getPlayerStats();
 
@@ -283,6 +286,17 @@ window.OLYCITY = {
     saved.push({ name, agents: filled, createdAt: Date.now() });
     localStorage.setItem('olycity-saved-comps', JSON.stringify(saved));
     alert('Comp sauvegardée !');
+  },
+
+  switchLineupAgent(mapName, agent, btn) {
+    // Switch active tab
+    document.querySelectorAll(`.lineup-agent-tab[data-map="${mapName}"]`)
+      .forEach(b => b.classList.remove('active'));
+    if (btn) btn.classList.add('active');
+    // Show/hide agent cards
+    document.querySelectorAll(`[data-lineup-map="${mapName}"]`).forEach(el => {
+      el.classList.toggle('hidden', el.dataset.lineupAgent !== agent);
+    });
   },
 
   filterAgents(role, btn) {

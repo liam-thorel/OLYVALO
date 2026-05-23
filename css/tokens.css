@@ -93,3 +93,5 @@ body{
 .spa-page.active {
   animation: pageSlideIn .3s cubic-bezier(.22,1,.36,1);
 }
+
+.hidden { display: none !important; }

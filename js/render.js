@@ -189,35 +189,64 @@ export function compHTML(comp, mapIdx, compIdx) {
     </div>`;
 }
 
-// ─── LINEUPS SECTION ─────────────────────────────
-function lineupsHTML(lineups, mapName) {
-  if (!lineups?.length) return '';
-  const cards = lineups.map(l => {
-    const img = valorantApi.agentImg(l.agent);
-    const trackerUrl = `https://tracker.gg/valorant/guides/clips?map=${encodeURIComponent(mapName)}&agent=${encodeURIComponent(l.agent)}`;
-    return `<div class="lineup-card">
-      <div class="lineup-card-header">
-        ${img ? `<img class="lineup-agent-img" src="${img}" alt="${l.agent}">` : ''}
-        <div class="lineup-agent-info">
-          <div class="lineup-agent-name">${l.agent}</div>
-          <div class="lineup-ability">${l.ability}</div>
-          <div class="lineup-count">~${l.count} lineups disponibles</div>
-        </div>
-      </div>
-      <div class="lineup-tip">${l.tip}</div>
-      <a class="lineup-link" href="${trackerUrl}" target="_blank" rel="noopener">
-        ↗ Voir les lineups sur Tracker.gg
-      </a>
-    </div>`;
+// ─── LINEUPS INDIVIDUELS ─────────────────────────
+function lineupsHTML(legacyData, mapName) {
+  // Use new individual lineup data from state.LINEUPS
+  const mapLineups = state.LINEUPS?.[mapName];
+  if (!mapLineups || Object.keys(mapLineups).length === 0) return '';
+
+  const agents = Object.keys(mapLineups);
+
+  // Agent filter tabs
+  const tabs = agents.map((agent, i) => {
+    const img = valorantApi.agentImg(agent);
+    const imgEl = img ? `<img src="${img}" alt="${agent}">` : '';
+    return `<button class="lineup-agent-tab ${i === 0 ? 'active' : ''}"
+      data-map="${mapName}" data-agent="${agent}"
+      onclick="window.OLYCITY.switchLineupAgent('${mapName}','${agent}',this)">
+      ${imgEl}${agent}
+    </button>`;
   }).join('');
 
-  return `<div class="lineups-section">
+  // Cards for first agent by default
+  const cardsHTML = (agentName) => {
+    const lineups = mapLineups[agentName] || [];
+    return lineups.map((l, idx) => {
+      const embedId = `lineup-embed-${mapName.replace(/\s/g,'')}-${agentName}-${idx}`;
+      const src = 'https://www.youtube.com/embed/' + l.videoId
+        + '?start=' + (l.start || 0)
+        + '&autoplay=0&rel=0&modestbranding=1&controls=1';
+      return `<div class="lineup-v2-card">
+        <div class="lineup-embed-wrap">
+          <iframe id="${embedId}" src="${src}" allow="autoplay; encrypted-media" loading="lazy" title="${l.name}"></iframe>
+        </div>
+        <div class="lineup-v2-info">
+          <div class="lineup-v2-header">
+            <span class="lineup-v2-name">${l.name}</span>
+            <span class="lineup-type-badge ${l.type}">${l.type}</span>
+            <span class="lineup-diff-badge">${l.diff}</span>
+          </div>
+          <p class="lineup-v2-desc">${l.desc}</p>
+        </div>
+      </div>`;
+    }).join('');
+  };
+
+  // Render all agents' cards, hide non-active ones
+  const allCards = agents.map((agent, i) =>
+    `<div class="lineup-agent-cards ${i === 0 ? '' : 'hidden'}" data-lineup-map="${mapName}" data-lineup-agent="${agent}">
+      <div class="lineup-cards-grid">${cardsHTML(agent)}</div>
+    </div>`
+  ).join('');
+
+  return `<div class="lineup-section-v2">
     <div class="sub-section-title">
       <span class="sub-tag">Lineups</span>
       <span class="sub-title">Positions clés</span>
       <div class="sub-line"></div>
     </div>
-    <div class="lineups-grid">${cards}</div>
+    <div class="lineup-agent-tabs">${tabs}</div>
+    ${allCards}
   </div>`;
 }
 
