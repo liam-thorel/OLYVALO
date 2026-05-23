@@ -339,10 +339,24 @@ export function stierHTML() {
     const img = valorantApi.agentImg(name);
     const imgEl = img
       ? `<img src="${img}" alt="${name}" loading="lazy">`
-      : `<div class="portrait-ph" style="font-size:22px">${name[0]}</div>`;
+      : `<div class="portrait-ph" style="font-size:28px">${name[0]}</div>`;
+    const role = state.ROLES[name] || 'D';
+    const roleLabel = state.ROLE_FULL[role] || '';
+    // Count how many comps use this agent
+    const pickCount = state.COMPS_DATA.reduce((acc, map) =>
+      acc + map.comps.filter(c => c.agents.includes(name)).length, 0);
+    const mapsUsed = state.COMPS_DATA
+      .filter(map => map.comps.some(c => c.agents.includes(name)))
+      .map(m => m.map.slice(0,3).toUpperCase())
+      .join(' · ');
     return `<div class="stier-card" title="${name}" onclick="window.OLYCITY.showAgentPage('${name}')">
-      <div class="stier-frame">${imgEl}<span class="stier-badge">S-TIER</span></div>
+      <div class="stier-frame">
+        ${imgEl}
+        <span class="stier-badge">S-TIER</span>
+        ${mapsUsed ? `<div class="stier-maps">${mapsUsed}</div>` : ''}
+      </div>
       <span class="stier-name">${name}</span>
+      <span class="stier-role">${roleLabel}</span>
     </div>`;
   }).join('');
 }
@@ -477,6 +491,8 @@ export function agentPageHTML(name) {
     <div class="agent-hero">
       ${bgEl}
       ${gradientOverlay}
+      <div class="agent-hero-grain"></div>
+      <div class="agent-hero-scan"></div>
       <div class="agent-hero-gradient"></div>
       <div class="agent-hero-grid"></div>
       <div class="agent-hero-content">
