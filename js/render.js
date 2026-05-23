@@ -325,9 +325,13 @@ export function mapSectionHTML(data, idx) {
     ? `<img class="map-hero-img" src="${splash}" alt="${data.map}" loading="lazy">`
     : `<div class="map-hero-img" style="background:var(--surf3)"></div>`;
   const tags = data.tags.map(t => `<span class="map-tag">${t}</span>`).join('');
-  const tabs = data.comps.map((c, ci) =>
-    `<button class="comp-tab ${ci === 0 ? 'active' : ''}" onclick="window.OLYCITY.switchComp(${idx},${ci},this)">${c.label}</button>`
-  ).join('');
+  const tabs = data.comps.map((c, ci) => {
+    const isFun = c.tier === 'F';
+    const cls = isFun ? 'fun-tab' : '';
+    const emoji = isFun ? '🎉 ' : '';
+    return `<button class="comp-tab ${ci === 0 ? 'active' : ''} ${cls}"
+      onclick="window.OLYCITY.switchComp(${idx},${ci},this)">${emoji}${c.label}</button>`;
+  }).join('');
   const panels = data.comps.map((c, ci) => compHTML(c, idx, ci)).join('');
   const notes = data.notes.map(n =>
     `<div class="note-row"><span class="note-marker"></span>${n}</div>`
@@ -782,6 +786,53 @@ export function agentsGridHTML(filter = 'all', search = '') {
   }
 
   return filtered.map(name => agentCardHTML(name)).join('');
+}
+
+// ─── SAVED COMPS ─────────────────────────────────
+export function savedCompsHTML() {
+  let saved = [];
+  try { saved = JSON.parse(localStorage.getItem('olycity-saved-comps') || '[]'); } catch(e) {}
+
+  if (saved.length === 0) {
+    return `<div class="saved-comps-section">
+      <div class="sub-section-title">
+        <span class="sub-tag">Sauvegardées</span>
+        <span class="sub-title">Mes comps custom</span>
+        <div class="sub-line"></div>
+      </div>
+      <div class="no-saved">Aucune comp sauvegardée — crée-en une dans le builder ci-dessus</div>
+    </div>`;
+  }
+
+  const cards = saved.map((comp, i) => {
+    const agents = (comp.agents || []).map(name => {
+      const img = valorantApi.agentImg(name);
+      return `<div class="saved-comp-agent">
+        ${img ? `<img src="${img}" alt="${name}" title="${name}">` : ''}
+      </div>`;
+    }).join('');
+    const date = comp.createdAt
+      ? new Date(comp.createdAt).toLocaleDateString('fr-FR', { day:'2-digit', month:'short' })
+      : '—';
+    return `<div class="saved-comp-card">
+      <div class="saved-comp-name">${comp.name}</div>
+      <div class="saved-comp-agents">${agents}</div>
+      <div class="saved-comp-date">Créée le ${date} · ${comp.agents?.length || 0} agents</div>
+      <div class="saved-comp-actions">
+        <button class="saved-comp-btn load" onclick="window.OLYCITY.builderLoad(${i})">↺ Charger</button>
+        <button class="saved-comp-btn del" onclick="window.OLYCITY.savedCompDelete(${i})">✕ Supprimer</button>
+      </div>
+    </div>`;
+  }).join('');
+
+  return `<div class="saved-comps-section">
+    <div class="sub-section-title">
+      <span class="sub-tag">Sauvegardées</span>
+      <span class="sub-title">Mes comps custom (${saved.length})</span>
+      <div class="sub-line"></div>
+    </div>
+    <div class="saved-comps-grid">${cards}</div>
+  </div>`;
 }
 
 // ─── COMP COMPARISON ─────────────────────────────

@@ -125,6 +125,52 @@
           "split": 4
         },
         "vods": []
+      },
+      {
+        "label": "Double Duelist",
+        "tier": "B",
+        "tierLabel": "B-TIER",
+        "winrate": 52.1,
+        "updatedAt": "Mai 2026",
+        "agents": [
+          "Jett",
+          "Raze",
+          "Fade",
+          "Omen",
+          "Chamber"
+        ],
+        "source": "ValoHub · Plat+ competitive data 2026",
+        "tip": "<strong>Jett + Raze</strong> exploitent à fond les ziplines et les angles serrés de Fracture. Chamber anchor B pendant que Fade donne l'info sur les deux spawns. Omen smoke le CT central.",
+        "agility": {
+          "antiRush": 2,
+          "postPlant": 3,
+          "retake": 3,
+          "split": 5
+        },
+        "vods": []
+      },
+      {
+        "label": "Fun — Full Chaos",
+        "tier": "F",
+        "tierLabel": "FUN",
+        "winrate": 48.0,
+        "updatedAt": "Mai 2026",
+        "agents": [
+          "Raze",
+          "Neon",
+          "Jett",
+          "Yoru",
+          "Iso"
+        ],
+        "source": "OLYCITY Creativity Lab · Ranked pour rire",
+        "tip": "5 Duelists. Pas de smokes. Pas de recon. Juste du skill pur et de la vitesse. Chacun prend un côté différent dès le début du round — bonne chance à la défense.",
+        "agility": {
+          "antiRush": 1,
+          "postPlant": 1,
+          "retake": 2,
+          "split": 5
+        },
+        "vods": []
       }
     ],
     "notes": [
@@ -278,6 +324,52 @@
           "antiRush": 3,
           "postPlant": 2,
           "retake": 3,
+          "split": 5
+        },
+        "vods": []
+      },
+      {
+        "label": "Double Duelist 3 Sites",
+        "tier": "B",
+        "tierLabel": "B-TIER",
+        "winrate": 51.5,
+        "updatedAt": "Mai 2026",
+        "agents": [
+          "Neon",
+          "Phoenix",
+          "Sova",
+          "Omen",
+          "Killjoy"
+        ],
+        "source": "Esports Insider · S26 Act 1 Meta",
+        "tip": "<strong>Neon + Phoenix</strong> pressent deux sites simultanément. Sova recon dart pour savoir où la défense est concentrée. Omen flexible sur les 3 smokes. Killjoy anchor B.",
+        "agility": {
+          "antiRush": 3,
+          "postPlant": 2,
+          "retake": 3,
+          "split": 5
+        },
+        "vods": []
+      },
+      {
+        "label": "Fun — Triple Site Rush",
+        "tier": "F",
+        "tierLabel": "FUN",
+        "winrate": 45.0,
+        "updatedAt": "Mai 2026",
+        "agents": [
+          "Jett",
+          "Yoru",
+          "Neon",
+          "Omen",
+          "Gekko"
+        ],
+        "source": "OLYCITY Creativity Lab · Pour les soirs de tilte",
+        "tip": "Yoru fake sur C, Neon rush A, Jett rush B simultanément. Omen smoke au pif. Gekko fait n'importe quoi. Le chaos est le plan. Ça marche 1 fois sur 5 mais c'est <strong>épique</strong>.",
+        "agility": {
+          "antiRush": 1,
+          "postPlant": 1,
+          "retake": 2,
           "split": 5
         },
         "vods": []
@@ -437,6 +529,52 @@
           "split": 2
         },
         "vods": []
+      },
+      {
+        "label": "Double Duelist Longue Portée",
+        "tier": "B",
+        "tierLabel": "B-TIER",
+        "winrate": 53.9,
+        "updatedAt": "Mai 2026",
+        "agents": [
+          "Jett",
+          "Reyna",
+          "Sova",
+          "Viper",
+          "Chamber"
+        ],
+        "source": "ValoHub · Plat+ data 2026",
+        "tip": "<strong>Jett + Chamber double Operator</strong> — les deux meilleurs agents à l'Op sur les longues sightlines de Breeze. Viper wall B, Sova info A. Reyna nettoie les restes.",
+        "agility": {
+          "antiRush": 2,
+          "postPlant": 4,
+          "retake": 2,
+          "split": 2
+        },
+        "vods": []
+      },
+      {
+        "label": "Fun — Yoru Teleporter Chaos",
+        "tier": "F",
+        "tierLabel": "FUN",
+        "winrate": 43.0,
+        "updatedAt": "Mai 2026",
+        "agents": [
+          "Yoru",
+          "Omen",
+          "Viper",
+          "KAY/O",
+          "Jett"
+        ],
+        "source": "OLYCITY Creativity Lab · Stratégie mentale",
+        "tip": "Yoru pose ses téléporteurs aux deux sites. Omen teleport depuis le milieu. Viper wall coupe la map. L'objectif : faire croire à la défense que vous êtes partout. Psychologiquement dévastateur.",
+        "agility": {
+          "antiRush": 2,
+          "postPlant": 3,
+          "retake": 2,
+          "split": 3
+        },
+        "vods": []
       }
     ],
     "notes": [
@@ -589,6 +727,52 @@
         "agility": {
           "antiRush": 3,
           "postPlant": 4,
+          "retake": 4,
+          "split": 3
+        },
+        "vods": []
+      },
+      {
+        "label": "Double Controller 3 Sites",
+        "tier": "B",
+        "tierLabel": "B-TIER",
+        "winrate": 51.4,
+        "updatedAt": "Mai 2026",
+        "agents": [
+          "Raze",
+          "Fade",
+          "Omen",
+          "Clove",
+          "Killjoy"
+        ],
+        "source": "ValoHub · Meta 2026 Lotus",
+        "tip": "<strong>Omen + Clove</strong> = double controller avec Clove qui peut jouer post-mort. Fade isole les sites individuellement. Killjoy garde C seul. Raze pour la mobilité entre les 3 sites.",
+        "agility": {
+          "antiRush": 4,
+          "postPlant": 5,
+          "retake": 4,
+          "split": 3
+        },
+        "vods": []
+      },
+      {
+        "label": "Fun — 5 Initiateurs",
+        "tier": "F",
+        "tierLabel": "FUN",
+        "winrate": 44.0,
+        "updatedAt": "Mai 2026",
+        "agents": [
+          "Skye",
+          "Fade",
+          "Sova",
+          "Gekko",
+          "KAY/O"
+        ],
+        "source": "OLYCITY Creativity Lab · Information overload",
+        "tip": "5 initiateurs = information infinie. Vous savez exactement où est la défense à tout moment. Le problème c'est que personne peut entrer sur site. 10 minutes de recon pour planter en 1v5.",
+        "agility": {
+          "antiRush": 5,
+          "postPlant": 2,
           "retake": 4,
           "split": 3
         },
@@ -749,6 +933,52 @@
           "split": 3
         },
         "vods": []
+      },
+      {
+        "label": "Double Duelist Téléporteurs",
+        "tier": "B",
+        "tierLabel": "B-TIER",
+        "winrate": 53.0,
+        "updatedAt": "Mai 2026",
+        "agents": [
+          "Raze",
+          "Neon",
+          "Skye",
+          "Clove",
+          "Chamber"
+        ],
+        "source": "ValoHub · Plat+ data 2026",
+        "tip": "<strong>Raze + Neon</strong> exploitent les téléporteurs à fond. Clove joue agressivement et peut rejouer après sa mort. Skye flash pour Hookah. Chamber anchor et donne l'info passive.",
+        "agility": {
+          "antiRush": 2,
+          "postPlant": 4,
+          "retake": 3,
+          "split": 4
+        },
+        "vods": []
+      },
+      {
+        "label": "Fun — Téléporteur Shenanigans",
+        "tier": "F",
+        "tierLabel": "FUN",
+        "winrate": 46.0,
+        "updatedAt": "Mai 2026",
+        "agents": [
+          "Yoru",
+          "Omen",
+          "Raze",
+          "Clove",
+          "Cypher"
+        ],
+        "source": "OLYCITY Creativity Lab · Bind abuse",
+        "tip": "Yoru fake dans les téléporteurs pendant qu'Omen ghost de l'autre côté. Cypher cam sur les deux téléporteurs. Personne ne sait où vous allez, y compris vous-même. <strong>Fun garanti.</strong>",
+        "agility": {
+          "antiRush": 2,
+          "postPlant": 3,
+          "retake": 3,
+          "split": 4
+        },
+        "vods": []
       }
     ],
     "notes": [
@@ -905,6 +1135,52 @@
           "split": 3
         },
         "vods": []
+      },
+      {
+        "label": "Triple Initiateur",
+        "tier": "B",
+        "tierLabel": "B-TIER",
+        "winrate": 52.0,
+        "updatedAt": "Mai 2026",
+        "agents": [
+          "Raze",
+          "Skye",
+          "Fade",
+          "Breach",
+          "Omen"
+        ],
+        "source": "VLR.gg Community · Reddit r/ValorantCompetitive",
+        "tip": "<strong>Skye + Fade + Breach</strong> = triple initiateur qui nettoie chaque angle avant d'entrer. Omen single controller. Raze pour la mobilité sur les escaliers. Brutal en exécute coordonnée.",
+        "agility": {
+          "antiRush": 5,
+          "postPlant": 3,
+          "retake": 4,
+          "split": 4
+        },
+        "vods": []
+      },
+      {
+        "label": "Fun — Double Sage Wall",
+        "tier": "F",
+        "tierLabel": "FUN",
+        "winrate": 42.0,
+        "updatedAt": "Mai 2026",
+        "agents": [
+          "Sage",
+          "Raze",
+          "Breach",
+          "Omen",
+          "Cypher"
+        ],
+        "source": "OLYCITY Creativity Lab · Construction mode",
+        "tip": "Sage wall sur Ramp ET sur B Heaven en même temps. Les défenseurs ne peuvent aller nulle part. C'est techniquement une stratégie de contrôle total. En pratique c'est du pure désordre architectural.",
+        "agility": {
+          "antiRush": 5,
+          "postPlant": 3,
+          "retake": 5,
+          "split": 2
+        },
+        "vods": []
       }
     ],
     "notes": [
@@ -1059,6 +1335,52 @@
           "postPlant": 5,
           "retake": 2,
           "split": 2
+        },
+        "vods": []
+      },
+      {
+        "label": "Double Duelist Mid Control",
+        "tier": "B",
+        "tierLabel": "B-TIER",
+        "winrate": 53.6,
+        "updatedAt": "Mai 2026",
+        "agents": [
+          "Jett",
+          "Waylay",
+          "Sova",
+          "Astra",
+          "Cypher"
+        ],
+        "source": "ValoHub · Plat+ data 2026 + VLR meta",
+        "tip": "<strong>Jett + Waylay</strong> — le nouveau duo duelist qui domine Pearl en 2026. Waylay dash refract pour prendre mid, Jett op sur A Long. Astra globes mid, Cypher anchor B.",
+        "agility": {
+          "antiRush": 3,
+          "postPlant": 4,
+          "retake": 3,
+          "split": 4
+        },
+        "vods": []
+      },
+      {
+        "label": "Fun — 5 Controllers",
+        "tier": "F",
+        "tierLabel": "FUN",
+        "winrate": 40.0,
+        "updatedAt": "Mai 2026",
+        "agents": [
+          "Omen",
+          "Viper",
+          "Astra",
+          "Miks",
+          "Clove"
+        ],
+        "source": "OLYCITY Creativity Lab · Smoke meta extrême",
+        "tip": "Pearl entier est fumé en permanence. Chaque entrée, chaque angle, chaque respiration de la défense est couverte. En théorie inarrêtable. En pratique personne ne peut voir où planter.",
+        "agility": {
+          "antiRush": 5,
+          "postPlant": 5,
+          "retake": 5,
+          "split": 1
         },
         "vods": []
       }

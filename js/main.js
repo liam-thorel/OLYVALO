@@ -5,7 +5,7 @@
 
 import { valorantApi } from './api.js';
 import { syncPlayer as henrikSyncPlayer, syncAllPlayers as henrikSyncAll, persistPlayerStats } from './henrik.js';
-import { rosterHTML, mapSectionHTML, stierHTML, globalNotesHTML, navMapsHTML, agentPageHTML, miniRosterHTML, agentsFiltersHTML, agentsGridHTML, compCompareHTML, compBuilderHTML } from './render.js';
+import { rosterHTML, mapSectionHTML, stierHTML, globalNotesHTML, navMapsHTML, agentPageHTML, miniRosterHTML, agentsFiltersHTML, agentsGridHTML, compCompareHTML, compBuilderHTML, savedCompsHTML } from './render.js';
 import { initTheme, initTilt, initParallax, initSearch, initKeyboard, updateFavCount } from './interactions.js';
 import { storage } from './storage.js';
 
@@ -246,7 +246,7 @@ window.OLYCITY = {
   // ─── COMP BUILDER ────────────────────────────
   _renderBuilder() {
     const wrap = document.getElementById('comp-builder-wrap');
-    if (wrap) wrap.innerHTML = compBuilderHTML(state.builderSlots);
+    if (wrap) wrap.innerHTML = compBuilderHTML(state.builderSlots) + savedCompsHTML();
   },
 
   builderFocusSlot(i) {
@@ -280,6 +280,27 @@ window.OLYCITY = {
     state.builderFocusSlot = 0;
     window.OLYCITY._renderBuilder();
     localStorage.removeItem('olycity-builder');
+  },
+
+  builderLoad(i) {
+    try {
+      const saved = JSON.parse(localStorage.getItem('olycity-saved-comps') || '[]');
+      if (saved[i]) {
+        const agents = saved[i].agents || [];
+        state.builderSlots = [...agents.slice(0,5), ...Array(5).fill(null)].slice(0,5);
+        state.builderFocusSlot = 0;
+        window.OLYCITY._renderBuilder();
+      }
+    } catch(e) {}
+  },
+
+  savedCompDelete(i) {
+    try {
+      const saved = JSON.parse(localStorage.getItem('olycity-saved-comps') || '[]');
+      saved.splice(i, 1);
+      localStorage.setItem('olycity-saved-comps', JSON.stringify(saved));
+      window.OLYCITY._renderBuilder();
+    } catch(e) {}
   },
 
   builderSave() {

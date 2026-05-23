@@ -1301,3 +1301,94 @@
 .lineup-v2-desc {
   font-size: 12.5px; line-height: 1.5; color: var(--muted);
 }
+
+/* ════════════════════════════════════════════════
+   FUN COMP — Rainbow gradient
+   ════════════════════════════════════════════════ */
+.tier-f {
+  background: linear-gradient(135deg,
+    rgba(255,70,86,.2), rgba(255,200,0,.2), rgba(63,207,207,.2),
+    rgba(168,127,255,.2), rgba(255,130,0,.2));
+  color: transparent;
+  background-clip: text;
+  -webkit-background-clip: text;
+  border: 1px solid transparent;
+  background-origin: border-box;
+  position: relative;
+}
+.tier-f::before {
+  content: 'FUN 🎉';
+  position: absolute; inset: 0;
+  display: flex; align-items: center; justify-content: center;
+  background: linear-gradient(135deg, #ff4656, #f5c842, #3fcfcf, #a87fff, #ff8200);
+  background-clip: text;
+  -webkit-background-clip: text;
+  color: transparent;
+  font-family: 'Tomorrow', sans-serif;
+  font-size: 10px; font-weight: 700; letter-spacing: 1.5px;
+}
+
+/* Fun comp card has rainbow left border */
+.comp-card:has(.tier-f)::before {
+  background: linear-gradient(180deg, #ff4656, #f5c842, #3fcfcf, #a87fff, #ff8200);
+}
+.comp-card:has(.tier-f) {
+  border-color: rgba(168,127,255,.3);
+}
+.comp-tab:has(.tier-f),
+.comp-tab[style*="fun"],
+button.comp-tab.fun-tab {
+  background: linear-gradient(135deg, rgba(255,70,86,.15), rgba(168,127,255,.15));
+  border-color: rgba(168,127,255,.4);
+  color: var(--text);
+}
+
+/* SAVED COMPS */
+.saved-comps-section {
+  margin-top: 32px; padding-top: 32px;
+  border-top: 1px solid var(--border);
+}
+.saved-comps-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 12px; margin-top: 16px;
+}
+.saved-comp-card {
+  background: var(--surf); border: 1px solid var(--border);
+  padding: 16px 18px;
+  transition: transform .2s, border-color .2s;
+}
+.saved-comp-card:hover { transform: translateY(-2px); border-color: var(--border2); }
+.saved-comp-name {
+  font-family: 'Tomorrow', sans-serif; font-size: 14px; font-weight: 600;
+  letter-spacing: .5px; text-transform: uppercase; color: var(--text);
+  margin-bottom: 10px;
+}
+.saved-comp-agents {
+  display: flex; gap: 6px; margin-bottom: 10px; flex-wrap: wrap;
+}
+.saved-comp-agent img {
+  width: 36px; height: 46px; object-fit: cover;
+  object-position: top center; border: 1px solid var(--border2);
+}
+.saved-comp-date {
+  font-family: 'Tomorrow', sans-serif; font-size: 9px;
+  letter-spacing: 1px; color: var(--dim); text-transform: uppercase;
+}
+.saved-comp-actions {
+  display: flex; gap: 6px; margin-top: 10px;
+}
+.saved-comp-btn {
+  flex: 1; background: transparent; border: 1px solid var(--border2);
+  color: var(--muted); cursor: pointer; padding: 5px 0;
+  font-family: 'Tomorrow', sans-serif; font-size: 9px; font-weight: 600;
+  letter-spacing: 1px; text-transform: uppercase; transition: all .15s;
+}
+.saved-comp-btn:hover { color: var(--text); border-color: var(--border2); }
+.saved-comp-btn.del:hover { color: var(--D); border-color: rgba(255,107,122,.4); }
+.saved-comp-btn.load:hover { color: var(--S); border-color: rgba(63,207,207,.4); }
+.no-saved {
+  color: var(--dim); font-family: 'Tomorrow', sans-serif;
+  font-size: 12px; letter-spacing: 2px; text-transform: uppercase;
+  padding: 24px 0;
+}
