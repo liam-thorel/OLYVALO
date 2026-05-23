@@ -141,7 +141,7 @@ export function compHTML(comp, mapIdx, compIdx) {
 
   const vodsHTML = comp.vods?.length
     ? `<div class="comp-vods">${comp.vods.map(v =>
-        `<a href="${v.url}" target="_blank" rel="noopener" class="vod-link" title="Voir les stats pick/winrate des agents en pro sur VLR.gg">↗ ${v.label}</a>`
+        `<a href="${v.url}" target="_blank" rel="noopener" class="vod-link" title="Pick rates et win rates des agents sur cette map via dak.gg">↗ ${v.label}</a>`
       ).join('')}</div>`
     : '';
 
@@ -298,7 +298,13 @@ export function mapSectionHTML(data, idx) {
 // ─── ROSTER ──────────────────────────────────────
 export function rosterHTML() {
   return state.ROSTER.map((p) => {
-    const mains = (p.mains || []).filter(Boolean).map(name => {
+    // Priorité aux vrais top agents de l'acte (depuis sync), fallback sur JSON
+    const stats = state.PLAYER_STATS[p.name] || {};
+    const displayMains = (Array.isArray(stats.topAgents) && stats.topAgents.length > 0)
+      ? stats.topAgents.slice(0, 3).filter(Boolean)
+      : (p.mains || []).filter(Boolean);
+
+    const mains = displayMains.map(name => {
       const img = valorantApi.agentImg(name);
       const display = displayName(name);
       const imgEl = img
@@ -310,7 +316,6 @@ export function rosterHTML() {
       </div>`;
     }).join('');
 
-    const stats = state.PLAYER_STATS[p.name] || {};
     const rankDisplay = stats.rank ? `
       <div class="player-rank">
         ${rankColorDot(stats.rank)}

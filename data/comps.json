@@ -97,8 +97,8 @@
         },
         "vods": [
           {
-            "label": "Stats pro · Fracture",
-            "url": "https://www.vlr.gg/stats?type=agents&map=fracture&act="
+            "label": "Pick rates · Fracture",
+            "url": "https://dak.gg/valorant/agents?map=Fracture"
           }
         ]
       },
@@ -232,8 +232,8 @@
         },
         "vods": [
           {
-            "label": "Stats pro · Haven",
-            "url": "https://www.vlr.gg/stats?type=agents&map=haven&act="
+            "label": "Pick rates · Haven",
+            "url": "https://dak.gg/valorant/agents?map=Haven"
           }
         ]
       },
@@ -367,8 +367,8 @@
         },
         "vods": [
           {
-            "label": "Stats pro · Breeze",
-            "url": "https://www.vlr.gg/stats?type=agents&map=breeze&act="
+            "label": "Pick rates · Breeze",
+            "url": "https://dak.gg/valorant/agents?map=Breeze"
           }
         ]
       },
@@ -502,8 +502,8 @@
         },
         "vods": [
           {
-            "label": "Stats pro · Lotus",
-            "url": "https://www.vlr.gg/stats?type=agents&map=lotus&act="
+            "label": "Pick rates · Lotus",
+            "url": "https://dak.gg/valorant/agents?map=Lotus"
           }
         ]
       },
@@ -637,8 +637,8 @@
         },
         "vods": [
           {
-            "label": "Stats pro · Bind",
-            "url": "https://www.vlr.gg/stats?type=agents&map=bind&act="
+            "label": "Pick rates · Bind",
+            "url": "https://dak.gg/valorant/agents?map=Bind"
           }
         ]
       },
@@ -772,8 +772,8 @@
         },
         "vods": [
           {
-            "label": "Stats pro · Split",
-            "url": "https://www.vlr.gg/stats?type=agents&map=split&act="
+            "label": "Pick rates · Split",
+            "url": "https://dak.gg/valorant/agents?map=Split"
           }
         ]
       },
@@ -907,8 +907,8 @@
         },
         "vods": [
           {
-            "label": "Stats pro · Pearl",
-            "url": "https://www.vlr.gg/stats?type=agents&map=pearl&act="
+            "label": "Pick rates · Pearl",
+            "url": "https://dak.gg/valorant/agents?map=Pearl"
           }
         ]
       },
