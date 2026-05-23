@@ -221,9 +221,9 @@ window.OLYCITY = {
       const wrap = document.getElementById('compare-panel-wrap');
       const inner = document.getElementById('compare-panel-content');
       if (wrap && inner) {
-        inner.innerHTML = compCompareHTML(compA, compB, a.mapIdx, a.compIdx, b.mapIdx, b.compIdx);
+        inner.innerHTML = compCompareHTML(compA, compB);
         wrap.style.display = 'block';
-        wrap.scrollTo(0,0);
+        wrap.scrollTo(0, 0);
       }
     }
   },

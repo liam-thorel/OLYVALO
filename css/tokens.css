@@ -83,18 +83,13 @@ body{
 }
 
 /* ════════════════════════════════════════════════
-   GLITCH TRANSITIONS
+   PAGE TRANSITIONS — fade + slide léger
    ════════════════════════════════════════════════ */
-@keyframes glitchIn {
-  0%   { opacity:0; transform:translateX(-6px) skewX(-2deg); clip-path:inset(0 100% 0 0); }
-  15%  { clip-path:inset(0 70% 0 0); transform:translateX(4px) skewX(1.5deg); opacity:.6; }
-  30%  { clip-path:inset(0 45% 0 0); transform:translateX(-3px) skewX(-.5deg); }
-  50%  { clip-path:inset(0 20% 0 0); transform:translateX(2px); opacity:.9; }
-  70%  { clip-path:inset(0 5% 0 0); transform:translateX(-1px) skewX(.3deg); }
-  85%  { clip-path:inset(0 1% 0 0); transform:translateX(.5px); }
-  100% { clip-path:inset(0 0% 0 0); transform:translateX(0) skewX(0); opacity:1; }
+@keyframes pageSlideIn {
+  from { opacity:0; transform:translateY(10px); }
+  to   { opacity:1; transform:translateY(0); }
 }
 
 .spa-page.active {
-  animation: glitchIn .45s cubic-bezier(.22,1,.36,1);
+  animation: pageSlideIn .3s cubic-bezier(.22,1,.36,1);
 }

@@ -927,71 +927,119 @@
 .compare-btn:hover { color:var(--gold); border-color:rgba(245,200,66,.4); background:var(--gold-low); }
 .compare-btn.selected { color:var(--gold); border-color:var(--gold); background:var(--gold-low); }
 
-/* COMPARISON PANEL */
+/* COMPARISON PANEL — overlay modal */
+#compare-panel-wrap {
+  padding:40px 24px !important;
+}
 .comp-compare-panel {
-  display:none; margin-top:24px;
+  display:none;
   border:1px solid var(--gold);
   background:var(--surf);
   animation:fadeUp .3s ease;
+  max-width:1100px;
+  margin:0 auto;
 }
 .comp-compare-panel.active { display:block; }
 .comp-compare-header {
   display:flex; align-items:center; justify-content:space-between;
-  padding:12px 20px; border-bottom:1px solid var(--border);
+  padding:16px 28px; border-bottom:1px solid var(--border);
   background:var(--gold-low);
 }
 .comp-compare-title {
-  font-family:'Tomorrow',sans-serif; font-size:11px; font-weight:700;
+  font-family:'Tomorrow',sans-serif; font-size:13px; font-weight:700;
   letter-spacing:3px; text-transform:uppercase; color:var(--gold);
+  display:flex; align-items:center; gap:10px;
+}
+.comp-compare-subtitle {
+  font-family:'Tomorrow',sans-serif; font-size:9px; font-weight:500;
+  letter-spacing:2px; color:var(--muted);
 }
 .comp-compare-close {
-  background:transparent; border:none; color:var(--muted);
-  cursor:pointer; font-size:18px; padding:0 4px;
-  transition:color .15s;
+  background:transparent; border:1px solid var(--border2); color:var(--muted);
+  cursor:pointer; font-size:14px; padding:6px 14px;
+  font-family:'Tomorrow',sans-serif; letter-spacing:1px;
+  transition:all .15s;
 }
-.comp-compare-close:hover { color:var(--text); }
+.comp-compare-close:hover { color:var(--text); border-color:var(--red-mid); }
 .comp-compare-grid {
-  display:grid; grid-template-columns:1fr 1fr; gap:0;
+  display:grid; grid-template-columns:1fr 60px 1fr; gap:0;
 }
 .comp-compare-col {
-  padding:20px; border-right:1px solid var(--border);
+  padding:28px;
 }
-.comp-compare-col:last-child { border-right:none; }
+.comp-compare-col:first-child { border-right:1px solid var(--border); }
+.comp-compare-col:last-child { border-left:1px solid var(--border); }
+.comp-compare-center {
+  display:flex; flex-direction:column; align-items:center;
+  justify-content:center; gap:0; padding:28px 0;
+  border-left:1px solid var(--border);
+  border-right:1px solid var(--border);
+}
 .comp-compare-col-title {
-  font-family:'Tomorrow',sans-serif; font-size:13px; font-weight:600;
+  font-family:'Tomorrow',sans-serif; font-size:16px; font-weight:600;
   letter-spacing:1px; text-transform:uppercase; color:var(--text);
-  margin-bottom:14px; display:flex; align-items:center; gap:8px;
+  margin-bottom:18px; display:flex; align-items:center; gap:10px;
 }
 .comp-compare-agents {
-  display:flex; gap:6px; margin-bottom:16px; flex-wrap:wrap;
+  display:flex; gap:10px; margin-bottom:22px; flex-wrap:wrap;
 }
 .comp-compare-agent {
-  display:flex; flex-direction:column; align-items:center; gap:4px;
-  cursor:pointer;
+  display:flex; flex-direction:column; align-items:center; gap:5px;
+  cursor:pointer; transition:transform .2s;
 }
+.comp-compare-agent:hover { transform:translateY(-3px); }
 .comp-compare-agent img {
-  width:52px; height:66px; object-fit:cover; object-position:top center;
+  width:68px; height:86px; object-fit:cover; object-position:top center;
   border:1px solid var(--border2);
 }
 .comp-compare-agent span {
-  font-family:'Tomorrow',sans-serif; font-size:8px; letter-spacing:.5px;
+  font-family:'Tomorrow',sans-serif; font-size:9px; letter-spacing:.5px;
   text-transform:uppercase; color:var(--muted);
 }
-.comp-compare-agility { display:flex; flex-direction:column; gap:6px; }
+.comp-compare-tip {
+  font-size:12.5px; line-height:1.55; color:var(--muted);
+  border-top:1px dashed var(--border); padding-top:16px; margin-top:4px;
+}
+.comp-compare-tip strong { color:var(--C); }
+.comp-compare-wr {
+  font-family:'Tomorrow',sans-serif; font-size:26px; font-weight:700;
+  color:var(--text); letter-spacing:1px; margin-bottom:4px;
+}
+.comp-compare-wr-lbl {
+  font-family:'Tomorrow',sans-serif; font-size:9px; letter-spacing:2px;
+  text-transform:uppercase; color:var(--muted);
+}
+
+/* Agility comparison rows */
+.comp-compare-agility { display:flex; flex-direction:column; gap:10px; margin-top:4px; }
 .comp-compare-metric {
-  display:flex; align-items:center; gap:8px;
-  font-family:'Tomorrow',sans-serif; font-size:10px; color:var(--muted);
+  display:flex; align-items:center; gap:10px;
+  font-family:'Tomorrow',sans-serif; font-size:11px; color:var(--muted);
 }
 .comp-compare-bar {
-  flex:1; height:6px; background:var(--surf4); position:relative;
+  flex:1; height:8px; background:var(--surf4); position:relative;
 }
 .comp-compare-fill {
   position:absolute; left:0; top:0; height:100%;
   transition:width .8s cubic-bezier(.22,1,.36,1);
 }
 .comp-compare-num {
-  font-weight:700; color:var(--text); min-width:20px; text-align:right;
+  font-family:'Tomorrow',sans-serif; font-weight:700; font-size:13px;
+  color:var(--text); min-width:28px; text-align:right;
 }
+
+/* Center diff badges */
+.comp-compare-diffs {
+  display:flex; flex-direction:column; gap:10px;
+  margin-top:4px; align-items:center;
+}
+.diff-badge {
+  font-family:'Tomorrow',sans-serif; font-size:11px; font-weight:700;
+  letter-spacing:.5px; padding:4px 8px; min-width:40px; text-align:center;
+}
+.diff-badge.pos { background:rgba(63,207,207,.15); color:var(--S); border:1px solid rgba(63,207,207,.3); }
+.diff-badge.neg { background:rgba(255,107,122,.15); color:var(--D); border:1px solid rgba(255,107,122,.3); }
+.diff-badge.eq  { background:var(--surf3); color:var(--dim); border:1px solid var(--border); }
 
 /* COMP BUILDER */
 .comp-builder-section {

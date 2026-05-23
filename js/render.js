@@ -685,53 +685,98 @@ export function agentsGridHTML(filter = 'all', search = '') {
 }
 
 // ─── COMP COMPARISON ─────────────────────────────
-export function compCompareHTML(compA, compB, mapIdxA, compIdxA, mapIdxB, compIdxB) {
+export function compCompareHTML(compA, compB) {
   const metrics = [
-    { key:'antiRush', label:'Anti-Rush', icon:'⚡' },
-    { key:'postPlant', label:'Post-Plant', icon:'◆' },
-    { key:'retake',   label:'Retake',    icon:'↩' },
-    { key:'split',    label:'Split',     icon:'↔' },
+    { key:'antiRush',  label:'Anti-Rush',  icon:'⚡' },
+    { key:'postPlant', label:'Post-Plant',  icon:'◆'  },
+    { key:'retake',    label:'Retake',      icon:'↩'  },
+    { key:'split',     label:'Split Push',  icon:'↔'  },
   ];
-  const colors = { 5:'var(--S)', 4:'var(--S)', 3:'var(--gold)', 2:'var(--D)', 1:'var(--D)' };
+  const barColor = v => v >= 4 ? 'var(--S)' : v >= 3 ? 'var(--gold)' : 'var(--D)';
 
-  function colHTML(comp, mapIdx, compIdx) {
-    const agents = (comp.agents || []).map(name => {
+  function agentsCol(comp) {
+    return (comp.agents || []).map(name => {
       const img = valorantApi.agentImg(name);
       return `<div class="comp-compare-agent" onclick="window.OLYCITY.showAgentPage('${name}')">
         ${img ? `<img src="${img}" alt="${name}">` : ''}
         <span>${displayName(name)}</span>
       </div>`;
     }).join('');
-    const agility = metrics.map(m => {
-      const val = comp.agility?.[m.key] || 0;
-      const pct = (val/5)*100;
-      const color = colors[val] || 'var(--muted)';
-      return `<div class="comp-compare-metric">
-        <span style="width:14px">${m.icon}</span>
-        <span style="width:72px">${m.label}</span>
-        <div class="comp-compare-bar"><div class="comp-compare-fill" style="width:${pct}%;background:${color}"></div></div>
-        <span class="comp-compare-num">${val}/5</span>
-      </div>`;
-    }).join('');
-    const tierCls = comp.tier === 'S' ? 'tier-s' : 'tier-a';
-    return `<div class="comp-compare-col">
-      <div class="comp-compare-col-title">
-        <span class="comp-tier ${tierCls}" style="font-size:9px;padding:2px 8px">${comp.tierLabel}</span>
-        ${comp.label}
-      </div>
-      <div class="comp-compare-agents">${agents}</div>
-      <div class="comp-compare-agility">${agility}</div>
-    </div>`;
   }
 
-  return `<div class="comp-compare-panel active" id="compare-panel">
+  function agilityCol(comp, isLeft) {
+    return metrics.map(m => {
+      const val = comp.agility?.[m.key] || 0;
+      const pct = (val/5)*100;
+      // For left col, bar grows right-to-left to face the center
+      const barStyle = isLeft
+        ? `width:${pct}%;background:${barColor(val)};right:0;left:auto`
+        : `width:${pct}%;background:${barColor(val)}`;
+      const track = isLeft
+        ? `<div class="comp-compare-bar" style="direction:rtl"><div class="comp-compare-fill" style="${barStyle}"></div></div>`
+        : `<div class="comp-compare-bar"><div class="comp-compare-fill" style="${barStyle}"></div></div>`;
+      return `<div class="comp-compare-metric" style="${isLeft ? 'flex-direction:row-reverse;text-align:right' : ''}">
+        <span class="comp-compare-num">${val}/5</span>
+        ${track}
+      </div>`;
+    }).join('');
+  }
+
+  // Center diff badges
+  const diffs = metrics.map(m => {
+    const vA = compA.agility?.[m.key] || 0;
+    const vB = compB.agility?.[m.key] || 0;
+    const d = vA - vB;
+    const cls = d > 0 ? 'pos' : d < 0 ? 'neg' : 'eq';
+    const label = d > 0 ? `+${d}` : d < 0 ? `${d}` : '=';
+    return `<div style="display:flex;align-items:center;gap:4px;height:28px">
+      <span class="diff-badge ${cls}">${label}</span>
+    </div>`;
+  }).join('');
+
+  const tierA = compA.tier === 'S' ? 'tier-s' : 'tier-a';
+  const tierB = compB.tier === 'S' ? 'tier-s' : 'tier-a';
+
+  return `<div class="comp-compare-panel active">
     <div class="comp-compare-header">
-      <span class="comp-compare-title">⇄ Comparaison</span>
-      <button class="comp-compare-close" onclick="window.OLYCITY.closeCompare()">✕</button>
+      <div class="comp-compare-title">
+        ⇄ Comparaison
+        <span class="comp-compare-subtitle">Sélectionne 2 comps · les diff sont au centre</span>
+      </div>
+      <button class="comp-compare-close" onclick="window.OLYCITY.closeCompare()">✕ Fermer</button>
     </div>
     <div class="comp-compare-grid">
-      ${colHTML(compA, mapIdxA, compIdxA)}
-      ${colHTML(compB, mapIdxB, compIdxB)}
+
+      <div class="comp-compare-col">
+        <div class="comp-compare-col-title">
+          <span class="comp-tier ${tierA}">${compA.tierLabel}</span>${compA.label}
+        </div>
+        <div class="comp-compare-agents">${agentsCol(compA)}</div>
+        <div class="comp-compare-wr">${compA.winrate.toFixed(1)}%</div>
+        <div class="comp-compare-wr-lbl">Win rate</div>
+        <div class="comp-compare-agility" style="margin-top:16px">${agilityCol(compA, true)}</div>
+        <div class="comp-compare-tip">${compA.tip}</div>
+      </div>
+
+      <div class="comp-compare-center">
+        <div style="font-family:'Tomorrow',sans-serif;font-size:8px;letter-spacing:2px;color:var(--dim);text-transform:uppercase;margin-bottom:8px">WR</div>
+        <div class="diff-badge ${compA.winrate > compB.winrate ? 'pos' : compA.winrate < compB.winrate ? 'neg' : 'eq'}" style="margin-bottom:24px">
+          ${compA.winrate > compB.winrate ? '+' : ''}${(compA.winrate - compB.winrate).toFixed(1)}%
+        </div>
+        <div class="comp-compare-diffs">${diffs}</div>
+      </div>
+
+      <div class="comp-compare-col">
+        <div class="comp-compare-col-title">
+          <span class="comp-tier ${tierB}">${compB.tierLabel}</span>${compB.label}
+        </div>
+        <div class="comp-compare-agents">${agentsCol(compB)}</div>
+        <div class="comp-compare-wr">${compB.winrate.toFixed(1)}%</div>
+        <div class="comp-compare-wr-lbl">Win rate</div>
+        <div class="comp-compare-agility" style="margin-top:16px">${agilityCol(compB, false)}</div>
+        <div class="comp-compare-tip">${compB.tip}</div>
+      </div>
+
     </div>
   </div>`;
 }
