@@ -5,7 +5,7 @@
 
 import { valorantApi } from './api.js';
 import { syncPlayer as henrikSyncPlayer, syncAllPlayers as henrikSyncAll, persistPlayerStats } from './henrik.js';
-import { rosterHTML, mapSectionHTML, stierHTML, globalNotesHTML, navMapsHTML, agentPageHTML } from './render.js';
+import { rosterHTML, mapSectionHTML, stierHTML, globalNotesHTML, navMapsHTML, agentPageHTML, miniRosterHTML } from './render.js';
 import { initTheme, initTilt, initParallax, initSearch, initKeyboard, updateFavCount } from './interactions.js';
 import { storage } from './storage.js';
 
@@ -82,6 +82,34 @@ function setSyncStatus(html, type = 'info') {
 // ─── WINDOW.OLYCITY — handlers inline HTML ─────────
 window.OLYCITY = {
 
+  nav(page) {
+    // Hide all pages
+    document.querySelectorAll('.spa-page').forEach(p => p.classList.remove('active'));
+    document.querySelectorAll('.page-nav-btn').forEach(b => b.classList.remove('active'));
+
+    // Show target page
+    const pageEl = document.getElementById(`page-${page}`);
+    if (pageEl) pageEl.classList.add('active');
+    const navBtn = document.querySelector(`.page-nav-btn[data-page="${page}"]`);
+    if (navBtn) navBtn.classList.add('active');
+
+    // Show/hide map nav
+    const mapNav = document.getElementById('nav-maps');
+    if (mapNav) mapNav.style.display = page === 'maps' ? 'flex' : 'none';
+
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+    state.currentPage = page;
+
+    // Re-init tilt on map page
+    if (page === 'maps') setTimeout(() => initTilt(), 100);
+    // Update mini roster on home
+    if (page === 'home') {
+      const el = document.getElementById('mini-roster');
+      if (el) el.innerHTML = miniRosterHTML();
+    }
+  },
+
+
   showMap(idx, btn) {
     document.querySelectorAll('.map-section').forEach(s => s.classList.remove('active'));
     document.querySelectorAll('.nav-map-btn').forEach(b => b.classList.remove('active'));
@@ -126,6 +154,11 @@ window.OLYCITY = {
     const page = document.getElementById('agent-page');
     if (page) { page.classList.remove('active'); page.innerHTML = ''; }
     document.body.classList.remove('agent-mode');
+    // Restore current SPA page visibility
+    const curPage = state.currentPage || 'home';
+    document.querySelectorAll('.spa-page').forEach(p => p.classList.remove('active'));
+    const curEl = document.getElementById(`page-${curPage}`);
+    if (curEl) curEl.classList.add('active');
   },
 
   goToComp(mapIdx, compIdx) {
@@ -222,8 +255,9 @@ function renderAll() {
   document.getElementById('nav-maps').innerHTML = navMapsHTML();
   // Map sections
   document.getElementById('main').innerHTML = state.COMPS_DATA.map((d, i) => mapSectionHTML(d, i)).join('');
-  // Roster
+  // Roster (full + mini)
   document.getElementById('roster-grid').innerHTML = rosterHTML();
+  document.getElementById('mini-roster').innerHTML = miniRosterHTML();
   // S-Tier
   document.getElementById('stier-row').innerHTML = stierHTML();
   // Global notes

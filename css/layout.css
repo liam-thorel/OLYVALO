@@ -38,6 +38,25 @@
   letter-spacing:3.5px; color:var(--red); margin-top:2px;
 }
 
+/* PAGE NAV (Accueil / Maps / Roster) */
+.page-nav{
+  display:flex; gap:4px; flex-shrink:0;
+}
+.page-nav-btn{
+  background:transparent; border:1px solid transparent; cursor:pointer;
+  padding:8px 18px; display:flex; align-items:center; gap:7px;
+  font-family:'Tomorrow',sans-serif; font-size:12px; font-weight:600;
+  letter-spacing:1.5px; text-transform:uppercase;
+  color:var(--muted); transition:all .2s;
+  clip-path:polygon(8px 0, 100% 0, calc(100% - 8px) 100%, 0 100%);
+}
+.page-nav-btn:hover{ color:var(--text); background:var(--surf2); }
+.page-nav-btn.active{
+  background:var(--red); border-color:var(--red); color:#fff;
+}
+.page-nav-icon{ font-size:13px; }
+
+/* MAP NAV (dans page Maps) */
 .nav-maps{ display:flex; gap:2px; flex:1; justify-content:center; flex-wrap:wrap; }
 .nav-map-btn{
   position:relative; background:transparent; border:none; cursor:pointer;
@@ -54,6 +73,74 @@
   flex-shrink:0; overflow:hidden;
 }
 .nav-map-icon img{ width:100%; height:100%; object-fit:cover; display:block; }
+
+/* SPA PAGES */
+.spa-page{ display:none; }
+.spa-page.active{ display:block; animation:pageIn .4s cubic-bezier(.22,1,.36,1); }
+@keyframes pageIn{
+  from{ opacity:0; transform:translateY(12px); }
+  to{ opacity:1; transform:translateY(0); }
+}
+
+/* HERO CTAs */
+.hero-ctas{
+  display:flex; gap:12px; justify-content:center; flex-wrap:wrap;
+  margin-top:28px;
+}
+.hero-cta-primary{
+  background:var(--red); border:1px solid var(--red); color:#fff;
+  padding:12px 28px; cursor:pointer;
+  font-family:'Tomorrow',sans-serif; font-size:12px; font-weight:600;
+  letter-spacing:2px; text-transform:uppercase;
+  transition:all .2s; clip-path:polygon(10px 0, 100% 0, calc(100% - 10px) 100%, 0 100%);
+}
+.hero-cta-primary:hover{ background:#e63a4a; transform:translateY(-2px); box-shadow:0 8px 20px var(--red-glow); }
+.hero-cta-secondary{
+  background:transparent; border:1px solid var(--border2); color:var(--text);
+  padding:12px 28px; cursor:pointer;
+  font-family:'Tomorrow',sans-serif; font-size:12px; font-weight:600;
+  letter-spacing:2px; text-transform:uppercase;
+  transition:all .2s; clip-path:polygon(10px 0, 100% 0, calc(100% - 10px) 100%, 0 100%);
+}
+.hero-cta-secondary:hover{ border-color:var(--red-mid); color:var(--red); background:var(--red-low); }
+
+/* MINI ROSTER (home page) */
+.mini-roster{
+  display:flex; gap:12px; flex-wrap:wrap;
+}
+.mini-player{
+  display:flex; align-items:center; gap:12px;
+  background:var(--surf); border:1px solid var(--border);
+  padding:12px 16px; flex:1; min-width:160px;
+  transition:transform .2s, border-color .2s; cursor:pointer;
+}
+.mini-player:hover{ transform:translateY(-3px); border-color:var(--red-mid); }
+.mini-player-avatar{
+  width:40px; height:40px; background:var(--surf3);
+  overflow:hidden; flex-shrink:0; position:relative;
+}
+.mini-player-avatar img{
+  width:100%; height:100%; object-fit:cover; object-position:top center;
+}
+.mini-player-info{ flex:1; min-width:0; }
+.mini-player-name{
+  font-family:'Tomorrow',sans-serif; font-size:14px; font-weight:600;
+  color:var(--text); letter-spacing:.5px; text-transform:uppercase;
+  line-height:1; margin-bottom:3px;
+}
+.mini-player-role{
+  font-family:'Tomorrow',sans-serif; font-size:9px; letter-spacing:1.5px;
+  text-transform:uppercase; color:var(--muted);
+}
+.mini-player-rank{
+  font-family:'Tomorrow',sans-serif; font-size:10px; font-weight:700;
+  color:var(--red); letter-spacing:.5px; text-align:right;
+}
+
+/* ROSTER PAGE */
+.roster-page-inner{
+  max-width:1600px; margin:0 auto; padding:48px 32px;
+}
 
 .topbar-tools{ display:flex; align-items:center; gap:6px; flex-shrink:0; }
 .tool-btn{

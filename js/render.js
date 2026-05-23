@@ -461,17 +461,22 @@ export function agentPageHTML(name) {
     ? (usage.reduce((s, u) => s + u.winrate, 0) / usage.length).toFixed(1) : '—';
   const fullEl = fullPortrait
     ? `<img class="agent-portrait-full" src="${fullPortrait}" alt="${display}">`  : '';
-  // Use fullPortrait for bg (more colorful, unique per agent)
-  const heroBg = fullPortrait || bgImg;
-  const roleGlow = { D:'rgba(255,107,122,.15)', I:'rgba(240,168,50,.15)', S:'rgba(63,207,207,.15)', C:'rgba(168,127,255,.15)' }[role] || 'transparent';
-  const bgEl = heroBg
-    ? `<div class="agent-hero-bg" style="background-image:url(${heroBg})"></div>
-       <div style="position:absolute;inset:0;background:radial-gradient(ellipse at 70% 30%,${roleGlow},transparent 60%);pointer-events:none;z-index:1"></div>`
+  // Background cinématique : background art de l'agent + gradient de ses couleurs
+  const bgArt = valorantApi.agentBackground(name);
+  const gradient = valorantApi.agentGradient(name);
+  const bgEl = bgArt
+    ? `<div class="agent-hero-bg" style="background-image:url(${bgArt})"></div>`
+    : fullPortrait
+      ? `<div class="agent-hero-bg" style="background-image:url(${fullPortrait});background-size:contain;background-repeat:no-repeat;background-position:80% center;"></div>`
+      : '';
+  const gradientOverlay = gradient
+    ? `<div style="position:absolute;inset:0;background:${gradient};opacity:.35;pointer-events:none;z-index:1;mix-blend-mode:screen"></div>`
     : '';
 
   return `
     <div class="agent-hero">
       ${bgEl}
+      ${gradientOverlay}
       <div class="agent-hero-gradient"></div>
       <div class="agent-hero-grid"></div>
       <div class="agent-hero-content">
@@ -525,4 +530,26 @@ export function agentPageHTML(name) {
         </div>
       </div>
     </div>`;
+}
+
+// ─── MINI ROSTER (home page) ─────────────────────
+export function miniRosterHTML() {
+  return state.ROSTER.map(p => {
+    const img = valorantApi.agentImg(p.mains?.[0]);
+    const imgEl = img
+      ? `<img src="${img}" alt="${p.mains?.[0] || ''}">`
+      : `<div style="width:100%;height:100%;background:var(--surf3);display:flex;align-items:center;justify-content:center;font-size:16px;color:var(--dim)">${p.name[0]}</div>`;
+    const stats = state.PLAYER_STATS[p.name] || {};
+    const rankEl = stats.rank
+      ? `<span class="mini-player-rank">${stats.rank.split(' ').slice(0,1)[0]}</span>`
+      : '';
+    return `<div class="mini-player" onclick="window.OLYCITY.nav('roster')">
+      <div class="mini-player-avatar">${imgEl}</div>
+      <div class="mini-player-info">
+        <div class="mini-player-name">${p.name}</div>
+        <div class="mini-player-role">${p.tag}</div>
+      </div>
+      ${rankEl}
+    </div>`;
+  }).join('');
 }

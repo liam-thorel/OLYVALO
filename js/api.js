@@ -21,6 +21,8 @@ export const valorantApi = {
       this.agents[a.displayName] = {
         portrait: a.bustPortrait || a.fullPortrait || a.displayIcon,
         fullPortrait: a.fullPortrait,
+        background: a.background,
+        gradientColors: a.backgroundGradientColors || [],
         icon: a.displayIcon,
         role: a.role?.displayName,
         desc: a.description,
@@ -42,6 +44,18 @@ export const valorantApi = {
 
   agentFullImg(name) {
     return this.agents[name]?.fullPortrait || this.agents[name]?.portrait || null;
+  },
+
+  agentBackground(name) {
+    return this.agents[name]?.background || null;
+  },
+
+  agentGradient(name) {
+    const colors = this.agents[name]?.gradientColors || [];
+    if (colors.length >= 2) {
+      return `linear-gradient(135deg, #${colors[0]}cc 0%, #${colors[1]}99 40%, #${colors[colors.length-1]}44 100%)`;
+    }
+    return null;
   },
 
   agentData(name) {

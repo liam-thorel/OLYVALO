@@ -25,7 +25,7 @@
   <!-- TOP BAR -->
   <nav class="topbar">
     <div class="topbar-row">
-      <div class="brand" onclick="window.OLYCITY?.closeAgentPage()">
+      <div class="brand" onclick="window.OLYCITY?.nav('home')">
         <div class="brand-mark">OC</div>
         <div class="brand-text">
           <span class="brand-title">OLYCITY</span>
@@ -33,9 +33,21 @@
         </div>
       </div>
 
-      <div class="nav-maps" id="nav-maps">
-        <!-- populated by main.js -->
+      <!-- PAGE NAV -->
+      <div class="page-nav" id="page-nav">
+        <button class="page-nav-btn active" data-page="home" onclick="window.OLYCITY?.nav('home')">
+          <span class="page-nav-icon">⌂</span> Accueil
+        </button>
+        <button class="page-nav-btn" data-page="maps" onclick="window.OLYCITY?.nav('maps')">
+          <span class="page-nav-icon">◈</span> Maps
+        </button>
+        <button class="page-nav-btn" data-page="roster" onclick="window.OLYCITY?.nav('roster')">
+          <span class="page-nav-icon">◉</span> Roster
+        </button>
       </div>
+
+      <!-- MAP SELECTOR (visible only on maps page) -->
+      <div class="nav-maps" id="nav-maps" style="display:none"></div>
 
       <div class="topbar-tools">
         <div class="search-wrap">
@@ -43,82 +55,102 @@
           <input type="text" id="search-input" class="search-input" placeholder="Agent…" autocomplete="off">
         </div>
         <div class="search-results" id="search-results"></div>
-
-        <button class="tool-btn" id="theme-toggle" title="Changer de thème">
+        <button class="tool-btn" id="theme-toggle" title="Thème">
           <span id="theme-icon">☾</span>
         </button>
       </div>
     </div>
   </nav>
 
-  <!-- AGENT PAGE (immersive, hidden by default) -->
+  <!-- AGENT PAGE (overlay global) -->
   <div id="agent-page" class="agent-page"></div>
 
-  <!-- HERO -->
-  <header class="hero">
-    <div class="hero-eyebrow">OLYCITY · Five Stack · EU</div>
-    <h1 class="hero-title">
-      <div class="hero-title-frame">OLYCITY</div>
-    </h1>
-    <div class="hero-sub">Valorant Meta Comps · Patch 12.09</div>
-    <div class="hero-meta">
-      <span><span class="dot"></span>7 maps</span>
-      <span><span class="dot"></span>14 comps sourcées</span>
-      <span><span class="dot"></span>Stats live HenrikDev</span>
-      <span><span class="dot"></span>Mis à jour 2026</span>
-    </div>
-  </header>
+  <!-- ═══════════ PAGE ACCUEIL ═══════════ -->
+  <div id="page-home" class="spa-page active">
 
-  <!-- MAP SECTIONS (main) -->
-  <main id="main" class="main">
-    <!-- populated by main.js -->
-  </main>
+    <header class="hero">
+      <div class="hero-eyebrow">OLYCITY · Five Stack · EU</div>
+      <h1 class="hero-title">
+        <div class="hero-title-frame">OLYCITY</div>
+      </h1>
+      <div class="hero-sub">Valorant Meta Comps · Patch 12.09</div>
+      <div class="hero-meta">
+        <span><span class="dot"></span>7 maps</span>
+        <span><span class="dot"></span>14 comps sourcées</span>
+        <span><span class="dot"></span>Stats live HenrikDev</span>
+        <span><span class="dot"></span>2026 · Act 3</span>
+      </div>
+      <div class="hero-ctas">
+        <button class="hero-cta-primary" onclick="window.OLYCITY?.nav('maps')">
+          ◈ Explorer les maps
+        </button>
+        <button class="hero-cta-secondary" onclick="window.OLYCITY?.nav('roster')">
+          ◉ Voir le roster
+        </button>
+      </div>
+    </header>
 
-  <!-- ROSTER -->
-  <section class="roster-section" id="roster">
-    <div class="roster-header">
-      <span class="roster-eyebrow">Le Roster</span>
-      <h2 class="roster-title">Les joueurs OLYCITY</h2>
-      <span class="roster-sub">Stats live · HenrikDev API</span>
-      <button class="sync-all-btn" id="sync-all-btn" onclick="window.OLYCITY.syncAllPlayers()">
-        <span class="sync-spin">↻</span> Sync tout
-      </button>
-    </div>
-    <div style="max-width:1600px;margin:0 auto;padding:0 32px">
+    <!-- S-TIER -->
+    <section class="section">
+      <div class="section-inner">
+        <div class="section-header">
+          <span class="section-tag">S-Tier</span>
+          <h2 class="section-title">Priorité absolue en pick</h2>
+          <div class="section-line"></div>
+        </div>
+        <div class="stier-row" id="stier-row"></div>
+      </div>
+    </section>
+
+    <!-- GLOBAL NOTES -->
+    <section class="section">
+      <div class="section-inner">
+        <div class="section-header">
+          <span class="section-tag">Global</span>
+          <h2 class="section-title">Notes meta générales</h2>
+          <div class="section-line"></div>
+        </div>
+        <div class="gs-grid" id="global-notes-grid"></div>
+      </div>
+    </section>
+
+    <!-- MINI ROSTER PREVIEW -->
+    <section class="section">
+      <div class="section-inner">
+        <div class="section-header">
+          <span class="section-tag">Équipe</span>
+          <h2 class="section-title">Le squad OLYCITY</h2>
+          <div class="section-line"></div>
+          <button class="tool-btn" onclick="window.OLYCITY?.nav('roster')" style="margin-left:auto">
+            Voir tout →
+          </button>
+        </div>
+        <div class="mini-roster" id="mini-roster"></div>
+      </div>
+    </section>
+
+  </div>
+
+  <!-- ═══════════ PAGE MAPS ═══════════ -->
+  <div id="page-maps" class="spa-page">
+    <main id="main" class="main"></main>
+  </div>
+
+  <!-- ═══════════ PAGE ROSTER ═══════════ -->
+  <div id="page-roster" class="spa-page">
+    <div class="roster-page-inner">
+      <div class="roster-header">
+        <span class="roster-eyebrow">Le Roster</span>
+        <h2 class="roster-title">Les joueurs OLYCITY</h2>
+        <span class="roster-sub">Stats live · HenrikDev API · Acte en cours</span>
+        <button class="sync-all-btn" id="sync-all-btn" onclick="window.OLYCITY.syncAllPlayers()">
+          <span class="sync-spin">↻</span> Sync tout
+        </button>
+      </div>
       <div id="sync-status"></div>
+      <div class="roster-grid" id="roster-grid"></div>
     </div>
-    <div class="roster-grid" id="roster-grid">
-      <!-- populated by main.js -->
-    </div>
-  </section>
-
-  <!-- S-TIER SECTION -->
-  <section class="section">
-    <div class="section-inner">
-      <div class="section-header">
-        <span class="section-tag">S-Tier</span>
-        <h2 class="section-title">Priorité absolue en pick</h2>
-        <div class="section-line"></div>
-      </div>
-      <div class="stier-row" id="stier-row">
-        <!-- populated by main.js -->
-      </div>
-    </div>
-  </section>
-
-  <!-- GLOBAL NOTES -->
-  <section class="section">
-    <div class="section-inner">
-      <div class="section-header">
-        <span class="section-tag">Global</span>
-        <h2 class="section-title">Notes meta générales</h2>
-        <div class="section-line"></div>
-      </div>
-      <div class="gs-grid" id="global-notes-grid">
-        <!-- populated by main.js -->
-      </div>
-    </div>
-  </section>
+  </div>
 
   <!-- FOOTER -->
   <footer class="footer">
