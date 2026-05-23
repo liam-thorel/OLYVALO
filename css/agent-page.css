@@ -99,9 +99,13 @@
 .agent-hero-gradient{
   position:absolute; inset:0; z-index:3;
   background:
-    linear-gradient(135deg, var(--bg) 0%, transparent 55%),
-    linear-gradient(to top, var(--bg) 0%, transparent 50%),
-    linear-gradient(to right, var(--bg) 0%, transparent 40%);
+    linear-gradient(to top, var(--bg) 0%, transparent 55%),
+    linear-gradient(to right, rgba(10,12,16,.7) 0%, transparent 50%);
+}
+:root[data-theme="light"] .agent-hero-gradient{
+  background:
+    linear-gradient(to top, var(--bg) 0%, transparent 55%),
+    linear-gradient(to right, rgba(244,241,234,.7) 0%, transparent 50%);
 }
 :root[data-theme="light"] .agent-hero-gradient{ filter:brightness(1.1); }
 .agent-hero-grid{

@@ -83,6 +83,13 @@ function setSyncStatus(html, type = 'info') {
 window.OLYCITY = {
 
   nav(page) {
+    // Close agent page if open
+    const agentPage = document.getElementById('agent-page');
+    if (agentPage && agentPage.classList.contains('active')) {
+      agentPage.classList.remove('active');
+      agentPage.innerHTML = '';
+      document.body.classList.remove('agent-mode');
+    }
     // Hide all pages
     document.querySelectorAll('.spa-page').forEach(p => p.classList.remove('active'));
     document.querySelectorAll('.page-nav-btn').forEach(b => b.classList.remove('active'));

@@ -359,9 +359,6 @@
   letter-spacing:2px; text-transform:uppercase; color:var(--muted);
 }
 
-/* When agent page is active, hide everything else */
-body.agent-mode .main,
-body.agent-mode .hero,
-body.agent-mode .roster-section,
-body.agent-mode .section{ display:none; }
-body.agent-mode .topbar{ position:relative; }
+/* When agent page is active, hide SPA pages + footer */
+body.agent-mode .spa-page{ display:none !important; }
+body.agent-mode .footer{ display:none; }
