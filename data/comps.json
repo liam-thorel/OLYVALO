@@ -9,7 +9,8 @@
     ],
     "stats": {
       "difficulty": "4.2/5",
-      "sides": "A-favored"
+      "sides": "Attaquants favorisés",
+      "bestSite": "A Arcade"
     },
     "strategies": [
       {
@@ -144,7 +145,8 @@
     ],
     "stats": {
       "difficulty": "3.8/5",
-      "sides": "Balanced"
+      "sides": "Équilibré",
+      "bestSite": "C Long"
     },
     "strategies": [
       {
@@ -279,7 +281,8 @@
     ],
     "stats": {
       "difficulty": "4.5/5",
-      "sides": "B-favored"
+      "sides": "Défenseurs favorisés",
+      "bestSite": "B Hall"
     },
     "strategies": [
       {
@@ -414,7 +417,8 @@
     ],
     "stats": {
       "difficulty": "4.7/5",
-      "sides": "Defender-favored"
+      "sides": "Défenseurs favorisés",
+      "bestSite": "C Site"
     },
     "strategies": [
       {
@@ -549,7 +553,8 @@
     ],
     "stats": {
       "difficulty": "3.5/5",
-      "sides": "A-favored"
+      "sides": "Attaquants favorisés",
+      "bestSite": "A Showers"
     },
     "strategies": [
       {
@@ -684,7 +689,8 @@
     ],
     "stats": {
       "difficulty": "4.1/5",
-      "sides": "Defender-favored"
+      "sides": "Défenseurs favorisés",
+      "bestSite": "A Ramp"
     },
     "strategies": [
       {
@@ -819,7 +825,8 @@
     ],
     "stats": {
       "difficulty": "4.3/5",
-      "sides": "Balanced"
+      "sides": "Équilibré",
+      "bestSite": "A Art"
     },
     "strategies": [
       {

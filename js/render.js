@@ -139,11 +139,8 @@ export function compHTML(comp, mapIdx, compIdx) {
   const tierCls = comp.tier === 'S' ? 'tier-s' : 'tier-a';
   const isFav = state.FAVS.includes(cid);
 
-  const vodsHTML = comp.vods?.length
-    ? `<div class="comp-vods">${comp.vods.map(v =>
-        `<a href="${v.url}" target="_blank" rel="noopener" class="vod-link" title="Pick rates et win rates des agents sur cette map via dak.gg">↗ ${v.label}</a>`
-      ).join('')}</div>`
-    : '';
+  // VODs/stats link — désactivé, en attente d'une meilleure source
+  const vodsHTML = '';
 
   return `
     <div class="comp-panel ${compIdx === 0 ? 'active' : ''}" id="panel-${mapIdx}-${compIdx}">
@@ -287,7 +284,8 @@ export function mapSectionHTML(data, idx) {
           <div class="map-hero-stats">
             <div class="map-stat"><div class="map-stat-val">${data.comps.length}</div><div class="map-stat-lbl">Comps</div></div>
             <div class="map-stat"><div class="map-stat-val">${data.stats.difficulty}</div><div class="map-stat-lbl">Difficulté</div></div>
-            <div class="map-stat"><div class="map-stat-val">${data.stats.sides}</div><div class="map-stat-lbl">Côté favorisé</div></div>
+            <div class="map-stat" style="max-width:160px"><div class="map-stat-val" style="font-size:clamp(14px,1.5vw,22px)">${data.stats.sides}</div><div class="map-stat-lbl">Équilibre</div></div>
+            ${data.stats.bestSite ? `<div class="map-stat"><div class="map-stat-val" style="font-size:clamp(14px,1.5vw,22px);color:var(--red)">${data.stats.bestSite}</div><div class="map-stat-lbl">Meilleur site ATK</div></div>` : ''}
           </div>
         </div>
       </div>
