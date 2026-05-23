@@ -27,6 +27,7 @@ export const state = {
   builderSlots: [null,null,null,null,null],
   builderFocusSlot: 0,
   LINEUPS: {},
+  currentCompIdx: {},
 };
 
 // ─── LOAD JSON DATA ───────────────────────────────
@@ -141,6 +142,9 @@ window.OLYCITY = {
   },
 
   switchComp(mapIdx, compIdx, btn) {
+    state.currentCompIdx[mapIdx] = compIdx;
+    const _lp = document.getElementById(`maptab-${mapIdx}-lineups`);
+    if (_lp?.classList.contains('active')) window.OLYCITY._refreshLineupTabs(mapIdx);
     document.querySelectorAll(`#map-${mapIdx} .comp-panel`).forEach(p => p.classList.remove('active'));
     document.querySelectorAll(`#map-${mapIdx} .comp-tab`).forEach(b => b.classList.remove('active'));
     const panel = document.getElementById(`panel-${mapIdx}-${compIdx}`);
@@ -314,6 +318,32 @@ window.OLYCITY = {
     alert('Comp sauvegardée !');
   },
 
+  _refreshLineupTabs(mapIdx) {
+    const mapName = state.COMPS_DATA[mapIdx]?.map;
+    if (!mapName) return;
+    const compIdx = state.currentCompIdx[mapIdx] ?? 0;
+    const comp = state.COMPS_DATA[mapIdx]?.comps[compIdx];
+    const compAgents = comp?.agents || [];
+    const mapLineups = state.LINEUPS[mapName] || {};
+    const lineupAgents = Object.keys(mapLineups);
+
+    // Find agents that are both in current comp AND have lineups
+    const relevantAgents = compAgents.filter(a => lineupAgents.includes(a));
+    const showAgents = relevantAgents.length > 0 ? relevantAgents : lineupAgents;
+
+    document.querySelectorAll(`.lineup-agent-tab[data-map="${mapName}"]`).forEach(tab => {
+      const agent = tab.dataset.agent;
+      tab.style.display = showAgents.includes(agent) ? '' : 'none';
+    });
+
+    // Auto-select first visible agent
+    const firstVisible = showAgents.find(a => lineupAgents.includes(a));
+    if (firstVisible) {
+      const tabEl = document.querySelector(`.lineup-agent-tab[data-map="${mapName}"][data-agent="${firstVisible}"]`);
+      window.OLYCITY.switchLineupAgent(mapName, firstVisible, tabEl);
+    }
+  },
+
   switchMapTab(mapIdx, tab, btn) {
     const prefix = `maptab-${mapIdx}-`;
     document.querySelectorAll(`[id^="${prefix}"]`).forEach(el => el.classList.remove('active'));
@@ -322,6 +352,7 @@ window.OLYCITY = {
     if (panel) panel.classList.add('active');
     if (btn) btn.classList.add('active');
     if (tab === 'comps') setTimeout(() => initTilt(), 50);
+    if (tab === 'lineups') setTimeout(() => window.OLYCITY._refreshLineupTabs(mapIdx), 50);
   },
 
   goToLineups(mapIdx, agentName) {

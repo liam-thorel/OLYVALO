@@ -1,87 +1,806 @@
 {
   "Fracture": {
     "Sova": [
-      { "name": "B Site God Arrow", "type": "ATK", "diff": "Facile", "videoId": "21kK2500UmA", "start": 7, "desc": "Révèle tout B Site depuis le spawn ATK — à lancer dès que le round commence" },
-      { "name": "A Main Arrow 1", "type": "ATK", "diff": "Facile", "videoId": "21kK2500UmA", "start": 146, "desc": "Recon sur A Main depuis le spawn, combo avec Breach stun pour execute rapide" },
-      { "name": "B Main Tree God Arrow", "type": "DEF", "diff": "Moyen", "videoId": "21kK2500UmA", "start": 294, "desc": "Info B depuis la Tree en défense — révèle les ATK en approche B Main" },
-      { "name": "B Default Post-Plant", "type": "ATK", "diff": "Facile", "videoId": "21kK2500UmA", "start": 631, "desc": "Shock Dart sur le plant B par défaut — à lancer en retrait depuis l'Arcade" }
+      {
+        "name": "B Site God Arrow",
+        "type": "ATK",
+        "diff": "Facile",
+        "videoId": "21kK2500UmA",
+        "start": 7,
+        "desc": "Révèle tout B Site depuis le spawn ATK — à lancer dès que le round commence"
+      },
+      {
+        "name": "A Main Arrow 1",
+        "type": "ATK",
+        "diff": "Facile",
+        "videoId": "21kK2500UmA",
+        "start": 146,
+        "desc": "Recon sur A Main depuis le spawn, combo avec Breach stun pour execute rapide"
+      },
+      {
+        "name": "B Main Tree God Arrow",
+        "type": "DEF",
+        "diff": "Moyen",
+        "videoId": "21kK2500UmA",
+        "start": 294,
+        "desc": "Info B depuis la Tree en défense — révèle les ATK en approche B Main"
+      },
+      {
+        "name": "B Default Post-Plant",
+        "type": "ATK",
+        "diff": "Facile",
+        "videoId": "21kK2500UmA",
+        "start": 631,
+        "desc": "Shock Dart sur le plant B par défaut — à lancer en retrait depuis l'Arcade"
+      }
     ],
     "Fade": [
-      { "name": "A Main God Reveal", "type": "ATK", "diff": "Facile", "videoId": "L-SkFHrl7Zk", "start": 7, "desc": "Haunt pour reveal A Main complet avant d'entrer sur site" },
-      { "name": "B Site God Reveal", "type": "ATK", "diff": "Facile", "videoId": "L-SkFHrl7Zk", "start": 60, "desc": "Haunt depuis B Arcade pour reveal le back site B" },
-      { "name": "A Retake God Arrow", "type": "DEF", "diff": "Moyen", "videoId": "L-SkFHrl7Zk", "start": 120, "desc": "Haunt pour A retake depuis le spawn DEF — reveal toutes les positions ATK" }
+      {
+        "name": "A Main God Reveal",
+        "type": "ATK",
+        "diff": "Facile",
+        "videoId": "L-SkFHrl7Zk",
+        "start": 7,
+        "desc": "Haunt pour reveal A Main complet avant d'entrer sur site"
+      },
+      {
+        "name": "B Site God Reveal",
+        "type": "ATK",
+        "diff": "Facile",
+        "videoId": "L-SkFHrl7Zk",
+        "start": 60,
+        "desc": "Haunt depuis B Arcade pour reveal le back site B"
+      },
+      {
+        "name": "A Retake God Arrow",
+        "type": "DEF",
+        "diff": "Moyen",
+        "videoId": "L-SkFHrl7Zk",
+        "start": 120,
+        "desc": "Haunt pour A retake depuis le spawn DEF — reveal toutes les positions ATK"
+      }
+    ],
+    "Cypher": [
+      {
+        "name": "[DEF] Camera A Site",
+        "type": "DEF",
+        "diff": "Facile",
+        "videoId": "9WWU4_wKa44",
+        "start": 13,
+        "desc": "Positions de caméra A Site qui couvrent A Drop et A Halls sans risque"
+      },
+      {
+        "name": "[DEF] Tripwires A Site",
+        "type": "DEF",
+        "diff": "Moyen",
+        "videoId": "9WWU4_wKa44",
+        "start": 151,
+        "desc": "Tripwires A Site — positions inattendues qui attrapent les ATK en execute"
+      },
+      {
+        "name": "[DEF] Camera B Site",
+        "type": "DEF",
+        "diff": "Facile",
+        "videoId": "9WWU4_wKa44",
+        "start": 514,
+        "desc": "Caméras B Site qui révèlent B Tower et B Arcade sans sortir couvert"
+      },
+      {
+        "name": "[ATK] Tripwires Attaque",
+        "type": "ATK",
+        "diff": "Moyen",
+        "videoId": "9WWU4_wKa44",
+        "start": 905,
+        "desc": "Placement tripwires en attaque — bloquent les rotations DEF et révèlent les flancs"
+      }
     ]
   },
   "Haven": {
     "Sova": [
-      { "name": "A Site God Arrow", "type": "ATK", "diff": "Facile", "videoId": "czketOpD2p8", "start": 7, "desc": "Révèle tout A Site depuis A Long — à lancer sans avancer" },
-      { "name": "B Site God Arrow", "type": "ATK", "diff": "Facile", "videoId": "czketOpD2p8", "start": 30, "desc": "Recon B Site en phase d'achat depuis le spawn — info immédiate" },
-      { "name": "C Site God Arrow", "type": "ATK", "diff": "Facile", "videoId": "czketOpD2p8", "start": 55, "desc": "C Site reveal depuis le spawn ATK — parfait pour une execute rapide C" },
-      { "name": "A Early Info God Arrow", "type": "DEF", "diff": "Moyen", "videoId": "czketOpD2p8", "start": 254, "desc": "Info A Long très tôt en DEF — permet de savoir si les ATK pushent A ou rotent" },
-      { "name": "C Lobby God Arrow", "type": "DEF", "diff": "Moyen", "videoId": "czketOpD2p8", "start": 422, "desc": "Info C Lobby depuis CT — révèle la présence ATK en C sans s'exposer" }
+      {
+        "name": "A Site God Arrow",
+        "type": "ATK",
+        "diff": "Facile",
+        "videoId": "czketOpD2p8",
+        "start": 7,
+        "desc": "Révèle tout A Site depuis A Long — à lancer sans avancer"
+      },
+      {
+        "name": "B Site God Arrow",
+        "type": "ATK",
+        "diff": "Facile",
+        "videoId": "czketOpD2p8",
+        "start": 30,
+        "desc": "Recon B Site en phase d'achat depuis le spawn — info immédiate"
+      },
+      {
+        "name": "C Site God Arrow",
+        "type": "ATK",
+        "diff": "Facile",
+        "videoId": "czketOpD2p8",
+        "start": 55,
+        "desc": "C Site reveal depuis le spawn ATK — parfait pour une execute rapide C"
+      },
+      {
+        "name": "A Early Info God Arrow",
+        "type": "DEF",
+        "diff": "Moyen",
+        "videoId": "czketOpD2p8",
+        "start": 254,
+        "desc": "Info A Long très tôt en DEF — permet de savoir si les ATK pushent A ou rotent"
+      },
+      {
+        "name": "C Lobby God Arrow",
+        "type": "DEF",
+        "diff": "Moyen",
+        "videoId": "czketOpD2p8",
+        "start": 422,
+        "desc": "Info C Lobby depuis CT — révèle la présence ATK en C sans s'exposer"
+      }
     ],
     "Fade": [
-      { "name": "A Site God Reveal", "type": "ATK", "diff": "Facile", "videoId": "_VwWwoRSEcY", "start": 25, "desc": "Haunt A Site depuis A Short avant d'entrer — reveal complet du site" },
-      { "name": "C Site God Reveal", "type": "ATK", "diff": "Facile", "videoId": "_VwWwoRSEcY", "start": 83, "desc": "Haunt C depuis Garage — reveal tout C avant l'execute" },
-      { "name": "A Early Info", "type": "DEF", "diff": "Facile", "videoId": "_VwWwoRSEcY", "start": 140, "desc": "Haunt A Long en début de round depuis CT — info gratuite sur A push" },
-      { "name": "C Early Info", "type": "DEF", "diff": "Facile", "videoId": "_VwWwoRSEcY", "start": 202, "desc": "Haunt C Lobby en début de round — reveal les ATK qui pushent C early" }
+      {
+        "name": "A Site God Reveal",
+        "type": "ATK",
+        "diff": "Facile",
+        "videoId": "_VwWwoRSEcY",
+        "start": 25,
+        "desc": "Haunt A Site depuis A Short avant d'entrer — reveal complet du site"
+      },
+      {
+        "name": "C Site God Reveal",
+        "type": "ATK",
+        "diff": "Facile",
+        "videoId": "_VwWwoRSEcY",
+        "start": 83,
+        "desc": "Haunt C depuis Garage — reveal tout C avant l'execute"
+      },
+      {
+        "name": "A Early Info",
+        "type": "DEF",
+        "diff": "Facile",
+        "videoId": "_VwWwoRSEcY",
+        "start": 140,
+        "desc": "Haunt A Long en début de round depuis CT — info gratuite sur A push"
+      },
+      {
+        "name": "C Early Info",
+        "type": "DEF",
+        "diff": "Facile",
+        "videoId": "_VwWwoRSEcY",
+        "start": 202,
+        "desc": "Haunt C Lobby en début de round — reveal les ATK qui pushent C early"
+      }
+    ],
+    "Cypher": [
+      {
+        "name": "[DEF] Setup A Site complet",
+        "type": "DEF",
+        "diff": "Moyen",
+        "videoId": "IeyWG0WYlnI",
+        "start": 7,
+        "desc": "Setup Cypher A Site — cam, tripwire et cage coordonnés pour hold A seul"
+      },
+      {
+        "name": "[DEF] Setup B Site",
+        "type": "DEF",
+        "diff": "Facile",
+        "videoId": "IeyWG0WYlnI",
+        "start": 90,
+        "desc": "Hold B Site avec une seule cam bien placée — couvre B Short et B Long"
+      },
+      {
+        "name": "[DEF] Setup C Site",
+        "type": "DEF",
+        "diff": "Moyen",
+        "videoId": "IeyWG0WYlnI",
+        "start": 180,
+        "desc": "Tripwires C Long et cage C Site — impossible de clear sans se faire spotter"
+      }
+    ],
+    "Breach": [
+      {
+        "name": "[ATK] Aftershock C Default",
+        "type": "ATK",
+        "diff": "Moyen",
+        "videoId": "Rux0HjzKQbw",
+        "start": 55,
+        "desc": "Aftershock post-plant C depuis Garage à travers le mur"
+      },
+      {
+        "name": "[ATK] Flash A Long",
+        "type": "ATK",
+        "diff": "Facile",
+        "videoId": "Rux0HjzKQbw",
+        "start": 0,
+        "desc": "Flash à travers le mur A Long depuis le spawn ATK"
+      }
     ]
   },
   "Breeze": {
     "Sova": [
-      { "name": "A Lobby to A Site Back", "type": "ATK", "diff": "Moyen", "videoId": "49-JROgKeCo", "start": 18, "desc": "Recon révèle le back A Site depuis A Lobby — sécurise l'entrée" },
-      { "name": "B Lobby to B Site Back v1", "type": "ATK", "diff": "Moyen", "videoId": "49-JROgKeCo", "start": 395, "desc": "Reveal B Site depuis B Lobby — God arrow sur le back site" },
-      { "name": "B Lobby to B Site Wall", "type": "ATK", "diff": "Difficile", "videoId": "49-JROgKeCo", "start": 430, "desc": "Recon mural B Site depuis B Lobby — révèle les positions côté wall" },
-      { "name": "B Nest to B Lobby", "type": "DEF", "diff": "Moyen", "videoId": "49-JROgKeCo", "start": 1126, "desc": "Info B Lobby en défense depuis B Nest — permet de savoir si les ATK approchent B" }
+      {
+        "name": "A Lobby to A Site Back",
+        "type": "ATK",
+        "diff": "Moyen",
+        "videoId": "49-JROgKeCo",
+        "start": 18,
+        "desc": "Recon révèle le back A Site depuis A Lobby — sécurise l'entrée"
+      },
+      {
+        "name": "B Lobby to B Site Back v1",
+        "type": "ATK",
+        "diff": "Moyen",
+        "videoId": "49-JROgKeCo",
+        "start": 395,
+        "desc": "Reveal B Site depuis B Lobby — God arrow sur le back site"
+      },
+      {
+        "name": "B Lobby to B Site Wall",
+        "type": "ATK",
+        "diff": "Difficile",
+        "videoId": "49-JROgKeCo",
+        "start": 430,
+        "desc": "Recon mural B Site depuis B Lobby — révèle les positions côté wall"
+      },
+      {
+        "name": "B Nest to B Lobby",
+        "type": "DEF",
+        "diff": "Moyen",
+        "videoId": "49-JROgKeCo",
+        "start": 1126,
+        "desc": "Info B Lobby en défense depuis B Nest — permet de savoir si les ATK approchent B"
+      }
+    ],
+    "Viper": [
+      {
+        "name": "[ATK] A Site Wall",
+        "type": "ATK",
+        "diff": "Facile",
+        "videoId": "hzVo5JEQCt4",
+        "start": 18,
+        "desc": "Toxic Screen qui coupe A Site en deux pour l'execute — à placer dès le spawn"
+      },
+      {
+        "name": "[ATK] B Site Wall",
+        "type": "ATK",
+        "diff": "Facile",
+        "videoId": "hzVo5JEQCt4",
+        "start": 306,
+        "desc": "Wall B Site depuis B Lobby — isole B Main de B back site"
+      },
+      {
+        "name": "[ATK] Molly B Default Plant",
+        "type": "ATK",
+        "diff": "Moyen",
+        "videoId": "hzVo5JEQCt4",
+        "start": 450,
+        "desc": "Snake Bite sur le plant B par défaut depuis B Lobby"
+      },
+      {
+        "name": "[DEF] Wall A Site + Mid",
+        "type": "DEF",
+        "diff": "Moyen",
+        "videoId": "hzVo5JEQCt4",
+        "start": 497,
+        "desc": "Wall défensif qui couvre A Site et le milieu simultanément"
+      },
+      {
+        "name": "[DEF] Molly CT to B Default",
+        "type": "DEF",
+        "diff": "Difficile",
+        "videoId": "hzVo5JEQCt4",
+        "start": 817,
+        "desc": "Snake Bite post-plant B défaut depuis CT Arches"
+      }
     ]
   },
   "Lotus": {
     "Sova": [
-      { "name": "A Lobby to A Main", "type": "ATK", "diff": "Facile", "videoId": "K8b5qR-bTek", "start": 5, "desc": "Recon A Main depuis le spawn ATK — info immédiate sur les défenseurs A" },
-      { "name": "B Lobby to B Site", "type": "ATK", "diff": "Facile", "videoId": "K8b5qR-bTek", "start": 189, "desc": "Reveal B Site depuis B Lobby avant l'execute" },
-      { "name": "C Lobby to C Site", "type": "ATK", "diff": "Moyen", "videoId": "K8b5qR-bTek", "start": 308, "desc": "Reveal C Site depuis C Lobby — essentiel avec la porte pivotante" },
-      { "name": "A Backsite to A Root", "type": "DEF", "diff": "Moyen", "videoId": "K8b5qR-bTek", "start": 413, "desc": "Info A Root en DEF depuis A Backsite — révèle les ATK en approche" }
+      {
+        "name": "A Lobby to A Main",
+        "type": "ATK",
+        "diff": "Facile",
+        "videoId": "K8b5qR-bTek",
+        "start": 5,
+        "desc": "Recon A Main depuis le spawn ATK — info immédiate sur les défenseurs A"
+      },
+      {
+        "name": "B Lobby to B Site",
+        "type": "ATK",
+        "diff": "Facile",
+        "videoId": "K8b5qR-bTek",
+        "start": 189,
+        "desc": "Reveal B Site depuis B Lobby avant l'execute"
+      },
+      {
+        "name": "C Lobby to C Site",
+        "type": "ATK",
+        "diff": "Moyen",
+        "videoId": "K8b5qR-bTek",
+        "start": 308,
+        "desc": "Reveal C Site depuis C Lobby — essentiel avec la porte pivotante"
+      },
+      {
+        "name": "A Backsite to A Root",
+        "type": "DEF",
+        "diff": "Moyen",
+        "videoId": "K8b5qR-bTek",
+        "start": 413,
+        "desc": "Info A Root en DEF depuis A Backsite — révèle les ATK en approche"
+      }
     ],
     "Fade": [
-      { "name": "A Main God Reveal DEF", "type": "DEF", "diff": "Facile", "videoId": "Gb0RESvGUZw", "start": 7, "desc": "Haunt A Main depuis le spawn DEF — reveal immédiat d'une push ATK A" },
-      { "name": "C God Retake", "type": "DEF", "diff": "Moyen", "videoId": "Gb0RESvGUZw", "start": 179, "desc": "Haunt pour retake C depuis B Site — reveal tous les ATK plantés sur C" },
-      { "name": "A Main God Reveal ATK", "type": "ATK", "diff": "Facile", "videoId": "Gb0RESvGUZw", "start": 203, "desc": "Haunt A Main depuis le spawn ATK avant d'avancer" },
-      { "name": "C Site God Reveal ATK", "type": "ATK", "diff": "Moyen", "videoId": "Gb0RESvGUZw", "start": 333, "desc": "Haunt C Site depuis C Main — révèle le back site et les angles cachés" }
+      {
+        "name": "A Main God Reveal DEF",
+        "type": "DEF",
+        "diff": "Facile",
+        "videoId": "Gb0RESvGUZw",
+        "start": 7,
+        "desc": "Haunt A Main depuis le spawn DEF — reveal immédiat d'une push ATK A"
+      },
+      {
+        "name": "C God Retake",
+        "type": "DEF",
+        "diff": "Moyen",
+        "videoId": "Gb0RESvGUZw",
+        "start": 179,
+        "desc": "Haunt pour retake C depuis B Site — reveal tous les ATK plantés sur C"
+      },
+      {
+        "name": "A Main God Reveal ATK",
+        "type": "ATK",
+        "diff": "Facile",
+        "videoId": "Gb0RESvGUZw",
+        "start": 203,
+        "desc": "Haunt A Main depuis le spawn ATK avant d'avancer"
+      },
+      {
+        "name": "C Site God Reveal ATK",
+        "type": "ATK",
+        "diff": "Moyen",
+        "videoId": "Gb0RESvGUZw",
+        "start": 333,
+        "desc": "Haunt C Site depuis C Main — révèle le back site et les angles cachés"
+      }
+    ],
+    "Viper": [
+      {
+        "name": "[ATK] Molly A Default Plant",
+        "type": "ATK",
+        "diff": "Moyen",
+        "videoId": "n2xj9YrgQF4",
+        "start": 7,
+        "desc": "Snake Bite sur le plant A depuis A Roots"
+      },
+      {
+        "name": "[ATK] One Way C Site",
+        "type": "DEF",
+        "diff": "Difficile",
+        "videoId": "n2xj9YrgQF4",
+        "start": 112,
+        "desc": "One-way smoke C depuis CT qui permet de voir les ATK sans être vu"
+      },
+      {
+        "name": "[DEF] One Way B Site",
+        "type": "DEF",
+        "diff": "Moyen",
+        "videoId": "n2xj9YrgQF4",
+        "start": 172,
+        "desc": "Smoke défensif B — bloque la vision ATK tout en gardant info"
+      }
+    ],
+    "Killjoy": [
+      {
+        "name": "[ATK] Nanoswarm A Default",
+        "type": "ATK",
+        "diff": "Moyen",
+        "videoId": "jJ3dqccSUxo",
+        "start": 7,
+        "desc": "Post-plant nanoswarm sur le plant A par défaut depuis A Roots"
+      },
+      {
+        "name": "[ATK] Nanoswarm B Default",
+        "type": "ATK",
+        "diff": "Moyen",
+        "videoId": "jJ3dqccSUxo",
+        "start": 60,
+        "desc": "Post-plant nanoswarm B default depuis B Lobby"
+      },
+      {
+        "name": "[ATK] Nanoswarm C Default",
+        "type": "ATK",
+        "diff": "Moyen",
+        "videoId": "jJ3dqccSUxo",
+        "start": 120,
+        "desc": "Post-plant nanoswarm C depuis C Lobby — piège le défenseur sur le défuse"
+      }
+    ],
+    "Breach": [
+      {
+        "name": "[ATK] Aftershock A Site",
+        "type": "ATK",
+        "diff": "Moyen",
+        "videoId": "vP-_67t2mjw",
+        "start": 160,
+        "desc": "Aftershock à travers le mur A pour post-plant — impossible à défuser"
+      },
+      {
+        "name": "[ATK] Faille A Ramp",
+        "type": "ATK",
+        "diff": "Moyen",
+        "videoId": "vP-_67t2mjw",
+        "start": 250,
+        "desc": "Fault Line à travers le mur A pour stun les DEF avant l'execute"
+      }
     ]
   },
   "Bind": {
     "Sova": [
-      { "name": "A Lobby to A Showers v1", "type": "ATK", "diff": "Facile", "videoId": "PlfzmveLezo", "start": 12, "desc": "Recon A Showers depuis A Lobby — révèle les défenseurs dans le couloir" },
-      { "name": "B Fountain to B Site", "type": "ATK", "diff": "Moyen", "videoId": "PlfzmveLezo", "start": 401, "desc": "Reveal B Site complet depuis B Fountain avant l'execute B" },
-      { "name": "B Short to B Site v1", "type": "ATK", "diff": "Moyen", "videoId": "PlfzmveLezo", "start": 462, "desc": "Recon B Short vers B Site — god arrow qui révèle Hookah et back site" }
+      {
+        "name": "A Lobby to A Showers v1",
+        "type": "ATK",
+        "diff": "Facile",
+        "videoId": "PlfzmveLezo",
+        "start": 12,
+        "desc": "Recon A Showers depuis A Lobby — révèle les défenseurs dans le couloir"
+      },
+      {
+        "name": "B Fountain to B Site",
+        "type": "ATK",
+        "diff": "Moyen",
+        "videoId": "PlfzmveLezo",
+        "start": 401,
+        "desc": "Reveal B Site complet depuis B Fountain avant l'execute B"
+      },
+      {
+        "name": "B Short to B Site v1",
+        "type": "ATK",
+        "diff": "Moyen",
+        "videoId": "PlfzmveLezo",
+        "start": 462,
+        "desc": "Recon B Short vers B Site — god arrow qui révèle Hookah et back site"
+      }
+    ],
+    "Viper": [
+      {
+        "name": "[ATK] Wall A Short + Site",
+        "type": "ATK",
+        "diff": "Facile",
+        "videoId": "9rYRRIj-Pcc",
+        "start": 12,
+        "desc": "Toxic Screen qui coupe A Short de A Site pour l'execute"
+      },
+      {
+        "name": "[ATK] Molly A Showers Default",
+        "type": "ATK",
+        "diff": "Moyen",
+        "videoId": "9rYRRIj-Pcc",
+        "start": 75,
+        "desc": "Snake Bite sur le plant A depuis A Lobby — sort via les Showers"
+      },
+      {
+        "name": "[ATK] Wall B Hookah + Site",
+        "type": "ATK",
+        "diff": "Facile",
+        "videoId": "9rYRRIj-Pcc",
+        "start": 498,
+        "desc": "Wall qui bloque le retour défenseur depuis Hookah pendant l'execute B"
+      },
+      {
+        "name": "[DEF] Wall A Site + Showers",
+        "type": "DEF",
+        "diff": "Moyen",
+        "videoId": "9rYRRIj-Pcc",
+        "start": 792,
+        "desc": "One-way Toxic Screen défensif sur A Site — voit les ATK sans être vu"
+      }
+    ],
+    "Killjoy": [
+      {
+        "name": "[ATK] Nanoswarm A Default",
+        "type": "ATK",
+        "diff": "Moyen",
+        "videoId": "v8j5aC-VNE8",
+        "start": 120,
+        "desc": "Post-plant molly A default depuis A Short — position sécurisée dans la Fountain"
+      },
+      {
+        "name": "[ATK] Nanoswarm B Default",
+        "type": "ATK",
+        "diff": "Moyen",
+        "videoId": "v8j5aC-VNE8",
+        "start": 200,
+        "desc": "Post-plant nanoswarm B depuis B Hookah"
+      }
     ]
   },
   "Split": {
     "Sova": [
-      { "name": "A Site God Arrow", "type": "ATK", "diff": "Facile", "videoId": "k7GGhJ0NJCU", "start": 7, "desc": "Révèle tout A Site depuis le spawn ATK — essentiel avant chaque execute A" },
-      { "name": "B Site God Arrow 1", "type": "ATK", "diff": "Facile", "videoId": "k7GGhJ0NJCU", "start": 152, "desc": "B Site complet depuis spawn ATK — révèle B Heaven et back site" },
-      { "name": "A Info God Arrow 1", "type": "DEF", "diff": "Moyen", "videoId": "k7GGhJ0NJCU", "start": 260, "desc": "Info A Long en début de round depuis CT — sait si les ATK pushent A" },
-      { "name": "B Info God Arrow", "type": "DEF", "diff": "Moyen", "videoId": "k7GGhJ0NJCU", "start": 396, "desc": "Info B depuis A Ramp — combo avec l'ulti pour triple info simultanée" }
+      {
+        "name": "A Site God Arrow",
+        "type": "ATK",
+        "diff": "Facile",
+        "videoId": "k7GGhJ0NJCU",
+        "start": 7,
+        "desc": "Révèle tout A Site depuis le spawn ATK — essentiel avant chaque execute A"
+      },
+      {
+        "name": "B Site God Arrow 1",
+        "type": "ATK",
+        "diff": "Facile",
+        "videoId": "k7GGhJ0NJCU",
+        "start": 152,
+        "desc": "B Site complet depuis spawn ATK — révèle B Heaven et back site"
+      },
+      {
+        "name": "A Info God Arrow 1",
+        "type": "DEF",
+        "diff": "Moyen",
+        "videoId": "k7GGhJ0NJCU",
+        "start": 260,
+        "desc": "Info A Long en début de round depuis CT — sait si les ATK pushent A"
+      },
+      {
+        "name": "B Info God Arrow",
+        "type": "DEF",
+        "diff": "Moyen",
+        "videoId": "k7GGhJ0NJCU",
+        "start": 396,
+        "desc": "Info B depuis A Ramp — combo avec l'ulti pour triple info simultanée"
+      }
     ],
     "Fade": [
-      { "name": "A Info Best Reveal", "type": "DEF", "diff": "Facile", "videoId": "9raAqRhORI0", "start": 7, "desc": "Haunt A Info depuis CT — le meilleur reveal A en défense sur Split" },
-      { "name": "A Retake 1 Deep", "type": "DEF", "diff": "Moyen", "videoId": "9raAqRhORI0", "start": 132, "desc": "Haunt pour retake A depuis le spawn DEF — reveal toutes les positions ATK" },
-      { "name": "A Site Best Reveal ATK", "type": "ATK", "diff": "Facile", "videoId": "9raAqRhORI0", "start": 377, "desc": "Haunt A Site depuis A Ramp — le reveal ATK le plus efficace sur Split" },
-      { "name": "B Site God Reveal ATK", "type": "ATK", "diff": "Moyen", "videoId": "9raAqRhORI0", "start": 461, "desc": "Haunt B Site depuis le milieu — révèle Heaven et back site simultanément" }
+      {
+        "name": "A Info Best Reveal",
+        "type": "DEF",
+        "diff": "Facile",
+        "videoId": "9raAqRhORI0",
+        "start": 7,
+        "desc": "Haunt A Info depuis CT — le meilleur reveal A en défense sur Split"
+      },
+      {
+        "name": "A Retake 1 Deep",
+        "type": "DEF",
+        "diff": "Moyen",
+        "videoId": "9raAqRhORI0",
+        "start": 132,
+        "desc": "Haunt pour retake A depuis le spawn DEF — reveal toutes les positions ATK"
+      },
+      {
+        "name": "A Site Best Reveal ATK",
+        "type": "ATK",
+        "diff": "Facile",
+        "videoId": "9raAqRhORI0",
+        "start": 377,
+        "desc": "Haunt A Site depuis A Ramp — le reveal ATK le plus efficace sur Split"
+      },
+      {
+        "name": "B Site God Reveal ATK",
+        "type": "ATK",
+        "diff": "Moyen",
+        "videoId": "9raAqRhORI0",
+        "start": 461,
+        "desc": "Haunt B Site depuis le milieu — révèle Heaven et back site simultanément"
+      }
+    ],
+    "Viper": [
+      {
+        "name": "[ATK] Wall A Main + Heaven",
+        "type": "ATK",
+        "diff": "Facile",
+        "videoId": "2H_aNHkB-L8",
+        "start": 11,
+        "desc": "Toxic Screen A Main qui coupe les angles A Heaven pour l'execute A"
+      },
+      {
+        "name": "[ATK] Molly A Site Flowers",
+        "type": "ATK",
+        "diff": "Moyen",
+        "videoId": "2H_aNHkB-L8",
+        "start": 127,
+        "desc": "Snake Bite post-plant A depuis A Lobby — position Flowers (plant default)"
+      },
+      {
+        "name": "[ATK] Wall B Main + Site",
+        "type": "ATK",
+        "diff": "Facile",
+        "videoId": "2H_aNHkB-L8",
+        "start": 275,
+        "desc": "Toxic Screen B qui coupe B Heaven de B Main"
+      },
+      {
+        "name": "[DEF] Wall A Ramp + Site",
+        "type": "DEF",
+        "diff": "Moyen",
+        "videoId": "2H_aNHkB-L8",
+        "start": 607,
+        "desc": "One-way défensif sur A Ramp — info et ralentissement sans risque"
+      }
+    ],
+    "Killjoy": [
+      {
+        "name": "[ATK] Nanoswarm A Default",
+        "type": "ATK",
+        "diff": "Facile",
+        "videoId": "LX5HQAI9Kpk",
+        "start": 7,
+        "desc": "Molly sur le plant A par défaut depuis A Lobby"
+      },
+      {
+        "name": "[ATK] Nanoswarm B Default",
+        "type": "ATK",
+        "diff": "Facile",
+        "videoId": "LX5HQAI9Kpk",
+        "start": 60,
+        "desc": "Nanoswarm B default depuis B Lobby — position safe derrière les caisses"
+      },
+      {
+        "name": "[DEF] Alarm Bot Setup A",
+        "type": "DEF",
+        "diff": "Facile",
+        "videoId": "LX5HQAI9Kpk",
+        "start": 120,
+        "desc": "Setup défensif complet A Site — tripwire + cam + nanoswarm coordonnés"
+      }
+    ],
+    "Cypher": [
+      {
+        "name": "[DEF] Camera A Site",
+        "type": "DEF",
+        "diff": "Facile",
+        "videoId": "KGSa_0qU7iA",
+        "start": 29,
+        "desc": "Positions cam A qui couvrent A Ramp et A Heaven simultanément"
+      },
+      {
+        "name": "[DEF] Tripwires A",
+        "type": "DEF",
+        "diff": "Moyen",
+        "videoId": "KGSa_0qU7iA",
+        "start": 72,
+        "desc": "Tripwires A — positions incontournables pour info A Ramp early"
+      },
+      {
+        "name": "[DEF] Camera B Site",
+        "type": "DEF",
+        "diff": "Facile",
+        "videoId": "KGSa_0qU7iA",
+        "start": 163,
+        "desc": "Caméra B depuis B Back — révèle B Main sans s'exposer"
+      },
+      {
+        "name": "[ATK] Camera Attaque",
+        "type": "ATK",
+        "diff": "Moyen",
+        "videoId": "KGSa_0qU7iA",
+        "start": 372,
+        "desc": "Cam d'attaque depuis CT — info sur les rotations DEF pendant le plant"
+      }
+    ],
+    "Breach": [
+      {
+        "name": "[ATK] Aftershock A Default",
+        "type": "ATK",
+        "diff": "Moyen",
+        "videoId": "Rux0HjzKQbw",
+        "start": 60,
+        "desc": "Aftershock post-plant A depuis A Ramp à travers le mur — standard sur Split"
+      },
+      {
+        "name": "[ATK] Flash A Ramp",
+        "type": "ATK",
+        "diff": "Facile",
+        "videoId": "Rux0HjzKQbw",
+        "start": 120,
+        "desc": "Flashbang à travers le mur A Ramp pour forcer les DEF à sortir de position"
+      }
     ]
   },
   "Pearl": {
     "Sova": [
-      { "name": "A Site God Arrow", "type": "ATK", "diff": "Facile", "videoId": "3ATKevAGLMw", "start": 49, "desc": "Révèle tout A Site depuis A Main — scanne le back site complètement" },
-      { "name": "B Site God Arrow", "type": "ATK", "diff": "Facile", "videoId": "3ATKevAGLMw", "start": 232, "desc": "Reveal B Site depuis B Long — god arrow indispensable sur Pearl" },
-      { "name": "Mid Doors God Arrow", "type": "ATK", "diff": "Moyen", "videoId": "3ATKevAGLMw", "start": 331, "desc": "Info Mid Doors depuis le spawn ATK — essentiel pour le contrôle mid" },
-      { "name": "A Retake God Arrow", "type": "DEF", "diff": "Moyen", "videoId": "3ATKevAGLMw", "start": 416, "desc": "Haunt pour retake A depuis CT — révèle toutes les positions ATK plantées" },
-      { "name": "B Retake God Arrow", "type": "DEF", "diff": "Moyen", "videoId": "3ATKevAGLMw", "start": 531, "desc": "Reveal B pour retake depuis CT — scanne le back site et les angles" }
+      {
+        "name": "A Site God Arrow",
+        "type": "ATK",
+        "diff": "Facile",
+        "videoId": "3ATKevAGLMw",
+        "start": 49,
+        "desc": "Révèle tout A Site depuis A Main — scanne le back site complètement"
+      },
+      {
+        "name": "B Site God Arrow",
+        "type": "ATK",
+        "diff": "Facile",
+        "videoId": "3ATKevAGLMw",
+        "start": 232,
+        "desc": "Reveal B Site depuis B Long — god arrow indispensable sur Pearl"
+      },
+      {
+        "name": "Mid Doors God Arrow",
+        "type": "ATK",
+        "diff": "Moyen",
+        "videoId": "3ATKevAGLMw",
+        "start": 331,
+        "desc": "Info Mid Doors depuis le spawn ATK — essentiel pour le contrôle mid"
+      },
+      {
+        "name": "A Retake God Arrow",
+        "type": "DEF",
+        "diff": "Moyen",
+        "videoId": "3ATKevAGLMw",
+        "start": 416,
+        "desc": "Haunt pour retake A depuis CT — révèle toutes les positions ATK plantées"
+      },
+      {
+        "name": "B Retake God Arrow",
+        "type": "DEF",
+        "diff": "Moyen",
+        "videoId": "3ATKevAGLMw",
+        "start": 531,
+        "desc": "Reveal B pour retake depuis CT — scanne le back site et les angles"
+      }
     ],
     "Fade": [
-      { "name": "A Site Reveal ATK", "type": "ATK", "diff": "Facile", "videoId": "oW_XVC44SM0", "start": 7, "desc": "Haunt A Site depuis A Main avant l'execute" },
-      { "name": "B Site God Reveal ATK", "type": "ATK", "diff": "Facile", "videoId": "oW_XVC44SM0", "start": 60, "desc": "Haunt B Site depuis B Long — reveal complet avant execute B" },
-      { "name": "A Retake God Arrow DEF", "type": "DEF", "diff": "Moyen", "videoId": "oW_XVC44SM0", "start": 120, "desc": "Haunt pour retake A — reveal les positions ATK après le plant" }
+      {
+        "name": "A Site Reveal ATK",
+        "type": "ATK",
+        "diff": "Facile",
+        "videoId": "oW_XVC44SM0",
+        "start": 7,
+        "desc": "Haunt A Site depuis A Main avant l'execute"
+      },
+      {
+        "name": "B Site God Reveal ATK",
+        "type": "ATK",
+        "diff": "Facile",
+        "videoId": "oW_XVC44SM0",
+        "start": 60,
+        "desc": "Haunt B Site depuis B Long — reveal complet avant execute B"
+      },
+      {
+        "name": "A Retake God Arrow DEF",
+        "type": "DEF",
+        "diff": "Moyen",
+        "videoId": "oW_XVC44SM0",
+        "start": 120,
+        "desc": "Haunt pour retake A — reveal les positions ATK après le plant"
+      }
+    ],
+    "Killjoy": [
+      {
+        "name": "[ATK] Nanoswarm A Default",
+        "type": "ATK",
+        "diff": "Moyen",
+        "videoId": "RJanDlYAAeo",
+        "start": 7,
+        "desc": "Post-plant molly A default depuis A Main — impossible à défuser sans mourir"
+      },
+      {
+        "name": "[ATK] Nanoswarm B Default",
+        "type": "ATK",
+        "diff": "Moyen",
+        "videoId": "RJanDlYAAeo",
+        "start": 60,
+        "desc": "Post-plant nanoswarm B default depuis B Long"
+      }
+    ],
+    "Cypher": [
+      {
+        "name": "[DEF] Setup A Site",
+        "type": "DEF",
+        "diff": "Moyen",
+        "videoId": "eBldwgdplJI",
+        "start": 7,
+        "desc": "Setup complet A Site Pearl — cam + tripwires qui couvrent A Main et A Link"
+      },
+      {
+        "name": "[DEF] Setup B Site",
+        "type": "DEF",
+        "diff": "Moyen",
+        "videoId": "eBldwgdplJI",
+        "start": 90,
+        "desc": "Hold B Long avec tripwires incontournables — info précoce sur les ATK B"
+      }
     ]
   }
 }

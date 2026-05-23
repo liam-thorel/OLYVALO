@@ -34,3 +34,109 @@
   .agent-page-name{ font-size:48px; }
   .agents-grid{ gap:6px; }
 }
+
+/* ════════════════════════════════════════════════
+   VAGUE 4 — RESPONSIVE AMÉLIORÉ
+   ════════════════════════════════════════════════ */
+
+/* ── TABLET (1024px) ─────────────── */
+@media (max-width: 1024px) {
+  .topbar-row { flex-wrap: wrap; gap: 8px; padding: 8px 16px; }
+  .page-nav { order: 3; width: 100%; justify-content: center; }
+  .topbar-tools { margin-left: auto; }
+
+  .map-hero-content { flex-direction: column; gap: 16px; padding: 28px 20px; }
+  .map-hero-stats { flex-wrap: wrap; gap: 16px; }
+  .map-stat { min-width: 80px; }
+
+  .comp-compare-grid { grid-template-columns: 1fr; }
+  .comp-compare-center { flex-direction: row; justify-content: center; padding: 16px 0; }
+  .comp-compare-diffs { flex-direction: row; }
+
+  .agents-full-grid { grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); }
+}
+
+/* ── MOBILE (768px) ──────────────── */
+@media (max-width: 768px) {
+  .topbar-row { padding: 8px 12px; gap: 6px; }
+  .brand-sub { display: none; }
+  .page-nav { gap: 2px; }
+  .page-nav-btn { padding: 7px 10px; font-size: 10px; letter-spacing: 1px; }
+  .page-nav-btn span.page-nav-icon { font-size: 11px; }
+
+  /* Hero compact */
+  .hero { padding: 40px 20px 32px; }
+  .hero-title { font-size: clamp(40px, 12vw, 80px); }
+  .hero-ctas { flex-direction: column; align-items: center; }
+  .hero-cta-primary, .hero-cta-secondary { width: 200px; text-align: center; justify-content: center; }
+
+  /* Map section */
+  .map-hero { min-height: 200px; }
+  .map-hero-title { font-size: 32px; }
+  .map-hero-stats { gap: 12px; }
+  .map-stat-val { font-size: 18px; }
+
+  .map-section-tabs { overflow-x: auto; }
+  .map-section-tab { white-space: nowrap; padding: 10px 14px; font-size: 10px; }
+
+  /* Comps */
+  .comp-tabs { flex-wrap: wrap; gap: 4px; }
+  .comp-tab { font-size: 10px; padding: 8px 12px; }
+
+  .comp-agents { gap: 4px; }
+  .comp-agents .portrait-frame { width: 52px; }
+
+  .agility-box { padding: 16px; }
+  .agility-bar-wrap { gap: 8px; }
+
+  /* Nav maps */
+  .nav-maps { overflow-x: auto; flex-wrap: nowrap; padding-bottom: 4px; }
+  .nav-map-btn { white-space: nowrap; font-size: 10px; }
+
+  /* Roster */
+  .roster-grid { grid-template-columns: 1fr; gap: 12px; }
+
+  /* Agents page */
+  .agents-page-header { flex-direction: column; gap: 12px; }
+  .agents-search { margin-left: 0; }
+  .agents-full-grid { grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); gap: 8px; }
+
+  /* Builder */
+  .comp-builder-slots { gap: 6px; }
+  .comp-builder-slot { min-width: 80px; }
+  .comp-builder-agents { grid-template-columns: repeat(auto-fill, minmax(60px, 1fr)); gap: 6px; }
+
+  /* Lineups */
+  .lineup-cards-grid { grid-template-columns: 1fr; }
+
+  /* Strats */
+  .strats-grid { grid-template-columns: 1fr; }
+  .eco-grid { grid-template-columns: 1fr; }
+
+  /* Compare */
+  .comp-compare-grid { grid-template-columns: 1fr; }
+  .comp-compare-center { display: none; }
+
+  /* Mini roster */
+  .mini-roster { grid-template-columns: 1fr 1fr; }
+
+  /* Agent page */
+  .agent-hero-content { grid-template-columns: 1fr; }
+  .agent-portrait-wrap { display: none; }
+  .agent-hero { min-height: 420px; }
+  .agent-info { padding: 20px; }
+}
+
+/* ── SMALL MOBILE (480px) ─────────── */
+@media (max-width: 480px) {
+  .page-nav-btn { letter-spacing: 0; }
+  .topbar-tools .search-wrap { display: none; }
+
+  .section-inner { padding: 32px 16px; }
+  .roster-page-inner, .agents-page-inner, .builder-page-inner { padding: 32px 16px; }
+
+  .comp-compare-panel { margin: 8px; }
+
+  .stier-row { gap: 8px; }
+  .stier-card { min-width: 90px; }
+}
