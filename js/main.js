@@ -5,7 +5,7 @@
 
 import { valorantApi } from './api.js';
 
-const SITE_VERSION = '1779645198'; // Auto-updated on push
+const SITE_VERSION = '1779645339'; // Auto-updated on push
 import { syncPlayer as henrikSyncPlayer, syncAllPlayers as henrikSyncAll, persistPlayerStats } from './henrik.js';
 import { rosterHTML, guestCardHTML, mapSectionHTML, stierHTML, globalNotesHTML, navMapsHTML, agentPageHTML, miniRosterHTML, agentsFiltersHTML, agentsGridHTML, compCompareHTML, compBuilderHTML, savedCompsHTML, calloutsHTML } from './render.js';
 import { initTheme, initTilt, initParallax, initSearch, initKeyboard, updateFavCount } from './interactions.js';
@@ -525,6 +525,14 @@ window.OLYCITY = {
 
       // Static mains preserved — HenrikDev only gives 10 matches, not enough for reliable top agents
       document.getElementById('roster-grid').innerHTML = rosterHTML() + guestCardHTML();
+  // Guest card Enter key listener (re-attach after render)
+  setTimeout(() => {
+    const gn = document.getElementById('guest-name');
+    const gt = document.getElementById('guest-tag');
+    [gn, gt].forEach(el => el?.addEventListener('keydown', e => {
+      if (e.key === 'Enter') window.OLYCITY.guestOpen('tracker', e);
+    }));
+  }, 50);
       setBtnState(playerName, 'synced', 'Synced ✓');
     } catch (e) {
       const msgs = {
@@ -553,7 +561,7 @@ window.OLYCITY = {
         persistPlayerStats(playerName, stats);
         const player = state.ROSTER.find(p => p.name === playerName);
         // Static mains preserved
-        document.getElementById('roster-grid').innerHTML = rosterHTML();
+        document.getElementById('roster-grid').innerHTML = rosterHTML() + guestCardHTML();
       },
       onPlayerError(playerName, msg) {
         setBtnState(playerName, 'error', msg === 'NOT_FOUND' ? 'Introuvable' : 'Erreur');
@@ -583,7 +591,7 @@ function renderAll() {
   // Map sections
   document.getElementById('main').innerHTML = state.COMPS_DATA.map((d, i) => mapSectionHTML(d, i)).join('');
   // Roster (full + mini)
-  document.getElementById('roster-grid').innerHTML = rosterHTML();
+  document.getElementById('roster-grid').innerHTML = rosterHTML() + guestCardHTML();
   document.getElementById('mini-roster').innerHTML = miniRosterHTML();
   // Agents page
   document.getElementById('agents-filters').innerHTML = agentsFiltersHTML();
