@@ -94,7 +94,7 @@ function setSyncStatus(html, type = 'info') {
 // ─── WINDOW.OLYCITY — handlers inline HTML ─────────
 window.OLYCITY = {
 
-  nav(page) {
+  nav(page, pushHistory = true) {
     // Close agent page if open
     const agentPage = document.getElementById('agent-page');
     if (agentPage && agentPage.classList.contains('active')) {
@@ -123,6 +123,12 @@ window.OLYCITY = {
 
     window.scrollTo({ top: 0, behavior: 'smooth' });
     state.currentPage = page;
+
+    // Push to browser history
+    if (pushHistory) {
+      const url = page === 'home' ? window.location.pathname : `${window.location.pathname}#${page}`;
+      window.history.pushState({ page }, '', url);
+    }
 
     // Re-init tilt on map page
     if (page === 'maps') setTimeout(() => initTilt(), 100);
@@ -168,6 +174,8 @@ window.OLYCITY = {
   },
 
   showAgentPage(name) {
+    // Push agent page to history so back button works
+    window.history.pushState({ page: 'agent', agent: name }, '', `${window.location.pathname}#agent-${encodeURIComponent(name)}`);
     const page = document.getElementById('agent-page');
     if (!page) return;
     page.innerHTML = agentPageHTML(name);
@@ -186,6 +194,8 @@ window.OLYCITY = {
     document.querySelectorAll('.spa-page').forEach(p => p.classList.remove('active'));
     const curEl = document.getElementById(`page-${curPage}`);
     if (curEl) curEl.classList.add('active');
+    // Go back in history
+    window.history.back();
   },
 
   goToComp(mapIdx, compIdx) {
@@ -670,10 +680,39 @@ async function boot() {
       if (tabBtns[ci]) window.OLYCITY.switchComp(mi, ci, tabBtns[ci]);
     }
   }
+  // Browser back/forward button support
+  window.addEventListener('popstate', (e) => {
+    const state_data = e.state;
+    // Close video modal if open
+    window.OLYCITY.closeVideoModal();
+    // Close compare panel if open
+    const compareWrap = document.getElementById('compare-panel-wrap');
+    if (compareWrap) compareWrap.style.display = 'none';
+
+    if (state_data?.page === 'agent') {
+      // Re-open agent page
+      if (state_data.agent) window.OLYCITY.showAgentPage(state_data.agent);
+    } else if (state_data?.page) {
+      window.OLYCITY.nav(state_data.page, false);
+    } else {
+      // No state = home or hash-based
+      const hash = window.location.hash.replace('#', '');
+      if (hash && ['maps','roster','agents','builder'].includes(hash)) {
+        window.OLYCITY.nav(hash, false);
+      } else if (!hash || hash === 'home') {
+        window.OLYCITY.nav('home', false);
+      }
+    }
+  });
+
   // Close video modal on Escape
   document.addEventListener('keydown', e => {
     if (e.key === 'Escape') window.OLYCITY.closeVideoModal();
   });
+  // Push initial history state
+  const initHash = window.location.hash.replace('#','');
+  const initPage = ['maps','roster','agents','builder'].includes(initHash) ? initHash : 'home';
+  window.history.replaceState({ page: initPage }, '', window.location.href);
   console.log('[OLYCITY] Ready ✓');
 }
 

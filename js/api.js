@@ -34,13 +34,37 @@ export const valorantApi = {
       this.maps[m.displayName] = {
         splash: m.splash,
         icon: m.displayIcon,
-        minimap: m.displayIcon, // top-down minimap view
+        minimap: m.displayIcon,
+        xMul: m.xMultiplier,
+        yMul: m.yMultiplier,
+        xAdd: m.xScalarToAdd,
+        yAdd: m.yScalarToAdd,
+        callouts: (m.callouts || []).map(c => ({
+          region: c.regionName,
+          super: c.superRegionName,
+          x: c.location?.x ?? 0,
+          y: c.location?.y ?? 0,
+        })),
       };
     });
   },
 
   agentImg(name) {
     return this.agents[name]?.portrait || this.agents[name]?.icon || null;
+  },
+
+  // Convert game coords → 0-1 range using Riot's multipliers
+  mapGameToMinimap(mapName, gameX, gameY) {
+    const m = this.maps[mapName];
+    if (!m) return { x: 0.5, y: 0.5 };
+    const x = gameX * m.xMul + m.xAdd;
+    const y = gameY * m.yMul + m.yAdd;
+    // Clamp to [0,1]
+    return { x: Math.max(0, Math.min(1, x)), y: Math.max(0, Math.min(1, y)) };
+  },
+
+  mapCallouts(mapName) {
+    return this.maps[mapName]?.callouts || [];
   },
 
   mapMinimap(name) {
