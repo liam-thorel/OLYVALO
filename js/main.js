@@ -3,13 +3,22 @@
  * Point d'entrée. Charge les données, orchestre les modules, expose window.OLYCITY.
  */
 
-import { valorantApi } from './api.js?v=1779596306';
+import { valorantApi } from './api.js?v=1779596407';
 
-const SITE_VERSION = '1779596306'; // Auto-updated on push
-import { syncPlayer as henrikSyncPlayer, syncAllPlayers as henrikSyncAll, persistPlayerStats } from './henrik.js?v=1779596306';
-import { rosterHTML, mapSectionHTML, stierHTML, globalNotesHTML, navMapsHTML, agentPageHTML, miniRosterHTML, agentsFiltersHTML, agentsGridHTML, compCompareHTML, compBuilderHTML, savedCompsHTML, calloutsHTML } from './render.js?v=1779596306';
-import { initTheme, initTilt, initParallax, initSearch, initKeyboard, updateFavCount } from './interactions.js?v=1779596306';
-import { storage } from './storage.js?v=1779596306';
+const SITE_VERSION = '1779596407'; // Auto-updated on push
+// henrik loaded dynamically for cache busting
+let henrikSyncPlayer, henrikSyncAll, persistPlayerStats;
+**
+ * OLYCITY · Main
+ * Point d'entrée. Charge les données, orchestre les modules, expose window.OLYCITY.
+ */
+
+import { valorantApi } from './api.js?v=1779596407';
+
+const SITE_VERSION = '1779596407'; // Auto-updated on push
+import { rosterHTML, mapSectionHTML, stierHTML, globalNotesHTML, navMapsHTML, agentPageHTML, miniRosterHTML, agentsFiltersHTML, agentsGridHTML, compCompareHTML, compBuilderHTML, savedCompsHTML, calloutsHTML } from './render.js?v=1779596407';
+import { initTheme, initTilt, initParallax, initSearch, initKeyboard, updateFavCount } from './interactions.js?v=1779596407';
+import { storage } from './storage.js?v=1779596407';
 
 // ─── STATE (partagé avec render.js) ───────────────
 export const state = {
@@ -612,6 +621,12 @@ function renderAll() {
 
 // ─── BOOT ─────────────────────────────────────────
 async function boot() {
+  // Load henrik dynamically to bypass ES6 module cache
+  const henrik = await import('./henrik.js?v=' + SITE_VERSION);
+  henrikSyncPlayer = henrik.syncPlayer;
+  henrikSyncAll = henrik.syncAllPlayers;
+  persistPlayerStats = henrik.persistPlayerStats;
+
   // Auto-clear localStorage if version changed
   const storedVersion = localStorage.getItem('olycity-version');
   if (storedVersion !== SITE_VERSION) {
