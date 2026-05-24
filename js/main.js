@@ -5,7 +5,7 @@
 
 import { valorantApi } from './api.js';
 
-const SITE_VERSION = '1779652893'; // Auto-updated on push
+const SITE_VERSION = '1779653045'; // Auto-updated on push
 import { syncPlayer as henrikSyncPlayer, syncAllPlayers as henrikSyncAll, persistPlayerStats } from './henrik.js';
 import { rosterHTML, guestCardHTML, mapSectionHTML, stierHTML, globalNotesHTML, navMapsHTML, agentPageHTML, miniRosterHTML, agentsFiltersHTML, agentsGridHTML, compCompareHTML, compBuilderHTML, savedCompsHTML, calloutsHTML } from './render.js';
 import { initTheme, initTilt, initParallax, initSearch, initKeyboard, updateFavCount } from './interactions.js';
@@ -659,11 +659,8 @@ window.OLYCITY = {
       setTimeout(() => picker.remove(), 300);
     }
     window.OLYCITY._applyProfileIndicator(name);
-    // Re-render builder immediately with new profile's saved comps
-    const wrap = document.getElementById('comp-builder-wrap');
-    if (wrap && wrap.hasChildNodes()) window.OLYCITY._renderBuilder();
-    // If currently on builder page, force full re-render
-    if (state.currentPage === 'builder') window.OLYCITY._renderBuilder();
+    // Toujours re-render le builder pour mettre à jour les comps du profil
+    window.OLYCITY._renderBuilder();
   },
 
   _applyProfileIndicator(name) {
