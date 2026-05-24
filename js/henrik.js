@@ -112,7 +112,7 @@ export async function syncPlayer(player) {
         if (!agentName) return;
 
         if (!agentMap[agentName]) {
-          agentMap[agentName] = { games: 0, kills: 0, deaths: 0, assists: 0 };
+          agentMap[agentName] = { name: agentName, games: 0, kills: 0, deaths: 0, assists: 0 };
         }
         agentMap[agentName].games++;
 

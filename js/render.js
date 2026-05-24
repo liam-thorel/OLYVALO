@@ -417,8 +417,11 @@ export function rosterHTML() {
   return state.ROSTER.map((p) => {
     // Priorité aux vrais top agents de l'acte (depuis sync), fallback sur JSON
     const stats = state.PLAYER_STATS[p.name] || {};
-    const displayMains = (Array.isArray(stats.topAgents) && stats.topAgents.length > 0)
-      ? stats.topAgents.slice(0, 3).filter(Boolean)
+    const rawTop = Array.isArray(stats.topAgents)
+      ? stats.topAgents.filter(a => a && typeof a === 'string' && valorantApi.agentImg(a))
+      : [];
+    const displayMains = rawTop.length > 0
+      ? rawTop.slice(0, 3)
       : (p.mains || []).filter(Boolean);
 
     const mains = displayMains.map(name => {
