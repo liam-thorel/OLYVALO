@@ -165,6 +165,10 @@ export function compHTML(comp, mapIdx, compIdx) {
           </div>
         </div>
         <div class="agents-grid">${agents}</div>
+        <div class="comp-card-actions">
+          <button class="share-comp-btn" onclick="window.OLYCITY.shareComp(${mapIdx},${compIdx},this)">↗ Partager</button>
+          <button class="compare-btn" data-cid="${cid}" onclick="window.OLYCITY.selectCompare(${mapIdx},${compIdx},this)">⇄ Comparer</button>
+        </div>
         <div class="comp-bottom">
           <div class="comp-bottom-left">
             <div class="tip-box">
@@ -177,14 +181,6 @@ export function compHTML(comp, mapIdx, compIdx) {
         </div>
         <div class="comp-card-footer">
           <span class="comp-source">Source : ${comp.source}</span>
-          <div style="display:flex;gap:6px;flex-wrap:wrap;">
-            <button class="share-comp-btn" onclick="window.OLYCITY.shareComp(${mapIdx},${compIdx},this)" title="Copier le lien vers cette comp">
-              ↗ Partager
-            </button>
-            <button class="compare-btn" data-cid="${cid}" onclick="window.OLYCITY.selectCompare(${mapIdx},${compIdx},this)" title="Comparer cette comp">
-              ⇄ Comparer
-            </button>
-          </div>
         </div>
       </div>
     </div>`;

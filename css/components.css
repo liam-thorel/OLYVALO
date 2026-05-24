@@ -906,10 +906,12 @@
    ════════════════════════════════════════════════ */
 
 /* SHARE BUTTON */
+.comp-card-actions {
+  display: flex; gap: 6px; margin: 8px 0 4px;
+}
+
 .comp-card-footer {
-  display: flex; align-items: center; justify-content: space-between;
-  flex-wrap: wrap; gap: 8px;
-  padding-top: 10px; margin-top: auto;
+  padding-top: 8px;
   border-top: 1px solid var(--border);
 }
 
