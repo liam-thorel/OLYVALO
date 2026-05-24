@@ -583,6 +583,7 @@ export function getPlayersUsingAgent(name) {
 
 // ─── AGENT PAGE ──────────────────────────────────
 export function agentPageHTML(name) {
+  const pronoun = ['Jett','Sage','Viper','Skye','Reyna','Astra','Neon','Fade','Killjoy','Clove','Deadlock','Waylay','Vyse'].includes(name) ? 'elle joue' : 'il joue';
   const apiData = valorantApi.agentData(name);
   const frData = state.AGENT_FR[name] || {};
   const role = frData.role || state.ROLES[name] || 'D';
@@ -727,7 +728,7 @@ export function agentPageHTML(name) {
       <div class="usage-section">
         <div class="section-title-with-tag">
           <span class="sec-tag">Comps OLYCITY</span>
-                    <h2 class="sec-title">Dans quelles compos ${["Jett","Sage","Viper","Skye","Reyna","Astra","Neon","Fade","Killjoy","Clove","Deadlock","Waylay","Vyse"].includes(name) ? "elle joue" : "il joue"}</h2>
+                    <h2 class="sec-title">Dans quelles compos ${pronoun}</h2>
           <div class="sec-line"></div>
         </div>
         <div class="usage-grid">${usageHTML}</div>
