@@ -5,7 +5,7 @@
 
 import { valorantApi } from './api.js';
 
-const SITE_VERSION = '1779648543'; // Auto-updated on push
+const SITE_VERSION = '1779648620'; // Auto-updated on push
 import { syncPlayer as henrikSyncPlayer, syncAllPlayers as henrikSyncAll, persistPlayerStats } from './henrik.js';
 import { rosterHTML, guestCardHTML, mapSectionHTML, stierHTML, globalNotesHTML, navMapsHTML, agentPageHTML, miniRosterHTML, agentsFiltersHTML, agentsGridHTML, compCompareHTML, compBuilderHTML, savedCompsHTML, calloutsHTML } from './render.js';
 import { initTheme, initTilt, initParallax, initSearch, initKeyboard, updateFavCount } from './interactions.js';
@@ -318,10 +318,13 @@ window.OLYCITY = {
     ];
 
     grid.innerHTML = profiles.map(p => {
-      const img = valorantApi.agentImg(p.mains?.[0]);
-      const imgEl = img
-        ? `<img src="${img}" alt="${p.name}">`
-        : `<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-family:Tomorrow,sans-serif;font-size:28px;font-weight:700;color:rgba(255,255,255,.3)">${p.name[0]}</div>`;
+      const discordImg = p.avatar;
+      const agentImg = valorantApi.agentImg(p.mains?.[0]);
+      const imgEl = discordImg
+        ? `<img src="${discordImg}" alt="${p.name}" style="object-position:center top">`
+        : agentImg
+          ? `<img src="${agentImg}" alt="${p.name}">`
+          : `<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-family:Tomorrow,sans-serif;font-size:28px;font-weight:700;color:rgba(255,255,255,.3)">${p.name[0]}</div>`;
       const savedKey = `olycity-saved-comps-${p.name}`;
       const savedCount = JSON.parse(localStorage.getItem(savedKey) || '[]').length;
       const badge = savedCount > 0 ? `<span class="profile-badge">${savedCount}</span>` : '';
