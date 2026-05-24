@@ -5,7 +5,7 @@
 
 import { valorantApi } from './api.js';
 
-const SITE_VERSION = '1779647014'; // Auto-updated on push
+const SITE_VERSION = '1779647165'; // Auto-updated on push
 import { syncPlayer as henrikSyncPlayer, syncAllPlayers as henrikSyncAll, persistPlayerStats } from './henrik.js';
 import { rosterHTML, guestCardHTML, mapSectionHTML, stierHTML, globalNotesHTML, navMapsHTML, agentPageHTML, miniRosterHTML, agentsFiltersHTML, agentsGridHTML, compCompareHTML, compBuilderHTML, savedCompsHTML, calloutsHTML } from './render.js';
 import { initTheme, initTilt, initParallax, initSearch, initKeyboard, updateFavCount } from './interactions.js';
@@ -428,6 +428,16 @@ window.OLYCITY = {
       wrap.style.display = 'block';
       wrap.scrollTo(0, 0);
     }
+  },
+
+  openLineupCard(el) {
+    const vid   = el.dataset.vid;
+    const start = parseInt(el.dataset.start) || 0;
+    const name  = el.dataset.name;
+    const type  = el.dataset.type;
+    const diff  = el.dataset.diff;
+    const desc  = el.dataset.desc;
+    window.OLYCITY.openVideoModal(vid, start, name, type, diff, desc);
   },
 
   openVideoModal(videoId, start, name, type, diff, desc) {
