@@ -11,11 +11,11 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Tomorrow:wght@400;500;600;700&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="./css/tokens.css?v=1779662910">
-  <link rel="stylesheet" href="./css/layout.css?v=1779662910">
-  <link rel="stylesheet" href="./css/components.css?v=1779662910">
-  <link rel="stylesheet" href="./css/agent-page.css?v=1779662910">
-  <link rel="stylesheet" href="./css/responsive.css?v=1779662910">
+  <link rel="stylesheet" href="./css/tokens.css?v=1779663094">
+  <link rel="stylesheet" href="./css/layout.css?v=1779663094">
+  <link rel="stylesheet" href="./css/components.css?v=1779663094">
+  <link rel="stylesheet" href="./css/agent-page.css?v=1779663094">
+  <link rel="stylesheet" href="./css/responsive.css?v=1779663094">
 </head>
 <body>
 
@@ -89,9 +89,12 @@
         <button class="page-nav-btn active" data-page="home" onclick="window.OLYCITY?.nav('home')">
           <span class="page-nav-icon">⌂</span> Accueil
         </button>
-        <button class="page-nav-btn" data-page="maps" onclick="window.OLYCITY?.nav('maps')">
-          <span class="page-nav-icon">◈</span> Maps
-        </button>
+        <div class="nav-maps-dropdown" onmouseenter="this.classList.add('open')" onmouseleave="this.classList.remove('open')">
+          <button class="page-nav-btn" data-page="maps" onclick="window.OLYCITY?.nav('maps')">
+            <span class="page-nav-icon">◈</span> Maps
+          </button>
+          <div class="nav-maps-menu" id="nav-maps-menu"></div>
+        </div>
         <button class="page-nav-btn" data-page="roster" onclick="window.OLYCITY?.nav('roster')">
           <span class="page-nav-icon">◉</span> Roster
         </button>
@@ -293,6 +296,6 @@
       navigator.serviceWorker.getRegistrations().then(regs => regs.forEach(r => r.unregister()));
     }
   </script>
-  <script type="module" src="./js/main.js?v=1779662910"></script>
+  <script type="module" src="./js/main.js?v=1779663094"></script>
 </body>
 </html>

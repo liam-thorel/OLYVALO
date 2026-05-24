@@ -5,7 +5,7 @@
 
 import { valorantApi } from './api.js';
 
-const SITE_VERSION = '1779662910'; // Auto-updated on push
+const SITE_VERSION = '1779663094'; // Auto-updated on push
 import { syncPlayer as henrikSyncPlayer, syncAllPlayers as henrikSyncAll, persistPlayerStats } from './henrik.js';
 import { rosterHTML, guestCardHTML, mapSectionHTML, stierHTML, globalNotesHTML, navMapsHTML, agentPageHTML, miniRosterHTML, agentsFiltersHTML, agentsGridHTML, compCompareHTML, compBuilderHTML, savedCompsHTML, calloutsHTML } from './render.js';
 import { initTheme, initTilt, initParallax, initSearch, initKeyboard, updateFavCount, initHeroParticles } from './interactions.js';
@@ -33,18 +33,20 @@ export const state = {
   builderMapIdx: null,
   LINEUPS: {},
   CALLOUTS: {},
+  META: {},
   currentCompIdx: {},
 };
 
 // ─── LOAD JSON DATA ───────────────────────────────
 async function loadData() {
-  const [comps, roster, roles, agentsFr, lineups, callouts] = await Promise.all([
+  const [comps, roster, roles, agentsFr, lineups, callouts, meta] = await Promise.all([
     fetch('./data/comps.json').then(r => r.json()),
     fetch('./data/roster.json').then(r => r.json()),
     fetch('./data/roles.json').then(r => r.json()),
     fetch('./data/agents-fr.json').then(r => r.json()),
     fetch('./data/lineups.json').then(r => r.json()),
     fetch('./data/callouts.json').then(r => r.json()),
+    fetch('./data/meta.json').then(r => r.json()),
   ]);
 
   state.COMPS_DATA = comps;
@@ -57,6 +59,7 @@ async function loadData() {
   state.AGENT_FR = agentsFr;
   state.LINEUPS = lineups;
   state.CALLOUTS = callouts;
+  state.META = meta;
   state.FAVS = storage.getFavs();
   state.PLAYER_STATS = storage.getPlayerStats();
 
@@ -779,6 +782,17 @@ window.OLYCITY = {
 function renderAll() {
   // Nav maps
   document.getElementById('nav-maps').innerHTML = navMapsHTML();
+  // Populate hover dropdown
+  const mapsMenu = document.getElementById('nav-maps-menu');
+  if (mapsMenu) {
+    mapsMenu.innerHTML = state.COMPS_DATA.map((m, i) => {
+      const icon = valorantApi.mapIcon(m.map);
+      return `<button class="nav-maps-menu-item" onclick="window.OLYCITY.nav('maps');setTimeout(()=>{const btn=document.querySelector('[data-map-idx=\"${i}\"]');window.OLYCITY.showMap(${i},btn)},50);document.querySelector('.nav-maps-dropdown')?.classList.remove('open')">
+        ${icon ? `<img src="${icon}" alt="${m.map}">` : ''}
+        ${m.map}
+      </button>`;
+    }).join('');
+  }
   // Map sections
   document.getElementById('main').innerHTML = state.COMPS_DATA.map((d, i) => mapSectionHTML(d, i)).join('');
   // Roster (full + mini)

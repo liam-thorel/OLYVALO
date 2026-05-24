@@ -153,7 +153,9 @@ export function compHTML(comp, mapIdx, compIdx) {
           <div class="comp-label-row">
             <span class="comp-tier ${tierCls}">${comp.tierLabel}</span>
             <span class="comp-name">${comp.label}</span>
-            ${comp.updatedAt ? `<span class="comp-updated">Maj ${comp.updatedAt}</span>` : ''}
+            ${comp.patch && state.META?.currentPatch && comp.patch !== state.META.currentPatch
+              ? `<span class="comp-outdated" title="Comp du patch ${comp.patch}">⚠ Patch ${comp.patch}</span>`
+              : comp.updatedAt ? `<span class="comp-updated">Maj ${comp.updatedAt}</span>` : ''}
           </div>
           <div class="comp-meta">
             <div class="winrate-pill">

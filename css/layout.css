@@ -390,3 +390,34 @@
 /* When agent page is active, hide SPA pages + footer */
 body.agent-mode .spa-page{ display:none !important; }
 body.agent-mode .footer{ display:none; }
+
+/* Maps hover dropdown */
+.nav-maps-dropdown {
+  position: relative;
+}
+.nav-maps-menu {
+  display: none; position: absolute; top: 100%; left: 0;
+  background: var(--surf); border: 1px solid var(--border2);
+  min-width: 180px; z-index: 300;
+  box-shadow: 0 8px 24px rgba(0,0,0,.4);
+  animation: dropIn .15s ease;
+}
+@keyframes dropIn {
+  from { opacity:0; transform:translateY(-6px); }
+  to   { opacity:1; transform:translateY(0); }
+}
+.nav-maps-dropdown.open .nav-maps-menu { display: block; }
+.nav-maps-menu-item {
+  display: flex; align-items: center; gap: 10px;
+  padding: 9px 16px; cursor: pointer;
+  font-family: 'Tomorrow', sans-serif; font-size: 11px;
+  font-weight: 600; letter-spacing: 1.5px; text-transform: uppercase;
+  color: var(--muted); transition: all .12s; border: none;
+  background: transparent; width: 100%; text-align: left;
+}
+.nav-maps-menu-item:hover { color: var(--text); background: var(--surf2); }
+.nav-maps-menu-item img {
+  width: 28px; height: 18px; object-fit: cover; opacity: .7;
+  transition: opacity .12s;
+}
+.nav-maps-menu-item:hover img { opacity: 1; }

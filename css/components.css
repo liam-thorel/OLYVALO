@@ -1593,3 +1593,10 @@ button.comp-tab.fun-tab {
   transition: filter .3s;
 }
 .player-card:hover .player-banner-avatar { filter: brightness(.55) saturate(1); }
+
+.comp-outdated {
+  font-family: 'Tomorrow', sans-serif; font-size: 9px; font-weight: 600;
+  letter-spacing: 1.5px; text-transform: uppercase;
+  color: var(--gold); background: rgba(245,200,66,.1);
+  border: 1px solid rgba(245,200,66,.3); padding: 2px 8px;
+}
