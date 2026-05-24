@@ -108,6 +108,16 @@ export async function syncPlayer(player) {
     const agentMap = {};
     let totK = 0, totD = 0, totA = 0, counted = 0;
 
+    // Log first match player list to debug matching
+    if (ml.length > 0) {
+      const firstMatch = ml[0];
+      const firstPlayers = firstMatch.players?.all_players || [];
+      const nameTagList = firstPlayers.map(p => `${p.name}#${p.tag}(${p.puuid?.slice(0,8)})`).join(', ');
+      console.log(`[HenrikDev] ${name} — first match players: ${nameTagList.slice(0, 200)}`);
+      console.log(`[HenrikDev] ${name} — looking for puuid:${playerPuuid?.slice(0,8)} or name:${name}#${tag}`);
+    }
+
+    let foundCount = 0;
     ml.forEach(m => {
       try {
         const allPlayers = m.players?.all_players || [];
@@ -117,6 +127,7 @@ export async function syncPlayer(player) {
                     p.tag?.toLowerCase()  === tag.toLowerCase()
                   );
         if (!me) return;
+        foundCount++;
 
         const agentName = normalizeAgentName(me.character);
         if (!agentName) return;
@@ -145,6 +156,7 @@ export async function syncPlayer(player) {
 
     games = counted;
 
+    console.log(`[HenrikDev] ${name} — trouvé dans ${foundCount}/${ml.length} matchs, agentMap:`, Object.keys(agentMap));
     topAgents = Object.values(agentMap)
       .sort((a, b) => b.games - a.games)
       .slice(0, 3);
