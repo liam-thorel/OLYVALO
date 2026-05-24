@@ -4,7 +4,7 @@
  */
 
 import { CONFIG } from '../config.js';
-import { storage } from './storage.js';
+import { storage } from './storage.js?v=1779596306';
 
 const BASE = 'https://api.henrikdev.xyz/valorant';
 
@@ -190,7 +190,7 @@ export async function syncPlayer(player) {
 export async function syncAllPlayers(players, {
   onPlayerSynced = () => {},
   onPlayerError  = () => {},
-  delayMs = 1500,
+  delayMs = 2000,
 } = {}) {
   const playersWithRiot = players.filter(p => p.riot);
   let successCount = 0;

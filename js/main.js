@@ -3,13 +3,13 @@
  * Point d'entrée. Charge les données, orchestre les modules, expose window.OLYCITY.
  */
 
-import { valorantApi } from './api.js';
+import { valorantApi } from './api.js?v=1779596306';
 
-const SITE_VERSION = '1779596179'; // Auto-updated on push
-import { syncPlayer as henrikSyncPlayer, syncAllPlayers as henrikSyncAll, persistPlayerStats } from './henrik.js';
-import { rosterHTML, mapSectionHTML, stierHTML, globalNotesHTML, navMapsHTML, agentPageHTML, miniRosterHTML, agentsFiltersHTML, agentsGridHTML, compCompareHTML, compBuilderHTML, savedCompsHTML, calloutsHTML } from './render.js';
-import { initTheme, initTilt, initParallax, initSearch, initKeyboard, updateFavCount } from './interactions.js';
-import { storage } from './storage.js';
+const SITE_VERSION = '1779596306'; // Auto-updated on push
+import { syncPlayer as henrikSyncPlayer, syncAllPlayers as henrikSyncAll, persistPlayerStats } from './henrik.js?v=1779596306';
+import { rosterHTML, mapSectionHTML, stierHTML, globalNotesHTML, navMapsHTML, agentPageHTML, miniRosterHTML, agentsFiltersHTML, agentsGridHTML, compCompareHTML, compBuilderHTML, savedCompsHTML, calloutsHTML } from './render.js?v=1779596306';
+import { initTheme, initTilt, initParallax, initSearch, initKeyboard, updateFavCount } from './interactions.js?v=1779596306';
+import { storage } from './storage.js?v=1779596306';
 
 // ─── STATE (partagé avec render.js) ───────────────
 export const state = {
