@@ -158,6 +158,17 @@
     </div>
   </div>
 
+  <!-- BUILDER COMPARE PICKER -->
+  <div id="builder-compare-modal" style="display:none;position:fixed;inset:0;z-index:400;background:rgba(6,8,12,.88);backdrop-filter:blur(10px)" onclick="if(event.target===this)this.style.display='none'">
+    <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:min(92vw,600px);background:var(--surf);border:1px solid var(--border2)">
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:16px 24px;border-bottom:1px solid var(--border);background:var(--gold-low)">
+        <span style="font-family:Tomorrow,sans-serif;font-size:12px;font-weight:700;letter-spacing:3px;text-transform:uppercase;color:var(--gold)">⇄ Choisir une comp à comparer</span>
+        <button onclick="document.getElementById('builder-compare-modal').style.display='none'" style="background:transparent;border:1px solid var(--border2);color:var(--muted);cursor:pointer;padding:5px 12px;font-family:Tomorrow,sans-serif;font-size:10px;letter-spacing:1px">✕</button>
+      </div>
+      <div id="builder-compare-list" style="padding:20px;max-height:60vh;overflow-y:auto;display:flex;flex-direction:column;gap:8px"></div>
+    </div>
+  </div>
+
   <!-- VIDEO MODAL — lineup lightbox -->
   <div id="video-modal" style="display:none;position:fixed;inset:0;z-index:500;background:rgba(6,8,12,.92);backdrop-filter:blur(12px);cursor:pointer" onclick="window.OLYCITY.closeVideoModal(event)">
     <div style="position:absolute;top:16px;right:24px">

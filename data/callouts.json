@@ -1,0 +1,128 @@
+{
+  "Fracture": {
+    "zones": [
+      {"id":"atk-spawn","label":"Spawn ATK","x":10,"y":45,"color":"#ff4656"},
+      {"id":"def-spawn","label":"Spawn DEF","x":78,"y":45,"color":"#3fcfcf"},
+      {"id":"a-main","label":"A Main","x":22,"y":20,"color":"#f5c842"},
+      {"id":"a-drop","label":"A Drop","x":38,"y":18,"color":"#f5c842"},
+      {"id":"a-site","label":"A SITE","x":55,"y":16,"color":"#f5c842","major":true},
+      {"id":"b-main","label":"B Main","x":22,"y":70,"color":"#a87fff"},
+      {"id":"b-arcade","label":"B Arcade","x":38,"y":72,"color":"#a87fff"},
+      {"id":"b-site","label":"B SITE","x":55,"y":74,"color":"#a87fff","major":true},
+      {"id":"mid","label":"Mid / Zip","x":42,"y":46,"color":"#ff8200"},
+      {"id":"ct","label":"CT","x":68,"y":45,"color":"#3fcfcf"},
+      {"id":"a-hall","label":"A Hall","x":50,"y":25,"color":"#f5c842"},
+      {"id":"b-tower","label":"B Tower","x":50,"y":65,"color":"#a87fff"},
+      {"id":"a-rope","label":"A Rope","x":30,"y":32,"color":"#f5c842"},
+      {"id":"b-rope","label":"B Rope","x":30,"y":58,"color":"#a87fff"}
+    ]
+  },
+  "Haven": {
+    "zones": [
+      {"id":"atk-spawn","label":"Spawn ATK","x":8,"y":50,"color":"#ff4656"},
+      {"id":"def-spawn","label":"Spawn DEF","x":85,"y":50,"color":"#3fcfcf"},
+      {"id":"a-long","label":"A Long","x":22,"y":18,"color":"#f5c842"},
+      {"id":"a-site","label":"A SITE","x":42,"y":16,"color":"#f5c842","major":true},
+      {"id":"b-mid","label":"B Mid","x":38,"y":50,"color":"#ff8200"},
+      {"id":"b-site","label":"B SITE","x":55,"y":48,"color":"#ff8200","major":true},
+      {"id":"c-long","label":"C Long","x":22,"y":80,"color":"#a87fff"},
+      {"id":"c-site","label":"C SITE","x":42,"y":82,"color":"#a87fff","major":true},
+      {"id":"ct","label":"CT","x":70,"y":50,"color":"#3fcfcf"},
+      {"id":"garage","label":"Garage","x":20,"y":65,"color":"#a87fff"},
+      {"id":"a-lobby","label":"A Lobby","x":18,"y":30,"color":"#f5c842"},
+      {"id":"b-lobby","label":"B Lobby","x":25,"y":50,"color":"#ff8200"},
+      {"id":"a-short","label":"A Short","x":35,"y":28,"color":"#f5c842"},
+      {"id":"c-lobby","label":"C Lobby","x":30,"y":75,"color":"#a87fff"}
+    ]
+  },
+  "Breeze": {
+    "zones": [
+      {"id":"atk-spawn","label":"Spawn ATK","x":8,"y":50,"color":"#ff4656"},
+      {"id":"def-spawn","label":"Spawn DEF","x":88,"y":50,"color":"#3fcfcf"},
+      {"id":"a-lobby","label":"A Lobby","x":20,"y":22,"color":"#f5c842"},
+      {"id":"a-site","label":"A SITE","x":45,"y":20,"color":"#f5c842","major":true},
+      {"id":"b-lobby","label":"B Lobby","x":20,"y":75,"color":"#a87fff"},
+      {"id":"b-site","label":"B SITE","x":45,"y":78,"color":"#a87fff","major":true},
+      {"id":"mid","label":"Mid","x":38,"y":50,"color":"#ff8200"},
+      {"id":"mid-nest","label":"Mid Nest","x":50,"y":42,"color":"#ff8200"},
+      {"id":"mid-doors","label":"Mid Doors","x":55,"y":50,"color":"#ff8200"},
+      {"id":"ct","label":"CT","x":72,"y":50,"color":"#3fcfcf"},
+      {"id":"cave","label":"Cave","x":35,"y":28,"color":"#f5c842"},
+      {"id":"b-hall","label":"B Hall","x":35,"y":68,"color":"#a87fff"},
+      {"id":"a-bridge","label":"A Bridge","x":60,"y":25,"color":"#f5c842"},
+      {"id":"b-window","label":"B Window","x":58,"y":72,"color":"#a87fff"}
+    ]
+  },
+  "Lotus": {
+    "zones": [
+      {"id":"atk-spawn","label":"Spawn ATK","x":8,"y":50,"color":"#ff4656"},
+      {"id":"def-spawn","label":"Spawn DEF","x":88,"y":50,"color":"#3fcfcf"},
+      {"id":"a-main","label":"A Main","x":20,"y":20,"color":"#f5c842"},
+      {"id":"a-site","label":"A SITE","x":38,"y":16,"color":"#f5c842","major":true},
+      {"id":"b-main","label":"B Main","x":30,"y":50,"color":"#ff8200"},
+      {"id":"b-site","label":"B SITE","x":50,"y":50,"color":"#ff8200","major":true},
+      {"id":"c-main","label":"C Main","x":20,"y":78,"color":"#a87fff"},
+      {"id":"c-site","label":"C SITE","x":38,"y":82,"color":"#a87fff","major":true},
+      {"id":"ct","label":"CT","x":70,"y":50,"color":"#3fcfcf"},
+      {"id":"a-roots","label":"A Roots","x":25,"y":30,"color":"#f5c842"},
+      {"id":"b-link","label":"B Link","x":42,"y":38,"color":"#ff8200"},
+      {"id":"c-link","label":"C Link","x":42,"y":65,"color":"#a87fff"},
+      {"id":"door-ab","label":"Porte A/B","x":35,"y":35,"color":"#888"},
+      {"id":"door-bc","label":"Porte B/C","x":35,"y":62,"color":"#888"}
+    ]
+  },
+  "Bind": {
+    "zones": [
+      {"id":"atk-spawn","label":"Spawn ATK","x":8,"y":50,"color":"#ff4656"},
+      {"id":"def-spawn","label":"Spawn DEF","x":88,"y":50,"color":"#3fcfcf"},
+      {"id":"a-lobby","label":"A Lobby","x":18,"y":22,"color":"#f5c842"},
+      {"id":"a-showers","label":"Showers","x":32,"y":18,"color":"#f5c842"},
+      {"id":"a-site","label":"A SITE","x":52,"y":20,"color":"#f5c842","major":true},
+      {"id":"b-long","label":"B Long","x":18,"y":75,"color":"#a87fff"},
+      {"id":"b-hookah","label":"Hookah","x":35,"y":78,"color":"#a87fff"},
+      {"id":"b-site","label":"B SITE","x":52,"y":76,"color":"#a87fff","major":true},
+      {"id":"tp-a","label":"TP → A","x":72,"y":22,"color":"#f5c842"},
+      {"id":"tp-b","label":"TP → B","x":22,"y":50,"color":"#a87fff"},
+      {"id":"ct","label":"CT","x":72,"y":50,"color":"#3fcfcf"},
+      {"id":"lamps","label":"Lamps","x":62,"y":38,"color":"#ff8200"},
+      {"id":"a-heaven","label":"A Heaven","x":60,"y":25,"color":"#f5c842"},
+      {"id":"b-fountain","label":"Fountain","x":30,"y":60,"color":"#a87fff"}
+    ]
+  },
+  "Split": {
+    "zones": [
+      {"id":"atk-spawn","label":"Spawn ATK","x":8,"y":50,"color":"#ff4656"},
+      {"id":"def-spawn","label":"Spawn DEF","x":88,"y":50,"color":"#3fcfcf"},
+      {"id":"a-lobby","label":"A Lobby","x":18,"y":22,"color":"#f5c842"},
+      {"id":"a-ramp","label":"A Ramp","x":32,"y":22,"color":"#f5c842"},
+      {"id":"a-site","label":"A SITE","x":52,"y":18,"color":"#f5c842","major":true},
+      {"id":"a-heaven","label":"A Heaven","x":52,"y":10,"color":"#f5c842"},
+      {"id":"b-lobby","label":"B Lobby","x":18,"y":75,"color":"#a87fff"},
+      {"id":"b-alley","label":"B Alley","x":30,"y":72,"color":"#a87fff"},
+      {"id":"b-site","label":"B SITE","x":52,"y":78,"color":"#a87fff","major":true},
+      {"id":"b-heaven","label":"B Heaven","x":52,"y":88,"color":"#a87fff"},
+      {"id":"mid","label":"Mid","x":40,"y":50,"color":"#ff8200"},
+      {"id":"mid-vents","label":"Mid Vents","x":50,"y":50,"color":"#ff8200"},
+      {"id":"ct","label":"CT","x":70,"y":50,"color":"#3fcfcf"},
+      {"id":"mail","label":"Mail","x":60,"y":60,"color":"#3fcfcf"}
+    ]
+  },
+  "Pearl": {
+    "zones": [
+      {"id":"atk-spawn","label":"Spawn ATK","x":8,"y":50,"color":"#ff4656"},
+      {"id":"def-spawn","label":"Spawn DEF","x":88,"y":50,"color":"#3fcfcf"},
+      {"id":"a-main","label":"A Main","x":18,"y":22,"color":"#f5c842"},
+      {"id":"a-art","label":"A Art","x":32,"y":18,"color":"#f5c842"},
+      {"id":"a-site","label":"A SITE","x":52,"y":18,"color":"#f5c842","major":true},
+      {"id":"mid-street","label":"Mid Street","x":38,"y":50,"color":"#ff8200"},
+      {"id":"mid","label":"Mid","x":50,"y":50,"color":"#ff8200","major":true},
+      {"id":"b-long","label":"B Long","x":18,"y":75,"color":"#a87fff"},
+      {"id":"b-hall","label":"B Hall","x":35,"y":78,"color":"#a87fff"},
+      {"id":"b-site","label":"B SITE","x":52,"y":78,"color":"#a87fff","major":true},
+      {"id":"ct","label":"CT","x":70,"y":50,"color":"#3fcfcf"},
+      {"id":"a-link","label":"A Link","x":60,"y":32,"color":"#f5c842"},
+      {"id":"b-link","label":"B Link","x":60,"y":68,"color":"#a87fff"},
+      {"id":"mid-shops","label":"Mid Shops","x":42,"y":38,"color":"#ff8200"}
+    ]
+  }
+}

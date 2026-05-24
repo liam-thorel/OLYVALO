@@ -5,7 +5,7 @@
 
 import { valorantApi } from './api.js';
 import { syncPlayer as henrikSyncPlayer, syncAllPlayers as henrikSyncAll, persistPlayerStats } from './henrik.js';
-import { rosterHTML, mapSectionHTML, stierHTML, globalNotesHTML, navMapsHTML, agentPageHTML, miniRosterHTML, agentsFiltersHTML, agentsGridHTML, compCompareHTML, compBuilderHTML, savedCompsHTML } from './render.js';
+import { rosterHTML, mapSectionHTML, stierHTML, globalNotesHTML, navMapsHTML, agentPageHTML, miniRosterHTML, agentsFiltersHTML, agentsGridHTML, compCompareHTML, compBuilderHTML, savedCompsHTML, calloutsHTML } from './render.js';
 import { initTheme, initTilt, initParallax, initSearch, initKeyboard, updateFavCount } from './interactions.js';
 import { storage } from './storage.js';
 
@@ -27,17 +27,19 @@ export const state = {
   builderSlots: [null,null,null,null,null],
   builderFocusSlot: 0,
   LINEUPS: {},
+  CALLOUTS: {},
   currentCompIdx: {},
 };
 
 // ─── LOAD JSON DATA ───────────────────────────────
 async function loadData() {
-  const [comps, roster, roles, agentsFr, lineups] = await Promise.all([
+  const [comps, roster, roles, agentsFr, lineups, callouts] = await Promise.all([
     fetch('./data/comps.json').then(r => r.json()),
     fetch('./data/roster.json').then(r => r.json()),
     fetch('./data/roles.json').then(r => r.json()),
     fetch('./data/agents-fr.json').then(r => r.json()),
     fetch('./data/lineups.json').then(r => r.json()),
+    fetch('./data/callouts.json').then(r => r.json()),
   ]);
 
   state.COMPS_DATA = comps;
@@ -49,6 +51,7 @@ async function loadData() {
   state.GLOBAL_NOTES = roles.globalNotes;
   state.AGENT_FR = agentsFr;
   state.LINEUPS = lineups;
+  state.CALLOUTS = callouts;
   state.FAVS = storage.getFavs();
   state.PLAYER_STATS = storage.getPlayerStats();
 
@@ -341,6 +344,77 @@ window.OLYCITY = {
     if (firstVisible) {
       const tabEl = document.querySelector(`.lineup-agent-tab[data-map="${mapName}"][data-agent="${firstVisible}"]`);
       window.OLYCITY.switchLineupAgent(mapName, firstVisible, tabEl);
+    }
+  },
+
+  builderCompare() {
+    const filled = state.builderSlots.filter(Boolean);
+    if (filled.length < 2) return;
+
+    // Build picker list of all meta comps
+    const list = document.getElementById('builder-compare-list');
+    if (!list) return;
+
+    list.innerHTML = state.COMPS_DATA.flatMap((mapData, mi) =>
+      mapData.comps
+        .filter(c => c.tier !== 'F')
+        .map((comp, ci) => {
+          const tierCls = comp.tier === 'S' ? 'tier-s' : 'tier-a';
+          const agentImgs = comp.agents.slice(0,5).map(a => {
+            const img = valorantApi.agentImg(a);
+            return img ? `<img src="${img}" style="width:28px;height:36px;object-fit:cover;object-position:top center;border:1px solid var(--border)">` : '';
+          }).join('');
+          return `<div style="display:flex;align-items:center;gap:12px;padding:10px 14px;background:var(--surf2);border:1px solid var(--border);cursor:pointer;transition:border-color .15s"
+            onmouseover="this.style.borderColor='var(--gold)'" onmouseout="this.style.borderColor='var(--border)'"
+            onclick="window.OLYCITY.builderCompareWith(${mi},${ci})">
+            <span style="font-family:Tomorrow,sans-serif;font-size:9px;letter-spacing:1px;color:var(--muted);min-width:52px">${mapData.map}</span>
+            <span class="comp-tier ${tierCls}" style="font-size:8px;padding:1px 6px">${comp.tierLabel}</span>
+            <span style="font-family:Tomorrow,sans-serif;font-size:11px;font-weight:600;color:var(--text);flex:1">${comp.label}</span>
+            <div style="display:flex;gap:3px">${agentImgs}</div>
+          </div>`;
+        })
+    ).join('');
+
+    document.getElementById('builder-compare-modal').style.display = 'block';
+  },
+
+  builderCompareWith(mapIdx, compIdx) {
+    document.getElementById('builder-compare-modal').style.display = 'none';
+    const metaComp = state.COMPS_DATA[mapIdx]?.comps[compIdx];
+    if (!metaComp) return;
+
+    const filled = state.builderSlots.filter(Boolean);
+    const builderComp = {
+      label: 'Ma Comp Builder',
+      tierLabel: 'CUSTOM',
+      tier: 'X',
+      agents: filled,
+      winrate: 0,
+      tip: 'Comp créée dans le Builder OLYCITY',
+      agility: (() => {
+        const roleScores = {
+          D: { antiRush:2, postPlant:2, retake:3, split:4 },
+          I: { antiRush:4, postPlant:3, retake:3, split:3 },
+          S: { antiRush:4, postPlant:4, retake:2, split:2 },
+          C: { antiRush:3, postPlant:5, retake:3, split:3 },
+        };
+        const keys = ['antiRush','postPlant','retake','split'];
+        const result = {};
+        keys.forEach(k => {
+          let total = 0;
+          filled.forEach(a => { total += (roleScores[state.ROLES[a]||'D']?.[k] || 3); });
+          result[k] = filled.length > 0 ? Math.min(5, Math.round(total/filled.length)) : 0;
+        });
+        return result;
+      })(),
+    };
+
+    const wrap = document.getElementById('compare-panel-wrap');
+    const inner = document.getElementById('compare-panel-content');
+    if (wrap && inner) {
+      inner.innerHTML = compCompareHTML(builderComp, metaComp);
+      wrap.style.display = 'block';
+      wrap.scrollTo(0, 0);
     }
   },
 

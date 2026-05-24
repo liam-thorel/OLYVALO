@@ -374,6 +374,7 @@ export function mapSectionHTML(data, idx) {
         <button class="map-section-tab active" onclick="window.OLYCITY.switchMapTab('${idx}','comps',this)">◈ Comps</button>
         <button class="map-section-tab" onclick="window.OLYCITY.switchMapTab('${idx}','strats',this)">◆ Strats & Éco</button>
         ${hasLineups ? `<button class="map-section-tab" onclick="window.OLYCITY.switchMapTab('${idx}','lineups',this)">📹 Lineups</button>` : ''}
+        <button class="map-section-tab" onclick="window.OLYCITY.switchMapTab('${idx}','callouts',this)">◉ Callouts</button>
         <button class="map-section-tab" onclick="window.OLYCITY.switchMapTab('${idx}','notes',this)">★ Notes</button>
       </div>
 
@@ -393,6 +394,11 @@ export function mapSectionHTML(data, idx) {
       ${hasLineups ? `<div class="map-section-panel" id="maptab-${idx}-lineups">
         ${lineupsHTML(data.lineups, data.map)}
       </div>` : ''}
+
+      <!-- CALLOUTS TAB -->
+      <div class="map-section-panel" id="maptab-${idx}-callouts">
+        ${calloutsHTML(data.map)}
+      </div>
 
       <!-- NOTES TAB -->
       <div class="map-section-panel" id="maptab-${idx}-notes">
@@ -758,6 +764,91 @@ export function miniRosterHTML() {
   }).join('');
 }
 
+// ─── CALLOUTS MAP ────────────────────────────────
+export function calloutsHTML(mapName) {
+  const data = state.CALLOUTS?.[mapName];
+  if (!data?.zones?.length) return '';
+
+  const zones = data.zones;
+  const W = 800, H = 450;
+
+  // Background grid lines
+  const gridLines = [];
+  for (let x = 0; x <= W; x += 80) gridLines.push(`<line x1="${x}" y1="0" x2="${x}" y2="${H}" stroke="rgba(255,255,255,.04)" stroke-width="1"/>`);
+  for (let y = 0; y <= H; y += 50) gridLines.push(`<line x1="0" y1="${y}" x2="${W}" y2="${y}" stroke="rgba(255,255,255,.04)" stroke-width="1"/>`);
+
+  // ATK / DEF halves
+  const halves = `
+    <rect x="0" y="0" width="${W/2}" height="${H}" fill="rgba(255,70,86,.04)"/>
+    <rect x="${W/2}" y="0" width="${W/2}" height="${H}" fill="rgba(63,207,207,.03)"/>
+    <line x1="${W/2}" y1="0" x2="${W/2}" y2="${H}" stroke="rgba(255,255,255,.08)" stroke-width="1" stroke-dasharray="6,4"/>
+    <text x="${W/2-60}" y="16" fill="rgba(255,70,86,.4)" font-family="Tomorrow,sans-serif" font-size="10" letter-spacing="2" font-weight="600">ATK</text>
+    <text x="${W/2+20}" y="16" fill="rgba(63,207,207,.4)" font-family="Tomorrow,sans-serif" font-size="10" letter-spacing="2" font-weight="600">DEF</text>
+  `;
+
+  // Connection lines between related zones (simple heuristic: connect spawn to near zones)
+  const connections = zones
+    .filter(z => !z.id.includes('spawn'))
+    .slice(0, 8)
+    .map((z, i, arr) => {
+      const next = arr[(i + 1) % arr.length];
+      const x1 = (z.x / 100) * W, y1 = (z.y / 100) * H;
+      const x2 = (next.x / 100) * W, y2 = (next.y / 100) * H;
+      const dist = Math.sqrt((x2-x1)**2 + (y2-y1)**2);
+      if (dist > 200) return '';
+      return `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="${z.color}" stroke-width="1" stroke-dasharray="4,3" opacity=".2"/>`;
+    }).join('');
+
+  // Zone dots + labels
+  const labels = zones.map(z => {
+    const cx = (z.x / 100) * W;
+    const cy = (z.y / 100) * H;
+    const r = z.major ? 8 : 5;
+    const fontSize = z.major ? 11 : 9;
+    const labelY = cy - r - 5;
+    const labelX = cx;
+    const textLen = z.label.length * (fontSize * 0.6);
+    const bgW = textLen + 10;
+    const bgH = fontSize + 6;
+    return `
+      <g class="callout-label" transform="translate(${cx},${cy})">
+        <circle r="${r}" fill="${z.color}" opacity="${z.major ? '.9' : '.7'}"/>
+        ${z.major ? `<circle r="${r+4}" fill="none" stroke="${z.color}" stroke-width="1" opacity=".4"/>` : ''}
+        <rect class="callout-bg" x="${-bgW/2}" y="${-bgH-r-3}" width="${bgW}" height="${bgH}"
+          rx="2" fill="rgba(10,12,16,.85)" stroke="${z.color}" stroke-width=".5" opacity=".85"/>
+        <text x="0" y="${-r-6}" text-anchor="middle"
+          font-family="Tomorrow,sans-serif" font-size="${fontSize}" font-weight="${z.major ? '700' : '500'}"
+          letter-spacing="${z.major ? '1' : '.5'}" fill="${z.major ? '#fff' : 'rgba(255,255,255,.8)'}">
+          ${z.label}
+        </text>
+      </g>`;
+  }).join('');
+
+  const svgContent = `<svg viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg">
+    <rect width="${W}" height="${H}" fill="rgba(10,12,16,.95)"/>
+    ${gridLines.join('')}
+    ${halves}
+    ${connections}
+    ${labels}
+  </svg>`;
+
+  const legend = [
+    { color: '#ff4656', label: 'Spawn ATK' },
+    { color: '#3fcfcf', label: 'Spawn DEF / CT' },
+    { color: '#f5c842', label: 'Site A' },
+    { color: '#a87fff', label: 'Site B/C' },
+    { color: '#ff8200', label: 'Mid' },
+  ].map(l => `<div class="callout-legend-item">
+    <div class="callout-legend-dot" style="background:${l.color}"></div>
+    ${l.label}
+  </div>`).join('');
+
+  return `<div class="callouts-section">
+    <div class="callout-map-wrap">${svgContent}</div>
+    <div class="callout-legend">${legend}</div>
+  </div>`;
+}
+
 // ─── AGENTS PAGE ──────────────────────────────────
 export function agentsFiltersHTML() {
   const roles = [
@@ -1000,6 +1091,7 @@ export function compBuilderHTML(slots = [null,null,null,null,null]) {
     <div class="comp-builder-footer">
       <button class="comp-builder-clear" onclick="window.OLYCITY.builderClear()">✕ Reset</button>
       <button class="comp-builder-save" onclick="window.OLYCITY.builderSave()">★ Sauvegarder</button>
+      ${filled.length >= 2 ? `<button class="compare-btn" onclick="window.OLYCITY.builderCompare()" style="margin-left:4px">⇄ Comparer avec une comp meta</button>` : ''}
       <div class="comp-builder-agility">${agilityHTML}</div>
     </div>
   </div>`;

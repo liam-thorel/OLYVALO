@@ -1392,3 +1392,40 @@ button.comp-tab.fun-tab {
   font-size: 12px; letter-spacing: 2px; text-transform: uppercase;
   padding: 24px 0;
 }
+
+/* ════════════════════════════════════════════════
+   CALLOUTS MAP — SVG mini-map
+   ════════════════════════════════════════════════ */
+.callouts-section {
+  margin-top: 0; padding: 24px 0 0;
+}
+.callout-map-wrap {
+  position: relative; width: 100%; max-width: 900px; margin: 0 auto;
+  background: var(--surf2); border: 1px solid var(--border);
+  overflow: hidden;
+}
+.callout-map-wrap svg {
+  width: 100%; height: auto; display: block;
+}
+/* Callout label */
+.callout-label {
+  cursor: default;
+  transition: all .15s;
+}
+.callout-label:hover .callout-bg { opacity: 1; }
+.callout-label:hover text { fill: #fff; }
+
+/* Legend */
+.callout-legend {
+  display: flex; gap: 16px; flex-wrap: wrap;
+  margin-top: 14px; padding: 12px 16px;
+  background: var(--surf); border: 1px solid var(--border);
+}
+.callout-legend-item {
+  display: flex; align-items: center; gap: 6px;
+  font-family: 'Tomorrow', sans-serif; font-size: 10px;
+  letter-spacing: 1px; text-transform: uppercase; color: var(--muted);
+}
+.callout-legend-dot {
+  width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0;
+}
