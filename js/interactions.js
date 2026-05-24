@@ -185,12 +185,12 @@ export function updateFavCount() {
 }
 
 
-// ─── HERO PARTICLES ──────────────────────────────
+// ─── HERO SNAKE ──────────────────────────────────
 export function initHeroParticles() {
   const canvas = document.getElementById('hero-canvas');
   if (!canvas) return;
   const ctx = canvas.getContext('2d');
-  let W, H, particles = [], raf;
+  let W, H, raf, t = 0;
 
   const resize = () => {
     W = canvas.width = canvas.offsetWidth;
@@ -199,53 +199,59 @@ export function initHeroParticles() {
   resize();
   window.addEventListener('resize', resize);
 
-  // Create particles
-  const COUNT = 55;
-  for (let i = 0; i < COUNT; i++) {
-    particles.push({
-      x: Math.random() * W,
-      y: Math.random() * H,
-      r: Math.random() * 1.5 + 0.3,
-      vx: (Math.random() - 0.5) * 0.3,
-      vy: (Math.random() - 0.5) * 0.3,
-      alpha: Math.random() * 0.5 + 0.1,
-      color: Math.random() > 0.7 ? '#ff4656' : Math.random() > 0.5 ? '#a87fff' : '#ffffff',
-    });
-  }
+  // Snake: a long trail of points following a sinusoidal path
+  const TRAIL = 220;
+  const points = [];
+
+  // Snake head movement — organic figure-8 / lissajous path
+  let hx = W * 0.5, hy = H * 0.5;
+  let angle = 0;
+  const speed = 1.4;
 
   const draw = () => {
+    t += 0.012;
     ctx.clearRect(0, 0, W, H);
-    particles.forEach(p => {
-      p.x += p.vx;
-      p.y += p.vy;
-      if (p.x < 0) p.x = W;
-      if (p.x > W) p.x = 0;
-      if (p.y < 0) p.y = H;
-      if (p.y > H) p.y = 0;
-      ctx.beginPath();
-      ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
-      ctx.fillStyle = p.color;
-      ctx.globalAlpha = p.alpha;
-      ctx.fill();
-    });
 
-    // Draw connections between close particles
-    ctx.globalAlpha = 1;
-    for (let i = 0; i < particles.length; i++) {
-      for (let j = i + 1; j < particles.length; j++) {
-        const dx = particles[i].x - particles[j].x;
-        const dy = particles[i].y - particles[j].y;
-        const dist = Math.sqrt(dx*dx + dy*dy);
-        if (dist < 80) {
-          ctx.beginPath();
-          ctx.moveTo(particles[i].x, particles[i].y);
-          ctx.lineTo(particles[j].x, particles[j].y);
-          ctx.strokeStyle = 'rgba(255,70,86,' + (0.08 * (1 - dist/80)) + ')';
-          ctx.lineWidth = 0.5;
-          ctx.stroke();
-        }
-      }
+    // Move head along a slow organic lissajous curve
+    hx = W * 0.5 + Math.sin(t * 0.7) * W * 0.38 + Math.sin(t * 1.3) * W * 0.08;
+    hy = H * 0.5 + Math.sin(t * 0.9) * H * 0.32 + Math.cos(t * 1.1) * H * 0.1;
+
+    // Push new head position
+    points.unshift({ x: hx, y: hy });
+    if (points.length > TRAIL) points.pop();
+
+    if (points.length < 2) { raf = requestAnimationFrame(draw); return; }
+
+    // Draw trail as a thick glowing line that fades toward the tail
+    for (let i = 1; i < points.length; i++) {
+      const progress = 1 - i / points.length; // 1 at head, 0 at tail
+      const alpha = progress * progress * 0.55;
+      const width = progress * 3.5 + 0.3;
+
+      ctx.beginPath();
+      ctx.moveTo(points[i - 1].x, points[i - 1].y);
+      ctx.lineTo(points[i].x, points[i].y);
+      ctx.strokeStyle = `rgba(255,${Math.floor(40 + progress * 30)},${Math.floor(60 + progress * 20)},${alpha})`;
+      ctx.lineWidth = width;
+      ctx.lineCap = 'round';
+      ctx.stroke();
     }
+
+    // Glowing head dot
+    const grd = ctx.createRadialGradient(hx, hy, 0, hx, hy, 18);
+    grd.addColorStop(0, 'rgba(255,80,70,0.45)');
+    grd.addColorStop(1, 'rgba(255,50,60,0)');
+    ctx.beginPath();
+    ctx.arc(hx, hy, 18, 0, Math.PI * 2);
+    ctx.fillStyle = grd;
+    ctx.fill();
+
+    // Bright head core
+    ctx.beginPath();
+    ctx.arc(hx, hy, 2.5, 0, Math.PI * 2);
+    ctx.fillStyle = 'rgba(255,120,100,0.9)';
+    ctx.fill();
+
     raf = requestAnimationFrame(draw);
   };
   draw();
