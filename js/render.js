@@ -659,7 +659,7 @@ export function agentPageHTML(name) {
         allow="autoplay; encrypted-media"
         frameborder="0"
         title="${displayName(name)} cinematic"
-        onload="setTimeout(()=>{const c=document.getElementById('agent-video-cover');if(c)c.classList.add('loaded')},1200)"
+        onload="setTimeout(()=>{const c=document.getElementById('agent-video-cover');if(c)c.classList.add('loaded')},3500)"
       ></iframe>
       <div class="agent-hero-video-block"></div>
     </div>` : '';

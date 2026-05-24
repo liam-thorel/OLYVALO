@@ -36,9 +36,9 @@
 }
 /* Overlay to hide YouTube thumbnail+play button on load */
 .agent-hero-video-cover{
-  position:absolute; inset:0; z-index:1;
+  position:absolute; inset:0; z-index:6;
   background:var(--bg-deep);
-  transition:opacity 1.5s ease 1s; /* fade out after 1s delay */
+  transition:opacity 1.5s ease;
   pointer-events:none;
 }
 .agent-hero-video-cover.loaded{ opacity:0; }
