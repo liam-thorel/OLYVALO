@@ -4,7 +4,7 @@
  */
 
 import { CONFIG } from '../config.js';
-import { storage } from './storage.js?v=1779642952';
+import { storage } from './storage.js';
 
 const BASE = 'https://api.henrikdev.xyz/valorant';
 
