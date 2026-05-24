@@ -1209,8 +1209,7 @@
    LINEUPS INDIVIDUELS — cards avec embed YouTube
    ════════════════════════════════════════════════ */
 .lineup-section-v2 {
-  margin-top: 32px; padding-top: 32px;
-  border-top: 1px solid var(--border);
+  margin-top: 0; padding-top: 16px;
 }
 .lineup-agent-tabs {
   display: flex; gap: 6px; flex-wrap: wrap;

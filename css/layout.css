@@ -143,6 +143,8 @@
 .map-section-tabs{
   display:flex; gap:0; margin-bottom:0;
   border-bottom:1px solid var(--border);
+  position:sticky; top:56px; z-index:10;
+  background:var(--bg); 
 }
 .map-section-tab{
   background:transparent; border:none; border-bottom:2px solid transparent;
@@ -154,7 +156,7 @@
 .map-section-tab:hover{ color:var(--text); }
 .map-section-tab.active{ color:var(--red); border-bottom-color:var(--red); }
 .map-section-panel{ display:none; padding-top:24px; }
-.map-section-panel.active{ display:block; }
+.map-section-panel.active{ display:block; scroll-margin-top:100px; }
 
 /* ROSTER PAGE */
 .roster-page-inner{
