@@ -5,10 +5,10 @@
 
 import { valorantApi } from './api.js';
 
-const SITE_VERSION = '1779663282'; // Auto-updated on push
+const SITE_VERSION = '1779663583'; // Auto-updated on push
 import { syncPlayer as henrikSyncPlayer, syncAllPlayers as henrikSyncAll, persistPlayerStats } from './henrik.js';
 import { rosterHTML, guestCardHTML, mapSectionHTML, stierHTML, globalNotesHTML, navMapsHTML, agentPageHTML, miniRosterHTML, agentsFiltersHTML, agentsGridHTML, compCompareHTML, compBuilderHTML, savedCompsHTML, calloutsHTML } from './render.js';
-import { initTheme, initTilt, initParallax, initSearch, initKeyboard, updateFavCount, initHeroParticles } from './interactions.js';
+import { initTheme, initTilt, initParallax, initSearch, initKeyboard, updateFavCount, initHeroParticles, initWheelLogos } from './interactions.js';
 import { storage } from './storage.js';
 
 // ─── STATE (partagé avec render.js) ───────────────
@@ -60,6 +60,11 @@ async function loadData() {
   state.LINEUPS = lineups;
   state.CALLOUTS = callouts;
   state.META = meta;
+  // Load custom players added at runtime
+  try {
+    const custom = JSON.parse(localStorage.getItem('olycity-custom-players') || '[]');
+    custom.forEach(p => { if (!state.ROSTER.find(r => r.name === p.name)) state.ROSTER.push(p); });
+  } catch(e) {}
   state.FAVS = storage.getFavs();
   state.PLAYER_STATS = storage.getPlayerStats();
 
@@ -633,6 +638,47 @@ window.OLYCITY = {
     return false;
   },
 
+  showAddPlayerForm() {
+    document.getElementById('add-player-modal').classList.add('open');
+    setTimeout(() => document.getElementById('ap-name')?.focus(), 50);
+  },
+
+  hideAddPlayerForm() {
+    document.getElementById('add-player-modal').classList.remove('open');
+    ['ap-name','ap-riot-name','ap-mains','ap-avatar'].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.value = '';
+    });
+  },
+
+  submitAddPlayer() {
+    const name = document.getElementById('ap-name')?.value.trim();
+    if (!name) { alert('Le nom est obligatoire.'); return; }
+
+    const riotRaw = document.getElementById('ap-riot-name')?.value.trim();
+    const riotParts = riotRaw?.split('#');
+    const riot = riotParts?.length === 2
+      ? { name: riotParts[0].trim(), tag: riotParts[1].trim(), region: 'eu' }
+      : null;
+
+    const role = document.getElementById('ap-role')?.value || 'Fill';
+    const mainsRaw = document.getElementById('ap-mains')?.value || '';
+    const mains = mainsRaw.split(',').map(s => s.trim()).filter(Boolean);
+    const avatar = document.getElementById('ap-avatar')?.value.trim() || null;
+
+    const player = { name, tag: name, role, mains, riot, avatar };
+    state.ROSTER.push(player);
+
+    // Persist in localStorage
+    const custom = JSON.parse(localStorage.getItem('olycity-custom-players') || '[]');
+    custom.push(player);
+    localStorage.setItem('olycity-custom-players', JSON.stringify(custom));
+
+    window.OLYCITY.hideAddPlayerForm();
+    document.getElementById('roster-grid').innerHTML = rosterHTML() + guestCardHTML();
+    window.OLYCITY._showProfilePicker(); // refresh picker with new player
+  },
+
   _showProfilePicker() {
     let picker = document.getElementById('profile-picker');
     if (!picker) {
@@ -827,6 +873,7 @@ async function boot() {
   }
 
   initHeroParticles();
+  initWheelLogos();
   initTheme();
   initParallax();
   initKeyboard(() => window.OLYCITY.closeAgentPage());

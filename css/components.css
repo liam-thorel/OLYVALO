@@ -1600,3 +1600,69 @@ button.comp-tab.fun-tab {
   color: var(--gold); background: rgba(245,200,66,.1);
   border: 1px solid rgba(245,200,66,.3); padding: 2px 8px;
 }
+
+/* Add player card */
+.add-player-card {
+  background: var(--surf); border: 1px dashed var(--border2);
+  display: flex; flex-direction: column; align-items: center;
+  justify-content: center; gap: 10px; cursor: pointer;
+  min-height: 180px; transition: all .2s;
+}
+.add-player-card:hover { border-color: var(--red); background: var(--red-low); }
+.add-player-plus {
+  font-size: 36px; font-weight: 300; color: var(--border2);
+  transition: color .2s; line-height: 1;
+}
+.add-player-card:hover .add-player-plus { color: var(--red); }
+.add-player-label {
+  font-family: 'Tomorrow', sans-serif; font-size: 10px; font-weight: 600;
+  letter-spacing: 2px; text-transform: uppercase; color: var(--dim);
+  transition: color .2s;
+}
+.add-player-card:hover .add-player-label { color: var(--red); }
+
+/* Add player modal */
+.add-player-modal {
+  display: none; position: fixed; inset: 0; z-index: 500;
+  background: rgba(0,0,0,.7); align-items: center; justify-content: center;
+}
+.add-player-modal.open { display: flex; }
+.add-player-form {
+  background: var(--surf); border: 1px solid var(--border2);
+  padding: 28px 32px; width: 420px; max-width: 90vw;
+}
+.add-player-form h2 {
+  font-family: 'Tomorrow', sans-serif; font-size: 14px; font-weight: 700;
+  letter-spacing: 3px; text-transform: uppercase; color: var(--text);
+  margin-bottom: 20px;
+}
+.add-form-row {
+  display: flex; flex-direction: column; gap: 6px; margin-bottom: 14px;
+}
+.add-form-label {
+  font-family: 'Tomorrow', sans-serif; font-size: 9px; font-weight: 600;
+  letter-spacing: 2px; text-transform: uppercase; color: var(--dim);
+}
+.add-form-input {
+  background: var(--surf2); border: 1px solid var(--border2);
+  color: var(--text); padding: 10px 12px;
+  font-family: 'Tomorrow', sans-serif; font-size: 12px;
+  outline: none; transition: border-color .15s; width: 100%;
+}
+.add-form-input:focus { border-color: var(--red-mid); }
+.add-form-row-split { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.add-form-actions { display: flex; gap: 8px; margin-top: 20px; }
+.add-form-btn-submit {
+  flex: 1; background: var(--red); color: #fff; border: none;
+  padding: 11px; font-family: 'Tomorrow', sans-serif; font-size: 11px;
+  font-weight: 700; letter-spacing: 2px; text-transform: uppercase;
+  cursor: pointer; transition: opacity .15s;
+}
+.add-form-btn-submit:hover { opacity: .85; }
+.add-form-btn-cancel {
+  background: var(--surf2); color: var(--muted); border: 1px solid var(--border);
+  padding: 11px 20px; font-family: 'Tomorrow', sans-serif; font-size: 11px;
+  font-weight: 600; letter-spacing: 1.5px; text-transform: uppercase;
+  cursor: pointer; transition: all .15s;
+}
+.add-form-btn-cancel:hover { color: var(--text); }

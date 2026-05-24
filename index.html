@@ -11,13 +11,53 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Tomorrow:wght@400;500;600;700&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="./css/tokens.css?v=1779663282">
-  <link rel="stylesheet" href="./css/layout.css?v=1779663282">
-  <link rel="stylesheet" href="./css/components.css?v=1779663282">
-  <link rel="stylesheet" href="./css/agent-page.css?v=1779663282">
-  <link rel="stylesheet" href="./css/responsive.css?v=1779663282">
+  <link rel="stylesheet" href="./css/tokens.css?v=1779663583">
+  <link rel="stylesheet" href="./css/layout.css?v=1779663583">
+  <link rel="stylesheet" href="./css/components.css?v=1779663583">
+  <link rel="stylesheet" href="./css/agent-page.css?v=1779663583">
+  <link rel="stylesheet" href="./css/responsive.css?v=1779663583">
 </head>
 <body>
+
+  <!-- ADD PLAYER MODAL -->
+  <div class="add-player-modal" id="add-player-modal">
+    <div class="add-player-form">
+      <h2>Ajouter un joueur</h2>
+      <div class="add-form-row">
+        <label class="add-form-label">Nom affiché</label>
+        <input class="add-form-input" id="ap-name" placeholder="Pseudo" autocomplete="off">
+      </div>
+      <div class="add-form-row-split">
+        <div class="add-form-row" style="margin:0">
+          <label class="add-form-label">Riot Name</label>
+          <input class="add-form-input" id="ap-riot-name" placeholder="Pseudo#TAG" autocomplete="off">
+        </div>
+        <div class="add-form-row" style="margin:0">
+          <label class="add-form-label">Rôle</label>
+          <select class="add-form-input" id="ap-role">
+            <option value="IGL · Controller">IGL · Controller</option>
+            <option value="Entry Duelist">Entry Duelist</option>
+            <option value="Initiateur">Initiateur</option>
+            <option value="Duelliste">Duelliste</option>
+            <option value="Flex">Flex</option>
+            <option value="Fill">Fill</option>
+          </select>
+        </div>
+      </div>
+      <div class="add-form-row">
+        <label class="add-form-label">Agents principaux (séparés par virgule)</label>
+        <input class="add-form-input" id="ap-mains" placeholder="Jett, Raze, Neon" autocomplete="off">
+      </div>
+      <div class="add-form-row">
+        <label class="add-form-label">URL Avatar Discord (optionnel)</label>
+        <input class="add-form-input" id="ap-avatar" placeholder="https://cdn.discordapp.com/..." autocomplete="off">
+      </div>
+      <div class="add-form-actions">
+        <button class="add-form-btn-cancel" onclick="window.OLYCITY.hideAddPlayerForm()">Annuler</button>
+        <button class="add-form-btn-submit" onclick="window.OLYCITY.submitAddPlayer()">+ Ajouter</button>
+      </div>
+    </div>
+  </div>
 
   <!-- PROFILE PICKER — Netflix style -->
   <div id="profile-picker" style="
@@ -81,8 +121,8 @@
   <nav class="topbar">
     <div class="topbar-row">
       <div class="brand" onclick="window.OLYCITY?.nav('home')">
-        <div class="brand-mark" style="width:36px;height:36px;padding:0;background:transparent;border:none">
-          <img src="./assets/logo.svg" alt="OLYCITY" style="width:100%;height:100%;animation:logoSpin 12s linear infinite">
+        <div class="brand-mark" style="width:36px;height:40px;padding:0;background:transparent;border:none">
+          <canvas id="logo-canvas-topbar" width="36" height="40"></canvas>
         </div>
         <div class="brand-text">
           <span class="brand-title">OLYCITY</span>
@@ -141,8 +181,8 @@
 
     <header class="hero">
       <!-- Grande Roue OLYCITY -->
-      <div style="position:absolute;right:8%;top:50%;transform:translateY(-50%);z-index:0;opacity:0.12;pointer-events:none">
-        <img src="./assets/logo.svg" style="width:320px;height:320px;animation:logoSpin 30s linear infinite;filter:blur(0.5px)">
+      <div style="position:absolute;right:5%;top:50%;transform:translateY(-50%);z-index:0;pointer-events:none">
+        <canvas id="logo-canvas-hero" width="320" height="360"></canvas>
       </div>
       <canvas id="hero-canvas" style="position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:0"></canvas>
       <div class="hero-eyebrow" style="position:relative;z-index:1">OLYCITY · Five Stack · EU</div>
@@ -306,6 +346,6 @@
       navigator.serviceWorker.getRegistrations().then(regs => regs.forEach(r => r.unregister()));
     }
   </script>
-  <script type="module" src="./js/main.js?v=1779663282"></script>
+  <script type="module" src="./js/main.js?v=1779663583"></script>
 </body>
 </html>

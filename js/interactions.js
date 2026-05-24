@@ -257,3 +257,81 @@ export function initHeroParticles() {
   draw();
   return () => { cancelAnimationFrame(raf); window.removeEventListener('resize', resize); };
 }
+
+
+// ─── GRANDE ROUE CANVAS ──────────────────────────
+function drawWheel(canvas, size, speed, alpha) {
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  const cx = size * 0.5, cy = size * 0.5;
+  const R = size * 0.42; // outer radius
+  const gondolaColors = ['#ff4656','#a87fff','#3fcfcf','#ff4656','#a87fff','#3fcfcf','#ff4656','#a87fff'];
+  let angle = 0, raf;
+
+  const draw = () => {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.save();
+    ctx.globalAlpha = alpha;
+
+    // Supports legs (static)
+    ctx.strokeStyle = '#ff4656'; ctx.lineWidth = size * 0.025;
+    ctx.beginPath(); ctx.moveTo(cx, cy + R * 0.95); ctx.lineTo(cx - R * 0.45, canvas.height - 2); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(cx, cy + R * 0.95); ctx.lineTo(cx + R * 0.45, canvas.height - 2); ctx.stroke();
+    ctx.strokeStyle = '#a87fff'; ctx.lineWidth = size * 0.018;
+    ctx.beginPath(); ctx.moveTo(cx - R * 0.45, canvas.height - 2); ctx.lineTo(cx + R * 0.45, canvas.height - 2); ctx.stroke();
+
+    ctx.save();
+    ctx.translate(cx, cy);
+    ctx.rotate(angle);
+
+    // Outer ring
+    ctx.beginPath(); ctx.arc(0, 0, R, 0, Math.PI * 2);
+    ctx.strokeStyle = '#ff4656'; ctx.lineWidth = size * 0.022; ctx.stroke();
+
+    // Inner ring
+    ctx.beginPath(); ctx.arc(0, 0, R * 0.32, 0, Math.PI * 2);
+    ctx.strokeStyle = '#ff4656'; ctx.globalAlpha = alpha * 0.4; ctx.lineWidth = size * 0.012; ctx.stroke();
+    ctx.globalAlpha = alpha;
+
+    // 8 spokes
+    for (let i = 0; i < 8; i++) {
+      const a = (i / 8) * Math.PI * 2;
+      ctx.beginPath();
+      ctx.moveTo(Math.cos(a) * R * 0.32, Math.sin(a) * R * 0.32);
+      ctx.lineTo(Math.cos(a) * R, Math.sin(a) * R);
+      ctx.strokeStyle = i % 2 === 0 ? '#a87fff' : '#3fcfcf';
+      ctx.lineWidth = size * 0.012;
+      ctx.globalAlpha = alpha * 0.8; ctx.stroke(); ctx.globalAlpha = alpha;
+    }
+
+    // Gondolas
+    for (let i = 0; i < 8; i++) {
+      const a = (i / 8) * Math.PI * 2;
+      const gx = Math.cos(a) * R, gy = Math.sin(a) * R;
+      const gr = size * 0.058;
+      ctx.beginPath(); ctx.arc(gx, gy, gr, 0, Math.PI * 2);
+      ctx.fillStyle = gondolaColors[i]; ctx.fill();
+      ctx.strokeStyle = 'rgba(255,255,255,0.3)'; ctx.lineWidth = size * 0.008; ctx.stroke();
+    }
+
+    // Center hub
+    ctx.beginPath(); ctx.arc(0, 0, size * 0.07, 0, Math.PI * 2);
+    ctx.fillStyle = '#ff4656'; ctx.fill();
+    ctx.beginPath(); ctx.arc(0, 0, size * 0.042, 0, Math.PI * 2);
+    ctx.fillStyle = '#a87fff'; ctx.fill();
+    ctx.beginPath(); ctx.arc(0, 0, size * 0.022, 0, Math.PI * 2);
+    ctx.fillStyle = 'rgba(255,255,255,0.9)'; ctx.fill();
+
+    ctx.restore();
+    ctx.restore();
+    angle += speed;
+    raf = requestAnimationFrame(draw);
+  };
+  draw();
+  return () => cancelAnimationFrame(raf);
+}
+
+export function initWheelLogos() {
+  drawWheel(document.getElementById('logo-canvas-topbar'), 36, 0.008, 1);
+  drawWheel(document.getElementById('logo-canvas-hero'), 300, 0.003, 0.12);
+}
