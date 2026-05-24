@@ -395,25 +395,25 @@
         "name": "[ATK] Nanoswarm A Default",
         "type": "ATK",
         "diff": "Moyen",
-        "videoId": "jJ3dqccSUxo",
-        "start": 7,
-        "desc": "Post-plant nanoswarm sur le plant A par défaut depuis A Roots"
+        "videoId": "ksVh7mWT4Bw",
+        "start": 721,
+        "desc": "Post-plant nanoswarm A default depuis A Roots — bloque le défuse sur la position standard"
       },
       {
         "name": "[ATK] Nanoswarm B Default",
         "type": "ATK",
         "diff": "Moyen",
-        "videoId": "jJ3dqccSUxo",
-        "start": 60,
-        "desc": "Post-plant nanoswarm B default depuis B Lobby"
+        "videoId": "ksVh7mWT4Bw",
+        "start": 818,
+        "desc": "Post-plant nanoswarm B default depuis B Lobby — position safe"
       },
       {
         "name": "[ATK] Nanoswarm C Default",
         "type": "ATK",
         "diff": "Moyen",
-        "videoId": "jJ3dqccSUxo",
-        "start": 120,
-        "desc": "Post-plant nanoswarm C depuis C Lobby — piège le défenseur sur le défuse"
+        "videoId": "ksVh7mWT4Bw",
+        "start": 900,
+        "desc": "Post-plant nanoswarm C site — une des plus difficiles à défuser sur Lotus"
       }
     ]
   },

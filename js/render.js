@@ -10,8 +10,8 @@ import { formatRelTime } from './storage.js';
 // ─── Agent YouTube trailers (IDs officiels Riot) ──
 // Fallback sur background art si YouTube bloque l'embed
 const AGENT_TRAILERS = {
-  'Jett':      { id:'jGVAILACiMk' },
-  'Raze':      { id:'EVyXT6RcFTM' },
+  'Jett':      { id:'xU2U73Tk-DM' },
+  'Raze':      { id:'2-uAL__pp_U' },
   'Viper':     { id:'9dOSy0EhLfQ' },
   'Skye':      { id:'C3QTyMXi-WE' },
   'KAY/O':     { id:'eU1l7eBy2_Y' },
@@ -21,7 +21,7 @@ const AGENT_TRAILERS = {
   'Astra':     { id:'-ylVnuPWlJM' },
   'Gekko':     { id:'lLHBF24FciI' },
   'Clove':     { id:'GMUMNyoHAug' },
-  'Sage':      { id:'WhHNMPiGAzE' },
+  'Sage':      { id:'1aRwM_QsqQI' },
   'Miks':      { id:'0K4BhoKYVHs' },
   // IDs confirmés
   'Omen':      { id:'_jJdWy6bDj4' },
@@ -688,7 +688,7 @@ export function agentPageHTML(name) {
             <span class="agent-role-badge ${role}">${roleLabel}</span>
             ${frData.origin ? `<span class="agent-origin">Origine : ${frData.origin}</span>` : ''}
           </div>
-          <p class="agent-bio">${frData.bio || apiData?.desc || 'Biographie en cours de traduction.'}</p>
+          <p class="agent-bio">${apiData?.desc || frData.bio || 'Biographie indisponible.'}</p>
           <div class="agent-quick-stats">
             <div class="aqs"><div class="aqs-val">${pickCount}</div><div class="aqs-lbl">Comp${pickCount>1?'s':''} OLYCITY</div></div>
             <div class="aqs"><div class="aqs-val">${avgWR}${avgWR!=='—'?'%':''}</div><div class="aqs-lbl">WR moyen</div></div>

@@ -25,7 +25,7 @@ export const valorantApi = {
         gradientColors: a.backgroundGradientColors || [],
         icon: a.displayIcon,
         role: a.role?.displayName,
-        desc: a.description,
+        desc: a.description, // official Valorant description
         abilities: a.abilities || [],
       };
     });
@@ -54,12 +54,13 @@ export const valorantApi = {
   },
 
   // Convert game coords → 0-1 range using Riot's multipliers
+  // Valorant uses Unreal Engine coords: Y increases upward in world space
+  // but minimap image has Y increasing downward → must invert Y
   mapGameToMinimap(mapName, gameX, gameY) {
     const m = this.maps[mapName];
     if (!m) return { x: 0.5, y: 0.5 };
     const x = gameX * m.xMul + m.xAdd;
-    const y = gameY * m.yMul + m.yAdd;
-    // Clamp to [0,1]
+    const y = 1.0 - (gameY * m.yMul + m.yAdd); // invert Y axis
     return { x: Math.max(0, Math.min(1, x)), y: Math.max(0, Math.min(1, y)) };
   },
 
