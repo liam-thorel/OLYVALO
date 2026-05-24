@@ -60,8 +60,6 @@ async function loadData() {
   // Static mains from roster.json — not overridden by unreliable API topAgents
   state.ROSTER.forEach(p => {
     if (!Array.isArray(p.mains)) p.mains = [];
-    // mains stay as defined in roster.json
-    }
   });
 }
 
