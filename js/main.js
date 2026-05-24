@@ -3,22 +3,13 @@
  * Point d'entrée. Charge les données, orchestre les modules, expose window.OLYCITY.
  */
 
-import { valorantApi } from './api.js?v=1779642952';
+import { valorantApi } from './api.js';
 
-const SITE_VERSION = '1779643040'; // Auto-updated on push
-// henrik imported statically
+const SITE_VERSION = '1779643100'; // Auto-updated on push
 import { syncPlayer as henrikSyncPlayer, syncAllPlayers as henrikSyncAll, persistPlayerStats } from './henrik.js';
-**
- * OLYCITY · Main
- * Point d'entrée. Charge les données, orchestre les modules, expose window.OLYCITY.
- */
-
-import { valorantApi } from './api.js?v=1779642952';
-
-const SITE_VERSION = '1779643040'; // Auto-updated on push
-import { rosterHTML, mapSectionHTML, stierHTML, globalNotesHTML, navMapsHTML, agentPageHTML, miniRosterHTML, agentsFiltersHTML, agentsGridHTML, compCompareHTML, compBuilderHTML, savedCompsHTML, calloutsHTML } from './render.js?v=1779642952';
-import { initTheme, initTilt, initParallax, initSearch, initKeyboard, updateFavCount } from './interactions.js?v=1779642952';
-import { storage } from './storage.js?v=1779642952';
+import { rosterHTML, mapSectionHTML, stierHTML, globalNotesHTML, navMapsHTML, agentPageHTML, miniRosterHTML, agentsFiltersHTML, agentsGridHTML, compCompareHTML, compBuilderHTML, savedCompsHTML, calloutsHTML } from './render.js';
+import { initTheme, initTilt, initParallax, initSearch, initKeyboard, updateFavCount } from './interactions.js';
+import { storage } from './storage.js';
 
 // ─── STATE (partagé avec render.js) ───────────────
 export const state = {
@@ -629,6 +620,14 @@ async function boot() {
     localStorage.setItem('olycity-version', SITE_VERSION);
     console.log('[OLYCITY] Cache cleared — new version', SITE_VERSION);
   }
+  // Auto-clear localStorage if version changed
+  const storedVersion = localStorage.getItem('olycity-version');
+  if (storedVersion !== SITE_VERSION) {
+    const keys = Object.keys(localStorage).filter(k => k.startsWith('olycity-'));
+    keys.forEach(k => localStorage.removeItem(k));
+    localStorage.setItem('olycity-version', SITE_VERSION);
+    console.log('[OLYCITY] Cache cleared — new version', SITE_VERSION);
+  }
 
   initTheme();
   initParallax();
@@ -726,6 +725,32 @@ async function boot() {
   });
 
   // Close video modal on Escape
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape') window.OLYCITY.closeVideoModal();
+  });
+  // Push initial history state
+  const initHash = window.location.hash.replace('#','');
+  const initPage = ['maps','roster','agents','builder'].includes(initHash) ? initHash : 'home';
+  window.history.replaceState({ page: initPage }, '', window.location.href);
+  // Browser back/forward button support
+  window.addEventListener('popstate', (e) => {
+    const s = e.state;
+    window.OLYCITY.closeVideoModal();
+    const compareWrap = document.getElementById('compare-panel-wrap');
+    if (compareWrap) compareWrap.style.display = 'none';
+    if (s?.page === 'agent' && s.agent) {
+      window.OLYCITY.showAgentPage(s.agent);
+    } else if (s?.page) {
+      window.OLYCITY.nav(s.page, false);
+    } else {
+      const hash = window.location.hash.replace('#', '');
+      if (['maps','roster','agents','builder'].includes(hash)) {
+        window.OLYCITY.nav(hash, false);
+      } else {
+        window.OLYCITY.nav('home', false);
+      }
+    }
+  });
   document.addEventListener('keydown', e => {
     if (e.key === 'Escape') window.OLYCITY.closeVideoModal();
   });
