@@ -4,10 +4,26 @@
     "origin": "Brésil",
     "role": "D",
     "abilities": {
-      "Boom Bot": { "name": "Boom Bot", "cost": "300", "desc": "Déploie un robot qui parcourt la ligne droite, rebondit sur les murs, puis se verrouille sur les ennemis en ligne de vue et explose en infligeant de gros dégâts." },
-      "Blast Pack": { "name": "Sachet Explosif", "cost": "200", "desc": "Lance un sachet explosif qui colle aux surfaces. Réutilise pour le faire détoner, infligeant des dégâts et propulsant tout joueur à proximité." },
-      "Paint Shells": { "name": "Bombe à Sous-Munitions", "cost": "200", "desc": "Lance une grenade à sous-munitions qui inflige des dégâts puis se sépare en petites grenades qui infligent à nouveau des dégâts." },
-      "Showstopper": { "name": "Showstopper", "cost": "7 orbes", "desc": "Équipe un lance-roquettes qui inflige d'énormes dégâts à tout ce qu'il touche et bouscule les ennemis pris dans l'explosion." }
+      "Boom Bot": {
+        "name": "Boom Bot",
+        "cost": "300",
+        "desc": "Déploie un robot qui parcourt la ligne droite, rebondit sur les murs, puis se verrouille sur les ennemis en ligne de vue et explose en infligeant de gros dégâts."
+      },
+      "Blast Pack": {
+        "name": "Sachet Explosif",
+        "cost": "200",
+        "desc": "Lance un sachet explosif qui colle aux surfaces. Réutilise pour le faire détoner, infligeant des dégâts et propulsant tout joueur à proximité."
+      },
+      "Paint Shells": {
+        "name": "Bombe à Sous-Munitions",
+        "cost": "200",
+        "desc": "Lance une grenade à sous-munitions qui inflige des dégâts puis se sépare en petites grenades qui infligent à nouveau des dégâts."
+      },
+      "Showstopper": {
+        "name": "Showstopper",
+        "cost": "7 orbes",
+        "desc": "Équipe un lance-roquettes qui inflige d'énormes dégâts à tout ce qu'il touche et bouscule les ennemis pris dans l'explosion."
+      }
     }
   },
   "Jett": {
@@ -15,10 +31,26 @@
     "origin": "Corée du Sud",
     "role": "D",
     "abilities": {
-      "Cloudburst": { "name": "Nuée", "cost": "200", "desc": "Lance un projectile qui se déploie en une nuée de fumée à l'impact, obstruant la vue. Maintien pour orienter la trajectoire en vol." },
-      "Updraft": { "name": "Courant Ascendant", "cost": "150", "desc": "Bondit dans les airs." },
-      "Tailwind": { "name": "Vent Arrière", "cost": "Gratuit (2 kills)", "desc": "Se prépare à dasher. Réutilise pour dasher rapidement dans la direction du mouvement. Si tu ne bouges pas, dash vers l'avant." },
-      "Blade Storm": { "name": "Tempête de Lames", "cost": "8 orbes", "desc": "Équipe un set de couteaux hautement précis. Tir simple lance un couteau unique, restaure tous les couteaux sur un kill. Tir alternatif lance tous les couteaux restants mais ne restaure pas en cas de kill." }
+      "Cloudburst": {
+        "name": "Nuée",
+        "cost": "200",
+        "desc": "Lance un projectile qui se déploie en une nuée de fumée à l'impact, obstruant la vue. Maintien pour orienter la trajectoire en vol."
+      },
+      "Updraft": {
+        "name": "Courant Ascendant",
+        "cost": "150",
+        "desc": "Bondit dans les airs."
+      },
+      "Tailwind": {
+        "name": "Vent Arrière",
+        "cost": "Gratuit (2 kills)",
+        "desc": "Se prépare à dasher. Réutilise pour dasher rapidement dans la direction du mouvement. Si tu ne bouges pas, dash vers l'avant."
+      },
+      "Blade Storm": {
+        "name": "Tempête de Lames",
+        "cost": "8 orbes",
+        "desc": "Équipe un set de couteaux hautement précis. Tir simple lance un couteau unique, restaure tous les couteaux sur un kill. Tir alternatif lance tous les couteaux restants mais ne restaure pas en cas de kill."
+      }
     }
   },
   "Neon": {
@@ -26,10 +58,26 @@
     "origin": "Philippines",
     "role": "D",
     "abilities": {
-      "Fast Lane": { "name": "Voie Rapide", "cost": "300", "desc": "Lance deux lignes d'énergie électrique qui bloquent la vision et infligent des dégâts à tout joueur qui les traverse." },
-      "Relay Bolt": { "name": "Décharge", "cost": "200", "desc": "Lance instantanément une décharge d'énergie qui rebondit une fois. Au point d'arrivée et au rebond, libère un éclair concussif." },
-      "High Gear": { "name": "Surrégime", "cost": "Gratuit", "desc": "Canalise du courant à travers ses jambes, courant à vitesse incroyable. Tir alternatif pendant le sprint pour glisser. Recharge la jauge sur deux kills." },
-      "Overdrive": { "name": "Overdrive", "cost": "7 orbes", "desc": "Libère pleinement sa puissance et sa vitesse pour un temps limité. Tir avec son courant électrique mortel et hautement précis pour anéantir les ennemis." }
+      "Fast Lane": {
+        "name": "Voie Rapide",
+        "cost": "300",
+        "desc": "Lance deux lignes d'énergie électrique qui bloquent la vision et infligent des dégâts à tout joueur qui les traverse."
+      },
+      "Relay Bolt": {
+        "name": "Décharge",
+        "cost": "200",
+        "desc": "Lance instantanément une décharge d'énergie qui rebondit une fois. Au point d'arrivée et au rebond, libère un éclair concussif."
+      },
+      "High Gear": {
+        "name": "Surrégime",
+        "cost": "Gratuit",
+        "desc": "Canalise du courant à travers ses jambes, courant à vitesse incroyable. Tir alternatif pendant le sprint pour glisser. Recharge la jauge sur deux kills."
+      },
+      "Overdrive": {
+        "name": "Overdrive",
+        "cost": "7 orbes",
+        "desc": "Libère pleinement sa puissance et sa vitesse pour un temps limité. Tir avec son courant électrique mortel et hautement précis pour anéantir les ennemis."
+      }
     }
   },
   "Phoenix": {
@@ -37,10 +85,26 @@
     "origin": "Royaume-Uni",
     "role": "D",
     "abilities": {
-      "Blaze": { "name": "Embrasement", "cost": "200", "desc": "Équipe un mur enflammé. Tir pour créer une ligne de feu dans la direction visée. Tir alternatif pour courber le mur. Le mur bloque la vue et inflige des dégâts." },
-      "Curveball": { "name": "Effet Boomerang", "cost": "250", "desc": "Équipe un éclat de flammes incurvé. Tir pour le courber à gauche, tir alternatif pour le courber à droite. L'éclat aveugle les joueurs qui le voient." },
-      "Hot Hands": { "name": "Cocktail Molotov", "cost": "200", "desc": "Équipe une boule de feu. Tir pour la lancer en parabole, créant une zone enflammée qui inflige des dégâts. Soigne Phoenix s'il se tient dedans." },
-      "Run It Back": { "name": "Recommence", "cost": "6 orbes", "desc": "Marque l'emplacement actuel. Si tu meurs ou si le timer expire, tu reviens à cet emplacement avec ta santé complète." }
+      "Blaze": {
+        "name": "Embrasement",
+        "cost": "200",
+        "desc": "Équipe un mur enflammé. Tir pour créer une ligne de feu dans la direction visée. Tir alternatif pour courber le mur. Le mur bloque la vue et inflige des dégâts."
+      },
+      "Curveball": {
+        "name": "Effet Boomerang",
+        "cost": "250",
+        "desc": "Équipe un éclat de flammes incurvé. Tir pour le courber à gauche, tir alternatif pour le courber à droite. L'éclat aveugle les joueurs qui le voient."
+      },
+      "Hot Hands": {
+        "name": "Cocktail Molotov",
+        "cost": "200",
+        "desc": "Équipe une boule de feu. Tir pour la lancer en parabole, créant une zone enflammée qui inflige des dégâts. Soigne Phoenix s'il se tient dedans."
+      },
+      "Run It Back": {
+        "name": "Recommence",
+        "cost": "6 orbes",
+        "desc": "Marque l'emplacement actuel. Si tu meurs ou si le timer expire, tu reviens à cet emplacement avec ta santé complète."
+      }
     }
   },
   "Reyna": {
@@ -48,10 +112,26 @@
     "origin": "Mexique",
     "role": "D",
     "abilities": {
-      "Leer": { "name": "Regard", "cost": "250", "desc": "Équipe un œil d'éther. Tir pour le lancer. L'œil aveugle tous les ennemis qui le regardent." },
-      "Devour": { "name": "Dévorer", "cost": "Gratuit (orbe)", "desc": "Consomme instantanément une orbe proche, soignant rapidement pour un temps limité. Si tu fais une charge ulti, ce buff dure tout le round et tu ne peux pas mourir pendant ce temps." },
-      "Dismiss": { "name": "Renvoi", "cost": "Gratuit (orbe)", "desc": "Consomme instantanément une orbe proche, devenant intangible pour un temps limité. Si tu fais une charge ulti, tu deviens aussi invisible." },
-      "Empress": { "name": "Impératrice", "cost": "6 orbes", "desc": "Entre en frénésie, augmentant la vitesse de tir, d'équipement et de rechargement. Les kills réinitialisent la durée." }
+      "Leer": {
+        "name": "Regard",
+        "cost": "250",
+        "desc": "Équipe un œil d'éther. Tir pour le lancer. L'œil aveugle tous les ennemis qui le regardent."
+      },
+      "Devour": {
+        "name": "Dévorer",
+        "cost": "Gratuit (orbe)",
+        "desc": "Consomme instantanément une orbe proche, soignant rapidement pour un temps limité. Si tu fais une charge ulti, ce buff dure tout le round et tu ne peux pas mourir pendant ce temps."
+      },
+      "Dismiss": {
+        "name": "Renvoi",
+        "cost": "Gratuit (orbe)",
+        "desc": "Consomme instantanément une orbe proche, devenant intangible pour un temps limité. Si tu fais une charge ulti, tu deviens aussi invisible."
+      },
+      "Empress": {
+        "name": "Impératrice",
+        "cost": "6 orbes",
+        "desc": "Entre en frénésie, augmentant la vitesse de tir, d'équipement et de rechargement. Les kills réinitialisent la durée."
+      }
     }
   },
   "Yoru": {
@@ -59,10 +139,26 @@
     "origin": "Japon",
     "role": "D",
     "abilities": {
-      "Blindside": { "name": "Aveuglement", "cost": "250", "desc": "Équipe un fragment dimensionnel. Tir alternatif pour le déchirer, créant un éclat aveuglant après un court délai." },
-      "Gatecrash": { "name": "Effraction", "cost": "200", "desc": "Équipe un fragment dimensionnel. Tir pour envoyer un leurre. Réutilise pour téléporter à sa position." },
-      "Fakeout": { "name": "Bluff", "cost": "200", "desc": "Équipe un masque de leurre. Tir pour le déployer comme une copie de Yoru qui se déplace en ligne droite. Si shot, explose en cécité ; sinon disparaît." },
-      "Dimensional Drift": { "name": "Drift Dimensionnel", "cost": "7 orbes", "desc": "Équipe un masque dimensionnel. Tir pour entrer dans une autre dimension, devenant indétectable depuis le monde réel." }
+      "Blindside": {
+        "name": "Aveuglement",
+        "cost": "250",
+        "desc": "Équipe un fragment dimensionnel. Tir alternatif pour le déchirer, créant un éclat aveuglant après un court délai."
+      },
+      "Gatecrash": {
+        "name": "Effraction",
+        "cost": "200",
+        "desc": "Équipe un fragment dimensionnel. Tir pour envoyer un leurre. Réutilise pour téléporter à sa position."
+      },
+      "Fakeout": {
+        "name": "Bluff",
+        "cost": "200",
+        "desc": "Équipe un masque de leurre. Tir pour le déployer comme une copie de Yoru qui se déplace en ligne droite. Si shot, explose en cécité ; sinon disparaît."
+      },
+      "Dimensional Drift": {
+        "name": "Drift Dimensionnel",
+        "cost": "7 orbes",
+        "desc": "Équipe un masque dimensionnel. Tir pour entrer dans une autre dimension, devenant indétectable depuis le monde réel."
+      }
     }
   },
   "Iso": {
@@ -70,10 +166,26 @@
     "origin": "Chine",
     "role": "D",
     "abilities": {
-      "Contingency": { "name": "Imprévu", "cost": "300", "desc": "Lance un projectile énergétique qui se déploie en mur d'énergie indestructible, bloquant les balles." },
-      "Undercut": { "name": "Coup Bas", "cost": "200", "desc": "Lance un projectile éthéré qui traverse les murs et frappe les ennemis avec une rafale d'énergie qui les rend Vulnérables." },
-      "Double Tap": { "name": "Double Tap", "cost": "Gratuit", "desc": "Entre dans un état de concentration. Crée un flux qui invoque un bouclier qui absorbe une instance de dégâts. Tuer un ennemi recharge." },
-      "Kill Contract": { "name": "Contrat de Mort", "cost": "7 orbes", "desc": "Tire un faisceau qui aspire l'ennemi le plus proche dans une dimension parallèle, où ils s'affrontent dans un 1v1 mortel." }
+      "Contingency": {
+        "name": "Imprévu",
+        "cost": "300",
+        "desc": "Lance un projectile énergétique qui se déploie en mur d'énergie indestructible, bloquant les balles."
+      },
+      "Undercut": {
+        "name": "Coup Bas",
+        "cost": "200",
+        "desc": "Lance un projectile éthéré qui traverse les murs et frappe les ennemis avec une rafale d'énergie qui les rend Vulnérables."
+      },
+      "Double Tap": {
+        "name": "Double Tap",
+        "cost": "Gratuit",
+        "desc": "Entre dans un état de concentration. Crée un flux qui invoque un bouclier qui absorbe une instance de dégâts. Tuer un ennemi recharge."
+      },
+      "Kill Contract": {
+        "name": "Contrat de Mort",
+        "cost": "7 orbes",
+        "desc": "Tire un faisceau qui aspire l'ennemi le plus proche dans une dimension parallèle, où ils s'affrontent dans un 1v1 mortel."
+      }
     }
   },
   "Breach": {
@@ -81,10 +193,26 @@
     "origin": "Suède",
     "role": "I",
     "abilities": {
-      "Aftershock": { "name": "Réplique", "cost": "200", "desc": "Équipe un explosif sismique fusionné. Tir pour activer une explosion lente à travers le mur, infligeant des dégâts importants à tous les joueurs touchés." },
-      "Flashpoint": { "name": "Flash", "cost": "250 (×2)", "desc": "Équipe une charge flash aveuglante. Tir pour activer la charge à travers le mur, aveuglant rapidement tous les joueurs qui la regardent." },
-      "Fault Line": { "name": "Faille", "cost": "Gratuit", "desc": "Équipe une explosion sismique. Maintien le tir pour augmenter la distance. Relâche pour déclencher l'explosion, étourdissant tous les joueurs dans sa zone et dans une ligne jusqu'à la zone." },
-      "Rolling Thunder": { "name": "Tonnerre Roulant", "cost": "9 orbes", "desc": "Équipe un explosif sismique. Tir pour envoyer une cascade d'explosions sismiques à travers tout le terrain. L'explosion étourdit tous les joueurs pris et les renverse." }
+      "Aftershock": {
+        "name": "Réplique",
+        "cost": "200",
+        "desc": "Équipe un explosif sismique fusionné. Tir pour activer une explosion lente à travers le mur, infligeant des dégâts importants à tous les joueurs touchés."
+      },
+      "Flashpoint": {
+        "name": "Flash",
+        "cost": "250 (×2)",
+        "desc": "Équipe une charge flash aveuglante. Tir pour activer la charge à travers le mur, aveuglant rapidement tous les joueurs qui la regardent."
+      },
+      "Fault Line": {
+        "name": "Faille",
+        "cost": "Gratuit",
+        "desc": "Équipe une explosion sismique. Maintien le tir pour augmenter la distance. Relâche pour déclencher l'explosion, étourdissant tous les joueurs dans sa zone et dans une ligne jusqu'à la zone."
+      },
+      "Rolling Thunder": {
+        "name": "Tonnerre Roulant",
+        "cost": "9 orbes",
+        "desc": "Équipe un explosif sismique. Tir pour envoyer une cascade d'explosions sismiques à travers tout le terrain. L'explosion étourdit tous les joueurs pris et les renverse."
+      }
     }
   },
   "Fade": {
@@ -92,10 +220,26 @@
     "origin": "Turquie",
     "role": "I",
     "abilities": {
-      "Seize": { "name": "Emprise", "cost": "200", "desc": "Lance un nœud de peur brute. Le nœud descend après un temps défini. Au sol, il se rompt et retient les ennemis proches en place. Les ennemis retenus sont Assourdis et Dépérissent." },
-      "Haunt": { "name": "Hantise", "cost": "250", "desc": "Lance un guetteur hanté. Au sol, le guetteur révèle les ennemis dans sa ligne de vue et crée des traces de terreur menant à eux. Les ennemis peuvent détruire le guetteur." },
-      "Prowler": { "name": "Rôdeur", "cost": "300", "desc": "Lance un rôdeur. Maintien le tir pour le diriger vers ton viseur. Le rôdeur chasse le premier ennemi ou trace de terreur qu'il voit, et applique Myopie sur impact." },
-      "Nightfall": { "name": "Crépuscule", "cost": "7 orbes", "desc": "Libère la puissance du cauchemar lui-même. Tir pour déchaîner une vague d'énergie cauchemardesque imparable. Les ennemis pris sont Marqués, Assourdis, et Dépérissent." }
+      "Seize": {
+        "name": "Emprise",
+        "cost": "200",
+        "desc": "Lance un nœud de peur brute. Le nœud descend après un temps défini. Au sol, il se rompt et retient les ennemis proches en place. Les ennemis retenus sont Assourdis et Dépérissent."
+      },
+      "Haunt": {
+        "name": "Hantise",
+        "cost": "250",
+        "desc": "Lance un guetteur hanté. Au sol, le guetteur révèle les ennemis dans sa ligne de vue et crée des traces de terreur menant à eux. Les ennemis peuvent détruire le guetteur."
+      },
+      "Prowler": {
+        "name": "Rôdeur",
+        "cost": "300",
+        "desc": "Lance un rôdeur. Maintien le tir pour le diriger vers ton viseur. Le rôdeur chasse le premier ennemi ou trace de terreur qu'il voit, et applique Myopie sur impact."
+      },
+      "Nightfall": {
+        "name": "Crépuscule",
+        "cost": "7 orbes",
+        "desc": "Libère la puissance du cauchemar lui-même. Tir pour déchaîner une vague d'énergie cauchemardesque imparable. Les ennemis pris sont Marqués, Assourdis, et Dépérissent."
+      }
     }
   },
   "Sova": {
@@ -103,10 +247,26 @@
     "origin": "Russie",
     "role": "I",
     "abilities": {
-      "Shock Bolt": { "name": "Flèche-Choc", "cost": "150", "desc": "Équipe une flèche-choc. Tir pour lancer la flèche, déclenchant une explosion électrique qui inflige des dégâts à tous les joueurs proches." },
-      "Recon Bolt": { "name": "Flèche Reconnaissance", "cost": "250", "desc": "Équipe une flèche de reconnaissance. Tir pour lancer la flèche, déployant un capteur qui révèle l'emplacement des ennemis pris dans sa ligne de vue." },
-      "Owl Drone": { "name": "Drone Hibou", "cost": "300", "desc": "Équipe un drone hibou. Tir pour le déployer et le contrôler. Le drone peut tirer un dard qui marque les ennemis touchés." },
-      "Hunter's Fury": { "name": "Fureur du Chasseur", "cost": "8 orbes", "desc": "Équipe son arc avec trois traits cinétiques mortels à longue portée. Tir pour libérer un trait en ligne droite à travers les murs, infligeant des dégâts importants et révélant les ennemis touchés." }
+      "Shock Bolt": {
+        "name": "Flèche-Choc",
+        "cost": "150",
+        "desc": "Équipe une flèche-choc. Tir pour lancer la flèche, déclenchant une explosion électrique qui inflige des dégâts à tous les joueurs proches."
+      },
+      "Recon Bolt": {
+        "name": "Flèche Reconnaissance",
+        "cost": "250",
+        "desc": "Équipe une flèche de reconnaissance. Tir pour lancer la flèche, déployant un capteur qui révèle l'emplacement des ennemis pris dans sa ligne de vue."
+      },
+      "Owl Drone": {
+        "name": "Drone Hibou",
+        "cost": "300",
+        "desc": "Équipe un drone hibou. Tir pour le déployer et le contrôler. Le drone peut tirer un dard qui marque les ennemis touchés."
+      },
+      "Hunter's Fury": {
+        "name": "Fureur du Chasseur",
+        "cost": "8 orbes",
+        "desc": "Équipe son arc avec trois traits cinétiques mortels à longue portée. Tir pour libérer un trait en ligne droite à travers les murs, infligeant des dégâts importants et révélant les ennemis touchés."
+      }
     }
   },
   "Skye": {
@@ -114,10 +274,26 @@
     "origin": "Australie",
     "role": "I",
     "abilities": {
-      "Regrowth": { "name": "Régénération", "cost": "Gratuit", "desc": "Équipe un sort de soin. Maintien le tir pour canaliser, soignant les alliés en ligne de vue et à portée. Ne peut pas se soigner elle-même. Régénère avec le temps." },
-      "Trailblazer": { "name": "Pisteur", "cost": "300", "desc": "Équipe un tasmanien tigre. Tir pour le contrôler. Réutilise pour le faire bondir en avant, étourdissant et infligeant des dégâts à tous les ennemis touchés." },
-      "Guiding Light": { "name": "Lumière Guide", "cost": "250", "desc": "Équipe un faucon. Tir pour l'envoyer vers l'avant. Maintien le tir pour le contrôler. Réutilise pour exploser en lumière aveuglante." },
-      "Seekers": { "name": "Limiers", "cost": "7 orbes", "desc": "Équipe un Seeker. Tir pour envoyer trois Seekers traquer les trois ennemis les plus proches. Si un Seeker atteint sa cible, il applique Myopie." }
+      "Regrowth": {
+        "name": "Régénération",
+        "cost": "Gratuit",
+        "desc": "Équipe un sort de soin. Maintien le tir pour canaliser, soignant les alliés en ligne de vue et à portée. Ne peut pas se soigner elle-même. Régénère avec le temps."
+      },
+      "Trailblazer": {
+        "name": "Pisteur",
+        "cost": "300",
+        "desc": "Équipe un tasmanien tigre. Tir pour le contrôler. Réutilise pour le faire bondir en avant, étourdissant et infligeant des dégâts à tous les ennemis touchés."
+      },
+      "Guiding Light": {
+        "name": "Lumière Guide",
+        "cost": "250",
+        "desc": "Équipe un faucon. Tir pour l'envoyer vers l'avant. Maintien le tir pour le contrôler. Réutilise pour exploser en lumière aveuglante."
+      },
+      "Seekers": {
+        "name": "Limiers",
+        "cost": "7 orbes",
+        "desc": "Équipe un Seeker. Tir pour envoyer trois Seekers traquer les trois ennemis les plus proches. Si un Seeker atteint sa cible, il applique Myopie."
+      }
     }
   },
   "Gekko": {
@@ -125,10 +301,26 @@
     "origin": "États-Unis (Los Angeles)",
     "role": "I",
     "abilities": {
-      "Wingman": { "name": "Wingman", "cost": "250", "desc": "Équipe Wingman. Tir pour l'envoyer chercher les ennemis. Wingman libère une explosion concussive vers le premier ennemi qu'il voit. Tir alt pour planter/désamorcer la Spike." },
-      "Dizzy": { "name": "Dizzy", "cost": "250", "desc": "Équipe Dizzy. Tir pour l'envoyer dans les airs. Dizzy charge puis libère des éclats de plasma vers les ennemis en ligne de vue, les Aveuglant." },
-      "Mosh Pit": { "name": "Mosh Pit", "cost": "200", "desc": "Équipe Mosh. Tir pour le lancer comme une grenade. À l'atterrissage, Mosh se duplique sur une grande zone qui inflige des dégâts au fil du temps puis explose." },
-      "Thrash": { "name": "Thrash", "cost": "7 orbes", "desc": "Équipe Thrash. Tir pour se lier avec son esprit et la diriger en territoire ennemi. Active pour bondir en avant et exploser, Détenant tous les joueurs dans un petit rayon." }
+      "Wingman": {
+        "name": "Wingman",
+        "cost": "250",
+        "desc": "Équipe Wingman. Tir pour l'envoyer chercher les ennemis. Wingman libère une explosion concussive vers le premier ennemi qu'il voit. Tir alt pour planter/désamorcer la Spike."
+      },
+      "Dizzy": {
+        "name": "Dizzy",
+        "cost": "250",
+        "desc": "Équipe Dizzy. Tir pour l'envoyer dans les airs. Dizzy charge puis libère des éclats de plasma vers les ennemis en ligne de vue, les Aveuglant."
+      },
+      "Mosh Pit": {
+        "name": "Mosh Pit",
+        "cost": "200",
+        "desc": "Équipe Mosh. Tir pour le lancer comme une grenade. À l'atterrissage, Mosh se duplique sur une grande zone qui inflige des dégâts au fil du temps puis explose."
+      },
+      "Thrash": {
+        "name": "Thrash",
+        "cost": "7 orbes",
+        "desc": "Équipe Thrash. Tir pour se lier avec son esprit et la diriger en territoire ennemi. Active pour bondir en avant et exploser, Détenant tous les joueurs dans un petit rayon."
+      }
     }
   },
   "KAY/O": {
@@ -136,10 +328,26 @@
     "origin": "Indéfini (futur)",
     "role": "I",
     "abilities": {
-      "FRAG/ment": { "name": "FRAG/ment", "cost": "200", "desc": "Équipe un fragment explosif. Tir pour le lancer. Le fragment colle au sol et explose plusieurs fois, infligeant des dégâts au centre." },
-      "FLASH/drive": { "name": "FLASH/drive", "cost": "250 (×2)", "desc": "Équipe une grenade flash. Tir pour la lancer, explosant après un court délai et aveuglant tous ceux qui la voient." },
-      "ZERO/point": { "name": "ZERO/point", "cost": "400", "desc": "Équipe un couteau suppresseur. Tir pour le lancer. Le couteau colle à la première surface qu'il touche, charge brièvement, puis supprime tous les ennemis dans son rayon." },
-      "NULL/cmd": { "name": "NULL/cmd", "cost": "8 orbes", "desc": "Surcharge instantanément KAY/O avec un radianite polarisé, lui permettant d'EMP puissamment depuis sa position. Les ennemis pris dans la zone sont supprimés." }
+      "FRAG/ment": {
+        "name": "FRAG/ment",
+        "cost": "200",
+        "desc": "Équipe un fragment explosif. Tir pour le lancer. Le fragment colle au sol et explose plusieurs fois, infligeant des dégâts au centre."
+      },
+      "FLASH/drive": {
+        "name": "FLASH/drive",
+        "cost": "250 (×2)",
+        "desc": "Équipe une grenade flash. Tir pour la lancer, explosant après un court délai et aveuglant tous ceux qui la voient."
+      },
+      "ZERO/point": {
+        "name": "ZERO/point",
+        "cost": "400",
+        "desc": "Équipe un couteau suppresseur. Tir pour le lancer. Le couteau colle à la première surface qu'il touche, charge brièvement, puis supprime tous les ennemis dans son rayon."
+      },
+      "NULL/cmd": {
+        "name": "NULL/cmd",
+        "cost": "8 orbes",
+        "desc": "Surcharge instantanément KAY/O avec un radianite polarisé, lui permettant d'EMP puissamment depuis sa position. Les ennemis pris dans la zone sont supprimés."
+      }
     }
   },
   "Cypher": {
@@ -147,10 +355,26 @@
     "origin": "Maroc",
     "role": "S",
     "abilities": {
-      "Trapwire": { "name": "Câble-Piège", "cost": "200", "desc": "Place un câble-piège invisible entre deux murs. Les ennemis qui le déclenchent sont retenus, révélés, et étourdis brièvement." },
-      "Cyber Cage": { "name": "Cage Cybernétique", "cost": "100", "desc": "Lance un piège qui peut être activé pour créer une cage qui ralentit et émet du bruit quand traversée par les ennemis. Tir alternatif pour le placer immédiatement." },
-      "Spycam": { "name": "Caméra Espionne", "cost": "200", "desc": "Place une caméra espionne. Réactive pour prendre le contrôle de la vue de la caméra. Tir avec la caméra pour tirer un dard de tracking révélant les ennemis." },
-      "Neural Theft": { "name": "Vol Neural", "cost": "7 orbes", "desc": "Cible un cadavre ennemi dans la ligne de vue de Cypher. L'emplacement de tous les ennemis vivants restants est révélé." }
+      "Trapwire": {
+        "name": "Câble-Piège",
+        "cost": "200",
+        "desc": "Place un câble-piège invisible entre deux murs. Les ennemis qui le déclenchent sont retenus, révélés, et étourdis brièvement."
+      },
+      "Cyber Cage": {
+        "name": "Cage Cybernétique",
+        "cost": "100",
+        "desc": "Lance un piège qui peut être activé pour créer une cage qui ralentit et émet du bruit quand traversée par les ennemis. Tir alternatif pour le placer immédiatement."
+      },
+      "Spycam": {
+        "name": "Caméra Espionne",
+        "cost": "200",
+        "desc": "Place une caméra espionne. Réactive pour prendre le contrôle de la vue de la caméra. Tir avec la caméra pour tirer un dard de tracking révélant les ennemis."
+      },
+      "Neural Theft": {
+        "name": "Vol Neural",
+        "cost": "7 orbes",
+        "desc": "Cible un cadavre ennemi dans la ligne de vue de Cypher. L'emplacement de tous les ennemis vivants restants est révélé."
+      }
     }
   },
   "Killjoy": {
@@ -158,10 +382,26 @@
     "origin": "Allemagne",
     "role": "S",
     "abilities": {
-      "Alarmbot": { "name": "Robot Alarme", "cost": "200", "desc": "Équipe un Alarmbot. Tir pour le déployer, qui chasse les ennemis dans son rayon et explose, les rendant Vulnérables." },
-      "Turret": { "name": "Tourelle", "cost": "200", "desc": "Équipe une tourelle. Tir pour la déployer, tirant sur les ennemis dans son cône de 180°." },
-      "Nanoswarm": { "name": "Nano-Essaim", "cost": "200", "desc": "Équipe une grenade Nano-Essaim. Tir pour la lancer. Elle reste furtivement au sol après l'atterrissage. Réactive pour libérer un essaim qui inflige des dégâts." },
-      "Lockdown": { "name": "Confinement", "cost": "8 orbes", "desc": "Équipe le dispositif Lockdown. Tir pour le déployer. Le dispositif compte le temps puis Détient tous les ennemis dans le rayon. Les ennemis peuvent détruire le dispositif." }
+      "Alarmbot": {
+        "name": "Robot Alarme",
+        "cost": "200",
+        "desc": "Équipe un Alarmbot. Tir pour le déployer, qui chasse les ennemis dans son rayon et explose, les rendant Vulnérables."
+      },
+      "Turret": {
+        "name": "Tourelle",
+        "cost": "200",
+        "desc": "Équipe une tourelle. Tir pour la déployer, tirant sur les ennemis dans son cône de 180°."
+      },
+      "Nanoswarm": {
+        "name": "Nano-Essaim",
+        "cost": "200",
+        "desc": "Équipe une grenade Nano-Essaim. Tir pour la lancer. Elle reste furtivement au sol après l'atterrissage. Réactive pour libérer un essaim qui inflige des dégâts."
+      },
+      "Lockdown": {
+        "name": "Confinement",
+        "cost": "8 orbes",
+        "desc": "Équipe le dispositif Lockdown. Tir pour le déployer. Le dispositif compte le temps puis Détient tous les ennemis dans le rayon. Les ennemis peuvent détruire le dispositif."
+      }
     }
   },
   "Sage": {
@@ -169,10 +409,26 @@
     "origin": "Chine",
     "role": "S",
     "abilities": {
-      "Slow Orb": { "name": "Orbe de Ralentissement", "cost": "200", "desc": "Équipe une orbe lente. Tir pour la lancer. Au sol, l'orbe crée un champ qui ralentit et étouffe le bruit des ennemis dedans." },
-      "Healing Orb": { "name": "Orbe de Soin", "cost": "300", "desc": "Équipe une orbe de soin. Tir pour cibler un allié en ligne de vue, le soignant au fil du temps. Tir alternatif pour se soigner elle-même." },
-      "Barrier Orb": { "name": "Mur de Barrière", "cost": "400", "desc": "Équipe une orbe de barrière. Tir pour la placer, formant un grand mur solide. Tir alternatif pour faire pivoter avant placement." },
-      "Resurrection": { "name": "Résurrection", "cost": "9 orbes", "desc": "Équipe un pouvoir de résurrection. Tir avec un copain mort en ligne de vue pour commencer à le réanimer. Une fois canalisé, il revient à la vie avec pleine santé." }
+      "Slow Orb": {
+        "name": "Orbe de Ralentissement",
+        "cost": "200",
+        "desc": "Équipe une orbe lente. Tir pour la lancer. Au sol, l'orbe crée un champ qui ralentit et étouffe le bruit des ennemis dedans."
+      },
+      "Healing Orb": {
+        "name": "Orbe de Soin",
+        "cost": "300",
+        "desc": "Équipe une orbe de soin. Tir pour cibler un allié en ligne de vue, le soignant au fil du temps. Tir alternatif pour se soigner elle-même."
+      },
+      "Barrier Orb": {
+        "name": "Mur de Barrière",
+        "cost": "400",
+        "desc": "Équipe une orbe de barrière. Tir pour la placer, formant un grand mur solide. Tir alternatif pour faire pivoter avant placement."
+      },
+      "Resurrection": {
+        "name": "Résurrection",
+        "cost": "9 orbes",
+        "desc": "Équipe un pouvoir de résurrection. Tir avec un copain mort en ligne de vue pour commencer à le réanimer. Une fois canalisé, il revient à la vie avec pleine santé."
+      }
     }
   },
   "Chamber": {
@@ -180,10 +436,26 @@
     "origin": "France",
     "role": "S",
     "abilities": {
-      "Trademark": { "name": "Marque de Fabrique", "cost": "200", "desc": "Place un piège qui scanne les ennemis. Quand un ennemi visible entre dans son rayon, le piège commence à compter le temps puis explose en ralentissant ceux dans le rayon." },
-      "Headhunter": { "name": "Chasseur de Têtes", "cost": "150 (×8)", "desc": "Active pour équiper un pistolet lourd. Tir alternatif avec le pistolet pour viser avec précision." },
-      "Rendezvous": { "name": "Rendez-vous", "cost": "Gratuit", "desc": "Place une ancre de téléportation. Tant que sur le terrain et à portée, réutilise pour téléporter rapidement vers l'autre ancre. Les ancres peuvent être ramassées pour être redéployées." },
-      "Tour de Force": { "name": "Tour de Force", "cost": "8 orbes", "desc": "Active pour invoquer un puissant fusil de précision personnalisé qui tue net un ennemi avec n'importe quel coup direct. Tuer un ennemi crée un champ ralentissant." }
+      "Trademark": {
+        "name": "Marque de Fabrique",
+        "cost": "200",
+        "desc": "Place un piège qui scanne les ennemis. Quand un ennemi visible entre dans son rayon, le piège commence à compter le temps puis explose en ralentissant ceux dans le rayon."
+      },
+      "Headhunter": {
+        "name": "Chasseur de Têtes",
+        "cost": "150 (×8)",
+        "desc": "Active pour équiper un pistolet lourd. Tir alternatif avec le pistolet pour viser avec précision."
+      },
+      "Rendezvous": {
+        "name": "Rendez-vous",
+        "cost": "Gratuit",
+        "desc": "Place une ancre de téléportation. Tant que sur le terrain et à portée, réutilise pour téléporter rapidement vers l'autre ancre. Les ancres peuvent être ramassées pour être redéployées."
+      },
+      "Tour de Force": {
+        "name": "Tour de Force",
+        "cost": "8 orbes",
+        "desc": "Active pour invoquer un puissant fusil de précision personnalisé qui tue net un ennemi avec n'importe quel coup direct. Tuer un ennemi crée un champ ralentissant."
+      }
     }
   },
   "Deadlock": {
@@ -191,10 +463,26 @@
     "origin": "Norvège",
     "role": "S",
     "abilities": {
-      "GravNet": { "name": "GravNet", "cost": "200", "desc": "Équipe une grenade GravNet. Tir pour la lancer, ou tir alternatif pour la lober. Détone et force les ennemis pris dans le rayon à s'accroupir et se déplacer lentement." },
-      "Sonic Sensor": { "name": "Capteur Sonore", "cost": "200", "desc": "Équipe un capteur sonore. Tir pour le placer. Le capteur surveille un secteur pour les bruits de pas, de tir ou autres et étourdit tout le monde dans le rayon." },
-      "Barrier Mesh": { "name": "Maille de Barrière", "cost": "400", "desc": "Équipe un émetteur de maille. Tir pour lancer le disque qui crée des barrières bloquant les ennemis. Les barrières sont destructibles." },
-      "Annihilation": { "name": "Annihilation", "cost": "7 orbes", "desc": "Équipe un cocon de nanofils. Tir pour libérer une impulsion. Les ennemis pris dans l'impulsion sont capturés et tirés le long d'une piste de nanofils. Les ennemis morts si livrés à la fin." }
+      "GravNet": {
+        "name": "GravNet",
+        "cost": "200",
+        "desc": "Équipe une grenade GravNet. Tir pour la lancer, ou tir alternatif pour la lober. Détone et force les ennemis pris dans le rayon à s'accroupir et se déplacer lentement."
+      },
+      "Sonic Sensor": {
+        "name": "Capteur Sonore",
+        "cost": "200",
+        "desc": "Équipe un capteur sonore. Tir pour le placer. Le capteur surveille un secteur pour les bruits de pas, de tir ou autres et étourdit tout le monde dans le rayon."
+      },
+      "Barrier Mesh": {
+        "name": "Maille de Barrière",
+        "cost": "400",
+        "desc": "Équipe un émetteur de maille. Tir pour lancer le disque qui crée des barrières bloquant les ennemis. Les barrières sont destructibles."
+      },
+      "Annihilation": {
+        "name": "Annihilation",
+        "cost": "7 orbes",
+        "desc": "Équipe un cocon de nanofils. Tir pour libérer une impulsion. Les ennemis pris dans l'impulsion sont capturés et tirés le long d'une piste de nanofils. Les ennemis morts si livrés à la fin."
+      }
     }
   },
   "Vyse": {
@@ -202,10 +490,26 @@
     "origin": "Indéfini",
     "role": "S",
     "abilities": {
-      "Razorvine": { "name": "Vigne Tranchante", "cost": "150", "desc": "Lance des vignes métalliques qui se déploient au sol, créant un terrain difficile qui ralentit et endommage les ennemis qui le traversent." },
-      "Shear": { "name": "Cisaille", "cost": "200", "desc": "Place un mur de métal qui s'élève quand un ennemi le déclenche, bloquant la ligne de vue." },
-      "Arc Rose": { "name": "Rose d'Arc", "cost": "150", "desc": "Place une rose métallique cachée qui peut être détonée à distance, aveuglant tous les ennemis qui la voient." },
-      "Steel Garden": { "name": "Jardin d'Acier", "cost": "7 orbes", "desc": "Libère une vague qui désarme toutes les armes ennemies à portée pour un temps limité." }
+      "Razorvine": {
+        "name": "Vigne Tranchante",
+        "cost": "150",
+        "desc": "Lance des vignes métalliques qui se déploient au sol, créant un terrain difficile qui ralentit et endommage les ennemis qui le traversent."
+      },
+      "Shear": {
+        "name": "Cisaille",
+        "cost": "200",
+        "desc": "Place un mur de métal qui s'élève quand un ennemi le déclenche, bloquant la ligne de vue."
+      },
+      "Arc Rose": {
+        "name": "Rose d'Arc",
+        "cost": "150",
+        "desc": "Place une rose métallique cachée qui peut être détonée à distance, aveuglant tous les ennemis qui la voient."
+      },
+      "Steel Garden": {
+        "name": "Jardin d'Acier",
+        "cost": "7 orbes",
+        "desc": "Libère une vague qui désarme toutes les armes ennemies à portée pour un temps limité."
+      }
     }
   },
   "Omen": {
@@ -213,10 +517,26 @@
     "origin": "Inconnu",
     "role": "C",
     "abilities": {
-      "Shrouded Step": { "name": "Pas Voilé", "cost": "150", "desc": "Équipe un sort de téléportation à courte portée. Tir pour commencer à canaliser puis téléporter à l'emplacement marqué." },
-      "Paranoia": { "name": "Paranoïa", "cost": "300", "desc": "Équipe une vague ténébreuse. Tir pour envoyer une vague qui traverse les murs et applique Cécité à tous les joueurs touchés." },
-      "Dark Cover": { "name": "Couverture Sombre", "cost": "150", "desc": "Équipe une sphère ténébreuse. Tir pour lancer une sphère qui éclate en une grande sphère de ténèbres à un emplacement marqué." },
-      "From the Shadows": { "name": "Des Ombres", "cost": "7 orbes", "desc": "Équipe une carte tactique. Tir pour commencer à se téléporter à l'emplacement choisi. Pendant la téléportation, Omen apparaît comme une ombre que les ennemis peuvent tuer pour annuler." }
+      "Shrouded Step": {
+        "name": "Pas Voilé",
+        "cost": "150",
+        "desc": "Équipe un sort de téléportation à courte portée. Tir pour commencer à canaliser puis téléporter à l'emplacement marqué."
+      },
+      "Paranoia": {
+        "name": "Paranoïa",
+        "cost": "300",
+        "desc": "Équipe une vague ténébreuse. Tir pour envoyer une vague qui traverse les murs et applique Cécité à tous les joueurs touchés."
+      },
+      "Dark Cover": {
+        "name": "Couverture Sombre",
+        "cost": "150",
+        "desc": "Équipe une sphère ténébreuse. Tir pour lancer une sphère qui éclate en une grande sphère de ténèbres à un emplacement marqué."
+      },
+      "From the Shadows": {
+        "name": "Des Ombres",
+        "cost": "7 orbes",
+        "desc": "Équipe une carte tactique. Tir pour commencer à se téléporter à l'emplacement choisi. Pendant la téléportation, Omen apparaît comme une ombre que les ennemis peuvent tuer pour annuler."
+      }
     }
   },
   "Viper": {
@@ -224,10 +544,26 @@
     "origin": "États-Unis",
     "role": "C",
     "abilities": {
-      "Snake Bite": { "name": "Morsure de Serpent", "cost": "200 (×2)", "desc": "Équipe un lance-chimie. Tir pour lancer un récipient qui éclate à l'impact, créant une zone de liquide acide qui inflige des dégâts et Vulnérabilité." },
-      "Poison Cloud": { "name": "Nuage Toxique", "cost": "200", "desc": "Équipe un émetteur de gaz. Tir pour le lancer. Réactive pour créer un nuage toxique au coût de carburant. Peut être ramassé pour être redéployé." },
-      "Toxic Screen": { "name": "Écran Toxique", "cost": "Gratuit", "desc": "Équipe un lance-émetteurs de gaz. Tir pour déployer une longue ligne d'émetteurs. Réutilise pour créer un haut mur de gaz toxique au coût de carburant." },
-      "Viper's Pit": { "name": "Fosse de Viper", "cost": "8 orbes", "desc": "Équipe un éjecteur chimique. Tir pour libérer un grand nuage toxique qui réduit la vue et la portée de la vue maximale des ennemis dedans." }
+      "Snake Bite": {
+        "name": "Morsure de Serpent",
+        "cost": "200 (×2)",
+        "desc": "Équipe un lance-chimie. Tir pour lancer un récipient qui éclate à l'impact, créant une zone de liquide acide qui inflige des dégâts et Vulnérabilité."
+      },
+      "Poison Cloud": {
+        "name": "Nuage Toxique",
+        "cost": "200",
+        "desc": "Équipe un émetteur de gaz. Tir pour le lancer. Réactive pour créer un nuage toxique au coût de carburant. Peut être ramassé pour être redéployé."
+      },
+      "Toxic Screen": {
+        "name": "Écran Toxique",
+        "cost": "Gratuit",
+        "desc": "Équipe un lance-émetteurs de gaz. Tir pour déployer une longue ligne d'émetteurs. Réutilise pour créer un haut mur de gaz toxique au coût de carburant."
+      },
+      "Viper's Pit": {
+        "name": "Fosse de Viper",
+        "cost": "8 orbes",
+        "desc": "Équipe un éjecteur chimique. Tir pour libérer un grand nuage toxique qui réduit la vue et la portée de la vue maximale des ennemis dedans."
+      }
     }
   },
   "Astra": {
@@ -235,10 +571,26 @@
     "origin": "Ghana",
     "role": "C",
     "abilities": {
-      "Gravity Well": { "name": "Puits de Gravité", "cost": "150", "desc": "Place une étoile en mode astral et active pour former un puits de gravité. Les joueurs dans la zone sont attirés et rendus Vulnérables." },
-      "Nova Pulse": { "name": "Impulsion Nova", "cost": "150", "desc": "Place une étoile et active pour qu'elle se charge brièvement avant de pulser, Étourdissant tous les joueurs dans son rayon." },
-      "Nebula/Dissipate": { "name": "Nébuleuse/Dissipation", "cost": "150", "desc": "Place une étoile et active pour transformer en nébuleuse (smoke). Réutilise pour Dissiper, devenant brièvement un leurre avant de récupérer l'étoile." },
-      "Cosmic Divide": { "name": "Division Cosmique", "cost": "7 orbes", "desc": "Quand chargé, utilise la carte tactique pour choisir deux emplacements et confirmer pour former une Division Cosmique infinie. Bloque les balles et étouffe le son." }
+      "Gravity Well": {
+        "name": "Puits de Gravité",
+        "cost": "150",
+        "desc": "Place une étoile en mode astral et active pour former un puits de gravité. Les joueurs dans la zone sont attirés et rendus Vulnérables."
+      },
+      "Nova Pulse": {
+        "name": "Impulsion Nova",
+        "cost": "150",
+        "desc": "Place une étoile et active pour qu'elle se charge brièvement avant de pulser, Étourdissant tous les joueurs dans son rayon."
+      },
+      "Nebula/Dissipate": {
+        "name": "Nébuleuse/Dissipation",
+        "cost": "150",
+        "desc": "Place une étoile et active pour transformer en nébuleuse (smoke). Réutilise pour Dissiper, devenant brièvement un leurre avant de récupérer l'étoile."
+      },
+      "Cosmic Divide": {
+        "name": "Division Cosmique",
+        "cost": "7 orbes",
+        "desc": "Quand chargé, utilise la carte tactique pour choisir deux emplacements et confirmer pour former une Division Cosmique infinie. Bloque les balles et étouffe le son."
+      }
     }
   },
   "Brimstone": {
@@ -246,10 +598,26 @@
     "origin": "États-Unis",
     "role": "C",
     "abilities": {
-      "Stim Beacon": { "name": "Balise de Stim", "cost": "100", "desc": "Équipe une balise de stim. Tir pour lancer la balise vers l'avant qui crée une zone de RapidFire pour les joueurs dedans." },
-      "Incendiary": { "name": "Incendiaire", "cost": "250", "desc": "Équipe un lance-grenade incendiaire. Tir pour lancer la grenade qui détone en zone enflammée durable infligeant des dégâts." },
-      "Sky Smoke": { "name": "Fumées Aériennes", "cost": "100 (×3)", "desc": "Équipe une carte tactique. Tir pour placer des fumées qui obstruent la vue de manière persistante." },
-      "Orbital Strike": { "name": "Frappe Orbitale", "cost": "7 orbes", "desc": "Équipe une carte tactique. Tir pour lancer une frappe laser orbitale d'une durée définie infligeant des dégâts considérables." }
+      "Stim Beacon": {
+        "name": "Balise de Stim",
+        "cost": "100",
+        "desc": "Équipe une balise de stim. Tir pour lancer la balise vers l'avant qui crée une zone de RapidFire pour les joueurs dedans."
+      },
+      "Incendiary": {
+        "name": "Incendiaire",
+        "cost": "250",
+        "desc": "Équipe un lance-grenade incendiaire. Tir pour lancer la grenade qui détone en zone enflammée durable infligeant des dégâts."
+      },
+      "Sky Smoke": {
+        "name": "Fumées Aériennes",
+        "cost": "100 (×3)",
+        "desc": "Équipe une carte tactique. Tir pour placer des fumées qui obstruent la vue de manière persistante."
+      },
+      "Orbital Strike": {
+        "name": "Frappe Orbitale",
+        "cost": "7 orbes",
+        "desc": "Équipe une carte tactique. Tir pour lancer une frappe laser orbitale d'une durée définie infligeant des dégâts considérables."
+      }
     }
   },
   "Harbor": {
@@ -257,10 +625,26 @@
     "origin": "Inde",
     "role": "C",
     "abilities": {
-      "Cascade": { "name": "Cascade", "cost": "150", "desc": "Équipe un mur d'eau. Tir pour envoyer le mur en avant, suivant la cible. Réactive pour l'arrêter." },
-      "Cove": { "name": "Anse", "cost": "350", "desc": "Équipe une orbe d'eau. Tir/tir alt pour la lancer et invoquer un bouclier sphérique d'eau qui bloque les balles." },
-      "High Tide": { "name": "Marée Haute", "cost": "Gratuit", "desc": "Équipe une vague d'eau. Tir pour envoyer un long mur d'eau le long du sol dans la direction visée. Le mur ralentit les joueurs." },
-      "Reckoning": { "name": "Châtiment", "cost": "7 orbes", "desc": "Équipe le pouvoir total des artéfacts. Tir pour invoquer une zone géante d'eau. Des poolings ciblent les joueurs ennemis, leur étourdissant si touchés." }
+      "Cascade": {
+        "name": "Cascade",
+        "cost": "150",
+        "desc": "Équipe un mur d'eau. Tir pour envoyer le mur en avant, suivant la cible. Réactive pour l'arrêter."
+      },
+      "Cove": {
+        "name": "Anse",
+        "cost": "350",
+        "desc": "Équipe une orbe d'eau. Tir/tir alt pour la lancer et invoquer un bouclier sphérique d'eau qui bloque les balles."
+      },
+      "High Tide": {
+        "name": "Marée Haute",
+        "cost": "Gratuit",
+        "desc": "Équipe une vague d'eau. Tir pour envoyer un long mur d'eau le long du sol dans la direction visée. Le mur ralentit les joueurs."
+      },
+      "Reckoning": {
+        "name": "Châtiment",
+        "cost": "7 orbes",
+        "desc": "Équipe le pouvoir total des artéfacts. Tir pour invoquer une zone géante d'eau. Des poolings ciblent les joueurs ennemis, leur étourdissant si touchés."
+      }
     }
   },
   "Clove": {
@@ -268,10 +652,26 @@
     "origin": "Écosse",
     "role": "C",
     "abilities": {
-      "Pick-me-up": { "name": "Remontant", "cost": "100", "desc": "Drain l'essence d'un cadavre ennemi pour gagner un boost de vitesse et de PV temporaires." },
-      "Meddle": { "name": "Méfait", "cost": "200", "desc": "Lance un fragment d'entropie qui éclate après un court délai, infligeant Dépérir aux ennemis pris dans la zone." },
-      "Ruse": { "name": "Ruse", "cost": "100 (×2)", "desc": "Équipe une carte tactique. Tir pour placer des fumées qui obstruent la vue. Utilisable même mort." },
-      "Not Dead Yet": { "name": "Pas Encore Morte", "cost": "7 orbes", "desc": "Une fois morte, active pour revenir à la vie. Doit obtenir un kill ou un assist avant de revenir pour rester en vie." }
+      "Pick-me-up": {
+        "name": "Remontant",
+        "cost": "100",
+        "desc": "Drain l'essence d'un cadavre ennemi pour gagner un boost de vitesse et de PV temporaires."
+      },
+      "Meddle": {
+        "name": "Méfait",
+        "cost": "200",
+        "desc": "Lance un fragment d'entropie qui éclate après un court délai, infligeant Dépérir aux ennemis pris dans la zone."
+      },
+      "Ruse": {
+        "name": "Ruse",
+        "cost": "100 (×2)",
+        "desc": "Équipe une carte tactique. Tir pour placer des fumées qui obstruent la vue. Utilisable même mort."
+      },
+      "Not Dead Yet": {
+        "name": "Pas Encore Morte",
+        "cost": "7 orbes",
+        "desc": "Une fois morte, active pour revenir à la vie. Doit obtenir un kill ou un assist avant de revenir pour rester en vie."
+      }
     }
   },
   "Miks": {
@@ -279,10 +679,26 @@
     "origin": "Indéfini",
     "role": "C",
     "abilities": {
-      "Smoke Drop": { "name": "Largage de Fumée", "cost": "200 (×2)", "desc": "Lance une fumée durable qui bloque la vision sur une grande zone. Idéal pour exécutes ou défense de sites." },
-      "Slow Field": { "name": "Champ Ralentisseur", "cost": "200", "desc": "Déploie un champ qui ralentit tous les ennemis traversant la zone et émet du bruit." },
-      "Recall Beacon": { "name": "Balise de Rappel", "cost": "Gratuit", "desc": "Place une balise. Réutilise pour téléporter rapidement à l'emplacement, idéal pour les rotations." },
-      "Veil of Mist": { "name": "Voile de Brume", "cost": "7 orbes", "desc": "Libère une brume géante sur une large zone qui désoriente et ralentit tous les ennemis pris dedans pour quelques secondes." }
+      "Smoke Drop": {
+        "name": "Largage de Fumée",
+        "cost": "200 (×2)",
+        "desc": "Lance une fumée durable qui bloque la vision sur une grande zone. Idéal pour exécutes ou défense de sites."
+      },
+      "Slow Field": {
+        "name": "Champ Ralentisseur",
+        "cost": "200",
+        "desc": "Déploie un champ qui ralentit tous les ennemis traversant la zone et émet du bruit."
+      },
+      "Recall Beacon": {
+        "name": "Balise de Rappel",
+        "cost": "Gratuit",
+        "desc": "Place une balise. Réutilise pour téléporter rapidement à l'emplacement, idéal pour les rotations."
+      },
+      "Veil of Mist": {
+        "name": "Voile de Brume",
+        "cost": "7 orbes",
+        "desc": "Libère une brume géante sur une large zone qui désoriente et ralentit tous les ennemis pris dedans pour quelques secondes."
+      }
     }
   },
   "Tejo": {
@@ -290,10 +706,26 @@
     "origin": "Colombie",
     "role": "I",
     "abilities": {
-      "Stealth Drone": { "name": "Drone Furtif", "cost": "250", "desc": "Déploie un drone qui peut tirer un dard suppresseur sur les ennemis." },
-      "Special Delivery": { "name": "Livraison Spéciale", "cost": "200", "desc": "Lance une grenade collante qui étourdit les ennemis dans son rayon à la détonation." },
-      "Guided Salvo": { "name": "Salve Guidée", "cost": "400", "desc": "Sélectionne deux emplacements sur la carte tactique pour bombarder de missiles qui frappent les zones après un délai." },
-      "Armageddon": { "name": "Armageddon", "cost": "7 orbes", "desc": "Marque une large zone sur la carte qui sera bombardée d'explosifs incendiaires durables." }
+      "Stealth Drone": {
+        "name": "Drone Furtif",
+        "cost": "250",
+        "desc": "Déploie un drone qui peut tirer un dard suppresseur sur les ennemis."
+      },
+      "Special Delivery": {
+        "name": "Livraison Spéciale",
+        "cost": "200",
+        "desc": "Lance une grenade collante qui étourdit les ennemis dans son rayon à la détonation."
+      },
+      "Guided Salvo": {
+        "name": "Salve Guidée",
+        "cost": "400",
+        "desc": "Sélectionne deux emplacements sur la carte tactique pour bombarder de missiles qui frappent les zones après un délai."
+      },
+      "Armageddon": {
+        "name": "Armageddon",
+        "cost": "7 orbes",
+        "desc": "Marque une large zone sur la carte qui sera bombardée d'explosifs incendiaires durables."
+      }
     }
   },
   "Waylay": {
@@ -301,10 +733,53 @@
     "origin": "Thaïlande",
     "role": "D",
     "abilities": {
-      "Refract": { "name": "Réfraction", "cost": "Gratuit", "desc": "Place une marque. Réutilise pour téléporter rapidement à la marque, devenant invulnérable brièvement." },
-      "Lightspeed": { "name": "Vitesse Lumière", "cost": "250", "desc": "Dash en avant à grande vitesse, traversant la lumière." },
-      "Saturate": { "name": "Saturer", "cost": "200", "desc": "Lance un projectile lumineux qui ralentit les ennemis dans une zone." },
-      "Convergent Paths": { "name": "Chemins Convergents", "cost": "7 orbes", "desc": "Crée une zone géante où tous les ennemis pris dedans sont ralentis et leur déplacement est restreint." }
+      "Refract": {
+        "name": "Réfraction",
+        "cost": "Gratuit",
+        "desc": "Place une marque. Réutilise pour téléporter rapidement à la marque, devenant invulnérable brièvement."
+      },
+      "Lightspeed": {
+        "name": "Vitesse Lumière",
+        "cost": "250",
+        "desc": "Dash en avant à grande vitesse, traversant la lumière."
+      },
+      "Saturate": {
+        "name": "Saturer",
+        "cost": "200",
+        "desc": "Lance un projectile lumineux qui ralentit les ennemis dans une zone."
+      },
+      "Convergent Paths": {
+        "name": "Chemins Convergents",
+        "cost": "7 orbes",
+        "desc": "Crée une zone géante où tous les ennemis pris dedans sont ralentis et leur déplacement est restreint."
+      }
+    }
+  },
+  "Veto": {
+    "bio": "Originaire du Sénégal, Veto est une sentinelle dotée d'une mutation génétique unique qui lui confère le pouvoir de neutraliser l'utilité ennemie. Combinant téléportation, pièges paralysants et immunité aux débuffs, il redéfinit le rôle défensif en devenant aussi bien un mur infranchissable qu'un chasseur impitoyable.",
+    "origin": "Sénégal",
+    "role": "S",
+    "abilities": {
+      "Crosscut": {
+        "name": "Coupe Transversale",
+        "cost": "200 Cr",
+        "desc": "Déployez un vortex au sol. Regardez-le et réactivez pour vous téléporter. Peut être récupéré pendant la phase d'achat."
+      },
+      "Chokehold": {
+        "name": "Étreinte Paralysante",
+        "cost": "300 Cr",
+        "desc": "Lancez un fragment visqueux qui se déploie à l'impact en créant un piège. Les ennemis pris dedans sont Assourdis et Détériorés. Le piège peut être détruit avant activation."
+      },
+      "Interceptor": {
+        "name": "Intercepteur",
+        "cost": "Gratuit",
+        "desc": "Placez l'Intercepteur. Une fois activé, il détruit toute utilité qui rebondirait sur un joueur ou serait naturellement détruite par les tirs. Signature de Veto."
+      },
+      "Evolution": {
+        "name": "Évolution",
+        "cost": "7 pts",
+        "desc": "Activez pour devenir immunisé aux débuffs ennemis. Votre forme se transforme, libérant tout le potentiel de votre mutation génétique."
+      }
     }
   }
 }

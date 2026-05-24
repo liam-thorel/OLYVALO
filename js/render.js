@@ -39,6 +39,7 @@ const AGENT_TRAILERS = {
   'Waylay':    { id:'njK6KgRNr2k' },
   'Tejo':      { id:'dRuRID5JoQY' },
   'Vyse':      { id:'BEpcN-eE8ms' },
+  'Veto':      { id:'Q4ZdRYQmHvM' },
 };
 
 function trailerSrc(t) {
@@ -688,7 +689,7 @@ export function agentPageHTML(name) {
             <span class="agent-role-badge ${role}">${roleLabel}</span>
             ${frData.origin ? `<span class="agent-origin">Origine : ${frData.origin}</span>` : ''}
           </div>
-          <p class="agent-bio">${apiData?.desc || frData.bio || 'Biographie indisponible.'}</p>
+          <p class="agent-bio">${frData.bio || apiData?.desc || 'Biographie indisponible.'}</p>
           <div class="agent-quick-stats">
             <div class="aqs"><div class="aqs-val">${pickCount}</div><div class="aqs-lbl">Comp${pickCount>1?'s':''} OLYCITY</div></div>
             <div class="aqs"><div class="aqs-val">${avgWR}${avgWR!=='—'?'%':''}</div><div class="aqs-lbl">WR moyen</div></div>
