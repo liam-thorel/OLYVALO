@@ -5,7 +5,7 @@
 
 import { valorantApi } from './api.js';
 
-const SITE_VERSION = '1779649185'; // Auto-updated on push
+const SITE_VERSION = '1779652239'; // Auto-updated on push
 import { syncPlayer as henrikSyncPlayer, syncAllPlayers as henrikSyncAll, persistPlayerStats } from './henrik.js';
 import { rosterHTML, guestCardHTML, mapSectionHTML, stierHTML, globalNotesHTML, navMapsHTML, agentPageHTML, miniRosterHTML, agentsFiltersHTML, agentsGridHTML, compCompareHTML, compBuilderHTML, savedCompsHTML, calloutsHTML } from './render.js';
 import { initTheme, initTilt, initParallax, initSearch, initKeyboard, updateFavCount } from './interactions.js';
@@ -116,8 +116,7 @@ window.OLYCITY = {
     if (pageEl) pageEl.classList.add('active');
     // Lazy render builder
     if (page === 'builder') {
-      const wrap = document.getElementById('comp-builder-wrap');
-      if (wrap && !wrap.hasChildNodes()) window.OLYCITY._renderBuilder();
+      window.OLYCITY._renderBuilder();
     }
     const navBtn = document.querySelector(`.page-nav-btn[data-page="${page}"]`);
     if (navBtn) navBtn.classList.add('active');
@@ -660,7 +659,11 @@ window.OLYCITY = {
       setTimeout(() => picker.remove(), 300);
     }
     window.OLYCITY._applyProfileIndicator(name);
-    window.OLYCITY._renderBuilder();
+    // Re-render builder immediately with new profile's saved comps
+    const wrap = document.getElementById('comp-builder-wrap');
+    if (wrap && wrap.hasChildNodes()) window.OLYCITY._renderBuilder();
+    // If currently on builder page, force full re-render
+    if (state.currentPage === 'builder') window.OLYCITY._renderBuilder();
   },
 
   _applyProfileIndicator(name) {
