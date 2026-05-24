@@ -417,12 +417,9 @@ export function rosterHTML() {
   return state.ROSTER.map((p) => {
     // Priorité aux vrais top agents de l'acte (depuis sync), fallback sur JSON
     const stats = state.PLAYER_STATS[p.name] || {};
-    const rawTop = Array.isArray(stats.topAgents)
-      ? stats.topAgents.filter(a => a && typeof a === 'string')
-      : [];
-    const displayMains = rawTop.length > 0
-      ? rawTop.slice(0, 3)
-      : (p.mains || []).filter(Boolean);
+    // With HenrikDev free tier (10 matches max), topAgents is unreliable.
+    // Use static mains from roster.json — manually curated and always correct.
+    const displayMains = (p.mains || []).filter(Boolean);
 
     const mains = displayMains.map(name => {
       const img = valorantApi.agentImg(name);

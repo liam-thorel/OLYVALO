@@ -57,17 +57,10 @@ async function loadData() {
   state.FAVS = storage.getFavs();
   state.PLAYER_STATS = storage.getPlayerStats();
 
-  // Restore mains from last sync if available
+  // Static mains from roster.json — not overridden by unreliable API topAgents
   state.ROSTER.forEach(p => {
     if (!Array.isArray(p.mains)) p.mains = [];
-    const ps = state.PLAYER_STATS[p.name];
-    if (Array.isArray(ps?.topAgents) && ps.topAgents.length >= 1) {
-      const realMains = ps.topAgents.filter(Boolean).slice(0, 3);
-      const originalMains = Array.isArray(p.mains) ? p.mains : [];
-      while (realMains.length < 3 && originalMains[realMains.length]) {
-        realMains.push(originalMains[realMains.length]);
-      }
-      if (realMains.length > 0) p.mains = realMains;
+    // mains stay as defined in roster.json
     }
   });
 }
@@ -519,16 +512,7 @@ window.OLYCITY = {
       state.PLAYER_STATS[playerName] = stats;
       persistPlayerStats(playerName, stats);
 
-      // Update mains from real data
-      if (Array.isArray(stats.topAgents) && stats.topAgents.length >= 1) {
-        const realMains = stats.topAgents.filter(Boolean).slice(0, 3);
-        const originalMains = Array.isArray(player.mains) ? [...player.mains] : [];
-        while (realMains.length < 3 && originalMains[realMains.length]) {
-          realMains.push(originalMains[realMains.length]);
-        }
-        if (realMains.length > 0) player.mains = realMains;
-      }
-
+      // Static mains preserved — HenrikDev only gives 10 matches, not enough for reliable top agents
       document.getElementById('roster-grid').innerHTML = rosterHTML();
       setBtnState(playerName, 'synced', 'Synced ✓');
     } catch (e) {
@@ -556,14 +540,7 @@ window.OLYCITY = {
         state.PLAYER_STATS[playerName] = stats;
         persistPlayerStats(playerName, stats);
         const player = state.ROSTER.find(p => p.name === playerName);
-        if (player && Array.isArray(stats.topAgents) && stats.topAgents.length >= 1) {
-          const realMains = stats.topAgents.filter(Boolean).slice(0, 3);
-          const originalMains = Array.isArray(player.mains) ? [...player.mains] : [];
-          while (realMains.length < 3 && originalMains[realMains.length]) {
-            realMains.push(originalMains[realMains.length]);
-          }
-          if (realMains.length > 0) player.mains = realMains;
-        }
+        // Static mains preserved
         document.getElementById('roster-grid').innerHTML = rosterHTML();
       },
       onPlayerError(playerName, msg) {
@@ -615,7 +592,10 @@ async function boot() {
   // Auto-clear localStorage if version changed
   const storedVersion = localStorage.getItem('olycity-version');
   if (storedVersion !== SITE_VERSION) {
-    const keys = Object.keys(localStorage).filter(k => k.startsWith('olycity-'));
+    // Clear cache but KEEP player stats (expensive to re-sync, don't change with code updates)
+    const keys = Object.keys(localStorage).filter(k =>
+      k.startsWith('olycity-') && k !== 'olycity-player-stats'
+    );
     keys.forEach(k => localStorage.removeItem(k));
     localStorage.setItem('olycity-version', SITE_VERSION);
     console.log('[OLYCITY] Cache cleared — new version', SITE_VERSION);
