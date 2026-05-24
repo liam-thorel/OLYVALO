@@ -38,10 +38,9 @@
 .agent-hero-video-cover{
   position:absolute; inset:0; z-index:6;
   background:var(--bg-deep);
-  transition:opacity 1.5s ease;
-  pointer-events:none;
+  transition:opacity 1s ease;
+  pointer-events:none; /* laisser la vidéo recevoir les events pour démarrer */
 }
-.agent-hero-video-cover.loaded{ opacity:0; }
 
 /* Transparent overlay to block YouTube hover controls */
 .agent-hero-video-block{
