@@ -2,42 +2,86 @@
   {
     "name": "Nico",
     "role": "IGL · Controller",
-    "mains": ["Omen", "Miks", "Brimstone"],
+    "mains": [
+      "Miks",
+      "Jett",
+      "Skye"
+    ],
     "tag": "CAPTAIN",
-    "riot": { "name": "Drew A Picasso", "tag": "XOOO", "region": "eu" }
+    "riot": {
+      "name": "Drew A Picasso",
+      "tag": "XOOO",
+      "region": "eu"
+    }
   },
   {
     "name": "Liam",
     "role": "Entry Duelist",
-    "mains": ["Raze", "Jett", "Neon"],
+    "mains": [
+      "Omen",
+      "Miks",
+      "Chamber"
+    ],
     "tag": "ENTRY",
-    "riot": { "name": "Wong Chi Ming", "tag": "2046", "region": "eu" }
+    "riot": {
+      "name": "Wong Chi Ming",
+      "tag": "2046",
+      "region": "eu"
+    }
   },
   {
     "name": "Rayhan",
     "role": "Initiator",
-    "mains": ["Sova", "Fade", "Breach"],
+    "mains": [
+      "Omen",
+      "Chamber",
+      "Breach"
+    ],
     "tag": "INIT",
-    "riot": { "name": "RayBaz", "tag": "OLY", "region": "eu" }
+    "riot": {
+      "name": "RayBaz",
+      "tag": "OLY",
+      "region": "eu"
+    }
   },
   {
     "name": "Mathis",
     "role": "Duelist",
-    "mains": ["Raze", "Jett", "Phoenix"],
+    "mains": [
+      "Reyna",
+      "Miks",
+      "Jett"
+    ],
     "tag": "DUEL",
-    "riot": { "name": "MrScooby", "tag": "MYSTR", "region": "eu" }
+    "riot": {
+      "name": "MrScooby",
+      "tag": "MYSTR",
+      "region": "eu"
+    }
   },
   {
     "name": "Noé",
     "role": "Flex",
-    "mains": ["Skye", "KAY/O", "Gekko"],
+    "mains": [
+      "Chamber",
+      "Skye",
+      "Miks"
+    ],
     "tag": "FLEX",
-    "riot": { "name": "baby hayabusa", "tag": "NoWaY", "region": "eu" }
+    "riot": {
+      "name": "baby hayabusa",
+      "tag": "NoWaY",
+      "region": "eu"
+    }
   },
   {
     "name": "Random",
     "role": "Fill · Discord",
-    "mains": ["Reyna", "Phoenix", "Yoru"],
+    "mains": [
+      "Reyna",
+      "Phoenix",
+      "Yoru"
+    ],
     "tag": "FILL"
   }
 ]
