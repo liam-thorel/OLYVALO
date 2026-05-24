@@ -940,7 +940,10 @@ export function agentsGridHTML(filter = 'all', search = '') {
 // ─── SAVED COMPS ─────────────────────────────────
 export function savedCompsHTML() {
   let saved = [];
-  try { saved = JSON.parse(localStorage.getItem('olycity-saved-comps') || '[]'); } catch(e) {}
+  try {
+    const key = `olycity-saved-comps-${state.currentProfile || 'guest'}`;
+    saved = JSON.parse(localStorage.getItem(key) || '[]');
+  } catch(e) {}
 
   if (saved.length === 0) {
     return `<div class="saved-comps-section">
@@ -966,7 +969,7 @@ export function savedCompsHTML() {
     return `<div class="saved-comp-card">
       <div class="saved-comp-name">${comp.name}</div>
       <div class="saved-comp-agents">${agents}</div>
-      <div class="saved-comp-date">Créée le ${date} · ${comp.agents?.length || 0} agents</div>
+      <div class="saved-comp-date">Créée le ${date} · ${comp.agents?.length || 0} agents${comp.map ? ` · ${comp.map}` : ''}</div>
       <div class="saved-comp-actions">
         <button class="saved-comp-btn load" onclick="window.OLYCITY.builderLoad(${i})">↺ Charger</button>
         <button class="saved-comp-btn" onclick="window.OLYCITY.savedCompCompare(${i})" style="color:var(--gold);border-color:rgba(245,200,66,.3)">⇄ Comparer</button>

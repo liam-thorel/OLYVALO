@@ -11,13 +11,30 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Tomorrow:wght@400;500;600;700&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="./css/tokens.css?v=1779647682">
-  <link rel="stylesheet" href="./css/layout.css?v=1779647682">
-  <link rel="stylesheet" href="./css/components.css?v=1779647682">
-  <link rel="stylesheet" href="./css/agent-page.css?v=1779647682">
-  <link rel="stylesheet" href="./css/responsive.css?v=1779647682">
+  <link rel="stylesheet" href="./css/tokens.css?v=1779648106">
+  <link rel="stylesheet" href="./css/layout.css?v=1779648106">
+  <link rel="stylesheet" href="./css/components.css?v=1779648106">
+  <link rel="stylesheet" href="./css/agent-page.css?v=1779648106">
+  <link rel="stylesheet" href="./css/responsive.css?v=1779648106">
 </head>
 <body>
+
+  <!-- PROFILE PICKER — Netflix style -->
+  <div id="profile-picker" style="
+    display:none; position:fixed; inset:0; z-index:8000;
+    background:#0a0c10;
+    flex-direction:column; align-items:center; justify-content:center; gap:40px;
+  ">
+    <h1 style="font-family:'Tomorrow',sans-serif;font-size:28px;font-weight:700;
+      letter-spacing:6px;text-transform:uppercase;color:#fff">
+      Qui joue ?
+    </h1>
+    <div id="profile-grid" style="display:flex;gap:20px;flex-wrap:wrap;justify-content:center;max-width:800px"></div>
+    <div style="font-family:'Tomorrow',sans-serif;font-size:10px;letter-spacing:2px;
+      text-transform:uppercase;color:rgba(255,255,255,.25)">
+      Ton profil sauvegarde tes comps custom
+    </div>
+  </div>
 
   <!-- LOADING SCREEN -->
   <div id="loading-screen" style="
@@ -90,6 +107,11 @@
       <div class="nav-maps" id="nav-maps" style="display:none"></div>
 
       <div class="topbar-tools">
+        <!-- Profile indicator -->
+        <div class="profile-indicator" id="profile-indicator" onclick="window.OLYCITY._showProfilePicker()" title="Changer de profil">
+          <span class="profile-indicator-name">—</span>
+        </div>
+
         <div class="search-wrap">
           <span class="search-icon">⌕</span>
           <input type="text" id="search-input" class="search-input" placeholder="Agent…" autocomplete="off">
@@ -270,6 +292,6 @@
       navigator.serviceWorker.getRegistrations().then(regs => regs.forEach(r => r.unregister()));
     }
   </script>
-  <script type="module" src="./js/main.js?v=1779647682"></script>
+  <script type="module" src="./js/main.js?v=1779648106"></script>
 </body>
 </html>

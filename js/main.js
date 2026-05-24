@@ -5,7 +5,7 @@
 
 import { valorantApi } from './api.js';
 
-const SITE_VERSION = '1779647682'; // Auto-updated on push
+const SITE_VERSION = '1779648106'; // Auto-updated on push
 import { syncPlayer as henrikSyncPlayer, syncAllPlayers as henrikSyncAll, persistPlayerStats } from './henrik.js';
 import { rosterHTML, guestCardHTML, mapSectionHTML, stierHTML, globalNotesHTML, navMapsHTML, agentPageHTML, miniRosterHTML, agentsFiltersHTML, agentsGridHTML, compCompareHTML, compBuilderHTML, savedCompsHTML, calloutsHTML } from './render.js';
 import { initTheme, initTilt, initParallax, initSearch, initKeyboard, updateFavCount } from './interactions.js';
@@ -29,6 +29,7 @@ export const state = {
   builderSlots: [null,null,null,null,null],
   builderFocusSlot: 0,
   builderMapIdx: null,
+  currentProfile: null,
   LINEUPS: {},
   CALLOUTS: {},
   currentCompIdx: {},
@@ -302,6 +303,66 @@ window.OLYCITY = {
     localStorage.removeItem('olycity-builder');
   },
 
+  _showProfilePicker() {
+    const picker = document.getElementById('profile-picker');
+    const grid = document.getElementById('profile-grid');
+    if (!picker || !grid) return;
+
+    // Hide loading screen first
+    const ls = document.getElementById('loading-screen');
+    if (ls) { ls.style.opacity = '0'; setTimeout(() => ls.remove(), 500); }
+
+    const profiles = [
+      ...state.ROSTER,
+      { name: 'Guest', tag: 'Visiteur', role: 'Fill', mains: [] }
+    ];
+
+    grid.innerHTML = profiles.map(p => {
+      const img = valorantApi.agentImg(p.mains?.[0]);
+      const imgEl = img
+        ? `<img src="${img}" alt="${p.name}">`
+        : `<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-family:Tomorrow,sans-serif;font-size:28px;font-weight:700;color:rgba(255,255,255,.3)">${p.name[0]}</div>`;
+      const savedKey = `olycity-saved-comps-${p.name}`;
+      const savedCount = JSON.parse(localStorage.getItem(savedKey) || '[]').length;
+      const badge = savedCount > 0 ? `<span class="profile-badge">${savedCount}</span>` : '';
+      return `<div class="profile-card" onclick="window.OLYCITY._selectProfile('${p.name}')">
+        <div class="profile-avatar">${imgEl}${badge}</div>
+        <div class="profile-name">${p.name}</div>
+        <div class="profile-role">${p.tag || p.role || ''}</div>
+      </div>`;
+    }).join('');
+
+    picker.style.display = 'flex';
+  },
+
+  async _selectProfile(profileName) {
+    const picker = document.getElementById('profile-picker');
+    if (picker) { picker.style.opacity = '0'; picker.style.transition = 'opacity .4s'; setTimeout(() => picker.remove(), 400); }
+
+    localStorage.setItem('olycity-profile', profileName);
+    state.currentProfile = profileName;
+    window.OLYCITY._applyProfile(profileName);
+
+    // Continue boot
+    await window.OLYCITY._bootAfterProfile();
+  },
+
+  _applyProfile(profileName) {
+    // Update topbar profile indicator
+    const player = state.ROSTER.find(p => p.name === profileName);
+    const indicator = document.getElementById('profile-indicator');
+    if (!indicator) return;
+    if (player) {
+      const img = valorantApi.agentImg(player.mains?.[0]);
+      indicator.innerHTML = `
+        <div class="profile-indicator-avatar">${img ? `<img src="${img}" alt="${player.name}">` : ''}</div>
+        <span class="profile-indicator-name">${player.name}</span>
+      `;
+    } else {
+      indicator.innerHTML = `<span class="profile-indicator-name">${profileName}</span>`;
+    }
+  },
+
   builderSetMap(mapIdx) {
     state.builderMapIdx = mapIdx !== '' ? +mapIdx : null;
     // Update context label
@@ -377,7 +438,8 @@ window.OLYCITY = {
 
   builderLoad(i) {
     try {
-      const saved = JSON.parse(localStorage.getItem('olycity-saved-comps') || '[]');
+      const key = `olycity-saved-comps-${state.currentProfile || 'guest'}`;
+      const saved = JSON.parse(localStorage.getItem(key) || '[]');
       if (saved[i]) {
         const agents = saved[i].agents || [];
         state.builderSlots = [...agents.slice(0,5), ...Array(5).fill(null)].slice(0,5);
@@ -389,9 +451,10 @@ window.OLYCITY = {
 
   savedCompDelete(i) {
     try {
-      const saved = JSON.parse(localStorage.getItem('olycity-saved-comps') || '[]');
+      const key = `olycity-saved-comps-${state.currentProfile || 'guest'}`;
+      const saved = JSON.parse(localStorage.getItem(key) || '[]');
       saved.splice(i, 1);
-      localStorage.setItem('olycity-saved-comps', JSON.stringify(saved));
+      localStorage.setItem(key, JSON.stringify(saved));
       window.OLYCITY._renderBuilder();
     } catch(e) {}
   },
@@ -401,10 +464,11 @@ window.OLYCITY = {
     if (filled.length < 2) { alert('Ajoute au moins 2 agents avant de sauvegarder.'); return; }
     const name = prompt('Nom de cette comp :', 'Ma Comp Custom');
     if (!name) return;
-    const saved = JSON.parse(localStorage.getItem('olycity-saved-comps') || '[]');
-    saved.push({ name, agents: filled, createdAt: Date.now() });
-    localStorage.setItem('olycity-saved-comps', JSON.stringify(saved));
-    alert('Comp sauvegardée !');
+    const key = `olycity-saved-comps-${state.currentProfile || 'guest'}`;
+    const saved = JSON.parse(localStorage.getItem(key) || '[]');
+    saved.push({ name, agents: filled, map: state.builderMapIdx != null ? state.COMPS_DATA[state.builderMapIdx]?.map : null, createdAt: Date.now() });
+    localStorage.setItem(key, JSON.stringify(saved));
+    window.OLYCITY._renderBuilder(); // Re-render immediately
   },
 
   _refreshLineupTabs(mapIdx) {
@@ -701,6 +765,100 @@ function renderAll() {
 }
 
 // ─── BOOT ─────────────────────────────────────────
+async function bootAfterProfile() {
+  window.OLYCITY._bootAfterProfile = bootAfterProfile;
+
+  // Re-expose on OLYCITY for profile picker callback
+  const render = () => {
+    document.getElementById('nav-maps').innerHTML = navMapsHTML();
+    document.getElementById('main').innerHTML = state.COMPS_DATA.map((d, i) => mapSectionHTML(d, i)).join('');
+    document.getElementById('roster-grid').innerHTML = rosterHTML() + guestCardHTML();
+    document.getElementById('mini-roster').innerHTML = miniRosterHTML();
+    document.getElementById('agents-filters').innerHTML = agentsFiltersHTML();
+    document.getElementById('agents-full-grid').innerHTML = agentsGridHTML();
+    try { const sb = localStorage.getItem('olycity-builder'); if (sb) state.builderSlots = JSON.parse(sb); } catch(e) {}
+  };
+  render();
+
+  initTheme();
+  initTilt();
+  initParallax();
+  initSearch((name) => window.OLYCITY.showAgentPage(name));
+  initKeyboard?.();
+
+  const agentsInput = document.getElementById('agents-search-input');
+  if (agentsInput) {
+    agentsInput.addEventListener('input', (e) => {
+      const role = state.currentAgentFilter || 'all';
+      document.getElementById('agents-full-grid').innerHTML = agentsGridHTML(role, e.target.value);
+      setTimeout(() => initTilt(), 50);
+    });
+  }
+
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Enter') {
+      const active = document.activeElement;
+      if (active?.id === 'guest-name' || active?.id === 'guest-tag') {
+        window.OLYCITY.guestOpen('tracker', null);
+      }
+    }
+  });
+
+  // Guest card Enter key
+  setTimeout(() => {
+    const gn = document.getElementById('guest-name');
+    const gt = document.getElementById('guest-tag');
+    [gn, gt].forEach(el => el?.addEventListener('keydown', e => {
+      if (e.key === 'Enter') window.OLYCITY.guestOpen('tracker', e);
+    }));
+  }, 50);
+
+  window.addEventListener('popstate', (e) => {
+    const s = e.state;
+    window.OLYCITY.closeVideoModal();
+    const compareWrap = document.getElementById('compare-panel-wrap');
+    if (compareWrap) compareWrap.style.display = 'none';
+    if (s?.page === 'agent' && s.agent) {
+      window.OLYCITY.showAgentPage(s.agent);
+    } else if (s?.page) {
+      window.OLYCITY.nav(s.page, false);
+    } else {
+      const hash = window.location.hash.replace('#', '');
+      if (['maps','roster','agents','builder'].includes(hash)) {
+        window.OLYCITY.nav(hash, false);
+      } else {
+        window.OLYCITY.nav('home', false);
+      }
+    }
+  });
+
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape') window.OLYCITY.closeVideoModal();
+  });
+
+  const initHash = window.location.hash.replace('#','');
+  const initPage = ['maps','roster','agents','builder'].includes(initHash) ? initHash : 'home';
+  window.history.replaceState({ page: initPage }, '', window.location.href);
+
+  if (window.location.hash) {
+    const m = window.location.hash.replace('#','').match(/comp-(\d+)-(\d+)/);
+    if (m) {
+      const mi = +m[1], ci = +m[2];
+      window.OLYCITY.nav('maps');
+      const mapBtn = document.querySelector(`[data-map-idx="${mi}"]`);
+      window.OLYCITY.showMap(mi, mapBtn);
+      const tabBtns = document.querySelectorAll(`#map-${mi} .comp-tab`);
+      if (tabBtns[ci]) window.OLYCITY.switchComp(mi, ci, tabBtns[ci]);
+    }
+  }
+
+  window.OLYCITY._applyProfile(state.currentProfile || 'Guest');
+
+  const ls = document.getElementById('loading-screen');
+  if (ls) { ls.style.opacity = '0'; setTimeout(() => ls.remove(), 500); }
+  console.log('[OLYCITY] Ready ✓');
+}
+
 async function boot() {
   // Auto-clear localStorage if version changed
   const storedVersion = localStorage.getItem('olycity-version');
@@ -849,13 +1007,15 @@ async function boot() {
   const initHash = window.location.hash.replace('#','');
   const initPage = ['maps','roster','agents','builder'].includes(initHash) ? initHash : 'home';
   window.history.replaceState({ page: initPage }, '', window.location.href);
-  // Hide loading screen
-  const ls = document.getElementById('loading-screen');
-  if (ls) {
-    ls.style.opacity = '0';
-    setTimeout(() => ls.remove(), 500);
+  // ─── PROFILE PICKER ──────────────────────────────
+  const savedProfile = localStorage.getItem('olycity-profile');
+  if (savedProfile) {
+    state.currentProfile = savedProfile;
+    await bootAfterProfile();
+  } else {
+    window.OLYCITY._showProfilePicker();
+    // bootAfterProfile will be called after profile selection
   }
-  console.log('[OLYCITY] Ready ✓');
 }
 
 boot();
