@@ -939,10 +939,11 @@ export function agentsGridHTML(filter = 'all', search = '') {
 }
 
 // ─── SAVED COMPS ─────────────────────────────────
-export function savedCompsHTML() {
+export function savedCompsHTML(profile) {
+  const p = profile || state.currentProfile || 'guest';
   let saved = [];
   try {
-    const key = `olycity-saved-comps-${state.currentProfile || 'guest'}`;
+    const key = `olycity-saved-comps-${p}`;
     saved = JSON.parse(localStorage.getItem(key) || '[]');
   } catch(e) {}
 

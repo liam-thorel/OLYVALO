@@ -5,7 +5,7 @@
 
 import { valorantApi } from './api.js';
 
-const SITE_VERSION = '1779653045'; // Auto-updated on push
+const SITE_VERSION = '1779653216'; // Auto-updated on push
 import { syncPlayer as henrikSyncPlayer, syncAllPlayers as henrikSyncAll, persistPlayerStats } from './henrik.js';
 import { rosterHTML, guestCardHTML, mapSectionHTML, stierHTML, globalNotesHTML, navMapsHTML, agentPageHTML, miniRosterHTML, agentsFiltersHTML, agentsGridHTML, compCompareHTML, compBuilderHTML, savedCompsHTML, calloutsHTML } from './render.js';
 import { initTheme, initTilt, initParallax, initSearch, initKeyboard, updateFavCount } from './interactions.js';
@@ -265,9 +265,10 @@ window.OLYCITY = {
   },
 
   // ─── COMP BUILDER ────────────────────────────
-  _renderBuilder() {
+  _renderBuilder(profile) {
     const wrap = document.getElementById('comp-builder-wrap');
-    if (wrap) wrap.innerHTML = compBuilderHTML(state.builderSlots) + savedCompsHTML();
+    const p = profile || state.currentProfile || 'guest';
+    if (wrap) wrap.innerHTML = compBuilderHTML(state.builderSlots) + savedCompsHTML(p);
   },
 
   builderFocusSlot(i) {
@@ -406,7 +407,7 @@ window.OLYCITY = {
     const saved = JSON.parse(localStorage.getItem(key) || '[]');
     saved.push({ name, agents: filled, map: state.builderMapIdx != null ? state.COMPS_DATA[state.builderMapIdx]?.map : null, createdAt: Date.now() });
     localStorage.setItem(key, JSON.stringify(saved));
-    window.OLYCITY._renderBuilder();
+    window.OLYCITY._renderBuilder(state.currentProfile);
   },
 
   _refreshLineupTabs(mapIdx) {
@@ -659,8 +660,8 @@ window.OLYCITY = {
       setTimeout(() => picker.remove(), 300);
     }
     window.OLYCITY._applyProfileIndicator(name);
-    // Toujours re-render le builder pour mettre à jour les comps du profil
-    window.OLYCITY._renderBuilder();
+    // Passer le profil explicitement pour éviter tout problème de timing
+    window.OLYCITY._renderBuilder(name);
   },
 
   _applyProfileIndicator(name) {
