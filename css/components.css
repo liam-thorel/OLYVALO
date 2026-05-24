@@ -1214,7 +1214,8 @@
 .lineup-agent-tabs {
   display: flex; gap: 6px; flex-wrap: wrap;
   margin-bottom: 18px; padding-bottom: 4px;
-  position: relative; z-index: 2;
+  position: relative; z-index: 1;
+  overflow: visible;
 }
 .lineup-agent-tab {
   display: flex; align-items: center; gap: 7px;
@@ -1222,7 +1223,6 @@
   color: var(--muted); cursor: pointer; padding: 6px 14px 6px 8px;
   font-family: 'Tomorrow', sans-serif; font-size: 10px; font-weight: 600;
   letter-spacing: 1.5px; text-transform: uppercase; transition: all .15s;
-  clip-path: polygon(6px 0, 100% 0, calc(100% - 6px) 100%, 0 100%);
 }
 .lineup-agent-tab img {
   width: 22px; height: 28px; object-fit: cover; object-position: top center;
