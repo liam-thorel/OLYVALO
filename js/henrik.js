@@ -88,10 +88,29 @@ export async function syncPlayer(player) {
     const allMatches = matches?.data || [];
 
     // Filtre sur la saison en cours via metadata.season_id
-    const ml = currentSeasonId
-      ? allMatches.filter(m => m.metadata?.season_id === currentSeasonId)
-      : allMatches.slice(0, 10); // fallback si pas de season_id
-
+    let ml = [];
+    if (currentSeasonId) {
+      ml = allMatches.filter(m => m.metadata?.season_id === currentSeasonId);
+      // Log first match season_id to debug mismatches
+      if (allMatches.length > 0) {
+        const sampleId = allMatches[0]?.metadata?.season_id;
+        console.log(`[HenrikDev] ${name}: season_id MMR="${currentSeasonId}" vs match="${sampleId}"`);
+      }
+      // If filter returns 0 (season_id format mismatch), try partial match
+      if (ml.length === 0) {
+        const shortId = currentSeasonId.replace(/[^0-9a-z]/gi, '').toLowerCase();
+        ml = allMatches.filter(m => {
+          const mid = (m.metadata?.season_id || '').replace(/[^0-9a-z]/gi, '').toLowerCase();
+          return mid === shortId || mid.includes(shortId) || shortId.includes(mid);
+        });
+        console.log(`[HenrikDev] ${name}: partial match → ${ml.length} matchs`);
+      }
+    }
+    // Last resort: use most recent 20 matches
+    if (ml.length === 0) {
+      ml = allMatches.slice(0, 20);
+      console.log(`[HenrikDev] ${name}: fallback 20 derniers matchs`);
+    }
     console.log(`[HenrikDev] ${name}: ${allMatches.length} total → ${ml.length} matchs acte en cours`);
     games = ml.length;
 
