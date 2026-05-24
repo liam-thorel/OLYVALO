@@ -746,31 +746,36 @@ export function agentPageHTML(name) {
 
 // ─── GUEST CARD ──────────────────────────────────
 export function guestCardHTML() {
-  return `<div class="guest-card">
-    <div class="guest-card-title">Fill · Discord</div>
-    <div style="font-family:'Tomorrow',sans-serif;font-size:22px;font-weight:700;
-      letter-spacing:1px;color:var(--text);line-height:1;margin-bottom:2px">
-      Cherche un Fill ?
+  return `<div class="guest-card-full">
+    <div class="guest-card-full-inner">
+      <div class="guest-card-left">
+        <div class="guest-card-title">Recherche de joueur</div>
+        <div class="guest-card-subtitle">Entre un Riot ID pour voir le profil d'un fill ou d'un ennemi</div>
+        <div class="guest-input-row">
+          <input type="text" id="guest-name" class="guest-input" placeholder="Pseudo" autocomplete="off">
+          <span class="guest-input-sep">#</span>
+          <input type="text" id="guest-tag" class="guest-tag-input" placeholder="TAG" autocomplete="off">
+        </div>
+      </div>
+      <div class="guest-card-btns">
+        <a class="guest-link-btn tracker" href="#" target="_blank" rel="noopener"
+          onclick="return window.OLYCITY.guestOpen('tracker', event)">
+          <span class="guest-btn-icon">↗</span>
+          <span class="guest-btn-text">
+            <span class="guest-btn-name">Tracker.gg</span>
+            <span class="guest-btn-sub">Stats · Historique · Rank</span>
+          </span>
+        </a>
+        <a class="guest-link-btn vtl" href="#" target="_blank" rel="noopener"
+          onclick="return window.OLYCITY.guestOpen('vtl', event)">
+          <span class="guest-btn-icon">↗</span>
+          <span class="guest-btn-text">
+            <span class="guest-btn-name">VTL.lol</span>
+            <span class="guest-btn-sub">Graphs · Progression · Comps</span>
+          </span>
+        </a>
+      </div>
     </div>
-    <div style="font-size:12px;color:var(--muted);line-height:1.5">
-      Entre le Riot ID d'un joueur pour voir son profil.
-    </div>
-    <div class="guest-input-wrap">
-      <input type="text" id="guest-name" class="guest-input" placeholder="Pseudo" autocomplete="off">
-      <span class="guest-input-sep">#</span>
-      <input type="text" id="guest-tag" class="guest-tag-input" placeholder="TAG" autocomplete="off">
-    </div>
-    <div class="guest-links">
-      <a class="guest-link-btn tracker" href="#" id="guest-tracker-btn" target="_blank" rel="noopener"
-        onclick="return window.OLYCITY.guestOpen('tracker', event)">
-        ↗ Tracker.gg
-      </a>
-      <a class="guest-link-btn vlr" href="#" id="guest-vlr-btn" target="_blank" rel="noopener"
-        onclick="return window.OLYCITY.guestOpen('vtl', event)">
-        ↗ VTL.lol
-      </a>
-    </div>
-    <div class="guest-hint">Appuie sur Entrée ou clique un lien</div>
   </div>`;
 }
 

@@ -1431,64 +1431,88 @@ button.comp-tab.fun-tab {
 }
 
 /* ════════════════════════════════════════════════
-   GUEST CARD — recherche de pseudo
+   GUEST CARD — pleine largeur sous le roster
    ════════════════════════════════════════════════ */
-.guest-card {
-  background: var(--surf); border: 1px dashed var(--border2);
-  padding: 20px; display: flex; flex-direction: column;
-  gap: 14px; min-width: 220px; flex: 1;
-  transition: border-color .2s;
+.guest-card-full {
+  grid-column: 1 / -1;
+  background: var(--surf); border: 1px solid var(--border);
+  margin-top: 4px;
 }
-.guest-card:hover { border-color: var(--red-mid); }
+.guest-card-full-inner {
+  display: flex; align-items: center; gap: 32px;
+  padding: 24px 32px; flex-wrap: wrap;
+}
+.guest-card-left { flex: 1; min-width: 280px; }
 .guest-card-title {
-  font-family: 'Tomorrow', sans-serif; font-size: 11px; font-weight: 600;
+  font-family: 'Tomorrow', sans-serif; font-size: 10px; font-weight: 600;
   letter-spacing: 3px; text-transform: uppercase; color: var(--dim);
-  display: flex; align-items: center; gap: 8px;
+  margin-bottom: 8px;
 }
-.guest-card-title::before {
-  content: ''; width: 8px; height: 8px;
-  border: 1px dashed var(--border2); border-radius: 50%;
+.guest-card-subtitle {
+  font-size: 13px; color: var(--muted); margin-bottom: 14px; line-height: 1.4;
 }
-.guest-input-wrap {
-  display: flex; gap: 0; position: relative;
+.guest-input-row {
+  display: flex; align-items: stretch; gap: 0; max-width: 420px;
 }
 .guest-input {
   flex: 1; background: var(--surf2); border: 1px solid var(--border2);
-  border-right: none; color: var(--text); padding: 9px 12px;
-  font-family: 'Tomorrow', sans-serif; font-size: 12px;
+  border-right: none; color: var(--text); padding: 11px 14px;
+  font-family: 'Tomorrow', sans-serif; font-size: 13px;
   outline: none; transition: border-color .15s;
 }
 .guest-input:focus { border-color: var(--red-mid); }
-.guest-input::placeholder { color: var(--dim); font-size: 11px; }
+.guest-input::placeholder { color: var(--dim); }
 .guest-input-sep {
   display: flex; align-items: center; justify-content: center;
   background: var(--surf3); border: 1px solid var(--border2);
-  border-right: none; padding: 0 8px;
-  font-family: 'Tomorrow', sans-serif; font-size: 14px; color: var(--dim);
+  border-right: none; padding: 0 10px;
+  font-family: 'Tomorrow', sans-serif; font-size: 16px; color: var(--muted);
 }
 .guest-tag-input {
-  width: 72px; background: var(--surf2); border: 1px solid var(--border2);
-  color: var(--text); padding: 9px 10px;
-  font-family: 'Tomorrow', sans-serif; font-size: 12px;
+  width: 80px; background: var(--surf2); border: 1px solid var(--border2);
+  color: var(--text); padding: 11px 10px;
+  font-family: 'Tomorrow', sans-serif; font-size: 13px;
   outline: none; transition: border-color .15s;
 }
 .guest-tag-input:focus { border-color: var(--red-mid); }
-.guest-tag-input::placeholder { color: var(--dim); font-size: 11px; }
-.guest-links {
-  display: flex; flex-direction: column; gap: 6px;
+.guest-tag-input::placeholder { color: var(--dim); }
+
+.guest-card-btns {
+  display: flex; gap: 12px; flex-shrink: 0; flex-wrap: wrap;
 }
 .guest-link-btn {
-  display: flex; align-items: center; gap: 8px;
-  background: var(--surf2); border: 1px solid var(--border);
-  color: var(--muted); padding: 9px 14px; cursor: pointer;
-  font-family: 'Tomorrow', sans-serif; font-size: 10px; font-weight: 600;
-  letter-spacing: 1.5px; text-transform: uppercase;
-  text-decoration: none; transition: all .15s;
+  display: flex; align-items: center; gap: 14px;
+  padding: 14px 24px; cursor: pointer; text-decoration: none;
+  transition: all .2s; min-width: 200px;
+  clip-path: polygon(10px 0, 100% 0, calc(100% - 10px) 100%, 0 100%);
 }
-.guest-link-btn:hover { color: var(--text); border-color: var(--border2); background: var(--surf3); }
-.guest-link-btn.tracker:hover { color: #e8a838; border-color: rgba(232,168,56,.4); }
-.guest-link-btn.vlr:hover { color: var(--S); border-color: rgba(63,207,207,.4); }
-.guest-hint {
+.guest-link-btn.tracker {
+  background: rgba(255,70,86,.12); border: 1px solid rgba(255,70,86,.4);
+}
+.guest-link-btn.tracker:hover {
+  background: rgba(255,70,86,.22); border-color: var(--red);
+  transform: translateY(-2px); box-shadow: 0 8px 20px rgba(255,70,86,.2);
+}
+.guest-link-btn.vtl {
+  background: rgba(56,139,253,.12); border: 1px solid rgba(56,139,253,.4);
+}
+.guest-link-btn.vtl:hover {
+  background: rgba(56,139,253,.22); border-color: #388bfd;
+  transform: translateY(-2px); box-shadow: 0 8px 20px rgba(56,139,253,.2);
+}
+.guest-btn-icon {
+  font-size: 20px; flex-shrink: 0;
+}
+.guest-link-btn.tracker .guest-btn-icon { color: var(--red); }
+.guest-link-btn.vtl .guest-btn-icon { color: #388bfd; }
+.guest-btn-text { display: flex; flex-direction: column; gap: 2px; }
+.guest-btn-name {
+  font-family: 'Tomorrow', sans-serif; font-size: 14px; font-weight: 700;
+  letter-spacing: 1px; text-transform: uppercase;
+}
+.guest-link-btn.tracker .guest-btn-name { color: var(--red); }
+.guest-link-btn.vtl .guest-btn-name { color: #388bfd; }
+.guest-btn-sub {
   font-family: 'Tomorrow', sans-serif; font-size: 9px; letter-spacing: 1px;
-  text-transform: uppercase; color: var(--dim); text-align: center;
+  text-transform: uppercase; color: var(--muted);
 }
