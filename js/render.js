@@ -533,10 +533,13 @@ export function globalNotesHTML() {
 // ─── NAV MAPS ────────────────────────────────────
 export function navMapsHTML() {
   return state.COMPS_DATA.map((d, i) => {
-    const icon = valorantApi.mapIcon(d.map);
-    const iconEl = icon ? `<img src="${icon}" alt="">` : '';
-    return `<button class="nav-map-btn ${i === 0 ? 'active' : ''}" onclick="window.OLYCITY.showMap(${i},this)" data-map-idx="${i}">
-      <div class="nav-map-icon">${iconEl}</div>${d.map}
+    const splash = valorantApi.mapSplash(d.map);
+    const icon   = valorantApi.mapIcon(d.map);
+    return `<button class="nav-map-btn ${i === 0 ? 'active' : ''}"
+      onclick="window.OLYCITY.showMap(${i},this)" data-map-idx="${i}"
+      ${splash ? `style="--map-splash:url(${splash})"` : ''}>
+      ${icon ? `<div class="nav-map-icon"><img src="${icon}" alt=""></div>` : ''}
+      <span class="nav-map-label">${d.map}</span>
     </button>`;
   }).join('');
 }

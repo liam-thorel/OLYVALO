@@ -5,7 +5,7 @@
 
 import { valorantApi } from './api.js';
 
-const SITE_VERSION = '1779645727'; // Auto-updated on push
+const SITE_VERSION = '1779645959'; // Auto-updated on push
 import { syncPlayer as henrikSyncPlayer, syncAllPlayers as henrikSyncAll, persistPlayerStats } from './henrik.js';
 import { rosterHTML, guestCardHTML, mapSectionHTML, stierHTML, globalNotesHTML, navMapsHTML, agentPageHTML, miniRosterHTML, agentsFiltersHTML, agentsGridHTML, compCompareHTML, compBuilderHTML, savedCompsHTML, calloutsHTML } from './render.js';
 import { initTheme, initTilt, initParallax, initSearch, initKeyboard, updateFavCount } from './interactions.js';
@@ -88,6 +88,15 @@ function setSyncStatus(html, type = 'info') {
 window.OLYCITY = {
 
   nav(page, pushHistory = true) {
+    // Dynamic title
+    const titles = {
+      home: 'OLYCITY — Accueil',
+      maps: 'OLYCITY — Maps & Comps',
+      roster: 'OLYCITY — Roster',
+      agents: 'OLYCITY — Agents',
+      builder: 'OLYCITY — Comp Builder',
+    };
+    document.title = titles[page] || 'OLYCITY — Valorant Meta Comps';
     // Close agent page if open
     const agentPage = document.getElementById('agent-page');
     if (agentPage && agentPage.classList.contains('active')) {
@@ -756,6 +765,12 @@ async function boot() {
   const initHash = window.location.hash.replace('#','');
   const initPage = ['maps','roster','agents','builder'].includes(initHash) ? initHash : 'home';
   window.history.replaceState({ page: initPage }, '', window.location.href);
+  // Hide loading screen
+  const ls = document.getElementById('loading-screen');
+  if (ls) {
+    ls.style.opacity = '0';
+    setTimeout(() => ls.remove(), 500);
+  }
   console.log('[OLYCITY] Ready ✓');
 }
 

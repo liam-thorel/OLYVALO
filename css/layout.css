@@ -59,20 +59,37 @@
 /* MAP NAV (dans page Maps) */
 .nav-maps{ display:flex; gap:2px; flex:1; justify-content:center; flex-wrap:wrap; }
 .nav-map-btn{
-  position:relative; background:transparent; border:none; cursor:pointer;
-  padding:8px 14px 8px 10px; display:flex; align-items:center; gap:8px;
-  font-family:'Tomorrow',sans-serif; font-size:12px; font-weight:600;
+  position:relative; background:var(--surf2); border:none; cursor:pointer;
+  padding:0; display:flex; align-items:center; gap:0;
+  font-family:'Tomorrow',sans-serif; font-size:11px; font-weight:600;
   letter-spacing:1.5px; text-transform:uppercase;
-  color:var(--muted); transition:color .15s;
+  color:var(--muted); transition:all .2s; overflow:hidden;
   clip-path:polygon(8px 0, 100% 0, calc(100% - 8px) 100%, 0 100%);
+  min-width:80px;
 }
-.nav-map-btn:hover{ color:var(--text); background:var(--surf2); }
-.nav-map-btn.active{ background:var(--red-low); color:var(--red); }
+.nav-map-btn::before{
+  content:'';
+  position:absolute; inset:0;
+  background:var(--map-splash, none) center/cover;
+  opacity:0; transition:opacity .2s;
+  filter:brightness(.5) saturate(1.2);
+}
+.nav-map-btn:hover::before{ opacity:1; }
+.nav-map-btn:hover{ color:var(--text); }
+.nav-map-btn.active{ color:var(--red); }
+.nav-map-btn.active::before{ opacity:.6; }
+.nav-map-btn.active::after{
+  content:''; position:absolute; bottom:0; left:0; right:0;
+  height:2px; background:var(--red);
+}
 .nav-map-icon{
-  width:22px; height:16px; background:var(--surf3);
-  flex-shrink:0; overflow:hidden;
+  width:32px; height:32px; background:var(--surf3);
+  flex-shrink:0; overflow:hidden; position:relative; z-index:1;
 }
 .nav-map-icon img{ width:100%; height:100%; object-fit:cover; display:block; }
+.nav-map-label{
+  padding:8px 14px 8px 8px; position:relative; z-index:1;
+}
 
 /* SPA PAGES */
 .spa-page{ display:none; }

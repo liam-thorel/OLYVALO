@@ -4,19 +4,50 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>OLYCITY — Valorant Meta Comps</title>
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' fill='%23ff4656'/><text x='50%25' y='54%25' dominant-baseline='middle' text-anchor='middle' font-family='Tomorrow,sans-serif' font-weight='700' font-size='13' fill='white'>OC</text></svg>">
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Tomorrow:wght@400;500;600;700&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="./css/tokens.css?v=1779645727">
-  <link rel="stylesheet" href="./css/layout.css?v=1779645727">
-  <link rel="stylesheet" href="./css/components.css?v=1779645727">
-  <link rel="stylesheet" href="./css/agent-page.css?v=1779645727">
-  <link rel="stylesheet" href="./css/responsive.css?v=1779645727">
+  <link rel="stylesheet" href="./css/tokens.css?v=1779645959">
+  <link rel="stylesheet" href="./css/layout.css?v=1779645959">
+  <link rel="stylesheet" href="./css/components.css?v=1779645959">
+  <link rel="stylesheet" href="./css/agent-page.css?v=1779645959">
+  <link rel="stylesheet" href="./css/responsive.css?v=1779645959">
 </head>
 <body>
+
+  <!-- LOADING SCREEN -->
+  <div id="loading-screen" style="
+    position:fixed;inset:0;z-index:9999;
+    background:#0a0c10;
+    display:flex;flex-direction:column;align-items:center;justify-content:center;gap:20px;
+    transition:opacity .5s ease;
+  ">
+    <div style="
+      font-family:'Tomorrow',sans-serif;font-size:42px;font-weight:700;
+      letter-spacing:6px;color:#fff;
+    ">OLYCITY</div>
+    <div style="width:200px;height:2px;background:rgba(255,255,255,.1);position:relative;overflow:hidden;">
+      <div id="loading-bar" style="
+        position:absolute;left:-100%;top:0;height:100%;width:100%;
+        background:linear-gradient(90deg,transparent,#ff4656,transparent);
+        animation:loadingScan 1s ease-in-out infinite;
+      "></div>
+    </div>
+    <div style="
+      font-family:'Tomorrow',sans-serif;font-size:10px;letter-spacing:3px;
+      text-transform:uppercase;color:rgba(255,255,255,.3);
+    ">Chargement des données…</div>
+  </div>
+  <style>
+    @keyframes loadingScan {
+      from { left: -100%; }
+      to   { left: 100%;  }
+    }
+  </style>
 
   <!-- Background layers -->
   <div class="bg-layer bg-grid"></div>
@@ -239,6 +270,6 @@
       navigator.serviceWorker.getRegistrations().then(regs => regs.forEach(r => r.unregister()));
     }
   </script>
-  <script type="module" src="./js/main.js?v=1779645727"></script>
+  <script type="module" src="./js/main.js?v=1779645959"></script>
 </body>
 </html>
