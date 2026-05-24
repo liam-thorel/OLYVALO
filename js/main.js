@@ -5,10 +5,10 @@
 
 import { valorantApi } from './api.js';
 
-const SITE_VERSION = '1779662560'; // Auto-updated on push
+const SITE_VERSION = '1779662742'; // Auto-updated on push
 import { syncPlayer as henrikSyncPlayer, syncAllPlayers as henrikSyncAll, persistPlayerStats } from './henrik.js';
 import { rosterHTML, guestCardHTML, mapSectionHTML, stierHTML, globalNotesHTML, navMapsHTML, agentPageHTML, miniRosterHTML, agentsFiltersHTML, agentsGridHTML, compCompareHTML, compBuilderHTML, savedCompsHTML, calloutsHTML } from './render.js';
-import { initTheme, initTilt, initParallax, initSearch, initKeyboard, updateFavCount } from './interactions.js';
+import { initTheme, initTilt, initParallax, initSearch, initKeyboard, updateFavCount, initHeroParticles } from './interactions.js';
 import { storage } from './storage.js';
 
 // ─── STATE (partagé avec render.js) ───────────────
@@ -140,6 +140,7 @@ window.OLYCITY = {
     if (page === 'home') {
       const el = document.getElementById('mini-roster');
       if (el) el.innerHTML = miniRosterHTML();
+      setTimeout(() => initHeroParticles(), 50);
     }
   },
 
@@ -811,6 +812,7 @@ async function boot() {
     console.log('[OLYCITY] Cache cleared — new version', SITE_VERSION);
   }
 
+  initHeroParticles();
   initTheme();
   initParallax();
   initKeyboard(() => window.OLYCITY.closeAgentPage());

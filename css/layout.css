@@ -219,6 +219,47 @@
 .hero{
   position:relative; text-align:center;
   padding:60px 32px 40px; z-index:2;
+  overflow:hidden;
+}
+
+/* Fond animé hero */
+.hero::before {
+  content:'';
+  position:absolute; inset:0; z-index:-1;
+  background:
+    repeating-linear-gradient(
+      -45deg,
+      transparent,
+      transparent 80px,
+      rgba(255,70,86,.03) 80px,
+      rgba(255,70,86,.03) 81px
+    ),
+    repeating-linear-gradient(
+      45deg,
+      transparent,
+      transparent 80px,
+      rgba(255,255,255,.015) 80px,
+      rgba(255,255,255,.015) 81px
+    );
+  animation:heroGridShift 20s linear infinite;
+}
+.hero::after {
+  content:'';
+  position:absolute; inset:0; z-index:-1;
+  background:
+    radial-gradient(ellipse 60% 40% at 50% 50%, rgba(255,70,86,.06) 0%, transparent 70%),
+    radial-gradient(ellipse 30% 60% at 20% 80%, rgba(168,127,255,.04) 0%, transparent 60%),
+    radial-gradient(ellipse 40% 30% at 80% 20%, rgba(63,207,207,.04) 0%, transparent 60%);
+  animation:heroGlowPulse 6s ease-in-out infinite alternate;
+}
+@keyframes heroGridShift {
+  from { background-position: 0 0, 0 0; }
+  to   { background-position: 160px 160px, -160px 160px; }
+}
+@keyframes heroGlowPulse {
+  0%   { opacity:.6; transform:scale(1); }
+  50%  { opacity:1; transform:scale(1.05); }
+  100% { opacity:.7; transform:scale(.98); }
 }
 .hero-eyebrow{
   display:inline-flex; align-items:center; gap:8px;
