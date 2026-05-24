@@ -10,7 +10,6 @@ const BASE = 'https://api.henrikdev.xyz/valorant';
 
 async function fetchHenrik(path) {
   const url = `${BASE}${path}`;
-  console.log('[HenrikDev] Fetch', url);
   let res;
   try {
     res = await fetch(url, {
@@ -21,7 +20,6 @@ async function fetchHenrik(path) {
     console.error('[HenrikDev] Network error', e);
     throw new Error('NETWORK');
   }
-  console.log('[HenrikDev] Status', res.status);
   if (res.status === 429) throw new Error('RATE_LIMIT');
   if (res.status === 401) throw new Error('AUTH_REQUIRED');
   if (res.status === 403) throw new Error('COMPTE_PRIVE'); // Compte privé ou région incorrecte
@@ -75,7 +73,6 @@ export async function syncPlayer(player) {
     seasonWins      = currentAct.wins  ?? null;
     currentSeasonId = currentAct.season?.id ?? null;
     if (seasonGames > 0) seasonWr = Math.round((seasonWins / seasonGames) * 100);
-    console.log(`[HenrikDev] ${name}: ${currentAct.season?.short} — ${seasonWins}W/${seasonGames}G = ${seasonWr}%WR`);
   }
 
   // 2. Matchs compétitifs — on essaie d'abord avec le puuid (plus de données)
@@ -110,7 +107,6 @@ export async function syncPlayer(player) {
     if (allMatches.length > 0) {
       const sample = allMatches[0]?.metadata?.game_start;
       const sampleDate = sample ? new Date(sample * 1000).toLocaleDateString('fr-FR') : 'N/A';
-      console.log(`[HenrikDev] ${name}: ${allMatches.length} matchs total, dernier: ${sampleDate}, filtrés 75j: ${ml.length}`);
     }
     // Fallback si aucun match récent (joueur inactif ce trimestre)
     if (ml.length === 0) ml = allMatches.slice(0, 15);
@@ -124,8 +120,6 @@ export async function syncPlayer(player) {
       const firstMatch = ml[0];
       const firstPlayers = firstMatch.players?.all_players || [];
       const nameTagList = firstPlayers.map(p => `${p.name}#${p.tag}(${p.puuid?.slice(0,8)})`).join(', ');
-      console.log(`[HenrikDev] ${name} — first match players: ${nameTagList.slice(0, 200)}`);
-      console.log(`[HenrikDev] ${name} — looking for puuid:${playerPuuid?.slice(0,8)} or name:${name}#${tag}`);
     }
 
     let foundCount = 0;
@@ -167,7 +161,6 @@ export async function syncPlayer(player) {
 
     games = counted;
 
-    console.log(`[HenrikDev] ${name} — trouvé dans ${foundCount}/${ml.length} matchs, agentMap:`, Object.keys(agentMap));
     topAgents = Object.values(agentMap)
       .sort((a, b) => b.games - a.games)
       .slice(0, 3);
