@@ -422,20 +422,15 @@ body.agent-mode .footer{ display:none; }
 }
 .nav-maps-menu-item:hover img { opacity: 1; }
 
-/* Map navigation arrows */
-.map-nav-arrows {
-  display: flex; justify-content: space-between; align-items: center;
-  padding: 10px 0; margin-bottom: 0;
-}
-.map-arrow {
-  display: flex; align-items: center; gap: 8px;
-  background: transparent; border: 1px solid var(--border2);
-  color: var(--muted); cursor: pointer; padding: 8px 16px;
-  font-family: 'Tomorrow', sans-serif; font-size: 11px; font-weight: 600;
-  letter-spacing: 1.5px; text-transform: uppercase;
+/* Map side arrows */
+.map-side-arrow {
+  position: fixed; top: 50%; transform: translateY(-50%);
+  z-index: 50; background: rgba(10,12,16,.8);
+  border: 1px solid var(--border2); color: var(--muted);
+  cursor: pointer; width: 38px; height: 60px;
+  font-size: 20px; display: flex; align-items: center; justify-content: center;
   transition: all .2s;
 }
-.map-arrow:hover { color: var(--red); border-color: var(--red); background: var(--red-low); }
-.map-arrow span:first-child, .map-arrow span:last-child { font-size: 16px; }
-.map-arrow-label { font-size: 11px; }
-.map-arrow-placeholder { width: 120px; }
+.map-side-arrow:hover { color: var(--red); border-color: var(--red); background: rgba(255,70,86,.12); }
+.map-side-left  { left: 0; border-left: none; }
+.map-side-right { right: 0; border-right: none; }

@@ -5,7 +5,7 @@
 
 import { valorantApi } from './api.js';
 
-const SITE_VERSION = '1779663583'; // Auto-updated on push
+const SITE_VERSION = '1779663814'; // Auto-updated on push
 import { syncPlayer as henrikSyncPlayer, syncAllPlayers as henrikSyncAll, persistPlayerStats } from './henrik.js';
 import { rosterHTML, guestCardHTML, mapSectionHTML, stierHTML, globalNotesHTML, navMapsHTML, agentPageHTML, miniRosterHTML, agentsFiltersHTML, agentsGridHTML, compCompareHTML, compBuilderHTML, savedCompsHTML, calloutsHTML } from './render.js';
 import { initTheme, initTilt, initParallax, initSearch, initKeyboard, updateFavCount, initHeroParticles, initWheelLogos } from './interactions.js';
@@ -833,11 +833,22 @@ function renderAll() {
   if (mapsMenu) {
     mapsMenu.innerHTML = state.COMPS_DATA.map((m, i) => {
       const icon = valorantApi.mapIcon(m.map);
-      return `<button class="nav-maps-menu-item" onclick="window.OLYCITY.nav('maps');setTimeout(()=>{const btn=document.querySelector('[data-map-idx=\"${i}\"]');window.OLYCITY.showMap(${i},btn)},50);document.querySelector('.nav-maps-dropdown')?.classList.remove('open')">
+      return `<button class="nav-maps-menu-item" data-map-idx="${i}">
         ${icon ? `<img src="${icon}" alt="${m.map}">` : ''}
         ${m.map}
       </button>`;
     }).join('');
+    mapsMenu.querySelectorAll('.nav-maps-menu-item').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const mi = +btn.dataset.mapIdx;
+        document.querySelector('.nav-maps-dropdown')?.classList.remove('open');
+        window.OLYCITY.nav('maps');
+        setTimeout(() => {
+          const mapBtn = document.querySelector(`[data-map-idx="${mi}"]`);
+          window.OLYCITY.showMap(mi, mapBtn);
+        }, 60);
+      });
+    });
   }
   // Map sections
   document.getElementById('main').innerHTML = state.COMPS_DATA.map((d, i) => mapSectionHTML(d, i)).join('');

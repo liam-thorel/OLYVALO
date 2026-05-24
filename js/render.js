@@ -357,20 +357,8 @@ export function mapSectionHTML(data, idx) {
 
   return `
     <section class="map-section ${idx === 0 ? 'active' : ''}" id="map-${idx}">
-      <div class="map-nav-arrows">
-        ${prevIdx !== null
-          ? `<button class="map-arrow map-arrow-left" onclick="window.OLYCITY.showMap(${prevIdx},document.querySelector('[data-map-idx=\"${prevIdx}\"]'))" title="${state.COMPS_DATA[prevIdx]?.map}">
-              <span>←</span>
-              <span class="map-arrow-label">${state.COMPS_DATA[prevIdx]?.map}</span>
-            </button>`
-          : '<div class="map-arrow-placeholder"></div>'}
-        ${nextIdx !== null
-          ? `<button class="map-arrow map-arrow-right" onclick="window.OLYCITY.showMap(${nextIdx},document.querySelector('[data-map-idx=\"${nextIdx}\"]'))" title="${state.COMPS_DATA[nextIdx]?.map}">
-              <span class="map-arrow-label">${state.COMPS_DATA[nextIdx]?.map}</span>
-              <span>→</span>
-            </button>`
-          : '<div class="map-arrow-placeholder"></div>'}
-      </div>
+      ${prevIdx !== null ? `<button class="map-side-arrow map-side-left" onclick="window.OLYCITY.showMap(${prevIdx},document.querySelector('[data-map-idx=\"${prevIdx}\"]'))">&#8592;</button>` : ''}
+      ${nextIdx !== null ? `<button class="map-side-arrow map-side-right" onclick="window.OLYCITY.showMap(${nextIdx},document.querySelector('[data-map-idx=\"${nextIdx}\"]'))">&#8594;</button>` : ''}
       <div class="map-hero">
         <div class="map-hero-img-wrap">${splashEl}</div>
         <div class="map-hero-grid"></div>
