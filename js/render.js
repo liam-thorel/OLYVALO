@@ -583,7 +583,7 @@ export function getPlayersUsingAgent(name) {
 
 // ─── AGENT PAGE ──────────────────────────────────
 export function agentPageHTML(name) {
-  const pronoun = ['Jett','Sage','Viper','Skye','Reyna','Astra','Neon','Fade','Killjoy','Clove','Deadlock','Waylay','Vyse'].includes(name) ? 'elle joue' : 'il joue';
+  const pronoun = ['Jett','Raze','Sage','Viper','Skye','Reyna','Astra','Neon','Fade','Killjoy','Clove','Deadlock','Waylay','Vyse','Miks'].includes(name) ? 'elle joue' : 'il joue';
   const apiData = valorantApi.agentData(name);
   const frData = state.AGENT_FR[name] || {};
   const role = frData.role || state.ROLES[name] || 'D';
