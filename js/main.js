@@ -5,7 +5,7 @@
 
 import { valorantApi } from './api.js';
 
-const SITE_VERSION = '1779662406'; // Auto-updated on push
+const SITE_VERSION = '1779662460'; // Auto-updated on push
 import { syncPlayer as henrikSyncPlayer, syncAllPlayers as henrikSyncAll, persistPlayerStats } from './henrik.js';
 import { rosterHTML, guestCardHTML, mapSectionHTML, stierHTML, globalNotesHTML, navMapsHTML, agentPageHTML, miniRosterHTML, agentsFiltersHTML, agentsGridHTML, compCompareHTML, compBuilderHTML, savedCompsHTML, calloutsHTML } from './render.js';
 import { initTheme, initTilt, initParallax, initSearch, initKeyboard, updateFavCount } from './interactions.js';
@@ -178,6 +178,29 @@ window.OLYCITY = {
   },
 
   showAgentPage(name) {
+    // Listen for YouTube postMessage to hide cover when video plays
+    const ytListener = (e) => {
+      try {
+        const data = JSON.parse(e.data);
+        // YouTube sends playerState: 1 = playing
+        if (data.event === 'infoDelivery' && data.info?.playerState === 1) {
+          const cover = document.getElementById('agent-video-cover');
+          if (cover) {
+            cover.style.transition = 'opacity 0.8s ease';
+            cover.style.opacity = '0';
+            setTimeout(() => { if (cover) cover.style.display = 'none'; }, 800);
+          }
+          window.removeEventListener('message', ytListener);
+        }
+      } catch(e) {}
+    };
+    window.addEventListener('message', ytListener);
+    // Fallback: remove cover after 5s regardless
+    setTimeout(() => {
+      const cover = document.getElementById('agent-video-cover');
+      if (cover) { cover.style.transition = 'opacity 1s'; cover.style.opacity = '0'; }
+      window.removeEventListener('message', ytListener);
+    }, 5000);
     // Push agent page to history so back button works
     window.history.pushState({ page: 'agent', agent: name }, '', `${window.location.pathname}#agent-${encodeURIComponent(name)}`);
     const page = document.getElementById('agent-page');

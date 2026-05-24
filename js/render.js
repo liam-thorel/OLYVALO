@@ -655,11 +655,11 @@ export function agentPageHTML(name) {
       <div class="agent-hero-video-cover" id="agent-video-cover"></div>
       <iframe
         class="agent-hero-video"
-        src="${src}"
+        id="agent-yt-iframe"
+        src="${src}&enablejsapi=1"
         allow="autoplay; encrypted-media"
         frameborder="0"
         title="${displayName(name)} cinematic"
-        onload="setTimeout(()=>{const c=document.getElementById('agent-video-cover');if(c)c.classList.add('loaded')},3500)"
       ></iframe>
       <div class="agent-hero-video-block"></div>
     </div>` : '';
