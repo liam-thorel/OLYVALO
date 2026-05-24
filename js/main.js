@@ -5,7 +5,7 @@
 
 import { valorantApi } from './api.js';
 
-const SITE_VERSION = '1779648620'; // Auto-updated on push
+const SITE_VERSION = '1779648689'; // Auto-updated on push
 import { syncPlayer as henrikSyncPlayer, syncAllPlayers as henrikSyncAll, persistPlayerStats } from './henrik.js';
 import { rosterHTML, guestCardHTML, mapSectionHTML, stierHTML, globalNotesHTML, navMapsHTML, agentPageHTML, miniRosterHTML, agentsFiltersHTML, agentsGridHTML, compCompareHTML, compBuilderHTML, savedCompsHTML, calloutsHTML } from './render.js';
 import { initTheme, initTilt, initParallax, initSearch, initKeyboard, updateFavCount } from './interactions.js';
@@ -304,13 +304,21 @@ window.OLYCITY = {
   },
 
   _showProfilePicker() {
-    const picker = document.getElementById('profile-picker');
+    // Re-create picker if it was removed after first selection
+    let picker = document.getElementById('profile-picker');
+    if (!picker) {
+      picker = document.createElement('div');
+      picker.id = 'profile-picker';
+      picker.style.cssText = 'display:none;position:fixed;inset:0;z-index:8000;background:#0a0c10;flex-direction:column;align-items:center;justify-content:center;gap:40px;';
+      picker.innerHTML = `
+        <h1 style="font-family:'Tomorrow',sans-serif;font-size:28px;font-weight:700;letter-spacing:6px;text-transform:uppercase;color:#fff">Qui joue ?</h1>
+        <div id="profile-grid" style="display:flex;gap:20px;flex-wrap:wrap;justify-content:center;max-width:800px"></div>
+        <div style="font-family:'Tomorrow',sans-serif;font-size:10px;letter-spacing:2px;text-transform:uppercase;color:rgba(255,255,255,.25)">Ton profil sauvegarde tes comps custom</div>
+      `;
+      document.body.appendChild(picker);
+    }
     const grid = document.getElementById('profile-grid');
-    if (!picker || !grid) return;
-
-    // Hide loading screen first
-    const ls = document.getElementById('loading-screen');
-    if (ls) { ls.style.opacity = '0'; setTimeout(() => ls.remove(), 500); }
+    if (!grid) return;
 
     const profiles = [
       ...state.ROSTER,
