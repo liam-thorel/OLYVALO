@@ -5,7 +5,7 @@
 
 import { valorantApi } from './api.js';
 
-const SITE_VERSION = '1779645488'; // Auto-updated on push
+const SITE_VERSION = '1779645645'; // Auto-updated on push
 import { syncPlayer as henrikSyncPlayer, syncAllPlayers as henrikSyncAll, persistPlayerStats } from './henrik.js';
 import { rosterHTML, guestCardHTML, mapSectionHTML, stierHTML, globalNotesHTML, navMapsHTML, agentPageHTML, miniRosterHTML, agentsFiltersHTML, agentsGridHTML, compCompareHTML, compBuilderHTML, savedCompsHTML, calloutsHTML } from './render.js';
 import { initTheme, initTilt, initParallax, initSearch, initKeyboard, updateFavCount } from './interactions.js';
@@ -498,7 +498,7 @@ window.OLYCITY = {
     const encoded = encodeURIComponent(name);
     const url = site === 'tracker'
       ? `https://tracker.gg/valorant/profile/riot/${encoded}%23${tag}/overview`
-      : `https://vtl.lol/${encoded}%23${tag}`;
+      : `https://valorant.op.gg/profile/${encoded}-${encodeURIComponent(tag)}`;
     window.open(url, '_blank');
     event?.preventDefault();
     return false;
