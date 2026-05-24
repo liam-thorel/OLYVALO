@@ -45,9 +45,9 @@
 
 /* Transparent overlay to block YouTube hover controls */
 .agent-hero-video-block{
-  position:absolute; inset:0; z-index:2;
+  position:absolute; inset:-20px; z-index:5;
   background:transparent;
-  pointer-events:all; /* intercepts mouse = no YouTube controls */
+  pointer-events:all;
   cursor:default;
 }
 
