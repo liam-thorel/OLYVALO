@@ -652,11 +652,9 @@ export function agentPageHTML(name) {
   const src = trailerSrc(trailer);
   const videoEl = src ? `
     <div class="agent-hero-video-wrap">
-      <div class="agent-hero-video-cover" id="agent-video-cover"></div>
       <iframe
         class="agent-hero-video"
-        id="agent-yt-iframe"
-        src="${src}&enablejsapi=1"
+        src="${src}"
         allow="autoplay; encrypted-media"
         frameborder="0"
         title="${displayName(name)} cinematic"

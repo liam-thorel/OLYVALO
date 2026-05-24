@@ -36,15 +36,16 @@
 }
 /* Overlay to hide YouTube thumbnail+play button on load */
 .agent-hero-video-cover{
-  position:absolute; inset:0; z-index:6;
+  position:absolute; inset:0; z-index:1;
   background:var(--bg-deep);
-  transition:opacity 1s ease;
-  pointer-events:none; /* laisser la vidéo recevoir les events pour démarrer */
+  transition:opacity 1.5s ease 1s;
+  pointer-events:none;
 }
+.agent-hero-video-cover.loaded{ opacity:0; }
 
 /* Transparent overlay to block YouTube hover controls */
 .agent-hero-video-block{
-  position:absolute; inset:-20px; z-index:5;
+  position:absolute; inset:0; z-index:2;
   background:transparent;
   pointer-events:all;
   cursor:default;
