@@ -186,11 +186,12 @@
 .search-input::placeholder{ color:var(--dim); }
 
 .search-results{
-  display:none; position:absolute; top:100%; right:0;
+  display:none; position:fixed; top:56px; right:16px;
   background:var(--surf); border:1px solid var(--border2);
   min-width:280px; max-height:400px; overflow-y:auto;
-  margin-top:6px; z-index:200;
-  box-shadow:0 20px 40px -10px rgba(0,0,0,.5);
+  margin-top:0;
+  box-shadow:0 8px 32px rgba(0,0,0,.6);
+  z-index:400;
 }
 .search-results.show{ display:block; }
 .search-result-item{

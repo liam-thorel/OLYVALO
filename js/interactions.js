@@ -94,7 +94,8 @@ export function initSearch(onAgentSelect) {
       searchResults.classList.add('show');
       return;
     }
-    searchResults.innerHTML = matches.slice(0, 8).map(name => {
+    // Agents
+    const agentItems = matches.slice(0, 5).map(name => {
       const img = valorantApi.agentImg(name);
       const display = name === 'KAY/O' ? 'KAYO' : name;
       const occurrences = idx[name];
@@ -106,23 +107,56 @@ export function initSearch(onAgentSelect) {
       const detail = occurrences.length > 0
         ? `${roleLabel} · ${occurrences.length} comp${occurrences.length > 1 ? 's' : ''}`
         : `${roleLabel} · Hors meta`;
-      return `<div class="search-result-item" data-agent="${name}">
+      return `<div class="search-result-item" data-agent="${name}" data-type="agent">
         <div class="search-result-thumb">${imgEl}</div>
         <div class="search-result-info">
           <span class="search-result-name">${display}</span>
           <span class="search-result-detail">${detail}</span>
         </div>
+        <span style="font-size:8px;letter-spacing:1.5px;color:var(--dim);text-transform:uppercase;flex-shrink:0">Agent</span>
       </div>`;
     }).join('');
+
+    // Maps
+    const mapsData = state.COMPS_DATA || [];
+    const mapMatches = mapsData.filter(m => m.map.toLowerCase().includes(qLower));
+    const mapItems = mapMatches.slice(0, 3).map((m, i) => {
+      const mi = mapsData.indexOf(m);
+      const mapIcon = valorantApi.maps[m.map]?.icon;
+      const iconEl = mapIcon
+        ? `<img src="${mapIcon}" style="width:36px;height:22px;object-fit:cover;object-position:center;flex-shrink:0">`
+        : `<div class="portrait-ph" style="width:36px;height:22px;font-size:10px">${m.map[0]}</div>`;
+      return `<div class="search-result-item" data-map-idx="${mi}" data-type="map">
+        <div class="search-result-thumb" style="width:36px;height:22px;overflow:hidden">${iconEl}</div>
+        <div class="search-result-info">
+          <span class="search-result-name">${m.map}</span>
+          <span class="search-result-detail">${m.comps.length} comps · ${m.stats.difficulty}</span>
+        </div>
+        <span style="font-size:8px;letter-spacing:1.5px;color:var(--dim);text-transform:uppercase;flex-shrink:0">Map</span>
+      </div>`;
+    }).join('');
+
+    const sep = agentItems && mapItems
+      ? `<div style="height:1px;background:var(--border);margin:2px 0"></div>` : '';
+
+    searchResults.innerHTML = agentItems + sep + mapItems;
     searchResults.classList.add('show');
 
-    // Bind click on each result
+    // Bind clicks
     searchResults.querySelectorAll('.search-result-item').forEach(item => {
       item.addEventListener('click', () => {
-        const name = item.dataset.agent;
         searchInput.value = '';
         searchResults.classList.remove('show');
-        onAgentSelect(name);
+        if (item.dataset.type === 'agent') {
+          onAgentSelect(item.dataset.agent);
+        } else if (item.dataset.type === 'map') {
+          const mi = +item.dataset.mapIdx;
+          window.OLYCITY.nav('maps');
+          setTimeout(() => {
+            const btn = document.querySelector(`[data-map-idx="${mi}"]`);
+            window.OLYCITY.showMap(mi, btn);
+          }, 120);
+        }
       });
     });
   }
