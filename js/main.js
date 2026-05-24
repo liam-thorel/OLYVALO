@@ -5,7 +5,7 @@
 
 import { valorantApi } from './api.js';
 
-const SITE_VERSION = '1779647165'; // Auto-updated on push
+const SITE_VERSION = '1779647682'; // Auto-updated on push
 import { syncPlayer as henrikSyncPlayer, syncAllPlayers as henrikSyncAll, persistPlayerStats } from './henrik.js';
 import { rosterHTML, guestCardHTML, mapSectionHTML, stierHTML, globalNotesHTML, navMapsHTML, agentPageHTML, miniRosterHTML, agentsFiltersHTML, agentsGridHTML, compCompareHTML, compBuilderHTML, savedCompsHTML, calloutsHTML } from './render.js';
 import { initTheme, initTilt, initParallax, initSearch, initKeyboard, updateFavCount } from './interactions.js';
@@ -28,6 +28,7 @@ export const state = {
   compareSelections: [],
   builderSlots: [null,null,null,null,null],
   builderFocusSlot: 0,
+  builderMapIdx: null,
   LINEUPS: {},
   CALLOUTS: {},
   currentCompIdx: {},
@@ -299,6 +300,79 @@ window.OLYCITY = {
     state.builderFocusSlot = 0;
     window.OLYCITY._renderBuilder();
     localStorage.removeItem('olycity-builder');
+  },
+
+  builderSetMap(mapIdx) {
+    state.builderMapIdx = mapIdx !== '' ? +mapIdx : null;
+    // Update context label
+    const ctx = document.getElementById('builder-map-context');
+    if (ctx && mapIdx !== '') {
+      const m = state.COMPS_DATA[+mapIdx];
+      ctx.textContent = m ? `${m.stats.difficulty} · ${m.stats.sides}` : '';
+    } else if (ctx) ctx.textContent = '';
+  },
+
+  savedCompCompare(i) {
+    try {
+      const saved = JSON.parse(localStorage.getItem('olycity-saved-comps') || '[]');
+      if (!saved[i]) return;
+      const comp = saved[i];
+      const roleScores = {
+        D:{antiRush:2,postPlant:2,retake:3,split:4},
+        I:{antiRush:4,postPlant:3,retake:3,split:3},
+        S:{antiRush:4,postPlant:4,retake:2,split:2},
+        C:{antiRush:3,postPlant:5,retake:3,split:3},
+      };
+      const keys = ['antiRush','postPlant','retake','split'];
+      const agility = {};
+      keys.forEach(k => {
+        let total = 0;
+        (comp.agents||[]).forEach(a => { total += (roleScores[state.ROLES[a]||'D']?.[k]||3); });
+        agility[k] = comp.agents.length > 0 ? Math.min(5, Math.round(total/comp.agents.length)) : 0;
+      });
+      const savedComp = {
+        label: comp.name, tierLabel: 'CUSTOM', tier: 'X',
+        agents: comp.agents, winrate: 0,
+        tip: 'Comp sauvegardée depuis le Builder OLYCITY', agility,
+      };
+      // Open picker to choose what to compare against
+      window.OLYCITY._compareAgainst = savedComp;
+      const list = document.getElementById('builder-compare-list');
+      if (list) {
+        list.innerHTML = state.COMPS_DATA.flatMap((mapData, mi) =>
+          mapData.comps.filter(c => c.tier !== 'F').map((metaComp, ci) => {
+            const tierCls = metaComp.tier === 'S' ? 'tier-s' : 'tier-a';
+            const agentImgs = metaComp.agents.slice(0,5).map(a => {
+              const img = valorantApi.agentImg(a);
+              return img ? `<img src="${img}" style="width:28px;height:36px;object-fit:cover;object-position:top center;border:1px solid var(--border)">` : '';
+            }).join('');
+            return `<div style="display:flex;align-items:center;gap:12px;padding:10px 14px;background:var(--surf2);border:1px solid var(--border);cursor:pointer;transition:border-color .15s"
+              onmouseover="this.style.borderColor='var(--gold)'" onmouseout="this.style.borderColor='var(--border)'"
+              onclick="window.OLYCITY._runSavedCompare(${mi},${ci})">
+              <span style="font-family:Tomorrow,sans-serif;font-size:9px;letter-spacing:1px;color:var(--muted);min-width:52px">${mapData.map}</span>
+              <span class="comp-tier ${tierCls}" style="font-size:8px;padding:1px 6px">${metaComp.tierLabel}</span>
+              <span style="font-family:Tomorrow,sans-serif;font-size:11px;font-weight:600;color:var(--text);flex:1">${metaComp.label}</span>
+              <div style="display:flex;gap:3px">${agentImgs}</div>
+            </div>`;
+          })
+        ).join('');
+      }
+      document.getElementById('builder-compare-modal').style.display = 'block';
+    } catch(e) { console.error(e); }
+  },
+
+  _runSavedCompare(mapIdx, compIdx) {
+    document.getElementById('builder-compare-modal').style.display = 'none';
+    const metaComp = state.COMPS_DATA[mapIdx]?.comps[compIdx];
+    const savedComp = window.OLYCITY._compareAgainst;
+    if (!metaComp || !savedComp) return;
+    const wrap = document.getElementById('compare-panel-wrap');
+    const inner = document.getElementById('compare-panel-content');
+    if (wrap && inner) {
+      inner.innerHTML = compCompareHTML(savedComp, metaComp);
+      wrap.style.display = 'block';
+      wrap.scrollTo(0, 0);
+    }
   },
 
   builderLoad(i) {

@@ -969,7 +969,8 @@ export function savedCompsHTML() {
       <div class="saved-comp-date">Créée le ${date} · ${comp.agents?.length || 0} agents</div>
       <div class="saved-comp-actions">
         <button class="saved-comp-btn load" onclick="window.OLYCITY.builderLoad(${i})">↺ Charger</button>
-        <button class="saved-comp-btn del" onclick="window.OLYCITY.savedCompDelete(${i})">✕ Supprimer</button>
+        <button class="saved-comp-btn" onclick="window.OLYCITY.savedCompCompare(${i})" style="color:var(--gold);border-color:rgba(245,200,66,.3)">⇄ Comparer</button>
+        <button class="saved-comp-btn del" onclick="window.OLYCITY.savedCompDelete(${i})">✕ Sup.</button>
       </div>
     </div>`;
   }).join('');
@@ -1037,6 +1038,85 @@ export function compCompareHTML(compA, compB) {
   const tierA = compA.tier === 'S' ? 'tier-s' : 'tier-a';
   const tierB = compB.tier === 'S' ? 'tier-s' : 'tier-a';
 
+  // ─── Smart analysis ─────────────────────────────
+  function analyzeComps(cA, cB) {
+    const roleCount = (comp) => {
+      const agents = comp.agents || [];
+      return agents.reduce((acc, a) => {
+        const r = state.ROLES[a] || 'D';
+        acc[r] = (acc[r] || 0) + 1;
+        return acc;
+      }, {});
+    };
+    const rA = roleCount(cA), rB = roleCount(cB);
+    const agilityKeys = ['antiRush','postPlant','retake','split'];
+    const agilityLabels = { antiRush:'anti-rush', postPlant:'post-plant', retake:'retake', split:'split' };
+
+    const advantages = [], disadvantages = [];
+
+    // WR comparison
+    if (cA.winrate && cB.winrate) {
+      const diff = (cA.winrate - cB.winrate).toFixed(1);
+      if (Math.abs(diff) >= 1) {
+        const better = diff > 0 ? cA.label : cB.label;
+        const worse = diff > 0 ? cB.label : cA.label;
+        advantages.push(`<strong>${better}</strong> a un meilleur winrate sourcé (+${Math.abs(diff)}%)`);
+      }
+    }
+
+    // Agility advantages
+    agilityKeys.forEach(k => {
+      const vA = cA.agility?.[k] || 0;
+      const vB = cB.agility?.[k] || 0;
+      if (vA - vB >= 2) advantages.push(`<strong>${cA.label}</strong> est nettement supérieure en ${agilityLabels[k]}`);
+      else if (vB - vA >= 2) advantages.push(`<strong>${cB.label}</strong> est nettement supérieure en ${agilityLabels[k]}`);
+    });
+
+    // Role analysis
+    const duelA = rA.D || 0, duelB = rB.D || 0;
+    const ctrlA = rA.C || 0, ctrlB = rB.C || 0;
+    const initA = rA.I || 0, initB = rB.I || 0;
+    const sentA = rA.S || 0, sentB = rB.S || 0;
+
+    if (duelA > duelB) advantages.push(`<strong>${cA.label}</strong> est plus agressive (${duelA} duellist${duelA > 1 ? 's' : ''} vs ${duelB})`);
+    else if (duelB > duelA) advantages.push(`<strong>${cB.label}</strong> est plus agressive (${duelB} duellist${duelB > 1 ? 's' : ''} vs ${duelA})`);
+
+    if (ctrlA > ctrlB) advantages.push(`<strong>${cA.label}</strong> a plus de contrôle map (${ctrlA} controller${ctrlA > 1 ? 's' : ''})`);
+    else if (ctrlB > ctrlA) advantages.push(`<strong>${cB.label}</strong> a plus de contrôle map (${ctrlB} controller${ctrlB > 1 ? 's' : ''})`);
+
+    if (initA > initB) advantages.push(`<strong>${cA.label}</strong> a plus d'information (${initA} initiateur${initA > 1 ? 's' : ''})`);
+    else if (initB > initA) advantages.push(`<strong>${cB.label}</strong> a plus d'information (${initB} initiateur${initB > 1 ? 's' : ''})`);
+
+    // Défauts
+    if (duelA >= 2 && ctrlA === 0) disadvantages.push(`<strong>${cA.label}</strong> manque de smokes — exécutes difficiles sans controller`);
+    if (duelB >= 2 && ctrlB === 0) disadvantages.push(`<strong>${cB.label}</strong> manque de smokes — exécutes difficiles sans controller`);
+    if (sentA === 0) disadvantages.push(`<strong>${cA.label}</strong> n'a pas de sentinel — flancs et anchors vulnérables`);
+    if (sentB === 0) disadvantages.push(`<strong>${cB.label}</strong> n'a pas de sentinel — flancs et anchors vulnérables`);
+    if (initA === 0) disadvantages.push(`<strong>${cA.label}</strong> manque d'info — difficile de clear les angles en exécute`);
+    if (initB === 0) disadvantages.push(`<strong>${cB.label}</strong> manque d'info — difficile de clear les angles en exécute`);
+
+    if (!advantages.length && !disadvantages.length) {
+      return '<p style="color:var(--muted);font-size:13px">Les deux comps sont équilibrées — aucun avantage décisif.</p>';
+    }
+
+    const html = [];
+    if (advantages.length) {
+      html.push(`<div style="margin-bottom:10px">
+        <div style="font-family:'Tomorrow',sans-serif;font-size:9px;letter-spacing:2px;text-transform:uppercase;color:var(--S);margin-bottom:6px">✓ Avantages</div>
+        ${advantages.map(a => `<div style="font-size:12.5px;color:var(--muted);line-height:1.6;padding:2px 0">${a}</div>`).join('')}
+      </div>`);
+    }
+    if (disadvantages.length) {
+      html.push(`<div>
+        <div style="font-family:'Tomorrow',sans-serif;font-size:9px;letter-spacing:2px;text-transform:uppercase;color:var(--D);margin-bottom:6px">✗ Défauts</div>
+        ${disadvantages.map(d => `<div style="font-size:12.5px;color:var(--muted);line-height:1.6;padding:2px 0">${d}</div>`).join('')}
+      </div>`);
+    }
+    return html.join('');
+  }
+
+  const analysisHTML = analyzeComps(compA, compB);
+
   return `<div class="comp-compare-panel active">
     <div class="comp-compare-header">
       <div class="comp-compare-title">
@@ -1077,6 +1157,13 @@ export function compCompareHTML(compA, compB) {
         <div class="comp-compare-tip">${compB.tip}</div>
       </div>
 
+    </div>
+    <div style="padding:20px 28px;border-top:1px solid var(--border);background:var(--surf2)">
+      <div style="font-family:'Tomorrow',sans-serif;font-size:10px;font-weight:700;
+        letter-spacing:3px;text-transform:uppercase;color:var(--text);margin-bottom:12px">
+        Analyse OLYCITY
+      </div>
+      ${analysisHTML}
     </div>
   </div>`;
 }
@@ -1133,8 +1220,24 @@ export function compBuilderHTML(slots = [null,null,null,null,null]) {
     </div>`;
   }).join('');
 
+  const mapOptions = state.COMPS_DATA.map((m, i) =>
+    `<option value="${i}">${m.map}</option>`
+  ).join('');
+
   return `<div class="comp-builder-section">
     <div class="comp-builder-title">Comp Builder</div>
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:20px;flex-wrap:wrap">
+      <span style="font-family:'Tomorrow',sans-serif;font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--muted)">Map :</span>
+      <select id="builder-map-select" onchange="window.OLYCITY.builderSetMap(this.value)"
+        style="background:var(--surf2);border:1px solid var(--border2);color:var(--text);
+               padding:8px 16px;font-family:'Tomorrow',sans-serif;font-size:12px;
+               outline:none;cursor:pointer;min-width:140px">
+        <option value="">— Aucune —</option>
+        ${mapOptions}
+      </select>
+      <span id="builder-map-context" style="font-family:'Tomorrow',sans-serif;font-size:10px;
+        letter-spacing:1px;color:var(--dim);text-transform:uppercase"></span>
+    </div>
     <div class="comp-builder-slots">${slotsHTML}</div>
     <div style="font-family:'Tomorrow',sans-serif;font-size:9px;letter-spacing:2px;text-transform:uppercase;color:var(--muted);margin-bottom:10px">
       Choisir les agents :
