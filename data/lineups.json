@@ -177,43 +177,43 @@
         "name": "[DEF] Setup A Site complet",
         "type": "DEF",
         "diff": "Moyen",
-        "videoId": "IeyWG0WYlnI",
-        "start": 7,
+        "videoId": "AG2E4X2ODFg",
+        "start": 15,
         "desc": "Setup Cypher A Site — cam, tripwire et cage coordonnés pour hold A seul"
       },
       {
-        "name": "[DEF] Setup B Site",
+        "name": "[DEF] Setup B Mid",
         "type": "DEF",
         "diff": "Facile",
-        "videoId": "IeyWG0WYlnI",
+        "videoId": "AG2E4X2ODFg",
         "start": 90,
-        "desc": "Hold B Site avec une seule cam bien placée — couvre B Short et B Long"
+        "desc": "Cam B Mid depuis B Short — couvre B Long et B Mid sans risque"
       },
       {
         "name": "[DEF] Setup C Site",
         "type": "DEF",
         "diff": "Moyen",
-        "videoId": "IeyWG0WYlnI",
+        "videoId": "AG2E4X2ODFg",
         "start": 180,
-        "desc": "Tripwires C Long et cage C Site — impossible de clear sans se faire spotter"
+        "desc": "Tripwires C Long et cage C — impossible de clear sans se faire spotter"
       }
     ],
     "Breach": [
       {
-        "name": "[ATK] Aftershock C Default",
-        "type": "ATK",
-        "diff": "Moyen",
-        "videoId": "Rux0HjzKQbw",
-        "start": 55,
-        "desc": "Aftershock post-plant C depuis Garage à travers le mur"
-      },
-      {
         "name": "[ATK] Flash A Long",
         "type": "ATK",
         "diff": "Facile",
-        "videoId": "Rux0HjzKQbw",
-        "start": 0,
-        "desc": "Flash à travers le mur A Long depuis le spawn ATK"
+        "videoId": "R_njZnidXn0",
+        "start": 7,
+        "desc": "Flash Breach à travers le mur A Long — pop les DEF avant que tu entres sur A Site"
+      },
+      {
+        "name": "[ATK] Stun C Long",
+        "type": "ATK",
+        "diff": "Moyen",
+        "videoId": "R_njZnidXn0",
+        "start": 55,
+        "desc": "Fault Line C Long depuis le spawn ATK — stun les DEF avant l'execute C"
       }
     ]
   },
@@ -332,36 +332,36 @@
     ],
     "Fade": [
       {
-        "name": "A Main God Reveal DEF",
+        "name": "[DEF] A Main God Reveal",
         "type": "DEF",
         "diff": "Facile",
-        "videoId": "Gb0RESvGUZw",
+        "videoId": "MpwJ4hoWnmg",
         "start": 7,
         "desc": "Haunt A Main depuis le spawn DEF — reveal immédiat d'une push ATK A"
       },
       {
-        "name": "C God Retake",
-        "type": "DEF",
-        "diff": "Moyen",
-        "videoId": "Gb0RESvGUZw",
-        "start": 179,
-        "desc": "Haunt pour retake C depuis B Site — reveal tous les ATK plantés sur C"
-      },
-      {
-        "name": "A Main God Reveal ATK",
+        "name": "[ATK] A Site Reveal",
         "type": "ATK",
         "diff": "Facile",
-        "videoId": "Gb0RESvGUZw",
-        "start": 203,
-        "desc": "Haunt A Main depuis le spawn ATK avant d'avancer"
+        "videoId": "MpwJ4hoWnmg",
+        "start": 80,
+        "desc": "Haunt A Site depuis A Roots avant l'execute"
       },
       {
-        "name": "C Site God Reveal ATK",
+        "name": "[ATK] B Site Reveal",
         "type": "ATK",
+        "diff": "Facile",
+        "videoId": "MpwJ4hoWnmg",
+        "start": 160,
+        "desc": "Haunt B Site depuis B Lobby — révèle le back site"
+      },
+      {
+        "name": "[DEF] C Retake Reveal",
+        "type": "DEF",
         "diff": "Moyen",
-        "videoId": "Gb0RESvGUZw",
-        "start": 333,
-        "desc": "Haunt C Site depuis C Main — révèle le back site et les angles cachés"
+        "videoId": "MpwJ4hoWnmg",
+        "start": 240,
+        "desc": "Haunt pour retake C depuis B — reveal toutes les positions ATK plantées"
       }
     ],
     "Viper": [
@@ -414,24 +414,6 @@
         "videoId": "jJ3dqccSUxo",
         "start": 120,
         "desc": "Post-plant nanoswarm C depuis C Lobby — piège le défenseur sur le défuse"
-      }
-    ],
-    "Breach": [
-      {
-        "name": "[ATK] Aftershock A Site",
-        "type": "ATK",
-        "diff": "Moyen",
-        "videoId": "vP-_67t2mjw",
-        "start": 160,
-        "desc": "Aftershock à travers le mur A pour post-plant — impossible à défuser"
-      },
-      {
-        "name": "[ATK] Faille A Ramp",
-        "type": "ATK",
-        "diff": "Moyen",
-        "videoId": "vP-_67t2mjw",
-        "start": 250,
-        "desc": "Fault Line à travers le mur A pour stun les DEF avant l'execute"
       }
     ]
   },
@@ -623,25 +605,17 @@
         "name": "[ATK] Nanoswarm A Default",
         "type": "ATK",
         "diff": "Facile",
-        "videoId": "LX5HQAI9Kpk",
+        "videoId": "zIvYoL9FEpc",
         "start": 7,
-        "desc": "Molly sur le plant A par défaut depuis A Lobby"
+        "desc": "Molly sur le plant A par défaut depuis A Lobby — standard Split"
       },
       {
         "name": "[ATK] Nanoswarm B Default",
         "type": "ATK",
         "diff": "Facile",
-        "videoId": "LX5HQAI9Kpk",
+        "videoId": "zIvYoL9FEpc",
         "start": 60,
         "desc": "Nanoswarm B default depuis B Lobby — position safe derrière les caisses"
-      },
-      {
-        "name": "[DEF] Alarm Bot Setup A",
-        "type": "DEF",
-        "diff": "Facile",
-        "videoId": "LX5HQAI9Kpk",
-        "start": 120,
-        "desc": "Setup défensif complet A Site — tripwire + cam + nanoswarm coordonnés"
       }
     ],
     "Cypher": [
@@ -683,17 +657,25 @@
         "name": "[ATK] Aftershock A Default",
         "type": "ATK",
         "diff": "Moyen",
-        "videoId": "Rux0HjzKQbw",
-        "start": 60,
-        "desc": "Aftershock post-plant A depuis A Ramp à travers le mur — standard sur Split"
+        "videoId": "vasHyOtSPNw",
+        "start": 249,
+        "desc": "Aftershock post-plant A depuis A Ramp à travers le mur — bloque le défuse sur le plant default"
       },
       {
-        "name": "[ATK] Flash A Ramp",
+        "name": "[ATK] Fault Line A Ramp",
         "type": "ATK",
         "diff": "Facile",
-        "videoId": "Rux0HjzKQbw",
-        "start": 120,
-        "desc": "Flashbang à travers le mur A Ramp pour forcer les DEF à sortir de position"
+        "videoId": "vasHyOtSPNw",
+        "start": 9,
+        "desc": "Fault Line depuis le spawn ATK pour stun les DEF sur A Ramp avant d'entrer"
+      },
+      {
+        "name": "[DEF] Aftershock B Main",
+        "type": "DEF",
+        "diff": "Moyen",
+        "videoId": "vasHyOtSPNw",
+        "start": 735,
+        "desc": "Aftershock défensif B Main à travers le mur — ralentit l'execute B et donne du temps pour tourner"
       }
     ]
   },
@@ -771,15 +753,15 @@
         "name": "[ATK] Nanoswarm A Default",
         "type": "ATK",
         "diff": "Moyen",
-        "videoId": "RJanDlYAAeo",
+        "videoId": "gg51lVUxH24",
         "start": 7,
-        "desc": "Post-plant molly A default depuis A Main — impossible à défuser sans mourir"
+        "desc": "Post-plant molly A default depuis A Main"
       },
       {
         "name": "[ATK] Nanoswarm B Default",
         "type": "ATK",
         "diff": "Moyen",
-        "videoId": "RJanDlYAAeo",
+        "videoId": "gg51lVUxH24",
         "start": 60,
         "desc": "Post-plant nanoswarm B default depuis B Long"
       }

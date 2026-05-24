@@ -34,12 +34,17 @@ export const valorantApi = {
       this.maps[m.displayName] = {
         splash: m.splash,
         icon: m.displayIcon,
+        minimap: m.displayIcon, // top-down minimap view
       };
     });
   },
 
   agentImg(name) {
     return this.agents[name]?.portrait || this.agents[name]?.icon || null;
+  },
+
+  mapMinimap(name) {
+    return this.maps[name]?.icon || null;
   },
 
   agentFullImg(name) {
