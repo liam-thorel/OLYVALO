@@ -1429,3 +1429,66 @@ button.comp-tab.fun-tab {
 .callout-legend-dot {
   width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0;
 }
+
+/* ════════════════════════════════════════════════
+   GUEST CARD — recherche de pseudo
+   ════════════════════════════════════════════════ */
+.guest-card {
+  background: var(--surf); border: 1px dashed var(--border2);
+  padding: 20px; display: flex; flex-direction: column;
+  gap: 14px; min-width: 220px; flex: 1;
+  transition: border-color .2s;
+}
+.guest-card:hover { border-color: var(--red-mid); }
+.guest-card-title {
+  font-family: 'Tomorrow', sans-serif; font-size: 11px; font-weight: 600;
+  letter-spacing: 3px; text-transform: uppercase; color: var(--dim);
+  display: flex; align-items: center; gap: 8px;
+}
+.guest-card-title::before {
+  content: ''; width: 8px; height: 8px;
+  border: 1px dashed var(--border2); border-radius: 50%;
+}
+.guest-input-wrap {
+  display: flex; gap: 0; position: relative;
+}
+.guest-input {
+  flex: 1; background: var(--surf2); border: 1px solid var(--border2);
+  border-right: none; color: var(--text); padding: 9px 12px;
+  font-family: 'Tomorrow', sans-serif; font-size: 12px;
+  outline: none; transition: border-color .15s;
+}
+.guest-input:focus { border-color: var(--red-mid); }
+.guest-input::placeholder { color: var(--dim); font-size: 11px; }
+.guest-input-sep {
+  display: flex; align-items: center; justify-content: center;
+  background: var(--surf3); border: 1px solid var(--border2);
+  border-right: none; padding: 0 8px;
+  font-family: 'Tomorrow', sans-serif; font-size: 14px; color: var(--dim);
+}
+.guest-tag-input {
+  width: 72px; background: var(--surf2); border: 1px solid var(--border2);
+  color: var(--text); padding: 9px 10px;
+  font-family: 'Tomorrow', sans-serif; font-size: 12px;
+  outline: none; transition: border-color .15s;
+}
+.guest-tag-input:focus { border-color: var(--red-mid); }
+.guest-tag-input::placeholder { color: var(--dim); font-size: 11px; }
+.guest-links {
+  display: flex; flex-direction: column; gap: 6px;
+}
+.guest-link-btn {
+  display: flex; align-items: center; gap: 8px;
+  background: var(--surf2); border: 1px solid var(--border);
+  color: var(--muted); padding: 9px 14px; cursor: pointer;
+  font-family: 'Tomorrow', sans-serif; font-size: 10px; font-weight: 600;
+  letter-spacing: 1.5px; text-transform: uppercase;
+  text-decoration: none; transition: all .15s;
+}
+.guest-link-btn:hover { color: var(--text); border-color: var(--border2); background: var(--surf3); }
+.guest-link-btn.tracker:hover { color: #e8a838; border-color: rgba(232,168,56,.4); }
+.guest-link-btn.vlr:hover { color: var(--S); border-color: rgba(63,207,207,.4); }
+.guest-hint {
+  font-family: 'Tomorrow', sans-serif; font-size: 9px; letter-spacing: 1px;
+  text-transform: uppercase; color: var(--dim); text-align: center;
+}

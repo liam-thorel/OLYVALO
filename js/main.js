@@ -5,9 +5,9 @@
 
 import { valorantApi } from './api.js';
 
-const SITE_VERSION = '1779644778'; // Auto-updated on push
+const SITE_VERSION = '1779645198'; // Auto-updated on push
 import { syncPlayer as henrikSyncPlayer, syncAllPlayers as henrikSyncAll, persistPlayerStats } from './henrik.js';
-import { rosterHTML, mapSectionHTML, stierHTML, globalNotesHTML, navMapsHTML, agentPageHTML, miniRosterHTML, agentsFiltersHTML, agentsGridHTML, compCompareHTML, compBuilderHTML, savedCompsHTML, calloutsHTML } from './render.js';
+import { rosterHTML, guestCardHTML, mapSectionHTML, stierHTML, globalNotesHTML, navMapsHTML, agentPageHTML, miniRosterHTML, agentsFiltersHTML, agentsGridHTML, compCompareHTML, compBuilderHTML, savedCompsHTML, calloutsHTML } from './render.js';
 import { initTheme, initTilt, initParallax, initSearch, initKeyboard, updateFavCount } from './interactions.js';
 import { storage } from './storage.js';
 
@@ -491,6 +491,19 @@ window.OLYCITY = {
     });
   },
 
+  guestOpen(site, event) {
+    const name = document.getElementById('guest-name')?.value.trim();
+    const tag  = document.getElementById('guest-tag')?.value.trim();
+    if (!name || !tag) { event?.preventDefault(); return false; }
+    const encoded = encodeURIComponent(name);
+    const url = site === 'tracker'
+      ? `https://tracker.gg/valorant/profile/riot/${encoded}%23${tag}/overview`
+      : `https://vtl.lol/${encoded}%23${tag}`;
+    window.open(url, '_blank');
+    event?.preventDefault();
+    return false;
+  },
+
   filterAgents(role, btn) {
     // Update active button
     document.querySelectorAll('.agent-filter-btn').forEach(b => b.classList.remove('active'));
@@ -511,7 +524,7 @@ window.OLYCITY = {
       persistPlayerStats(playerName, stats);
 
       // Static mains preserved — HenrikDev only gives 10 matches, not enough for reliable top agents
-      document.getElementById('roster-grid').innerHTML = rosterHTML();
+      document.getElementById('roster-grid').innerHTML = rosterHTML() + guestCardHTML();
       setBtnState(playerName, 'synced', 'Synced ✓');
     } catch (e) {
       const msgs = {
@@ -633,6 +646,16 @@ async function boot() {
 
   renderAll();
   initSearch((name) => window.OLYCITY.showAgentPage(name));
+
+  // Guest card — Enter key support
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Enter') {
+      const active = document.activeElement;
+      if (active?.id === 'guest-name' || active?.id === 'guest-tag') {
+        window.OLYCITY.guestOpen('tracker', null);
+      }
+    }
+  });
 
   // Agents page search
   const agentsInput = document.getElementById('agents-search-input');
