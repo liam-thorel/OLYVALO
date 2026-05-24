@@ -88,17 +88,21 @@ export async function syncPlayer(player) {
     const allMatches = matches?.data || [];
 
     // Filtre par date : on garde les matchs des 75 derniers jours (≈ durée d'un acte)
-    // Plus fiable que season_id dont le format varie entre les endpoints HenrikDev
+    // On utilise game_start (Unix timestamp secondes) — plus fiable que game_start_patched
     const cutoff = Date.now() - 75 * 24 * 60 * 60 * 1000;
     let ml = allMatches.filter(m => {
-      const ts = m.metadata?.game_start_patched
-        ? new Date(m.metadata.game_start_patched).getTime()
-        : (m.metadata?.game_start ?? 0) * 1000;
-      return ts >= cutoff;
+      const startSec = m.metadata?.game_start;
+      if (!startSec) return false;
+      return startSec * 1000 >= cutoff;
     });
-    console.log(`[HenrikDev] ${name}: ${allMatches.length} total → ${ml.length} matchs (75j)`);
-    // Fallback si aucun match récent (joueur inactif)
-    if (ml.length === 0) ml = allMatches.slice(0, 10);
+    // Log pour diagnostic
+    if (allMatches.length > 0) {
+      const sample = allMatches[0]?.metadata?.game_start;
+      const sampleDate = sample ? new Date(sample * 1000).toLocaleDateString('fr-FR') : 'N/A';
+      console.log(`[HenrikDev] ${name}: ${allMatches.length} matchs total, dernier: ${sampleDate}, filtrés 75j: ${ml.length}`);
+    }
+    // Fallback si aucun match récent (joueur inactif ce trimestre)
+    if (ml.length === 0) ml = allMatches.slice(0, 15);
     games = ml.length;
 
     const agentMap = {};
