@@ -1577,8 +1577,10 @@ button.comp-tab.fun-tab {
 /* Discord avatar dans player card banner */
 .player-banner-avatar {
   position: absolute; inset: 0;
-  background-size: cover; background-position: center top;
-  filter: brightness(.35) saturate(.8);
+  background-size: contain;
+  background-position: center center;
+  background-repeat: no-repeat;
+  filter: brightness(.4) saturate(.8);
   transition: filter .3s;
 }
-.player-card:hover .player-banner-avatar { filter: brightness(.45) saturate(1); }
+.player-card:hover .player-banner-avatar { filter: brightness(.55) saturate(1); }
