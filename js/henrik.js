@@ -4,7 +4,7 @@
  */
 
 import { CONFIG } from '../config.js';
-import { storage } from './storage.js?v=1779596407';
+import { storage } from './storage.js?v=1779642833';
 
 const BASE = 'https://api.henrikdev.xyz/valorant';
 
@@ -77,14 +77,24 @@ export async function syncPlayer(player) {
     console.log(`[HenrikDev] ${name}: ${currentAct.season?.short} — ${seasonWins}W/${seasonGames}G = ${seasonWr}%WR`);
   }
 
-  // 2. Matchs de l'acte en cours — on fetch 50 et on filtre par season_id
+  // 2. Matchs compétitifs — on essaie d'abord avec le puuid (plus de données)
+  //    puis fallback sur name/tag
   let topAgents = [];
   let kda = null, games = 0;
 
   try {
-    const matches = await fetchHenrik(
-      `/v3/matches/${region}/${encodeURIComponent(name)}/${encodeURIComponent(tag)}?filter=competitive&size=50`
-    );
+    // Fetch with size=50 (max free tier)
+    let matches = null;
+    if (playerPuuid) {
+      matches = await fetchHenrik(
+        `/v3/by-puuid/matches/${region}/${playerPuuid}?filter=competitive&size=50`
+      );
+    }
+    if (!matches?.data?.length) {
+      matches = await fetchHenrik(
+        `/v3/matches/${region}/${encodeURIComponent(name)}/${encodeURIComponent(tag)}?filter=competitive&size=50`
+      );
+    }
     const allMatches = matches?.data || [];
 
     // Filtre par date : on garde les matchs des 75 derniers jours (≈ durée d'un acte)
