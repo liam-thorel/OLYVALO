@@ -769,15 +769,6 @@ export function guestCardHTML() {
             <span class="guest-btn-sub">Stats · Historique · Rank</span>
           </span>
         </a>
-        <a class="guest-link-btn vtl" href="#" target="_blank" rel="noopener"
-          onclick="return window.OLYCITY.guestOpen('vtl', event)">
-          <span class="guest-btn-icon">↗</span>
-          <span class="guest-btn-text">
-            <span class="guest-btn-name">VTL.lol</span>
-            <span class="guest-btn-sub">Graphs · Progression · Comps</span>
-          </span>
-        </a>
-      </div>
     </div>
   </div>`;
 }
