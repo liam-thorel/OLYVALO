@@ -3,9 +3,9 @@
  * Point d'entrée. Charge les données, orchestre les modules, expose window.OLYCITY.
  */
 
-import { valorantApi } from './api.js?v=1779642833';
+import { valorantApi } from './api.js?v=1779642952';
 
-const SITE_VERSION = '1779642833'; // Auto-updated on push
+const SITE_VERSION = '1779642952'; // Auto-updated on push
 // henrik loaded dynamically for cache busting
 let henrikSyncPlayer, henrikSyncAll, persistPlayerStats;
 **
@@ -13,12 +13,12 @@ let henrikSyncPlayer, henrikSyncAll, persistPlayerStats;
  * Point d'entrée. Charge les données, orchestre les modules, expose window.OLYCITY.
  */
 
-import { valorantApi } from './api.js?v=1779642833';
+import { valorantApi } from './api.js?v=1779642952';
 
-const SITE_VERSION = '1779642833'; // Auto-updated on push
-import { rosterHTML, mapSectionHTML, stierHTML, globalNotesHTML, navMapsHTML, agentPageHTML, miniRosterHTML, agentsFiltersHTML, agentsGridHTML, compCompareHTML, compBuilderHTML, savedCompsHTML, calloutsHTML } from './render.js?v=1779642833';
-import { initTheme, initTilt, initParallax, initSearch, initKeyboard, updateFavCount } from './interactions.js?v=1779642833';
-import { storage } from './storage.js?v=1779642833';
+const SITE_VERSION = '1779642952'; // Auto-updated on push
+import { rosterHTML, mapSectionHTML, stierHTML, globalNotesHTML, navMapsHTML, agentPageHTML, miniRosterHTML, agentsFiltersHTML, agentsGridHTML, compCompareHTML, compBuilderHTML, savedCompsHTML, calloutsHTML } from './render.js?v=1779642952';
+import { initTheme, initTilt, initParallax, initSearch, initKeyboard, updateFavCount } from './interactions.js?v=1779642952';
+import { storage } from './storage.js?v=1779642952';
 
 // ─── STATE (partagé avec render.js) ───────────────
 export const state = {
@@ -622,7 +622,7 @@ function renderAll() {
 // ─── BOOT ─────────────────────────────────────────
 async function boot() {
   // Load henrik dynamically to bypass ES6 module cache
-  const henrik = await import('./henrik.js?v=' + SITE_VERSION);
+  const henrik = await import(/* @vite-ignore */ `./henrik.js?v=${SITE_VERSION}`);
   henrikSyncPlayer = henrik.syncPlayer;
   henrikSyncAll = henrik.syncAllPlayers;
   persistPlayerStats = henrik.persistPlayerStats;

@@ -3,9 +3,9 @@
  * 3D tilt, parallax, theme toggle, search, keyboard shortcuts.
  */
 
-import { storage } from './storage.js?v=1779642833';
-import { valorantApi } from './api.js?v=1779642833';
-import { state } from './main.js?v=1779642833';
+import { storage } from './storage.js?v=1779642952';
+import { valorantApi } from './api.js?v=1779642952';
+import { state } from './main.js?v=1779642952';
 
 // ─── THEME TOGGLE ─────────────────────────────────
 export function initTheme() {

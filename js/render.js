@@ -3,9 +3,9 @@
  * Pure data → HTML functions.
  */
 
-import { valorantApi } from './api.js?v=1779642833';
-import { state } from './main.js?v=1779642833';
-import { formatRelTime } from './storage.js?v=1779642833';
+import { valorantApi } from './api.js?v=1779642952';
+import { state } from './main.js?v=1779642952';
+import { formatRelTime } from './storage.js?v=1779642952';
 
 // ─── Agent YouTube trailers (IDs officiels Riot) ──
 // Fallback sur background art si YouTube bloque l'embed
