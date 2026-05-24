@@ -1573,3 +1573,12 @@ button.comp-tab.fun-tab {
   font-family: 'Tomorrow', sans-serif; font-size: 10px; font-weight: 600;
   letter-spacing: 1px; text-transform: uppercase; color: var(--text);
 }
+
+/* Discord avatar dans player card banner */
+.player-banner-avatar {
+  position: absolute; inset: 0;
+  background-size: cover; background-position: center top;
+  filter: brightness(.35) saturate(.8);
+  transition: filter .3s;
+}
+.player-card:hover .player-banner-avatar { filter: brightness(.45) saturate(1); }

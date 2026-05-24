@@ -482,7 +482,8 @@ export function rosterHTML() {
       ${syncTime}` : '';
 
     return `<div class="player-card" data-player-name="${p.name}">
-      <div class="player-banner">
+      <div class="player-banner" ${p.avatar ? `style="--player-avatar:url(${p.avatar})"` : ''}>
+        ${p.avatar ? `<div class="player-banner-avatar" style="background-image:url(${p.avatar})"></div>` : ''}
         <div class="player-banner-deco"></div>
         <div class="player-banner-glow"></div>
         ${rankDisplay}
