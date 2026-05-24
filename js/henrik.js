@@ -23,7 +23,8 @@ async function fetchHenrik(path) {
   }
   console.log('[HenrikDev] Status', res.status);
   if (res.status === 429) throw new Error('RATE_LIMIT');
-  if (res.status === 401 || res.status === 403) throw new Error('AUTH_REQUIRED');
+  if (res.status === 401) throw new Error('AUTH_REQUIRED');
+  if (res.status === 403) throw new Error('COMPTE_PRIVE'); // Compte privé ou région incorrecte
   if (res.status === 404) throw new Error('NOT_FOUND');
   if (!res.ok) throw new Error('HTTP_' + res.status);
   return res.json();

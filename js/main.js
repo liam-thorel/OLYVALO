@@ -5,7 +5,7 @@
 
 import { valorantApi } from './api.js';
 
-const SITE_VERSION = '1779643567'; // Auto-updated on push
+const SITE_VERSION = '1779644778'; // Auto-updated on push
 import { syncPlayer as henrikSyncPlayer, syncAllPlayers as henrikSyncAll, persistPlayerStats } from './henrik.js';
 import { rosterHTML, mapSectionHTML, stierHTML, globalNotesHTML, navMapsHTML, agentPageHTML, miniRosterHTML, agentsFiltersHTML, agentsGridHTML, compCompareHTML, compBuilderHTML, savedCompsHTML, calloutsHTML } from './render.js';
 import { initTheme, initTilt, initParallax, initSearch, initKeyboard, updateFavCount } from './interactions.js';
@@ -516,6 +516,7 @@ window.OLYCITY = {
     } catch (e) {
       const msgs = {
         AUTH_REQUIRED: 'Clé invalide',
+        COMPTE_PRIVE: 'Compte privé Riot',
         RATE_LIMIT: 'Rate limit — attends 1min',
         NOT_FOUND: 'Compte privé ou introuvable',
         NETWORK: 'Pas de réseau',
