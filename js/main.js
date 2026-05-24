@@ -5,7 +5,7 @@
 
 import { valorantApi } from './api.js';
 
-const SITE_VERSION = '1779663094'; // Auto-updated on push
+const SITE_VERSION = '1779663282'; // Auto-updated on push
 import { syncPlayer as henrikSyncPlayer, syncAllPlayers as henrikSyncAll, persistPlayerStats } from './henrik.js';
 import { rosterHTML, guestCardHTML, mapSectionHTML, stierHTML, globalNotesHTML, navMapsHTML, agentPageHTML, miniRosterHTML, agentsFiltersHTML, agentsGridHTML, compCompareHTML, compBuilderHTML, savedCompsHTML, calloutsHTML } from './render.js';
 import { initTheme, initTilt, initParallax, initSearch, initKeyboard, updateFavCount, initHeroParticles } from './interactions.js';

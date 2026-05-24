@@ -351,8 +351,26 @@ export function mapSectionHTML(data, idx) {
     ? `📹 Lineups <span style="font-size:9px;opacity:.7">(${Object.keys(state.LINEUPS[data.map]).join(', ')})</span>`
     : '📹 Lineups';
 
+  const totalMaps = state.COMPS_DATA.length;
+  const prevIdx = idx > 0 ? idx - 1 : null;
+  const nextIdx = idx < totalMaps - 1 ? idx + 1 : null;
+
   return `
     <section class="map-section ${idx === 0 ? 'active' : ''}" id="map-${idx}">
+      <div class="map-nav-arrows">
+        ${prevIdx !== null
+          ? `<button class="map-arrow map-arrow-left" onclick="window.OLYCITY.showMap(${prevIdx},document.querySelector('[data-map-idx=\"${prevIdx}\"]'))" title="${state.COMPS_DATA[prevIdx]?.map}">
+              <span>←</span>
+              <span class="map-arrow-label">${state.COMPS_DATA[prevIdx]?.map}</span>
+            </button>`
+          : '<div class="map-arrow-placeholder"></div>'}
+        ${nextIdx !== null
+          ? `<button class="map-arrow map-arrow-right" onclick="window.OLYCITY.showMap(${nextIdx},document.querySelector('[data-map-idx=\"${nextIdx}\"]'))" title="${state.COMPS_DATA[nextIdx]?.map}">
+              <span class="map-arrow-label">${state.COMPS_DATA[nextIdx]?.map}</span>
+              <span>→</span>
+            </button>`
+          : '<div class="map-arrow-placeholder"></div>'}
+      </div>
       <div class="map-hero">
         <div class="map-hero-img-wrap">${splashEl}</div>
         <div class="map-hero-grid"></div>

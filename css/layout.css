@@ -421,3 +421,21 @@ body.agent-mode .footer{ display:none; }
   transition: opacity .12s;
 }
 .nav-maps-menu-item:hover img { opacity: 1; }
+
+/* Map navigation arrows */
+.map-nav-arrows {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 10px 0; margin-bottom: 0;
+}
+.map-arrow {
+  display: flex; align-items: center; gap: 8px;
+  background: transparent; border: 1px solid var(--border2);
+  color: var(--muted); cursor: pointer; padding: 8px 16px;
+  font-family: 'Tomorrow', sans-serif; font-size: 11px; font-weight: 600;
+  letter-spacing: 1.5px; text-transform: uppercase;
+  transition: all .2s;
+}
+.map-arrow:hover { color: var(--red); border-color: var(--red); background: var(--red-low); }
+.map-arrow span:first-child, .map-arrow span:last-child { font-size: 16px; }
+.map-arrow-label { font-size: 11px; }
+.map-arrow-placeholder { width: 120px; }
