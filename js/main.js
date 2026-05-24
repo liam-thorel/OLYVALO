@@ -5,7 +5,7 @@
 
 import { valorantApi } from './api.js';
 
-const SITE_VERSION = '1779643151'; // Auto-updated on push
+const SITE_VERSION = '1779643203'; // Auto-updated on push
 import { syncPlayer as henrikSyncPlayer, syncAllPlayers as henrikSyncAll, persistPlayerStats } from './henrik.js';
 import { rosterHTML, mapSectionHTML, stierHTML, globalNotesHTML, navMapsHTML, agentPageHTML, miniRosterHTML, agentsFiltersHTML, agentsGridHTML, compCompareHTML, compBuilderHTML, savedCompsHTML, calloutsHTML } from './render.js';
 import { initTheme, initTilt, initParallax, initSearch, initKeyboard, updateFavCount } from './interactions.js';
@@ -612,14 +612,6 @@ function renderAll() {
 
 // ─── BOOT ─────────────────────────────────────────
 async function boot() {
-  // Auto-clear localStorage if version changed
-  const storedVersion = localStorage.getItem('olycity-version');
-  if (storedVersion !== SITE_VERSION) {
-    const keys = Object.keys(localStorage).filter(k => k.startsWith('olycity-'));
-    keys.forEach(k => localStorage.removeItem(k));
-    localStorage.setItem('olycity-version', SITE_VERSION);
-    console.log('[OLYCITY] Cache cleared — new version', SITE_VERSION);
-  }
   // Auto-clear localStorage if version changed
   const storedVersion = localStorage.getItem('olycity-version');
   if (storedVersion !== SITE_VERSION) {
