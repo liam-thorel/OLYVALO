@@ -727,7 +727,7 @@ export function agentPageHTML(name) {
       <div class="usage-section">
         <div class="section-title-with-tag">
           <span class="sec-tag">Comps OLYCITY</span>
-          <h2 class="sec-title">Dans quelles compos ${{'Sage', 'Fade', 'Jett', 'Neon', 'Vyse', 'Killjoy', 'Skye', 'Astra', 'Deadlock', 'Waylay', 'Clove', 'Viper', 'Reyna'}.has(name) ? 'elle joue' : 'il joue'}</h2>
+                    <h2 class="sec-title">Dans quelles compos ${["Jett","Sage","Viper","Skye","Reyna","Astra","Neon","Fade","Killjoy","Clove","Deadlock","Waylay","Vyse"].includes(name) ? "elle joue" : "il joue"}</h2>
           <div class="sec-line"></div>
         </div>
         <div class="usage-grid">${usageHTML}</div>
