@@ -5,7 +5,7 @@
 
 import { valorantApi } from './api.js';
 
-const SITE_VERSION = '1779653216'; // Auto-updated on push
+const SITE_VERSION = '1779662087'; // Auto-updated on push
 import { syncPlayer as henrikSyncPlayer, syncAllPlayers as henrikSyncAll, persistPlayerStats } from './henrik.js';
 import { rosterHTML, guestCardHTML, mapSectionHTML, stierHTML, globalNotesHTML, navMapsHTML, agentPageHTML, miniRosterHTML, agentsFiltersHTML, agentsGridHTML, compCompareHTML, compBuilderHTML, savedCompsHTML, calloutsHTML } from './render.js';
 import { initTheme, initTilt, initParallax, initSearch, initKeyboard, updateFavCount } from './interactions.js';
@@ -282,26 +282,46 @@ window.OLYCITY = {
     const slot = state.builderFocusSlot;
     if (state.builderSlots[slot] === null || state.builderSlots[slot] !== name) {
       state.builderSlots[slot] = name;
-      // Advance to next empty slot
       const next = state.builderSlots.findIndex((s, i) => i > slot && s === null);
       state.builderFocusSlot = next >= 0 ? next : slot;
     }
-    window.OLYCITY._renderBuilder();
-    storage.setPlayerStats && localStorage.setItem('olycity-builder', JSON.stringify(state.builderSlots));
+    localStorage.setItem('olycity-builder', JSON.stringify(state.builderSlots));
+    window.OLYCITY._updateBuilderSlots();
   },
 
   builderRemove(i) {
     state.builderSlots[i] = null;
     state.builderFocusSlot = i;
-    window.OLYCITY._renderBuilder();
     localStorage.setItem('olycity-builder', JSON.stringify(state.builderSlots));
+    window.OLYCITY._updateBuilderSlots();
   },
 
   builderClear() {
     state.builderSlots = [null,null,null,null,null];
     state.builderFocusSlot = 0;
-    window.OLYCITY._renderBuilder();
     localStorage.removeItem('olycity-builder');
+    window.OLYCITY._renderBuilder(state.currentProfile);
+  },
+
+  // Partial update: only slots + used markers, no full re-render
+  _updateBuilderSlots() {
+    const { compBuilderSlotsHTML, compBuilderAgilityHTML } = window._builderPartials || {};
+    if (!compBuilderSlotsHTML) {
+      // Fallback: full re-render if partials not available
+      window.OLYCITY._renderBuilder(state.currentProfile);
+      return;
+    }
+    // Update slots
+    const slotsEl = document.getElementById('builder-slots-wrap');
+    if (slotsEl) slotsEl.innerHTML = compBuilderSlotsHTML(state.builderSlots);
+    // Update agility
+    const agilEl = document.getElementById('builder-agility-wrap');
+    if (agilEl) agilEl.innerHTML = compBuilderAgilityHTML(state.builderSlots);
+    // Update used markers on agent grid
+    const usedSet = new Set(state.builderSlots.filter(Boolean));
+    document.querySelectorAll('.comp-builder-agent[data-agent]').forEach(el => {
+      el.classList.toggle('used', usedSet.has(el.dataset.agent));
+    });
   },
 
   builderSetMap(mapIdx) {

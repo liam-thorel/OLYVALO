@@ -1174,8 +1174,53 @@ export function compCompareHTML(compA, compB) {
 }
 
 // ─── COMP BUILDER ────────────────────────────────
+// Partial render helpers for fast slot updates
+function compBuilderSlotsHTML(slots) {
+  const roleLabels = { D:'Duelliste', I:'Initiateur', S:'Sentinelle', C:'Contrôleur' };
+  return slots.map((agent, i) => {
+    if (agent) {
+      const img = valorantApi.agentImg(agent);
+      const role = state.ROLES[agent] || 'D';
+      return `<div class="comp-builder-slot filled">
+        ${img ? `<img src="${img}" alt="${agent}">` : ''}
+        <span class="comp-builder-slot-name">${displayName(agent)}</span>
+        <span class="comp-builder-slot-role">${roleLabels[role] || ''}</span>
+        <button class="comp-builder-slot-remove" onclick="window.OLYCITY.builderRemove(${i})">✕</button>
+      </div>`;
+    }
+    return `<div class="comp-builder-slot" onclick="window.OLYCITY.builderFocusSlot(${i})" id="builder-slot-${i}">
+      <span class="comp-builder-slot-empty">Slot ${i+1}<br>Cliquer pour<br>assigner</span>
+    </div>`;
+  }).join('');
+}
+
+function compBuilderAgilityHTML(slots) {
+  const agilityKeys = ['antiRush','postPlant','retake','split'];
+  const agilityLabels = ['Anti-Rush','Post-Plant','Retake','Split'];
+  const roleScores = {
+    D: { antiRush:2, postPlant:2, retake:3, split:4 },
+    I: { antiRush:4, postPlant:3, retake:3, split:3 },
+    S: { antiRush:4, postPlant:4, retake:2, split:2 },
+    C: { antiRush:3, postPlant:5, retake:3, split:3 },
+  };
+  const filled = slots.filter(Boolean);
+  return agilityKeys.map((k, idx) => {
+    let score = 0;
+    filled.forEach(a => { score += (roleScores[state.ROLES[a]||'D']?.[k] || 3); });
+    const avg = filled.length > 0 ? Math.min(5, Math.round(score / filled.length)) : 0;
+    const color = avg >= 4 ? 'green' : avg <= 2 ? 'red' : '';
+    return `<div class="cba-stat">
+      <span class="cba-val ${color}">${avg > 0 ? avg+'/5' : '—'}</span>
+      <span class="cba-lbl">${agilityLabels[idx]}</span>
+    </div>`;
+  }).join('');
+}
+
 export function compBuilderHTML(slots = [null,null,null,null,null]) {
   const roleLabels = { D:'Duelliste', I:'Initiateur', S:'Sentinelle', C:'Contrôleur' };
+  // Cache partial render functions for fast updates
+  window._builderPartials = { compBuilderSlotsHTML, compBuilderAgilityHTML };
+
   const slotsHTML = slots.map((agent, i) => {
     if (agent) {
       const img = valorantApi.agentImg(agent);
@@ -1243,7 +1288,7 @@ export function compBuilderHTML(slots = [null,null,null,null,null]) {
       <span id="builder-map-context" style="font-family:'Tomorrow',sans-serif;font-size:10px;
         letter-spacing:1px;color:var(--dim);text-transform:uppercase"></span>
     </div>
-    <div class="comp-builder-slots">${slotsHTML}</div>
+    <div class="comp-builder-slots" id="builder-slots-wrap">${slotsHTML}</div>
     <div style="font-family:'Tomorrow',sans-serif;font-size:9px;letter-spacing:2px;text-transform:uppercase;color:var(--muted);margin-bottom:10px">
       Choisir les agents :
     </div>
@@ -1252,7 +1297,7 @@ export function compBuilderHTML(slots = [null,null,null,null,null]) {
       <button class="comp-builder-clear" onclick="window.OLYCITY.builderClear()">✕ Reset</button>
       <button class="comp-builder-save" onclick="window.OLYCITY.builderSave()">★ Sauvegarder</button>
       ${filled.length >= 2 ? `<button class="compare-btn" onclick="window.OLYCITY.builderCompare()" style="margin-left:4px">⇄ Comparer avec une comp meta</button>` : ''}
-      <div class="comp-builder-agility">${agilityHTML}</div>
+      <div class="comp-builder-agility" id="builder-agility-wrap">${agilityHTML}</div>
     </div>
   </div>`;
 }
