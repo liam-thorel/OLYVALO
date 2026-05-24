@@ -1213,7 +1213,9 @@
   border-top: 1px solid var(--border);
 }
 .lineup-agent-tabs {
-  display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 18px;
+  display: flex; gap: 6px; flex-wrap: wrap;
+  margin-bottom: 18px; padding-bottom: 4px;
+  position: relative; z-index: 2;
 }
 .lineup-agent-tab {
   display: flex; align-items: center; gap: 7px;
@@ -1232,11 +1234,12 @@
 .lineup-cards-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-  gap: 16px;
+  gap: 16px; position: relative; z-index: 1;
 }
 .lineup-v2-card {
   background: var(--surf); border: 1px solid var(--border);
   overflow: hidden; transition: transform .2s, border-color .2s;
+  cursor: pointer; position: relative; z-index: 1;
 }
 .lineup-v2-card:hover { transform: translateY(-3px); border-color: var(--border2); }
 
