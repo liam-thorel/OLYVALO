@@ -5,7 +5,7 @@
 
 import { valorantApi } from './api.js';
 
-const SITE_VERSION = '1779721421'; // Auto-updated on push
+const SITE_VERSION = '1779721520'; // Auto-updated on push
 import { syncPlayer as henrikSyncPlayer, syncAllPlayers as henrikSyncAll, persistPlayerStats } from './henrik.js';
 import { rosterHTML, guestCardHTML, mapSectionHTML, stierHTML, globalNotesHTML, navMapsHTML, agentPageHTML, miniRosterHTML, agentsFiltersHTML, agentsGridHTML, compCompareHTML, compBuilderHTML, savedCompsHTML, calloutsHTML } from './render.js';
 import { initTheme, initTilt, initParallax, initSearch, initKeyboard, updateFavCount, initHeroParticles, initWheelLogos } from './interactions.js';
@@ -168,13 +168,13 @@ window.OLYCITY = {
 
 
   mapNavPrev() {
-    const i = (state.currentMapIdx || 0) - 1;
-    if (i >= 0) window.OLYCITY.showMap(i, null);
+    const cur = state.currentMapIdx ?? 0;
+    if (cur > 0) window.OLYCITY.showMap(cur - 1, null);
   },
 
   mapNavNext() {
-    const i = (state.currentMapIdx || 0) + 1;
-    if (i < state.COMPS_DATA.length) window.OLYCITY.showMap(i, null);
+    const cur = state.currentMapIdx ?? 0;
+    if (cur < state.COMPS_DATA.length - 1) window.OLYCITY.showMap(cur + 1, null);
   },
 
   showMap(idx, btn) {
@@ -1063,53 +1063,31 @@ async function boot() {
     window.OLYCITY._showProfilePicker();
   }
   // Create map arrows via JS — bypass CSS stacking context issues
-  const createArrow = (id, side, label, fn) => {
+  // Map arrows — iframe trick: create inside an absolutely positioned wrapper
+  // that is itself fixed, bypassing all CSS stacking context issues
+  const arrowWrap = document.createElement('div');
+  arrowWrap.id = 'map-arrows-wrap';
+  arrowWrap.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:9999';
+  document.body.insertBefore(arrowWrap, document.body.firstChild);
+
+  const makeArrow = (id, isLeft) => {
     const btn = document.createElement('button');
     btn.id = id;
-    btn.innerHTML = label;
-    btn.onclick = fn;
-    Object.assign(btn.style, {
-      position: 'absolute',
-      [side]: '0',
-      width: '40px',
-      height: '64px',
-      background: 'rgba(10,12,16,.92)',
-      border: '1px solid rgba(255,255,255,.15)',
-      ['border' + (side === 'left' ? 'Left' : 'Right')]: 'none',
-      borderRadius: side === 'left' ? '0 3px 3px 0' : '3px 0 0 3px',
-      color: 'rgba(255,255,255,.6)',
-      fontSize: '22px',
-      cursor: 'pointer',
-      display: 'none',
-      alignItems: 'center',
-      justifyContent: 'center',
-      zIndex: '9999',
-      padding: '0',
-      margin: '0',
-      transition: 'color .15s, opacity .2s',
-    });
-    btn.addEventListener('mouseenter', () => { if (btn.style.opacity !== '0.3') btn.style.color = '#ff4656'; });
-    btn.addEventListener('mouseleave', () => { btn.style.color = 'rgba(255,255,255,.6)'; });
-    document.body.appendChild(btn);
+    btn.innerHTML = isLeft ? '&#8592;' : '&#8594;';
+    btn.style.cssText = `position:absolute;top:calc(50% - 32px);${isLeft?'left:0':'right:0'};width:40px;height:64px;background:rgba(10,12,16,.92);border:1px solid rgba(255,255,255,.15);${isLeft?'border-left:none;border-radius:0 3px 3px 0':'border-right:none;border-radius:3px 0 0 3px'};color:rgba(255,255,255,.6);font-size:22px;cursor:pointer;display:none;align-items:center;justify-content:center;pointer-events:all;padding:0;transition:color .15s,opacity .2s`;
+    btn.onclick = () => isLeft ? window.OLYCITY.mapNavPrev() : window.OLYCITY.mapNavNext();
+    btn.onmouseenter = () => { if (parseFloat(btn.style.opacity||1) > 0.4) btn.style.color='#ff4656'; };
+    btn.onmouseleave = () => { btn.style.color='rgba(255,255,255,.6)'; };
+    arrowWrap.appendChild(btn);
     return btn;
   };
 
-  const arrowL = createArrow('map-arrow-left', 'left', '←', () => window.OLYCITY.mapNavPrev());
-  const arrowR = createArrow('map-arrow-right', 'right', '→', () => window.OLYCITY.mapNavNext());
-
-  // Position arrows at vertical center of viewport on scroll
-  const positionArrows = () => {
-    const top = window.scrollY + window.innerHeight / 2 - 32;
-    arrowL.style.top = top + 'px';
-    arrowR.style.top = top + 'px';
-  };
-  positionArrows();
-  window.addEventListener('scroll', positionArrows, { passive: true });
-  window.addEventListener('resize', positionArrows, { passive: true });
+  makeArrow('map-arrow-left', true);
+  makeArrow('map-arrow-right', false);
 
   window.OLYCITY.showMap(0, null);
-  arrowL.style.display = 'none';
-  arrowR.style.display = 'none';
+  document.getElementById('map-arrow-left').style.display = 'none';
+  document.getElementById('map-arrow-right').style.display = 'none';
   console.log('[OLYCITY] Ready ✓');
 }
 
