@@ -424,11 +424,18 @@ body.agent-mode .footer{ display:none; }
 
 /* Map side arrows — fixed to viewport center */
 .map-side-arrow {
-  position: fixed; top: 50vh; transform: translateY(-50%);
-  z-index: 9999; background: rgba(10,12,16,.9);
-  border: 1px solid var(--border2); color: var(--muted);
-  cursor: pointer; width: 40px; height: 64px;
-  font-size: 22px; display: none; align-items: center; justify-content: center;
+  position: fixed;
+  top: calc(50vh - 32px);
+  z-index: 9999;
+  background: rgba(10,12,16,.9);
+  border: 1px solid var(--border2);
+  color: var(--muted);
+  cursor: pointer;
+  width: 40px; height: 64px;
+  font-size: 22px;
+  display: none;
+  align-items: center;
+  justify-content: center;
   transition: color .15s, border-color .15s, opacity .2s;
   margin: 0; padding: 0;
 }

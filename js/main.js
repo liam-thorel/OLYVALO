@@ -5,7 +5,7 @@
 
 import { valorantApi } from './api.js';
 
-const SITE_VERSION = '1779720921'; // Auto-updated on push
+const SITE_VERSION = '1779721101'; // Auto-updated on push
 import { syncPlayer as henrikSyncPlayer, syncAllPlayers as henrikSyncAll, persistPlayerStats } from './henrik.js';
 import { rosterHTML, guestCardHTML, mapSectionHTML, stierHTML, globalNotesHTML, navMapsHTML, agentPageHTML, miniRosterHTML, agentsFiltersHTML, agentsGridHTML, compCompareHTML, compBuilderHTML, savedCompsHTML, calloutsHTML } from './render.js';
 import { initTheme, initTilt, initParallax, initSearch, initKeyboard, updateFavCount, initHeroParticles, initWheelLogos } from './interactions.js';
@@ -880,6 +880,8 @@ function renderAll() {
   }
   // Map sections
   document.getElementById('main').innerHTML = state.COMPS_DATA.map((d, i) => mapSectionHTML(d, i)).join('');
+  // Initialize map arrows state
+  setTimeout(() => window.OLYCITY.showMap(0, null), 0);
   // Roster (full + mini)
   document.getElementById('roster-grid').innerHTML = rosterHTML() + guestCardHTML();
   document.getElementById('mini-roster').innerHTML = miniRosterHTML();
