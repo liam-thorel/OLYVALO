@@ -5,7 +5,7 @@
 
 import { valorantApi } from './api.js';
 
-const SITE_VERSION = '1779729375'; // Auto-updated on push
+const SITE_VERSION = '1779729565'; // Auto-updated on push
 import { syncPlayer as henrikSyncPlayer, syncAllPlayers as henrikSyncAll, persistPlayerStats } from './henrik.js';
 import { rosterHTML, guestCardHTML, mapSectionHTML, stierHTML, globalNotesHTML, navMapsHTML, agentPageHTML, miniRosterHTML, agentsFiltersHTML, agentsGridHTML, compCompareHTML, compBuilderHTML, savedCompsHTML, calloutsHTML } from './render.js';
 import { initTheme, initTilt, initParallax, initSearch, initKeyboard, updateFavCount, initHeroParticles, initWheelLogos } from './interactions.js';
@@ -161,16 +161,6 @@ window.OLYCITY = {
     }
   },
 
-
-  mapNavPrev() {
-    const cur = state.currentMapIdx ?? 0;
-    if (cur > 0) window.OLYCITY.showMap(cur - 1, null);
-  },
-
-  mapNavNext() {
-    const cur = state.currentMapIdx ?? 0;
-    if (cur < state.COMPS_DATA.length - 1) window.OLYCITY.showMap(cur + 1, null);
-  },
 
   showMap(idx, btn) {
     state.currentMapIdx = idx;
@@ -703,13 +693,11 @@ window.OLYCITY = {
     const audio = document.getElementById('site-audio');
     const btn = document.getElementById('audio-toggle');
     if (!audio) { console.error('audio element not found'); return; }
-    console.log('audio state:', audio.paused, 'src:', audio.src, 'readyState:', audio.readyState);
     if (audio.paused) {
       audio.volume = (document.getElementById('audio-vol')?.value || 30) / 100;
       audio.play().then(() => {
-        console.log('playing OK');
         if (btn) btn.innerHTML = '⏸';
-      }).catch(e => console.error('play error:', e));
+      }).catch(() => {});
     } else {
       audio.pause();
       if (btn) btn.innerHTML = '▶';
