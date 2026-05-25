@@ -5,7 +5,7 @@
 
 import { valorantApi } from './api.js';
 
-const SITE_VERSION = '1779721246'; // Auto-updated on push
+const SITE_VERSION = '1779721421'; // Auto-updated on push
 import { syncPlayer as henrikSyncPlayer, syncAllPlayers as henrikSyncAll, persistPlayerStats } from './henrik.js';
 import { rosterHTML, guestCardHTML, mapSectionHTML, stierHTML, globalNotesHTML, navMapsHTML, agentPageHTML, miniRosterHTML, agentsFiltersHTML, agentsGridHTML, compCompareHTML, compBuilderHTML, savedCompsHTML, calloutsHTML } from './render.js';
 import { initTheme, initTilt, initParallax, initSearch, initKeyboard, updateFavCount, initHeroParticles, initWheelLogos } from './interactions.js';
@@ -1062,12 +1062,54 @@ async function boot() {
   } else {
     window.OLYCITY._showProfilePicker();
   }
-  // Initialize map arrows (hide until on maps page)
+  // Create map arrows via JS — bypass CSS stacking context issues
+  const createArrow = (id, side, label, fn) => {
+    const btn = document.createElement('button');
+    btn.id = id;
+    btn.innerHTML = label;
+    btn.onclick = fn;
+    Object.assign(btn.style, {
+      position: 'absolute',
+      [side]: '0',
+      width: '40px',
+      height: '64px',
+      background: 'rgba(10,12,16,.92)',
+      border: '1px solid rgba(255,255,255,.15)',
+      ['border' + (side === 'left' ? 'Left' : 'Right')]: 'none',
+      borderRadius: side === 'left' ? '0 3px 3px 0' : '3px 0 0 3px',
+      color: 'rgba(255,255,255,.6)',
+      fontSize: '22px',
+      cursor: 'pointer',
+      display: 'none',
+      alignItems: 'center',
+      justifyContent: 'center',
+      zIndex: '9999',
+      padding: '0',
+      margin: '0',
+      transition: 'color .15s, opacity .2s',
+    });
+    btn.addEventListener('mouseenter', () => { if (btn.style.opacity !== '0.3') btn.style.color = '#ff4656'; });
+    btn.addEventListener('mouseleave', () => { btn.style.color = 'rgba(255,255,255,.6)'; });
+    document.body.appendChild(btn);
+    return btn;
+  };
+
+  const arrowL = createArrow('map-arrow-left', 'left', '←', () => window.OLYCITY.mapNavPrev());
+  const arrowR = createArrow('map-arrow-right', 'right', '→', () => window.OLYCITY.mapNavNext());
+
+  // Position arrows at vertical center of viewport on scroll
+  const positionArrows = () => {
+    const top = window.scrollY + window.innerHeight / 2 - 32;
+    arrowL.style.top = top + 'px';
+    arrowR.style.top = top + 'px';
+  };
+  positionArrows();
+  window.addEventListener('scroll', positionArrows, { passive: true });
+  window.addEventListener('resize', positionArrows, { passive: true });
+
   window.OLYCITY.showMap(0, null);
-  const al = document.getElementById('map-arrow-left');
-  const ar = document.getElementById('map-arrow-right');
-  if (al) al.style.display = 'none';
-  if (ar) ar.style.display = 'none';
+  arrowL.style.display = 'none';
+  arrowR.style.display = 'none';
   console.log('[OLYCITY] Ready ✓');
 }
 
