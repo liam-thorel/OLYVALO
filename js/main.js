@@ -5,7 +5,7 @@
 
 import { valorantApi } from './api.js';
 
-const SITE_VERSION = '1779720482'; // Auto-updated on push
+const SITE_VERSION = '1779720614'; // Auto-updated on push
 import { syncPlayer as henrikSyncPlayer, syncAllPlayers as henrikSyncAll, persistPlayerStats } from './henrik.js';
 import { rosterHTML, guestCardHTML, mapSectionHTML, stierHTML, globalNotesHTML, navMapsHTML, agentPageHTML, miniRosterHTML, agentsFiltersHTML, agentsGridHTML, compCompareHTML, compBuilderHTML, savedCompsHTML, calloutsHTML } from './render.js';
 import { initTheme, initTilt, initParallax, initSearch, initKeyboard, updateFavCount, initHeroParticles, initWheelLogos } from './interactions.js';
@@ -131,8 +131,7 @@ window.OLYCITY = {
     if (navBtn) navBtn.classList.add('active');
 
     // Show/hide map nav
-    const mapNav = document.getElementById('nav-maps');
-    if (mapNav) mapNav.style.display = page === 'maps' ? 'flex' : 'none';
+
     // Hide side arrows when not on maps
     if (page !== 'maps') {
       const al = document.getElementById('map-arrow-left');
@@ -856,8 +855,6 @@ window.OLYCITY = {
 
 // ─── RENDER ───────────────────────────────────────
 function renderAll() {
-  // Nav maps
-  document.getElementById('nav-maps').innerHTML = navMapsHTML();
   // Populate hover dropdown
   const mapsMenu = document.getElementById('nav-maps-menu');
   if (mapsMenu) {
