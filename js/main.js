@@ -5,7 +5,7 @@
 
 import { valorantApi } from './api.js';
 
-const SITE_VERSION = '1779721520'; // Auto-updated on push
+const SITE_VERSION = '1779721691'; // Auto-updated on push
 import { syncPlayer as henrikSyncPlayer, syncAllPlayers as henrikSyncAll, persistPlayerStats } from './henrik.js';
 import { rosterHTML, guestCardHTML, mapSectionHTML, stierHTML, globalNotesHTML, navMapsHTML, agentPageHTML, miniRosterHTML, agentsFiltersHTML, agentsGridHTML, compCompareHTML, compBuilderHTML, savedCompsHTML, calloutsHTML } from './render.js';
 import { initTheme, initTilt, initParallax, initSearch, initKeyboard, updateFavCount, initHeroParticles, initWheelLogos } from './interactions.js';
@@ -1074,7 +1074,7 @@ async function boot() {
     const btn = document.createElement('button');
     btn.id = id;
     btn.innerHTML = isLeft ? '&#8592;' : '&#8594;';
-    btn.style.cssText = `position:absolute;top:calc(50% - 32px);${isLeft?'left:0':'right:0'};width:40px;height:64px;background:rgba(10,12,16,.92);border:1px solid rgba(255,255,255,.15);${isLeft?'border-left:none;border-radius:0 3px 3px 0':'border-right:none;border-radius:3px 0 0 3px'};color:rgba(255,255,255,.6);font-size:22px;cursor:pointer;display:none;align-items:center;justify-content:center;pointer-events:all;padding:0;transition:color .15s,opacity .2s`;
+    btn.style.cssText = `position:absolute;top:50%;transform:translateY(-50%);${isLeft?'left:0':'right:0'};width:40px;height:64px;background:rgba(10,12,16,.92);border:1px solid rgba(255,255,255,.15);${isLeft?'border-left:none;border-radius:0 3px 3px 0':'border-right:none;border-radius:3px 0 0 3px'};color:rgba(255,255,255,.6);font-size:22px;cursor:pointer;display:none;align-items:center;justify-content:center;pointer-events:all;padding:0;transition:color .15s,opacity .2s`;
     btn.onclick = () => isLeft ? window.OLYCITY.mapNavPrev() : window.OLYCITY.mapNavNext();
     btn.onmouseenter = () => { if (parseFloat(btn.style.opacity||1) > 0.4) btn.style.color='#ff4656'; };
     btn.onmouseleave = () => { btn.style.color='rgba(255,255,255,.6)'; };
