@@ -5,7 +5,7 @@
 
 import { valorantApi } from './api.js';
 
-const SITE_VERSION = '1779721691'; // Auto-updated on push
+const SITE_VERSION = '1779721830'; // Auto-updated on push
 import { syncPlayer as henrikSyncPlayer, syncAllPlayers as henrikSyncAll, persistPlayerStats } from './henrik.js';
 import { rosterHTML, guestCardHTML, mapSectionHTML, stierHTML, globalNotesHTML, navMapsHTML, agentPageHTML, miniRosterHTML, agentsFiltersHTML, agentsGridHTML, compCompareHTML, compBuilderHTML, savedCompsHTML, calloutsHTML } from './render.js';
 import { initTheme, initTilt, initParallax, initSearch, initKeyboard, updateFavCount, initHeroParticles, initWheelLogos } from './interactions.js';
@@ -135,8 +135,8 @@ window.OLYCITY = {
     if (page !== 'maps') {
       const al = document.getElementById('map-arrow-left');
       const ar = document.getElementById('map-arrow-right');
-      if (al) al.style.display = 'none';
-      if (ar) ar.style.display = 'none';
+      if (al) al.style.visibility = 'hidden';
+      if (ar) ar.style.visibility = 'hidden';
     }
 
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -188,8 +188,8 @@ window.OLYCITY = {
     const total = state.COMPS_DATA.length;
     const al = document.getElementById('map-arrow-left');
     const ar = document.getElementById('map-arrow-right');
-    if (al) { al.style.display = 'flex'; al.style.opacity = idx === 0 ? '0.3' : '1'; al.style.pointerEvents = idx === 0 ? 'none' : 'auto'; }
-    if (ar) { ar.style.display = 'flex'; ar.style.opacity = idx === total-1 ? '0.3' : '1'; ar.style.pointerEvents = idx === total-1 ? 'none' : 'auto'; }
+    if (al) { al.style.visibility = 'visible'; al.style.opacity = idx === 0 ? '0.25' : '1'; al.style.pointerEvents = idx === 0 ? 'none' : 'all'; }
+    if (ar) { ar.style.visibility = 'visible'; ar.style.opacity = idx === total-1 ? '0.25' : '1'; ar.style.pointerEvents = idx === total-1 ? 'none' : 'all'; }
     setTimeout(() => initTilt(), 50);
   },
 
@@ -1067,14 +1067,14 @@ async function boot() {
   // that is itself fixed, bypassing all CSS stacking context issues
   const arrowWrap = document.createElement('div');
   arrowWrap.id = 'map-arrows-wrap';
-  arrowWrap.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:9999';
+  arrowWrap.style.cssText = 'position:fixed;top:0;left:0;width:100vw;height:100vh;pointer-events:none;z-index:9999';
   document.body.insertBefore(arrowWrap, document.body.firstChild);
 
   const makeArrow = (id, isLeft) => {
     const btn = document.createElement('button');
     btn.id = id;
     btn.innerHTML = isLeft ? '&#8592;' : '&#8594;';
-    btn.style.cssText = `position:absolute;top:50%;transform:translateY(-50%);${isLeft?'left:0':'right:0'};width:40px;height:64px;background:rgba(10,12,16,.92);border:1px solid rgba(255,255,255,.15);${isLeft?'border-left:none;border-radius:0 3px 3px 0':'border-right:none;border-radius:3px 0 0 3px'};color:rgba(255,255,255,.6);font-size:22px;cursor:pointer;display:none;align-items:center;justify-content:center;pointer-events:all;padding:0;transition:color .15s,opacity .2s`;
+    btn.style.cssText = `position:absolute;top:50%;transform:translateY(-50%);${isLeft?'left:0':'right:0'};width:40px;height:64px;background:rgba(10,12,16,.92);border:1px solid rgba(255,255,255,.15);${isLeft?'border-left:none;border-radius:0 3px 3px 0':'border-right:none;border-radius:3px 0 0 3px'};color:rgba(255,255,255,.6);font-size:22px;cursor:pointer;display:flex;align-items:center;justify-content:center;pointer-events:all;padding:0;visibility:hidden;transition:color .15s,opacity .2s`;
     btn.onclick = () => isLeft ? window.OLYCITY.mapNavPrev() : window.OLYCITY.mapNavNext();
     btn.onmouseenter = () => { if (parseFloat(btn.style.opacity||1) > 0.4) btn.style.color='#ff4656'; };
     btn.onmouseleave = () => { btn.style.color='rgba(255,255,255,.6)'; };
@@ -1086,8 +1086,8 @@ async function boot() {
   makeArrow('map-arrow-right', false);
 
   window.OLYCITY.showMap(0, null);
-  document.getElementById('map-arrow-left').style.display = 'none';
-  document.getElementById('map-arrow-right').style.display = 'none';
+  document.getElementById('map-arrow-left').style.visibility = 'hidden';
+  document.getElementById('map-arrow-right').style.visibility = 'hidden';
   console.log('[OLYCITY] Ready ✓');
 }
 
