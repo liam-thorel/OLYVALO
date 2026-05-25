@@ -5,7 +5,7 @@
 
 import { valorantApi } from './api.js';
 
-const SITE_VERSION = '1779725891'; // Auto-updated on push
+const SITE_VERSION = '1779729222'; // Auto-updated on push
 import { syncPlayer as henrikSyncPlayer, syncAllPlayers as henrikSyncAll, persistPlayerStats } from './henrik.js';
 import { rosterHTML, guestCardHTML, mapSectionHTML, stierHTML, globalNotesHTML, navMapsHTML, agentPageHTML, miniRosterHTML, agentsFiltersHTML, agentsGridHTML, compCompareHTML, compBuilderHTML, savedCompsHTML, calloutsHTML } from './render.js';
 import { initTheme, initTilt, initParallax, initSearch, initKeyboard, updateFavCount, initHeroParticles, initWheelLogos } from './interactions.js';
@@ -697,6 +697,25 @@ window.OLYCITY = {
     window.OLYCITY.hideAddPlayerForm();
     document.getElementById('roster-grid').innerHTML = rosterHTML() + guestCardHTML();
     window.OLYCITY._showProfilePicker(); // refresh picker with new player
+  },
+
+  toggleAudio() {
+    const audio = document.getElementById('site-audio');
+    const btn = document.getElementById('audio-toggle');
+    if (!audio) return;
+    if (audio.paused) {
+      audio.volume = (document.getElementById('audio-vol')?.value || 30) / 100;
+      audio.play();
+      if (btn) btn.innerHTML = '⏸';
+    } else {
+      audio.pause();
+      if (btn) btn.innerHTML = '▶';
+    }
+  },
+
+  setVolume(val) {
+    const audio = document.getElementById('site-audio');
+    if (audio) audio.volume = val / 100;
   },
 
   _showProfilePicker() {

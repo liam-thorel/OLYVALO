@@ -11,11 +11,11 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Tomorrow:wght@400;500;600;700&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="./css/tokens.css?v=1779725891">
-  <link rel="stylesheet" href="./css/layout.css?v=1779725891">
-  <link rel="stylesheet" href="./css/components.css?v=1779725891">
-  <link rel="stylesheet" href="./css/agent-page.css?v=1779725891">
-  <link rel="stylesheet" href="./css/responsive.css?v=1779725891">
+  <link rel="stylesheet" href="./css/tokens.css?v=1779729222">
+  <link rel="stylesheet" href="./css/layout.css?v=1779729222">
+  <link rel="stylesheet" href="./css/components.css?v=1779729222">
+  <link rel="stylesheet" href="./css/agent-page.css?v=1779729222">
+  <link rel="stylesheet" href="./css/responsive.css?v=1779729222">
 </head>
 <body>
 
@@ -112,6 +112,33 @@
 
   <!-- MAP ARROWS — must be before any transform/filter elements -->
 
+
+  <!-- AUDIO PLAYER -->
+  <audio id="site-audio" src="./assets/audio/theme.mp3" loop preload="none"></audio>
+  <div id="audio-player" style="
+    position:fixed; bottom:20px; right:20px; z-index:8000;
+    display:flex; align-items:center; gap:10px;
+    background:rgba(10,12,16,.92); border:1px solid rgba(255,70,86,.3);
+    padding:8px 14px; backdrop-filter:blur(12px);
+    font-family:'Tomorrow',sans-serif;
+  ">
+    <button id="audio-toggle" onclick="window.OLYCITY.toggleAudio()" style="
+      background:none; border:none; cursor:pointer; color:#ff4656;
+      font-size:16px; width:24px; display:flex; align-items:center; justify-content:center;
+      padding:0; transition:opacity .15s;
+    ">▶</button>
+    <div style="display:flex;flex-direction:column;gap:2px;min-width:100px">
+      <div style="font-size:8px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(255,255,255,.9);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:140px">Ran To Atlanta</div>
+      <div style="font-size:7px;letter-spacing:1px;text-transform:uppercase;color:rgba(255,255,255,.35)">Drake · Future</div>
+    </div>
+    <input id="audio-vol" type="range" min="0" max="100" value="30"
+      oninput="window.OLYCITY.setVolume(this.value)"
+      style="width:60px;accent-color:#ff4656;cursor:pointer">
+    <button onclick="document.getElementById('audio-player').style.display='none'" style="
+      background:none; border:none; cursor:pointer; color:rgba(255,255,255,.3);
+      font-size:12px; padding:0; line-height:1;
+    ">✕</button>
+  </div>
 
   <!-- Background layers -->
   <div class="bg-layer bg-grid"></div>
@@ -351,6 +378,6 @@
       navigator.serviceWorker.getRegistrations().then(regs => regs.forEach(r => r.unregister()));
     }
   </script>
-  <script type="module" src="./js/main.js?v=1779725891"></script>
+  <script type="module" src="./js/main.js?v=1779729222"></script>
 </body>
 </html>
