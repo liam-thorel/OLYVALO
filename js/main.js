@@ -5,7 +5,7 @@
 
 import { valorantApi } from './api.js';
 
-const SITE_VERSION = '1779720614'; // Auto-updated on push
+const SITE_VERSION = '1779720735'; // Auto-updated on push
 import { syncPlayer as henrikSyncPlayer, syncAllPlayers as henrikSyncAll, persistPlayerStats } from './henrik.js';
 import { rosterHTML, guestCardHTML, mapSectionHTML, stierHTML, globalNotesHTML, navMapsHTML, agentPageHTML, miniRosterHTML, agentsFiltersHTML, agentsGridHTML, compCompareHTML, compBuilderHTML, savedCompsHTML, calloutsHTML } from './render.js';
 import { initTheme, initTilt, initParallax, initSearch, initKeyboard, updateFavCount, initHeroParticles, initWheelLogos } from './interactions.js';
@@ -132,7 +132,6 @@ window.OLYCITY = {
 
     // Show/hide map nav
 
-    // Hide side arrows when not on maps
     if (page !== 'maps') {
       const al = document.getElementById('map-arrow-left');
       const ar = document.getElementById('map-arrow-right');
@@ -155,8 +154,9 @@ window.OLYCITY = {
       const al = document.getElementById('map-arrow-left');
       const ar = document.getElementById('map-arrow-right');
       const total = state.COMPS_DATA.length;
-      if (al) al.style.display = state.currentMapIdx > 0 ? 'flex' : 'none';
-      if (ar) ar.style.display = state.currentMapIdx < total - 1 ? 'flex' : 'none';
+      const mi = state.currentMapIdx || 0;
+      if (al) { al.style.display = 'flex'; al.disabled = mi === 0; al.style.opacity = mi === 0 ? '0.3' : '1'; }
+      if (ar) { ar.style.display = 'flex'; ar.disabled = mi === total-1; ar.style.opacity = mi === total-1 ? '0.3' : '1'; }
     }
     // Update mini roster on home
     if (page === 'home') {
