@@ -5,7 +5,7 @@
 
 import { valorantApi } from './api.js';
 
-const SITE_VERSION = '1779663814'; // Auto-updated on push
+const SITE_VERSION = '1779720482'; // Auto-updated on push
 import { syncPlayer as henrikSyncPlayer, syncAllPlayers as henrikSyncAll, persistPlayerStats } from './henrik.js';
 import { rosterHTML, guestCardHTML, mapSectionHTML, stierHTML, globalNotesHTML, navMapsHTML, agentPageHTML, miniRosterHTML, agentsFiltersHTML, agentsGridHTML, compCompareHTML, compBuilderHTML, savedCompsHTML, calloutsHTML } from './render.js';
 import { initTheme, initTilt, initParallax, initSearch, initKeyboard, updateFavCount, initHeroParticles, initWheelLogos } from './interactions.js';
@@ -30,6 +30,7 @@ export const state = {
   builderFocusSlot: 0,
   builderMapIdx: null,
   currentProfile: null,
+  currentMapIdx: 0,
   builderMapIdx: null,
   LINEUPS: {},
   CALLOUTS: {},
@@ -132,6 +133,13 @@ window.OLYCITY = {
     // Show/hide map nav
     const mapNav = document.getElementById('nav-maps');
     if (mapNav) mapNav.style.display = page === 'maps' ? 'flex' : 'none';
+    // Hide side arrows when not on maps
+    if (page !== 'maps') {
+      const al = document.getElementById('map-arrow-left');
+      const ar = document.getElementById('map-arrow-right');
+      if (al) al.style.display = 'none';
+      if (ar) ar.style.display = 'none';
+    }
 
     window.scrollTo({ top: 0, behavior: 'smooth' });
     state.currentPage = page;
@@ -143,7 +151,14 @@ window.OLYCITY = {
     }
 
     // Re-init tilt on map page
-    if (page === 'maps') setTimeout(() => initTilt(), 100);
+    if (page === 'maps') {
+      setTimeout(() => initTilt(), 100);
+      const al = document.getElementById('map-arrow-left');
+      const ar = document.getElementById('map-arrow-right');
+      const total = state.COMPS_DATA.length;
+      if (al) al.style.display = state.currentMapIdx > 0 ? 'flex' : 'none';
+      if (ar) ar.style.display = state.currentMapIdx < total - 1 ? 'flex' : 'none';
+    }
     // Update mini roster on home
     if (page === 'home') {
       const el = document.getElementById('mini-roster');
@@ -152,6 +167,21 @@ window.OLYCITY = {
     }
   },
 
+
+  mapNavPrev() {
+    if (state.currentMapIdx > 0) {
+      const i = state.currentMapIdx - 1;
+      window.OLYCITY.showMap(i, document.querySelector(`[data-map-idx="${i}"]`));
+    }
+  },
+
+  mapNavNext() {
+    const total = state.COMPS_DATA.length;
+    if (state.currentMapIdx < total - 1) {
+      const i = state.currentMapIdx + 1;
+      window.OLYCITY.showMap(i, document.querySelector(`[data-map-idx="${i}"]`));
+    }
+  },
 
   showMap(idx, btn) {
     document.querySelectorAll('.map-section').forEach(s => s.classList.remove('active'));

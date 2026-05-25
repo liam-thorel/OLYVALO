@@ -11,11 +11,11 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Tomorrow:wght@400;500;600;700&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="./css/tokens.css?v=1779663814">
-  <link rel="stylesheet" href="./css/layout.css?v=1779663814">
-  <link rel="stylesheet" href="./css/components.css?v=1779663814">
-  <link rel="stylesheet" href="./css/agent-page.css?v=1779663814">
-  <link rel="stylesheet" href="./css/responsive.css?v=1779663814">
+  <link rel="stylesheet" href="./css/tokens.css?v=1779720482">
+  <link rel="stylesheet" href="./css/layout.css?v=1779720482">
+  <link rel="stylesheet" href="./css/components.css?v=1779720482">
+  <link rel="stylesheet" href="./css/agent-page.css?v=1779720482">
+  <link rel="stylesheet" href="./css/responsive.css?v=1779720482">
 </head>
 <body>
 
@@ -153,7 +153,6 @@
       </div>
 
       <!-- MAP SELECTOR (visible only on maps page) -->
-      <div class="nav-maps" id="nav-maps" style="display:none"></div>
 
       <div class="topbar-tools">
         <!-- Profile indicator -->
@@ -246,6 +245,10 @@
     </section>
 
   </div>
+
+  <!-- MAP NAVIGATION ARROWS (global, outside sections) -->
+  <button id="map-arrow-left" class="map-side-arrow map-side-left" style="display:none" onclick="window.OLYCITY.mapNavPrev()">&#8592;</button>
+  <button id="map-arrow-right" class="map-side-arrow map-side-right" style="display:none" onclick="window.OLYCITY.mapNavNext()">&#8594;</button>
 
   <!-- ═══════════ PAGE MAPS ═══════════ -->
   <div id="page-maps" class="spa-page">
@@ -346,6 +349,6 @@
       navigator.serviceWorker.getRegistrations().then(regs => regs.forEach(r => r.unregister()));
     }
   </script>
-  <script type="module" src="./js/main.js?v=1779663814"></script>
+  <script type="module" src="./js/main.js?v=1779720482"></script>
 </body>
 </html>

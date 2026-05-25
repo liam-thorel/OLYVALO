@@ -422,15 +422,15 @@ body.agent-mode .footer{ display:none; }
 }
 .nav-maps-menu-item:hover img { opacity: 1; }
 
-/* Map side arrows */
+/* Map side arrows — fixed to viewport center */
 .map-side-arrow {
-  position: fixed; top: 50%; transform: translateY(-50%);
-  z-index: 50; background: rgba(10,12,16,.8);
+  position: fixed; top: 50vh; transform: translateY(-50%);
+  z-index: 200; background: rgba(10,12,16,.85);
   border: 1px solid var(--border2); color: var(--muted);
-  cursor: pointer; width: 38px; height: 60px;
-  font-size: 20px; display: flex; align-items: center; justify-content: center;
+  cursor: pointer; width: 40px; height: 64px;
+  font-size: 22px; display: flex; align-items: center; justify-content: center;
   transition: all .2s;
 }
-.map-side-arrow:hover { color: var(--red); border-color: var(--red); background: rgba(255,70,86,.12); }
-.map-side-left  { left: 0; border-left: none; }
-.map-side-right { right: 0; border-right: none; }
+.map-side-arrow:hover { color: var(--red); border-color: var(--red); background: rgba(255,70,86,.15); }
+.map-side-left  { left: 0; border-left: none; border-radius: 0 4px 4px 0; }
+.map-side-right { right: 0; border-right: none; border-radius: 4px 0 0 4px; }
