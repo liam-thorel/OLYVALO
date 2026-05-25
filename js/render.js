@@ -501,12 +501,13 @@ export function rosterHTML() {
       </div>
     </div>`;
   }).join('') + `<div class="player-card add-player-card" onclick="window.OLYCITY.showAddPlayerForm()">
-    <div class="player-banner" style="display:flex;align-items:center;justify-content:center">
-      <div style="font-size:48px;font-weight:100;color:rgba(255,255,255,.12);line-height:1">?</div>
+    <div class="player-banner add-player-banner">
+      <div class="add-player-question">?</div>
     </div>
-    <div class="player-body" style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;min-height:90px">
-      <div style="font-size:32px;color:var(--border2);font-weight:100;line-height:1">+</div>
-      <div class="player-role" style="text-align:center;letter-spacing:2px">Ajouter</div>
+    <div class="player-body" style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;min-height:90px">
+      <div class="add-player-icon">+</div>
+      <div class="player-name" style="font-size:14px;letter-spacing:3px;color:var(--dim)">NOUVEAU</div>
+      <div class="player-role" style="text-align:center;letter-spacing:2px;font-size:9px">Ajouter un joueur</div>
     </div>
   </div>`;
 }
