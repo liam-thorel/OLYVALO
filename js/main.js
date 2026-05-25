@@ -5,7 +5,7 @@
 
 import { valorantApi } from './api.js';
 
-const SITE_VERSION = '1779720822'; // Auto-updated on push
+const SITE_VERSION = '1779720921'; // Auto-updated on push
 import { syncPlayer as henrikSyncPlayer, syncAllPlayers as henrikSyncAll, persistPlayerStats } from './henrik.js';
 import { rosterHTML, guestCardHTML, mapSectionHTML, stierHTML, globalNotesHTML, navMapsHTML, agentPageHTML, miniRosterHTML, agentsFiltersHTML, agentsGridHTML, compCompareHTML, compBuilderHTML, savedCompsHTML, calloutsHTML } from './render.js';
 import { initTheme, initTilt, initParallax, initSearch, initKeyboard, updateFavCount, initHeroParticles, initWheelLogos } from './interactions.js';
@@ -168,27 +168,28 @@ window.OLYCITY = {
 
 
   mapNavPrev() {
-    if (state.currentMapIdx > 0) {
-      const i = state.currentMapIdx - 1;
-      window.OLYCITY.showMap(i, document.querySelector(`[data-map-idx="${i}"]`));
-    }
+    const i = (state.currentMapIdx || 0) - 1;
+    if (i >= 0) window.OLYCITY.showMap(i, null);
   },
 
   mapNavNext() {
-    const total = state.COMPS_DATA.length;
-    if (state.currentMapIdx < total - 1) {
-      const i = state.currentMapIdx + 1;
-      window.OLYCITY.showMap(i, document.querySelector(`[data-map-idx="${i}"]`));
-    }
+    const i = (state.currentMapIdx || 0) + 1;
+    if (i < state.COMPS_DATA.length) window.OLYCITY.showMap(i, null);
   },
 
   showMap(idx, btn) {
+    state.currentMapIdx = idx;
     document.querySelectorAll('.map-section').forEach(s => s.classList.remove('active'));
     document.querySelectorAll('.nav-map-btn').forEach(b => b.classList.remove('active'));
     const section = document.getElementById(`map-${idx}`);
     if (section) section.classList.add('active');
     if (btn) btn.classList.add('active');
-    state.currentMap = idx;
+    // Update side arrows
+    const total = state.COMPS_DATA.length;
+    const al = document.getElementById('map-arrow-left');
+    const ar = document.getElementById('map-arrow-right');
+    if (al) { al.style.display = 'flex'; al.style.opacity = idx === 0 ? '0.3' : '1'; al.style.pointerEvents = idx === 0 ? 'none' : 'auto'; }
+    if (ar) { ar.style.display = 'flex'; ar.style.opacity = idx === total-1 ? '0.3' : '1'; ar.style.pointerEvents = idx === total-1 ? 'none' : 'auto'; }
     setTimeout(() => initTilt(), 50);
   },
 
