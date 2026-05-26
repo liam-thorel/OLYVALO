@@ -98,8 +98,8 @@ export async function initDrawBoard(mapName, container) {
     <div class="draw-board" style="width:100%">
       <div class="draw-toolbar">
         <div class="draw-tool-group" style="align-items:center;gap:8px">
-          <div style="width:18px;height:18px;border-radius:50%;background:\${currentColor};border:2px solid rgba(255,255,255,.3);flex-shrink:0"></div>
-          <span style="font-size:10px;letter-spacing:1px;text-transform:uppercase;color:var(--muted)">\${profile}</span>
+          <div style="width:18px;height:18px;border-radius:50%;background:${currentColor};border:2px solid rgba(255,255,255,.3);flex-shrink:0"></div>
+          <span style="font-size:10px;letter-spacing:1px;text-transform:uppercase;color:var(--muted)">${profile}</span>
         </div>
         <div class="draw-tool-group">
           <input type="range" id="draw-size" min="1" max="20" value="3"
