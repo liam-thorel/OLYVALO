@@ -105,8 +105,9 @@ export async function initDrawBoard(mapName, container) {
   await loadMinimap();
 
   const resize = () => {
-    canvas.width = wrap.clientWidth || 800;
-    canvas.height = canvas.width; // square to match minimap
+    const w = wrap.clientWidth || 700;
+    canvas.width = w;
+    canvas.height = w; // square — minimap is square
     redraw();
   };
   setTimeout(resize, 50);
@@ -117,6 +118,17 @@ export async function initDrawBoard(mapName, container) {
     const src = e.touches ? e.touches[0] : e;
     return { x: (src.clientX - rect.left) / rect.width * 100, y: (src.clientY - rect.top) / rect.height * 100 };
   };
+
+  // Ctrl+Z = undo
+  const ctrlZ = (e) => {
+    if ((e.ctrlKey || e.metaKey) && e.key === 'z') {
+      e.preventDefault();
+      window._drawUndo?.();
+    }
+  };
+  document.addEventListener('keydown', ctrlZ);
+  // Cleanup on tab switch
+  canvas.dataset.ctrlzbound = '1';
 
   canvas.addEventListener('mousedown', e => { drawing = true; currentPath = [pos(e)]; });
   canvas.addEventListener('mousemove', e => {
@@ -172,8 +184,16 @@ export async function initDrawBoard(mapName, container) {
     // Draw minimap background
     if (minimapImg) {
       ctx.globalAlpha = 1;
-      ctx.drawImage(minimapImg, 0, 0, canvas.width, canvas.height);
-      ctx.fillStyle = 'rgba(6,8,12,.25)';
+      // Draw with contain — preserve aspect ratio
+      const iw = minimapImg.naturalWidth || minimapImg.width;
+      const ih = minimapImg.naturalHeight || minimapImg.height;
+      const scale = Math.min(canvas.width / iw, canvas.height / ih);
+      const dw = iw * scale, dh = ih * scale;
+      const dx = (canvas.width - dw) / 2, dy = (canvas.height - dh) / 2;
+      ctx.fillStyle = '#0d1117';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      ctx.drawImage(minimapImg, dx, dy, dw, dh);
+      ctx.fillStyle = 'rgba(6,8,12,.2)';
       ctx.fillRect(0, 0, canvas.width, canvas.height);
     } else {
       ctx.fillStyle = '#0d1117';
