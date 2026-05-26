@@ -5,7 +5,7 @@
 
 import { valorantApi } from './api.js';
 
-const SITE_VERSION = '1779811056'; // Auto-updated on push
+const SITE_VERSION = '1779811862'; // Auto-updated on push
 import { syncPlayer as henrikSyncPlayer, syncAllPlayers as henrikSyncAll, persistPlayerStats } from './henrik.js';
 import { rosterHTML, guestCardHTML, mapSectionHTML, stierHTML, globalNotesHTML, navMapsHTML, agentPageHTML, miniRosterHTML, agentsFiltersHTML, agentsGridHTML, compCompareHTML, compBuilderHTML, savedCompsHTML, calloutsHTML } from './render.js';
 import { initTheme, initTilt, initParallax, initSearch, initKeyboard, updateFavCount, initHeroParticles, initWheelLogos } from './interactions.js';
@@ -595,6 +595,16 @@ window.OLYCITY = {
   },
 
   switchMapTab(mapIdx, tab, btn) {
+    // Init draw board on first open
+    if (tab === 'draw') {
+      const boardEl = document.getElementById(`draw-board-${mapIdx}`);
+      if (boardEl && !boardEl.hasChildNodes()) {
+        const mapName = state.COMPS_DATA[mapIdx]?.map;
+        if (mapName) {
+          import('./firebase-draw.js').then(m => m.initDrawBoard(mapName, boardEl));
+        }
+      }
+    }
     const prefix = `maptab-${mapIdx}-`;
     document.querySelectorAll(`[id^="${prefix}"]`).forEach(el => el.classList.remove('active'));
     document.querySelectorAll(`#map-${mapIdx} .map-section-tab`).forEach(b => b.classList.remove('active'));

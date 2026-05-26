@@ -1705,3 +1705,33 @@ button.comp-tab.fun-tab {
   color: var(--red);
   background: var(--red-low);
 }
+
+/* ════════════════════════════════════════════════
+   DRAW BOARD — canvas collaboratif
+   ════════════════════════════════════════════════ */
+.draw-board { display:flex; flex-direction:column; gap:0; }
+.draw-toolbar {
+  display:flex; align-items:center; gap:12px; flex-wrap:wrap;
+  padding:10px 16px; background:var(--surf2); border:1px solid var(--border);
+  border-bottom:none;
+}
+.draw-tool-group { display:flex; align-items:center; gap:6px; }
+.draw-color-btn {
+  width:22px; height:22px; border-radius:50%; border:2px solid transparent;
+  cursor:pointer; transition:transform .15s, border-color .15s;
+}
+.draw-color-btn:hover { transform:scale(1.2); }
+.draw-color-btn.active { border-color:#fff; transform:scale(1.2); }
+.draw-btn {
+  background:var(--surf3); border:1px solid var(--border2); color:var(--muted);
+  padding:5px 12px; cursor:pointer; font-family:'Tomorrow',sans-serif;
+  font-size:9px; font-weight:600; letter-spacing:1.5px; text-transform:uppercase;
+  transition:all .15s;
+}
+.draw-btn:hover { color:var(--text); border-color:var(--border2); }
+.draw-btn-danger:hover { color:var(--red); border-color:var(--red-mid); }
+.draw-canvas-wrap {
+  position:relative; background:var(--surf); border:1px solid var(--border);
+  overflow:hidden;
+}
+.draw-canvas-wrap canvas { display:block; width:100%; }
