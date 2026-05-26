@@ -5,7 +5,7 @@
 
 import { valorantApi } from './api.js';
 
-const SITE_VERSION = '1779827992'; // Auto-updated on push
+const SITE_VERSION = '1779828137'; // Auto-updated on push
 import { syncPlayer as henrikSyncPlayer, syncAllPlayers as henrikSyncAll, persistPlayerStats } from './henrik.js';
 import { rosterHTML, guestCardHTML, mapSectionHTML, stierHTML, globalNotesHTML, navMapsHTML, agentPageHTML, miniRosterHTML, agentsFiltersHTML, agentsGridHTML, compCompareHTML, compBuilderHTML, savedCompsHTML, calloutsHTML } from './render.js';
 import { initTheme, initTilt, initParallax, initSearch, initKeyboard, updateFavCount, initHeroParticles, initWheelLogos } from './interactions.js';
@@ -719,23 +719,7 @@ window.OLYCITY = {
     if (audio) audio.volume = val / 100;
   },
 
-  _showProfilePicker(attempt) {
-    attempt = attempt || 0;
-    // Wait for Firebase presence (max 5 * 200ms = 1s)
-    if (!window._presenceReady && attempt < 5) {
-      let p = document.getElementById('profile-picker');
-      if (!p) {
-        p = document.createElement('div');
-        p.id = 'profile-picker';
-        Object.assign(p.style, {position:'fixed',inset:'0',zIndex:'8000',background:'#0a0c10',display:'flex',alignItems:'center',justifyContent:'center'});
-        p.innerHTML = '<div style="font-family:Tomorrow,sans-serif;font-size:11px;letter-spacing:3px;color:rgba(255,255,255,.3);text-transform:uppercase">Connexion…</div>';
-        document.body.appendChild(p);
-      }
-      p.style.display = 'flex';
-      p.style.opacity = '1';
-      setTimeout(() => window.OLYCITY._showProfilePicker(attempt + 1), 200);
-      return;
-    }
+  _showProfilePicker() {
     let picker = document.getElementById('profile-picker');
     const needsBuild = !picker;
     if (!picker) {
@@ -1094,6 +1078,14 @@ async function boot() {
     ls.style.opacity = '0';
     setTimeout(() => ls.remove(), 500);
   }
+  // Lancer Firebase EN PREMIER et attendre qu'il soit prêt
+  window._initPresence?.();
+  await new Promise(resolve => {
+    const t = Date.now();
+    const check = () => (window._presenceReady || Date.now()-t > 2000) ? resolve() : setTimeout(check, 100);
+    check();
+  });
+
   // Profile system
   const savedProfile = localStorage.getItem('olycity-profile');
   if (savedProfile) {
@@ -1102,19 +1094,7 @@ async function boot() {
   } else {
     window.OLYCITY._showProfilePicker();
   }
-  // Create map arrows via JS — bypass CSS stacking context issues
   window.OLYCITY.showMap(0, null);
-  // Heartbeat — update active timestamp every 5s
-  const currentP = localStorage.getItem('olycity-profile');
-  if (currentP) {
-    localStorage.setItem(`olycity-active-${currentP}`, Date.now());
-    setInterval(() => {
-      const p = localStorage.getItem('olycity-profile');
-      if (p) localStorage.setItem(`olycity-active-${p}`, Date.now());
-    }, 5000);
-  }
-  // Lancer la présence Firebase
-  window._initPresence?.();
   console.log('[OLYCITY] Ready ✓');
 }
 
