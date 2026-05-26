@@ -5,7 +5,7 @@
 
 import { valorantApi } from './api.js';
 
-const SITE_VERSION = '1779828919'; // Auto-updated on push
+const SITE_VERSION = '1779829093'; // Auto-updated on push
 import { syncPlayer as henrikSyncPlayer, syncAllPlayers as henrikSyncAll, persistPlayerStats } from './henrik.js';
 import { rosterHTML, guestCardHTML, mapSectionHTML, stierHTML, globalNotesHTML, navMapsHTML, agentPageHTML, miniRosterHTML, agentsFiltersHTML, agentsGridHTML, compCompareHTML, compBuilderHTML, savedCompsHTML, calloutsHTML } from './render.js';
 import { initTheme, initTilt, initParallax, initSearch, initKeyboard, updateFavCount, initHeroParticles, initWheelLogos } from './interactions.js';
@@ -768,6 +768,13 @@ window.OLYCITY = {
     picker.style.display = 'flex';
     picker.style.opacity = '1';
     picker.style.transition = '';
+  },
+
+  _refreshPickerDots() {
+    const picker = document.getElementById('profile-picker');
+    if (picker && picker.style.display !== 'none' && picker.style.opacity !== '0') {
+      window.OLYCITY._showProfilePicker();
+    }
   },
 
   _selectProfile(name) {
