@@ -107,8 +107,7 @@ export async function initDrawBoard(mapName, container) {
   // Center canvas in full-width wrap
   wrap.style.maxWidth = '100%';
   wrap.style.background = 'var(--surf)';
-  canvas.style.display = 'block';
-  canvas.style.margin = '0 auto';
+
 
   const resize = () => {
     const w = Math.min(wrap.clientWidth - 2, 500);
