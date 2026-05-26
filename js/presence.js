@@ -45,23 +45,16 @@ async function initPresence() {
   // Watch all sessions
   db.ref('sessions').on('value', snap => {
     window._activeProfiles = new Set();
-    if (snap.exists()) {
-      snap.forEach(profileSnap => {
-        let alive = false;
-        profileSnap.forEach(s => { if (Date.now() - (s.val()?.ts || 0) < 20000) alive = true; });
-        if (alive) window._activeProfiles.add(profileSnap.key);
-      });
-    }
-    window._presenceLoaded = true;
-    window._presenceReady = true;
-    // Open picker if pending, or refresh if open
-    if (window._pendingPicker) {
-      window.OLYCITY?._showProfilePicker();
-    } else {
-      const picker = document.getElementById('profile-picker');
-      if (picker && picker.style.display !== 'none') {
-        window.OLYCITY?._refreshPickerDots?.();
-      }
+    if (!snap.exists()) return;
+    snap.forEach(profileSnap => {
+      let alive = false;
+      profileSnap.forEach(s => { if (Date.now() - (s.val()?.ts || 0) < 20000) alive = true; });
+      if (alive) window._activeProfiles.add(profileSnap.key);
+    });
+    // Refresh picker if open
+    const picker = document.getElementById('profile-picker');
+    if (picker && picker.style.display !== 'none') {
+      window.OLYCITY?._refreshPickerDots?.();
     }
   });
 
