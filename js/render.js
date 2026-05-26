@@ -812,30 +812,11 @@ export function miniRosterHTML() {
 
 // ─── CALLOUTS MAP ────────────────────────────────
 export function calloutsHTML(mapName) {
+  // Uses ONLY static coordinates from callouts.json — never overridden by API
+  const zones = state.CALLOUTS?.[mapName]?.zones || [];
+  if (!zones.length) return '<div style="padding:24px;color:var(--dim);font-family:Tomorrow,sans-serif;font-size:11px;letter-spacing:2px">Callouts non configurés pour cette map.</div>';
+
   const minimapUrl = valorantApi.mapMinimap(mapName);
-  const apiCallouts = valorantApi.mapCallouts(mapName);
-
-  // Use static callout data for coloring (regionName → color)
-  const ZONE_COLORS = {
-    'A': '#f5c842', 'B': '#a87fff', 'C': '#a87fff',
-    'Mid': '#ff8200', 'Spawn': '#ff4656', 'CT': '#3fcfcf',
-    'Default': '#888', 'Attacker': '#ff4656', 'Defender': '#3fcfcf',
-  };
-
-  function zoneColor(region, superRegion) {
-    if (/attacker|atk/i.test(superRegion || region)) return '#ff4656';
-    if (/defender|def|ct/i.test(superRegion || region)) return '#3fcfcf';
-    if (/^a|^a site|^a main/i.test(region)) return '#f5c842';
-    if (/^b|^b site|^b main/i.test(region)) return '#a87fff';
-    if (/^c|^c site|^c main/i.test(region)) return '#a87fff';
-    if (/mid/i.test(region)) return '#ff8200';
-    return '#888888';
-  }
-
-  function isMajor(region) {
-    return /site|heaven|spawn/i.test(region);
-  }
-
   const W = 1024, H = 1024;
 
   const bg = minimapUrl
@@ -844,42 +825,22 @@ export function calloutsHTML(mapName) {
 
   const overlay = `<rect width="${W}" height="${H}" fill="rgba(6,8,12,.3)"/>`;
 
-  // Use API callouts if available, else fall back to static data
-  const zones = apiCallouts.length > 0
-    ? apiCallouts.map(c => {
-        const pos = valorantApi.mapGameToMinimap(mapName, c.x, c.y);
-        return {
-          label: c.region,
-          cx: pos.x * W,
-          cy: pos.y * H,
-          color: zoneColor(c.region, c.super),
-          major: isMajor(c.region),
-        };
-      })
-    : (state.CALLOUTS?.[mapName]?.zones || []).map(z => ({
-        label: z.label,
-        cx: (z.x / 100) * W,
-        cy: (z.y / 100) * H,
-        color: z.color,
-        major: !!z.major,
-      }));
-
-  if (!zones.length) return '';
-
   const labels = zones.map(z => {
-    const r = z.major ? 9 : 5;
-    const fontSize = z.major ? 12 : 9;
-    const textLen = z.label.length * (fontSize * 0.62);
-    const bgW = textLen + 12;
-    const bgH = fontSize + 7;
+    const cx = (z.x / 100) * W;
+    const cy = (z.y / 100) * H;
+    const r = z.major ? 10 : 6;
+    const fontSize = z.major ? 13 : 10;
+    const textLen = (z.label || '').length * (fontSize * 0.62);
+    const bgW = textLen + 14;
+    const bgH = fontSize + 8;
     const pulse = z.major ? `
-      <circle r="${r+5}" fill="none" stroke="${z.color}" stroke-width="1.5" opacity=".0">
+      <circle r="${r+6}" fill="none" stroke="${z.color}" stroke-width="1.5" opacity=".0">
         <animate attributeName="r" values="${r+2};${r+11};${r+2}" dur="2.5s" repeatCount="indefinite"/>
         <animate attributeName="opacity" values=".5;0;.5" dur="2.5s" repeatCount="indefinite"/>
       </circle>` : '';
-    return `<g transform="translate(${z.cx.toFixed(1)},${z.cy.toFixed(1)})">
+    return `<g transform="translate(${cx.toFixed(1)},${cy.toFixed(1)})">
       ${pulse}
-      <circle r="${r}" fill="${z.color}" opacity="${z.major ? '.95' : '.75'}"/>
+      <circle r="${r}" fill="${z.color}" opacity="${z.major ? '.95' : '.8'}"/>
       ${z.major ? `<circle r="${r+4}" fill="none" stroke="${z.color}" stroke-width="1" opacity=".45"/>` : ''}
       <rect x="${(-bgW/2).toFixed(1)}" y="${(-bgH-r-3).toFixed(1)}" width="${bgW.toFixed(1)}" height="${bgH}"
         rx="2" fill="rgba(6,8,12,.88)" stroke="${z.color}" stroke-width=".8" opacity=".92"/>
@@ -898,291 +859,18 @@ export function calloutsHTML(mapName) {
   const legend = [
     { color:'#ff4656', label:'Spawn ATK' }, { color:'#3fcfcf', label:'Spawn DEF / CT' },
     { color:'#f5c842', label:'Zone A' }, { color:'#a87fff', label:'Zone B / C' },
-    { color:'#ff8200', label:'Mid' }, { color:'#888', label:'Autres' },
+    { color:'#ff8200', label:'Mid' },
   ].map(l => `<div class="callout-legend-item">
     <div class="callout-legend-dot" style="background:${l.color}"></div>${l.label}
   </div>`).join('');
 
-  const src = apiCallouts.length > 0
-    ? `<div style="font-family:Tomorrow,sans-serif;font-size:8px;letter-spacing:1px;color:var(--dim);margin-top:8px">Callouts officiels — valorant-api.com · ${zones.length} zones</div>`
-    : `<div style="font-family:Tomorrow,sans-serif;font-size:8px;letter-spacing:1px;color:var(--dim);margin-top:8px">Positions estimées OLYCITY · ${zones.length} zones</div>`;
-
   return `<div class="callouts-section">
     <div class="callout-map-wrap" style="max-width:680px">${svgContent}</div>
-    <div class="callout-legend">${legend}${src}</div>
-  </div>`;
-}
-// ─── AGENTS PAGE ──────────────────────────────────
-export function agentsFiltersHTML() {
-  const roles = [
-    { key: 'all', label: 'Tous' },
-    { key: 'D',   label: 'Duelliste' },
-    { key: 'I',   label: 'Initiateur' },
-    { key: 'S',   label: 'Sentinelle' },
-    { key: 'C',   label: 'Contrôleur' },
-  ];
-  return roles.map(r =>
-    `<button class="agent-filter-btn ${r.key !== 'all' ? r.key : ''} ${r.key === 'all' ? 'active' : ''}"
-      data-role="${r.key}"
-      onclick="window.OLYCITY.filterAgents('${r.key}', this)">
-      ${r.label}
-    </button>`
-  ).join('');
-}
-
-export function agentsGridHTML(filter = 'all', search = '') {
-  const allAgents = Object.keys(valorantApi.agents).sort();
-  const q = search.toLowerCase().trim();
-
-  const filtered = allAgents.filter(name => {
-    const role = state.ROLES[name] || 'D';
-    const matchRole = filter === 'all' || role === filter;
-    const matchSearch = !q || name.toLowerCase().includes(q);
-    return matchRole && matchSearch;
-  });
-
-  if (filtered.length === 0) {
-    return `<div class="agents-empty">Aucun agent trouvé</div>`;
-  }
-
-  return filtered.map(name => agentCardHTML(name)).join('');
-}
-
-// ─── SAVED COMPS ─────────────────────────────────
-export function savedCompsHTML(profile) {
-  const p = profile || state.currentProfile || 'guest';
-  let saved = [];
-  try {
-    const key = `olycity-saved-comps-${p}`;
-    saved = JSON.parse(localStorage.getItem(key) || '[]');
-  } catch(e) {}
-
-  if (saved.length === 0) {
-    return `<div class="saved-comps-section">
-      <div class="sub-section-title">
-        <span class="sub-tag">Sauvegardées</span>
-        <span class="sub-title">Mes comps custom</span>
-        <div class="sub-line"></div>
-      </div>
-      <div class="no-saved">Aucune comp sauvegardée — crée-en une dans le builder ci-dessus</div>
-    </div>`;
-  }
-
-  const cards = saved.map((comp, i) => {
-    const agents = (comp.agents || []).map(name => {
-      const img = valorantApi.agentImg(name);
-      return `<div class="saved-comp-agent">
-        ${img ? `<img src="${img}" alt="${name}" title="${name}">` : ''}
-      </div>`;
-    }).join('');
-    const date = comp.createdAt
-      ? new Date(comp.createdAt).toLocaleDateString('fr-FR', { day:'2-digit', month:'short' })
-      : '—';
-    return `<div class="saved-comp-card">
-      <div class="saved-comp-name">${comp.name}</div>
-      <div class="saved-comp-agents">${agents}</div>
-      <div class="saved-comp-date">Créée le ${date} · ${comp.agents?.length || 0} agents${comp.map ? ` · ${comp.map}` : ''}</div>
-      <div class="saved-comp-actions">
-        <button class="saved-comp-btn load" onclick="window.OLYCITY.builderLoad(${i})">↺ Charger</button>
-        <button class="saved-comp-btn" onclick="window.OLYCITY.savedCompCompare(${i})" style="color:var(--gold);border-color:rgba(245,200,66,.3)">⇄ Comparer</button>
-        <button class="saved-comp-btn del" onclick="window.OLYCITY.savedCompDelete(${i})">✕ Sup.</button>
-      </div>
-    </div>`;
-  }).join('');
-
-  return `<div class="saved-comps-section">
-    <div class="sub-section-title">
-      <span class="sub-tag">Sauvegardées</span>
-      <span class="sub-title">Mes comps custom (${saved.length})</span>
-      <div class="sub-line"></div>
-    </div>
-    <div class="saved-comps-grid">${cards}</div>
-  </div>`;
-}
-
-// ─── COMP COMPARISON ─────────────────────────────
-export function compCompareHTML(compA, compB) {
-  const metrics = [
-    { key:'antiRush',  label:'Anti-Rush',  icon:'⚡' },
-    { key:'postPlant', label:'Post-Plant',  icon:'◆'  },
-    { key:'retake',    label:'Retake',      icon:'↩'  },
-    { key:'split',     label:'Split Push',  icon:'↔'  },
-  ];
-  const barColor = v => v >= 4 ? 'var(--S)' : v >= 3 ? 'var(--gold)' : 'var(--D)';
-
-  function agentsCol(comp) {
-    return (comp.agents || []).map(name => {
-      const img = valorantApi.agentImg(name);
-      return `<div class="comp-compare-agent" onclick="window.OLYCITY.showAgentPage('${name}')">
-        ${img ? `<img src="${img}" alt="${name}">` : ''}
-        <span>${displayName(name)}</span>
-      </div>`;
-    }).join('');
-  }
-
-  function agilityCol(comp, isLeft) {
-    return metrics.map(m => {
-      const val = comp.agility?.[m.key] || 0;
-      const pct = (val/5)*100;
-      // For left col, bar grows right-to-left to face the center
-      const barStyle = isLeft
-        ? `width:${pct}%;background:${barColor(val)};right:0;left:auto`
-        : `width:${pct}%;background:${barColor(val)}`;
-      const track = isLeft
-        ? `<div class="comp-compare-bar" style="direction:rtl"><div class="comp-compare-fill" style="${barStyle}"></div></div>`
-        : `<div class="comp-compare-bar"><div class="comp-compare-fill" style="${barStyle}"></div></div>`;
-      return `<div class="comp-compare-metric" style="${isLeft ? 'flex-direction:row-reverse;text-align:right' : ''}">
-        <span class="comp-compare-num">${val}/5</span>
-        ${track}
-      </div>`;
-    }).join('');
-  }
-
-  // Center diff badges
-  const diffs = metrics.map(m => {
-    const vA = compA.agility?.[m.key] || 0;
-    const vB = compB.agility?.[m.key] || 0;
-    const d = vA - vB;
-    const cls = d > 0 ? 'pos' : d < 0 ? 'neg' : 'eq';
-    const label = d > 0 ? `+${d}` : d < 0 ? `${d}` : '=';
-    return `<div style="display:flex;align-items:center;gap:4px;height:28px">
-      <span class="diff-badge ${cls}">${label}</span>
-    </div>`;
-  }).join('');
-
-  const tierA = compA.tier === 'S' ? 'tier-s' : 'tier-a';
-  const tierB = compB.tier === 'S' ? 'tier-s' : 'tier-a';
-
-  // ─── Smart analysis ─────────────────────────────
-  function analyzeComps(cA, cB) {
-    const roleCount = (comp) => {
-      const agents = comp.agents || [];
-      return agents.reduce((acc, a) => {
-        const r = state.ROLES[a] || 'D';
-        acc[r] = (acc[r] || 0) + 1;
-        return acc;
-      }, {});
-    };
-    const rA = roleCount(cA), rB = roleCount(cB);
-    const agilityKeys = ['antiRush','postPlant','retake','split'];
-    const agilityLabels = { antiRush:'anti-rush', postPlant:'post-plant', retake:'retake', split:'split' };
-
-    const advantages = [], disadvantages = [];
-
-    // WR comparison
-    if (cA.winrate && cB.winrate) {
-      const diff = (cA.winrate - cB.winrate).toFixed(1);
-      if (Math.abs(diff) >= 1) {
-        const better = diff > 0 ? cA.label : cB.label;
-        const worse = diff > 0 ? cB.label : cA.label;
-        advantages.push(`<strong>${better}</strong> a un meilleur winrate sourcé (+${Math.abs(diff)}%)`);
-      }
-    }
-
-    // Agility advantages
-    agilityKeys.forEach(k => {
-      const vA = cA.agility?.[k] || 0;
-      const vB = cB.agility?.[k] || 0;
-      if (vA - vB >= 2) advantages.push(`<strong>${cA.label}</strong> est nettement supérieure en ${agilityLabels[k]}`);
-      else if (vB - vA >= 2) advantages.push(`<strong>${cB.label}</strong> est nettement supérieure en ${agilityLabels[k]}`);
-    });
-
-    // Role analysis
-    const duelA = rA.D || 0, duelB = rB.D || 0;
-    const ctrlA = rA.C || 0, ctrlB = rB.C || 0;
-    const initA = rA.I || 0, initB = rB.I || 0;
-    const sentA = rA.S || 0, sentB = rB.S || 0;
-
-    if (duelA > duelB) advantages.push(`<strong>${cA.label}</strong> est plus agressive (${duelA} duellist${duelA > 1 ? 's' : ''} vs ${duelB})`);
-    else if (duelB > duelA) advantages.push(`<strong>${cB.label}</strong> est plus agressive (${duelB} duellist${duelB > 1 ? 's' : ''} vs ${duelA})`);
-
-    if (ctrlA > ctrlB) advantages.push(`<strong>${cA.label}</strong> a plus de contrôle map (${ctrlA} controller${ctrlA > 1 ? 's' : ''})`);
-    else if (ctrlB > ctrlA) advantages.push(`<strong>${cB.label}</strong> a plus de contrôle map (${ctrlB} controller${ctrlB > 1 ? 's' : ''})`);
-
-    if (initA > initB) advantages.push(`<strong>${cA.label}</strong> a plus d'information (${initA} initiateur${initA > 1 ? 's' : ''})`);
-    else if (initB > initA) advantages.push(`<strong>${cB.label}</strong> a plus d'information (${initB} initiateur${initB > 1 ? 's' : ''})`);
-
-    // Défauts
-    if (duelA >= 2 && ctrlA === 0) disadvantages.push(`<strong>${cA.label}</strong> manque de smokes — exécutes difficiles sans controller`);
-    if (duelB >= 2 && ctrlB === 0) disadvantages.push(`<strong>${cB.label}</strong> manque de smokes — exécutes difficiles sans controller`);
-    if (sentA === 0) disadvantages.push(`<strong>${cA.label}</strong> n'a pas de sentinel — flancs et anchors vulnérables`);
-    if (sentB === 0) disadvantages.push(`<strong>${cB.label}</strong> n'a pas de sentinel — flancs et anchors vulnérables`);
-    if (initA === 0) disadvantages.push(`<strong>${cA.label}</strong> manque d'info — difficile de clear les angles en exécute`);
-    if (initB === 0) disadvantages.push(`<strong>${cB.label}</strong> manque d'info — difficile de clear les angles en exécute`);
-
-    if (!advantages.length && !disadvantages.length) {
-      return '<p style="color:var(--muted);font-size:13px">Les deux comps sont équilibrées — aucun avantage décisif.</p>';
-    }
-
-    const html = [];
-    if (advantages.length) {
-      html.push(`<div style="margin-bottom:10px">
-        <div style="font-family:'Tomorrow',sans-serif;font-size:9px;letter-spacing:2px;text-transform:uppercase;color:var(--S);margin-bottom:6px">✓ Avantages</div>
-        ${advantages.map(a => `<div style="font-size:12.5px;color:var(--muted);line-height:1.6;padding:2px 0">${a}</div>`).join('')}
-      </div>`);
-    }
-    if (disadvantages.length) {
-      html.push(`<div>
-        <div style="font-family:'Tomorrow',sans-serif;font-size:9px;letter-spacing:2px;text-transform:uppercase;color:var(--D);margin-bottom:6px">✗ Défauts</div>
-        ${disadvantages.map(d => `<div style="font-size:12.5px;color:var(--muted);line-height:1.6;padding:2px 0">${d}</div>`).join('')}
-      </div>`);
-    }
-    return html.join('');
-  }
-
-  const analysisHTML = analyzeComps(compA, compB);
-
-  return `<div class="comp-compare-panel active">
-    <div class="comp-compare-header">
-      <div class="comp-compare-title">
-        ⇄ Comparaison
-        <span class="comp-compare-subtitle">Sélectionne 2 comps · les diff sont au centre</span>
-      </div>
-      <button class="comp-compare-close" onclick="window.OLYCITY.closeCompare()">✕ Fermer</button>
-    </div>
-    <div class="comp-compare-grid">
-
-      <div class="comp-compare-col">
-        <div class="comp-compare-col-title">
-          <span class="comp-tier ${tierA}">${compA.tierLabel}</span>${compA.label}
-        </div>
-        <div class="comp-compare-agents">${agentsCol(compA)}</div>
-        <div class="comp-compare-wr">${compA.winrate.toFixed(1)}%</div>
-        <div class="comp-compare-wr-lbl">Win rate</div>
-        <div class="comp-compare-agility" style="margin-top:16px">${agilityCol(compA, true)}</div>
-        <div class="comp-compare-tip">${compA.tip}</div>
-      </div>
-
-      <div class="comp-compare-center">
-        <div style="font-family:'Tomorrow',sans-serif;font-size:8px;letter-spacing:2px;color:var(--dim);text-transform:uppercase;margin-bottom:8px">WR</div>
-        <div class="diff-badge ${compA.winrate > compB.winrate ? 'pos' : compA.winrate < compB.winrate ? 'neg' : 'eq'}" style="margin-bottom:24px">
-          ${compA.winrate > compB.winrate ? '+' : ''}${(compA.winrate - compB.winrate).toFixed(1)}%
-        </div>
-        <div class="comp-compare-diffs">${diffs}</div>
-      </div>
-
-      <div class="comp-compare-col">
-        <div class="comp-compare-col-title">
-          <span class="comp-tier ${tierB}">${compB.tierLabel}</span>${compB.label}
-        </div>
-        <div class="comp-compare-agents">${agentsCol(compB)}</div>
-        <div class="comp-compare-wr">${compB.winrate.toFixed(1)}%</div>
-        <div class="comp-compare-wr-lbl">Win rate</div>
-        <div class="comp-compare-agility" style="margin-top:16px">${agilityCol(compB, false)}</div>
-        <div class="comp-compare-tip">${compB.tip}</div>
-      </div>
-
-    </div>
-    <div style="padding:20px 28px;border-top:1px solid var(--border);background:var(--surf2)">
-      <div style="font-family:'Tomorrow',sans-serif;font-size:10px;font-weight:700;
-        letter-spacing:3px;text-transform:uppercase;color:var(--text);margin-bottom:12px">
-        Analyse OLYCITY
-      </div>
-      ${analysisHTML}
+    <div class="callout-legend">${legend}
+      <div style="font-family:Tomorrow,sans-serif;font-size:8px;letter-spacing:1px;color:var(--dim);margin-top:8px">Positions manuelles · ${zones.length} zones</div>
     </div>
   </div>`;
 }
-
 // ─── COMP BUILDER ────────────────────────────────
 // Partial render helpers for fast slot updates
 function compBuilderSlotsHTML(slots) {
