@@ -65,7 +65,7 @@ export async function initDrawBoard(mapName, container) {
           <span style="font-size:9px;letter-spacing:1px;color:#3fcfcf">● Live</span>
         </div>
       </div>
-      <div class="draw-canvas-wrap">
+      <div class="draw-canvas-wrap" style="display:flex;justify-content:center;width:100%">
         <canvas id="draw-canvas" style="cursor:crosshair;touch-action:none"></canvas>
       </div>
     </div>
