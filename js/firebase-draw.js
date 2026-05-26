@@ -42,15 +42,47 @@ function loadScript(src) {
   });
 }
 
+// Call at page boot to register presence globally
+export async function initSession() {
+  const db = await getDB();
+  const profile = localStorage.getItem('olycity-profile');
+  if (!profile) return;
+  const sessionId = Math.random().toString(36).slice(2);
+  const sessionRef = db.ref(`sessions/${profile}/${sessionId}`);
+  sessionRef.set({ ts: Date.now() });
+  sessionRef.onDisconnect().remove();
+
+  // Watch all active sessions and expose on window
+  window._activeProfiles = new Set();
+  db.ref('sessions').on('value', snap => {
+    window._activeProfiles = new Set();
+    if (snap.exists()) {
+      snap.forEach(profileSnap => {
+        // Check if any session is recent (< 30s)
+        let hasActive = false;
+        profileSnap.forEach(sesSnap => {
+          if (Date.now() - (sesSnap.val().ts || 0) < 30000) hasActive = true;
+        });
+        if (hasActive) window._activeProfiles.add(profileSnap.key);
+      });
+    }
+  });
+
+  // Heartbeat every 10s
+  setInterval(() => {
+    sessionRef.set({ ts: Date.now() });
+  }, 10000);
+}
+
 export async function initDrawBoard(mapName, container) {
   const db = await getDB();
 
   const profile = localStorage.getItem('olycity-profile') || 'Guest';
   const sessionId = Math.random().toString(36).slice(2);
 
-  // Register as active
+  // Register session as active for this map draw board
   const activeRef = db.ref(`active/${profile}/${sessionId}`);
-  activeRef.set({ ts: Date.now() });
+  activeRef.set({ ts: Date.now(), map: mapName });
   activeRef.onDisconnect().remove();
 
   let drawing = false;
