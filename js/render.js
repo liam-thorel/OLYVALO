@@ -999,3 +999,272 @@ export function compBuilderHTML(slots = [null,null,null,null,null]) {
     </div>
   </div>`;
 }
+
+
+export function agentsFiltersHTML() {
+  const roles = [
+    { key: 'all', label: 'Tous' },
+    { key: 'D',   label: 'Duelliste' },
+    { key: 'I',   label: 'Initiateur' },
+    { key: 'S',   label: 'Sentinelle' },
+    { key: 'C',   label: 'Contrôleur' },
+  ];
+  return roles.map(r =>
+    `<button class="agent-filter-btn ${r.key !== 'all' ? r.key : ''} ${r.key === 'all' ? 'active' : ''}"
+      data-role="${r.key}"
+      onclick="window.OLYCITY.filterAgents('${r.key}', this)">
+      ${r.label}
+    </button>`
+  ).join('');
+}
+
+export function agentsGridHTML(filter = 'all', search = '') {
+  const allAgents = Object.keys(valorantApi.agents).sort();
+  const q = search.toLowerCase().trim();
+
+  const filtered = allAgents.filter(name => {
+    const role = state.ROLES[name] || 'D';
+    const matchRole = filter === 'all' || role === filter;
+    const matchSearch = !q || name.toLowerCase().includes(q);
+    return matchRole && matchSearch;
+  });
+
+  if (filtered.length === 0) {
+    return `<div class="agents-empty">Aucun agent trouvé</div>`;
+  }
+
+  return filtered.map(name => agentCardHTML(name)).join('');
+}
+
+export function savedCompsHTML(profile) {
+  const p = profile || state.currentProfile || 'guest';
+  let saved = [];
+  try {
+    const key = `olycity-saved-comps-${p}`;
+    saved = JSON.parse(localStorage.getItem(key) || '[]');
+  } catch(e) {}
+
+  if (saved.length === 0) {
+    return `<div class="saved-comps-section">
+      <div class="sub-section-title">
+        <span class="sub-tag">Sauvegardées</span>
+        <span class="sub-title">Mes comps custom</span>
+        <div class="sub-line"></div>
+      </div>
+      <div class="no-saved">Aucune comp sauvegardée — crée-en une dans le builder ci-dessus</div>
+    </div>`;
+  }
+
+  const cards = saved.map((comp, i) => {
+    const agents = (comp.agents || []).map(name => {
+      const img = valorantApi.agentImg(name);
+      return `<div class="saved-comp-agent">
+        ${img ? `<img src="${img}" alt="${name}" title="${name}">` : ''}
+      </div>`;
+    }).join('');
+    const date = comp.createdAt
+      ? new Date(comp.createdAt).toLocaleDateString('fr-FR', { day:'2-digit', month:'short' })
+      : '—';
+    return `<div class="saved-comp-card">
+      <div class="saved-comp-name">${comp.name}</div>
+      <div class="saved-comp-agents">${agents}</div>
+      <div class="saved-comp-date">Créée le ${date} · ${comp.agents?.length || 0} agents${comp.map ? ` · ${comp.map}` : ''}</div>
+      <div class="saved-comp-actions">
+        <button class="saved-comp-btn load" onclick="window.OLYCITY.builderLoad(${i})">↺ Charger</button>
+        <button class="saved-comp-btn" onclick="window.OLYCITY.savedCompCompare(${i})" style="color:var(--gold);border-color:rgba(245,200,66,.3)">⇄ Comparer</button>
+        <button class="saved-comp-btn del" onclick="window.OLYCITY.savedCompDelete(${i})">✕ Sup.</button>
+      </div>
+    </div>`;
+  }).join('');
+
+  return `<div class="saved-comps-section">
+    <div class="sub-section-title">
+      <span class="sub-tag">Sauvegardées</span>
+      <span class="sub-title">Mes comps custom (${saved.length})</span>
+      <div class="sub-line"></div>
+    </div>
+    <div class="saved-comps-grid">${cards}</div>
+  </div>`;
+}
+
+export function compCompareHTML(compA, compB) {
+  const metrics = [
+    { key:'antiRush',  label:'Anti-Rush',  icon:'⚡' },
+    { key:'postPlant', label:'Post-Plant',  icon:'◆'  },
+    { key:'retake',    label:'Retake',      icon:'↩'  },
+    { key:'split',     label:'Split Push',  icon:'↔'  },
+  ];
+  const barColor = v => v >= 4 ? 'var(--S)' : v >= 3 ? 'var(--gold)' : 'var(--D)';
+
+  function agentsCol(comp) {
+    return (comp.agents || []).map(name => {
+      const img = valorantApi.agentImg(name);
+      return `<div class="comp-compare-agent" onclick="window.OLYCITY.showAgentPage('${name}')">
+        ${img ? `<img src="${img}" alt="${name}">` : ''}
+        <span>${displayName(name)}</span>
+      </div>`;
+    }).join('');
+  }
+
+  function agilityCol(comp, isLeft) {
+    return metrics.map(m => {
+      const val = comp.agility?.[m.key] || 0;
+      const pct = (val/5)*100;
+      // For left col, bar grows right-to-left to face the center
+      const barStyle = isLeft
+        ? `width:${pct}%;background:${barColor(val)};right:0;left:auto`
+        : `width:${pct}%;background:${barColor(val)}`;
+      const track = isLeft
+        ? `<div class="comp-compare-bar" style="direction:rtl"><div class="comp-compare-fill" style="${barStyle}"></div></div>`
+        : `<div class="comp-compare-bar"><div class="comp-compare-fill" style="${barStyle}"></div></div>`;
+      return `<div class="comp-compare-metric" style="${isLeft ? 'flex-direction:row-reverse;text-align:right' : ''}">
+        <span class="comp-compare-num">${val}/5</span>
+        ${track}
+      </div>`;
+    }).join('');
+  }
+
+  // Center diff badges
+  const diffs = metrics.map(m => {
+    const vA = compA.agility?.[m.key] || 0;
+    const vB = compB.agility?.[m.key] || 0;
+    const d = vA - vB;
+    const cls = d > 0 ? 'pos' : d < 0 ? 'neg' : 'eq';
+    const label = d > 0 ? `+${d}` : d < 0 ? `${d}` : '=';
+    return `<div style="display:flex;align-items:center;gap:4px;height:28px">
+      <span class="diff-badge ${cls}">${label}</span>
+    </div>`;
+  }).join('');
+
+  const tierA = compA.tier === 'S' ? 'tier-s' : 'tier-a';
+  const tierB = compB.tier === 'S' ? 'tier-s' : 'tier-a';
+
+  // ─── Smart analysis ─────────────────────────────
+  function analyzeComps(cA, cB) {
+    const roleCount = (comp) => {
+      const agents = comp.agents || [];
+      return agents.reduce((acc, a) => {
+        const r = state.ROLES[a] || 'D';
+        acc[r] = (acc[r] || 0) + 1;
+        return acc;
+      }, {});
+    };
+    const rA = roleCount(cA), rB = roleCount(cB);
+    const agilityKeys = ['antiRush','postPlant','retake','split'];
+    const agilityLabels = { antiRush:'anti-rush', postPlant:'post-plant', retake:'retake', split:'split' };
+
+    const advantages = [], disadvantages = [];
+
+    // WR comparison
+    if (cA.winrate && cB.winrate) {
+      const diff = (cA.winrate - cB.winrate).toFixed(1);
+      if (Math.abs(diff) >= 1) {
+        const better = diff > 0 ? cA.label : cB.label;
+        const worse = diff > 0 ? cB.label : cA.label;
+        advantages.push(`<strong>${better}</strong> a un meilleur winrate sourcé (+${Math.abs(diff)}%)`);
+      }
+    }
+
+    // Agility advantages
+    agilityKeys.forEach(k => {
+      const vA = cA.agility?.[k] || 0;
+      const vB = cB.agility?.[k] || 0;
+      if (vA - vB >= 2) advantages.push(`<strong>${cA.label}</strong> est nettement supérieure en ${agilityLabels[k]}`);
+      else if (vB - vA >= 2) advantages.push(`<strong>${cB.label}</strong> est nettement supérieure en ${agilityLabels[k]}`);
+    });
+
+    // Role analysis
+    const duelA = rA.D || 0, duelB = rB.D || 0;
+    const ctrlA = rA.C || 0, ctrlB = rB.C || 0;
+    const initA = rA.I || 0, initB = rB.I || 0;
+    const sentA = rA.S || 0, sentB = rB.S || 0;
+
+    if (duelA > duelB) advantages.push(`<strong>${cA.label}</strong> est plus agressive (${duelA} duellist${duelA > 1 ? 's' : ''} vs ${duelB})`);
+    else if (duelB > duelA) advantages.push(`<strong>${cB.label}</strong> est plus agressive (${duelB} duellist${duelB > 1 ? 's' : ''} vs ${duelA})`);
+
+    if (ctrlA > ctrlB) advantages.push(`<strong>${cA.label}</strong> a plus de contrôle map (${ctrlA} controller${ctrlA > 1 ? 's' : ''})`);
+    else if (ctrlB > ctrlA) advantages.push(`<strong>${cB.label}</strong> a plus de contrôle map (${ctrlB} controller${ctrlB > 1 ? 's' : ''})`);
+
+    if (initA > initB) advantages.push(`<strong>${cA.label}</strong> a plus d'information (${initA} initiateur${initA > 1 ? 's' : ''})`);
+    else if (initB > initA) advantages.push(`<strong>${cB.label}</strong> a plus d'information (${initB} initiateur${initB > 1 ? 's' : ''})`);
+
+    // Défauts
+    if (duelA >= 2 && ctrlA === 0) disadvantages.push(`<strong>${cA.label}</strong> manque de smokes — exécutes difficiles sans controller`);
+    if (duelB >= 2 && ctrlB === 0) disadvantages.push(`<strong>${cB.label}</strong> manque de smokes — exécutes difficiles sans controller`);
+    if (sentA === 0) disadvantages.push(`<strong>${cA.label}</strong> n'a pas de sentinel — flancs et anchors vulnérables`);
+    if (sentB === 0) disadvantages.push(`<strong>${cB.label}</strong> n'a pas de sentinel — flancs et anchors vulnérables`);
+    if (initA === 0) disadvantages.push(`<strong>${cA.label}</strong> manque d'info — difficile de clear les angles en exécute`);
+    if (initB === 0) disadvantages.push(`<strong>${cB.label}</strong> manque d'info — difficile de clear les angles en exécute`);
+
+    if (!advantages.length && !disadvantages.length) {
+      return '<p style="color:var(--muted);font-size:13px">Les deux comps sont équilibrées — aucun avantage décisif.</p>';
+    }
+
+    const html = [];
+    if (advantages.length) {
+      html.push(`<div style="margin-bottom:10px">
+        <div style="font-family:'Tomorrow',sans-serif;font-size:9px;letter-spacing:2px;text-transform:uppercase;color:var(--S);margin-bottom:6px">✓ Avantages</div>
+        ${advantages.map(a => `<div style="font-size:12.5px;color:var(--muted);line-height:1.6;padding:2px 0">${a}</div>`).join('')}
+      </div>`);
+    }
+    if (disadvantages.length) {
+      html.push(`<div>
+        <div style="font-family:'Tomorrow',sans-serif;font-size:9px;letter-spacing:2px;text-transform:uppercase;color:var(--D);margin-bottom:6px">✗ Défauts</div>
+        ${disadvantages.map(d => `<div style="font-size:12.5px;color:var(--muted);line-height:1.6;padding:2px 0">${d}</div>`).join('')}
+      </div>`);
+    }
+    return html.join('');
+  }
+
+  const analysisHTML = analyzeComps(compA, compB);
+
+  return `<div class="comp-compare-panel active">
+    <div class="comp-compare-header">
+      <div class="comp-compare-title">
+        ⇄ Comparaison
+        <span class="comp-compare-subtitle">Sélectionne 2 comps · les diff sont au centre</span>
+      </div>
+      <button class="comp-compare-close" onclick="window.OLYCITY.closeCompare()">✕ Fermer</button>
+    </div>
+    <div class="comp-compare-grid">
+
+      <div class="comp-compare-col">
+        <div class="comp-compare-col-title">
+          <span class="comp-tier ${tierA}">${compA.tierLabel}</span>${compA.label}
+        </div>
+        <div class="comp-compare-agents">${agentsCol(compA)}</div>
+        <div class="comp-compare-wr">${compA.winrate.toFixed(1)}%</div>
+        <div class="comp-compare-wr-lbl">Win rate</div>
+        <div class="comp-compare-agility" style="margin-top:16px">${agilityCol(compA, true)}</div>
+        <div class="comp-compare-tip">${compA.tip}</div>
+      </div>
+
+      <div class="comp-compare-center">
+        <div style="font-family:'Tomorrow',sans-serif;font-size:8px;letter-spacing:2px;color:var(--dim);text-transform:uppercase;margin-bottom:8px">WR</div>
+        <div class="diff-badge ${compA.winrate > compB.winrate ? 'pos' : compA.winrate < compB.winrate ? 'neg' : 'eq'}" style="margin-bottom:24px">
+          ${compA.winrate > compB.winrate ? '+' : ''}${(compA.winrate - compB.winrate).toFixed(1)}%
+        </div>
+        <div class="comp-compare-diffs">${diffs}</div>
+      </div>
+
+      <div class="comp-compare-col">
+        <div class="comp-compare-col-title">
+          <span class="comp-tier ${tierB}">${compB.tierLabel}</span>${compB.label}
+        </div>
+        <div class="comp-compare-agents">${agentsCol(compB)}</div>
+        <div class="comp-compare-wr">${compB.winrate.toFixed(1)}%</div>
+        <div class="comp-compare-wr-lbl">Win rate</div>
+        <div class="comp-compare-agility" style="margin-top:16px">${agilityCol(compB, false)}</div>
+        <div class="comp-compare-tip">${compB.tip}</div>
+      </div>
+
+    </div>
+    <div style="padding:20px 28px;border-top:1px solid var(--border);background:var(--surf2)">
+      <div style="font-family:'Tomorrow',sans-serif;font-size:10px;font-weight:700;
+        letter-spacing:3px;text-transform:uppercase;color:var(--text);margin-bottom:12px">
+        Analyse OLYCITY
+      </div>
+      ${analysisHTML}
+    </div>
+  </div>`;
+}
