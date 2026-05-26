@@ -5,7 +5,7 @@
 
 import { valorantApi } from './api.js';
 
-const SITE_VERSION = '1779813426'; // Auto-updated on push
+const SITE_VERSION = '1779813487'; // Auto-updated on push
 import { syncPlayer as henrikSyncPlayer, syncAllPlayers as henrikSyncAll, persistPlayerStats } from './henrik.js';
 import { rosterHTML, guestCardHTML, mapSectionHTML, stierHTML, globalNotesHTML, navMapsHTML, agentPageHTML, miniRosterHTML, agentsFiltersHTML, agentsGridHTML, compCompareHTML, compBuilderHTML, savedCompsHTML, calloutsHTML } from './render.js';
 import { initTheme, initTilt, initParallax, initSearch, initKeyboard, updateFavCount, initHeroParticles, initWheelLogos } from './interactions.js';
@@ -721,6 +721,7 @@ window.OLYCITY = {
 
   _showProfilePicker() {
     let picker = document.getElementById('profile-picker');
+    const needsBuild = !picker;
     if (!picker) {
       picker = document.createElement('div');
       picker.id = 'profile-picker';
@@ -762,7 +763,10 @@ window.OLYCITY = {
       </div>
       <div style="font-family:'Tomorrow',sans-serif;font-size:10px;letter-spacing:2px;text-transform:uppercase;color:rgba(255,255,255,.25)">Ton profil sauvegarde tes comps custom</div>
     `;
+    // Always show (whether freshly created or existing)
     picker.style.display = 'flex';
+    picker.style.opacity = '1';
+    picker.style.transition = '';
   },
 
   _selectProfile(name) {
