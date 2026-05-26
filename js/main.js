@@ -5,7 +5,7 @@
 
 import { valorantApi } from './api.js';
 
-const SITE_VERSION = '1779827886'; // Auto-updated on push
+const SITE_VERSION = '1779827992'; // Auto-updated on push
 import { syncPlayer as henrikSyncPlayer, syncAllPlayers as henrikSyncAll, persistPlayerStats } from './henrik.js';
 import { rosterHTML, guestCardHTML, mapSectionHTML, stierHTML, globalNotesHTML, navMapsHTML, agentPageHTML, miniRosterHTML, agentsFiltersHTML, agentsGridHTML, compCompareHTML, compBuilderHTML, savedCompsHTML, calloutsHTML } from './render.js';
 import { initTheme, initTilt, initParallax, initSearch, initKeyboard, updateFavCount, initHeroParticles, initWheelLogos } from './interactions.js';
@@ -787,6 +787,7 @@ window.OLYCITY = {
 
   _selectProfile(name) {
     localStorage.setItem('olycity-profile', name);
+    window._changePresence?.(name);
     // Mark this profile as active with a heartbeat
     localStorage.setItem(`olycity-active-${name}`, Date.now());
     state.currentProfile = name;
@@ -1112,6 +1113,8 @@ async function boot() {
       if (p) localStorage.setItem(`olycity-active-${p}`, Date.now());
     }, 5000);
   }
+  // Lancer la présence Firebase
+  window._initPresence?.();
   console.log('[OLYCITY] Ready ✓');
 }
 
