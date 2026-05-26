@@ -4,6 +4,16 @@
  */
 
 // Firebase CDN (compat version - works without bundler)
+// Couleurs par profil OLYCITY
+const PROFILE_COLORS = {
+  'Nico':   '#ff4656',
+  'Liam':   '#3fcfcf',
+  'Rayhan': '#f5c842',
+  'Mathis': '#a87fff',
+  'Noé':    '#ff8200',
+  'Guest':  '#ffffff',
+};
+
 const FIREBASE_CONFIG = {
   apiKey: "AIzaSyBOfJ_6l3Elifz4DC_1iqpyzLjlzPRskCE",
   authDomain: "realtime-database-5bb9f.firebaseapp.com",
@@ -35,9 +45,17 @@ function loadScript(src) {
 export async function initDrawBoard(mapName, container) {
   const db = await getDB();
 
+  const profile = localStorage.getItem('olycity-profile') || 'Guest';
+  const sessionId = Math.random().toString(36).slice(2);
+
+  // Register as active
+  const activeRef = db.ref(`active/${profile}/${sessionId}`);
+  activeRef.set({ ts: Date.now() });
+  activeRef.onDisconnect().remove();
+
   let drawing = false;
   let currentPath = [];
-  let currentColor = '#ff4656';
+  let currentColor = PROFILE_COLORS[profile] || '#ffffff';
   let currentSize = 3;
   let paths = {};
 
@@ -47,12 +65,9 @@ export async function initDrawBoard(mapName, container) {
   container.innerHTML = `
     <div class="draw-board" style="width:100%">
       <div class="draw-toolbar">
-        <div class="draw-tool-group">
-          ${['#ff4656','#3fcfcf','#f5c842','#a87fff','#ffffff','#ff8200'].map(c =>
-            `<button class="draw-color-btn ${c === '#ff4656' ? 'active' : ''}"
-              style="background:${c}" data-color="${c}"
-              onclick="window._drawSetColor('${c}',this)"></button>`
-          ).join('')}
+        <div class="draw-tool-group" style="align-items:center;gap:8px">
+          <div style="width:18px;height:18px;border-radius:50%;background:\${currentColor};border:2px solid rgba(255,255,255,.3);flex-shrink:0"></div>
+          <span style="font-size:10px;letter-spacing:1px;text-transform:uppercase;color:var(--muted)">\${profile}</span>
         </div>
         <div class="draw-tool-group">
           <input type="range" id="draw-size" min="1" max="20" value="3"

@@ -5,7 +5,7 @@
 
 import { valorantApi } from './api.js';
 
-const SITE_VERSION = '1779813232'; // Auto-updated on push
+const SITE_VERSION = '1779813346'; // Auto-updated on push
 import { syncPlayer as henrikSyncPlayer, syncAllPlayers as henrikSyncAll, persistPlayerStats } from './henrik.js';
 import { rosterHTML, guestCardHTML, mapSectionHTML, stierHTML, globalNotesHTML, navMapsHTML, agentPageHTML, miniRosterHTML, agentsFiltersHTML, agentsGridHTML, compCompareHTML, compBuilderHTML, savedCompsHTML, calloutsHTML } from './render.js';
 import { initTheme, initTilt, initParallax, initSearch, initKeyboard, updateFavCount, initHeroParticles, initWheelLogos } from './interactions.js';
@@ -748,7 +748,11 @@ window.OLYCITY = {
             : `<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-family:Tomorrow,sans-serif;font-size:28px;font-weight:700;color:rgba(255,255,255,.3)">${p.name[0]}</div>`;
           const savedCount = JSON.parse(localStorage.getItem(`olycity-saved-comps-${p.name}`) || '[]').length;
           const badge = savedCount > 0 ? `<span style="position:absolute;bottom:4px;right:4px;background:#ff4656;color:#fff;font-family:Tomorrow,sans-serif;font-size:8px;font-weight:700;letter-spacing:1px;padding:2px 5px">${savedCount}</span>` : '';
-          return `<div class="profile-card" onclick="window.OLYCITY._selectProfile('${p.name}')">
+          // Check if profile is active in another tab (heartbeat < 10s ago)
+          const lastActive = +localStorage.getItem(`olycity-active-${p.name}`) || 0;
+          const isActive = p.name !== profile && Date.now() - lastActive < 10000;
+          const activeLabel = isActive ? `<div style="position:absolute;top:4px;left:4px;background:rgba(63,207,207,.9);color:#000;font-family:Tomorrow,sans-serif;font-size:7px;font-weight:700;letter-spacing:1px;padding:2px 6px;text-transform:uppercase">EN LIGNE</div>` : '';
+          return `<div class="profile-card" onclick="${isActive ? '' : `window.OLYCITY._selectProfile('${p.name}')`}" style="${isActive ? 'opacity:0.5;cursor:not-allowed' : ''}">
             <div class="profile-avatar" style="position:relative">${imgEl}${badge}</div>
             <div class="profile-name">${p.name}</div>
             <div class="profile-role">${p.tag || p.role || ''}</div>
@@ -762,6 +766,8 @@ window.OLYCITY = {
 
   _selectProfile(name) {
     localStorage.setItem('olycity-profile', name);
+    // Mark this profile as active with a heartbeat
+    localStorage.setItem(`olycity-active-${name}`, Date.now());
     state.currentProfile = name;
     const picker = document.getElementById('profile-picker');
     if (picker) {
@@ -1076,6 +1082,15 @@ async function boot() {
   }
   // Create map arrows via JS — bypass CSS stacking context issues
   window.OLYCITY.showMap(0, null);
+  // Heartbeat — update active timestamp every 5s
+  const currentP = localStorage.getItem('olycity-profile');
+  if (currentP) {
+    localStorage.setItem(`olycity-active-${currentP}`, Date.now());
+    setInterval(() => {
+      const p = localStorage.getItem('olycity-profile');
+      if (p) localStorage.setItem(`olycity-active-${p}`, Date.now());
+    }, 5000);
+  }
   console.log('[OLYCITY] Ready ✓');
 }
 
