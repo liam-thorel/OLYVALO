@@ -1,128 +1,291 @@
 {
   "Fracture": {
     "zones": [
-      {"id":"atk-spawn","label":"Spawn ATK","x":10,"y":45,"color":"#ff4656"},
-      {"id":"def-spawn","label":"Spawn DEF","x":78,"y":45,"color":"#3fcfcf"},
-      {"id":"a-main","label":"A Main","x":22,"y":20,"color":"#f5c842"},
-      {"id":"a-drop","label":"A Drop","x":38,"y":18,"color":"#f5c842"},
-      {"id":"a-site","label":"A SITE","x":55,"y":16,"color":"#f5c842","major":true},
-      {"id":"b-main","label":"B Main","x":22,"y":70,"color":"#a87fff"},
-      {"id":"b-arcade","label":"B Arcade","x":38,"y":72,"color":"#a87fff"},
-      {"id":"b-site","label":"B SITE","x":55,"y":74,"color":"#a87fff","major":true},
-      {"id":"mid","label":"Mid / Zip","x":42,"y":46,"color":"#ff8200"},
-      {"id":"ct","label":"CT","x":68,"y":45,"color":"#3fcfcf"},
-      {"id":"a-hall","label":"A Hall","x":50,"y":25,"color":"#f5c842"},
-      {"id":"b-tower","label":"B Tower","x":50,"y":65,"color":"#a87fff"},
-      {"id":"a-rope","label":"A Rope","x":30,"y":32,"color":"#f5c842"},
-      {"id":"b-rope","label":"B Rope","x":30,"y":58,"color":"#a87fff"}
+      {
+        "id": "atk-spawn",
+        "label": "Spawn ATK",
+        "x": 50,
+        "y": 84.5,
+        "color": "#ff4656"
+      },
+      {
+        "id": "def-spawn",
+        "label": "Spawn DEF",
+        "x": 50,
+        "y": 42.8,
+        "color": "#3fcfcf"
+      },
+      {
+        "id": "a-main",
+        "label": "A Main",
+        "x": 83.1,
+        "y": 64.7,
+        "color": "#f5c842"
+      },
+      {
+        "id": "a-site",
+        "label": "A SITE",
+        "x": 88.5,
+        "y": 51.6,
+        "color": "#f5c842",
+        "major": true
+      },
+      {
+        "id": "b-main",
+        "label": "B Main",
+        "x": 13.8,
+        "y": 68.2,
+        "color": "#a87fff"
+      },
+      {
+        "id": "b-site",
+        "label": "B SITE",
+        "x": 10.8,
+        "y": 51.1,
+        "color": "#a87fff",
+        "major": true
+      }
     ]
   },
   "Haven": {
     "zones": [
-      {"id":"atk-spawn","label":"Spawn ATK","x":8,"y":50,"color":"#ff4656"},
-      {"id":"def-spawn","label":"Spawn DEF","x":85,"y":50,"color":"#3fcfcf"},
-      {"id":"a-long","label":"A Long","x":22,"y":18,"color":"#f5c842"},
-      {"id":"a-site","label":"A SITE","x":42,"y":16,"color":"#f5c842","major":true},
-      {"id":"b-mid","label":"B Mid","x":38,"y":50,"color":"#ff8200"},
-      {"id":"b-site","label":"B SITE","x":55,"y":48,"color":"#ff8200","major":true},
-      {"id":"c-long","label":"C Long","x":22,"y":80,"color":"#a87fff"},
-      {"id":"c-site","label":"C SITE","x":42,"y":82,"color":"#a87fff","major":true},
-      {"id":"ct","label":"CT","x":70,"y":50,"color":"#3fcfcf"},
-      {"id":"garage","label":"Garage","x":20,"y":65,"color":"#a87fff"},
-      {"id":"a-lobby","label":"A Lobby","x":18,"y":30,"color":"#f5c842"},
-      {"id":"b-lobby","label":"B Lobby","x":25,"y":50,"color":"#ff8200"},
-      {"id":"a-short","label":"A Short","x":35,"y":28,"color":"#f5c842"},
-      {"id":"c-lobby","label":"C Lobby","x":30,"y":75,"color":"#a87fff"}
+      {
+        "id": "atk-spawn",
+        "label": "Spawn ATK",
+        "x": 91.2,
+        "y": 54.1,
+        "color": "#ff4656"
+      },
+      {
+        "id": "def-spawn",
+        "label": "Spawn DEF",
+        "x": 11.6,
+        "y": 39.8,
+        "color": "#3fcfcf"
+      },
+      {
+        "id": "a-site",
+        "label": "A SITE",
+        "x": 38.7,
+        "y": 17.5,
+        "color": "#f5c842",
+        "major": true
+      },
+      {
+        "id": "b-site",
+        "label": "B SITE",
+        "x": 39.2,
+        "y": 49.3,
+        "color": "#80ff95",
+        "major": true
+      },
+      {
+        "id": "c-site",
+        "label": "C SITE",
+        "x": 36.2,
+        "y": 84.5,
+        "color": "#a87fff",
+        "major": true
+      }
     ]
   },
   "Breeze": {
     "zones": [
-      {"id":"atk-spawn","label":"Spawn ATK","x":8,"y":50,"color":"#ff4656"},
-      {"id":"def-spawn","label":"Spawn DEF","x":88,"y":50,"color":"#3fcfcf"},
-      {"id":"a-lobby","label":"A Lobby","x":20,"y":22,"color":"#f5c842"},
-      {"id":"a-site","label":"A SITE","x":45,"y":20,"color":"#f5c842","major":true},
-      {"id":"b-lobby","label":"B Lobby","x":20,"y":75,"color":"#a87fff"},
-      {"id":"b-site","label":"B SITE","x":45,"y":78,"color":"#a87fff","major":true},
-      {"id":"mid","label":"Mid","x":38,"y":50,"color":"#ff8200"},
-      {"id":"mid-nest","label":"Mid Nest","x":50,"y":42,"color":"#ff8200"},
-      {"id":"mid-doors","label":"Mid Doors","x":55,"y":50,"color":"#ff8200"},
-      {"id":"ct","label":"CT","x":72,"y":50,"color":"#3fcfcf"},
-      {"id":"cave","label":"Cave","x":35,"y":28,"color":"#f5c842"},
-      {"id":"b-hall","label":"B Hall","x":35,"y":68,"color":"#a87fff"},
-      {"id":"a-bridge","label":"A Bridge","x":60,"y":25,"color":"#f5c842"},
-      {"id":"b-window","label":"B Window","x":58,"y":72,"color":"#a87fff"}
+      {
+        "id": "atk-spawn",
+        "label": "Spawn ATK",
+        "x": 45.5,
+        "y": 88.5,
+        "color": "#ff4656"
+      },
+      {
+        "id": "def-spawn",
+        "label": "Spawn DEF",
+        "x": 56.6,
+        "y": 15,
+        "color": "#3fcfcf"
+      },
+      {
+        "id": "a-site",
+        "label": "A SITE",
+        "x": 83.1,
+        "y": 42.4,
+        "color": "#f5c842",
+        "major": true
+      },
+      {
+        "id": "b-site",
+        "label": "B SITE",
+        "x": 17.8,
+        "y": 26.3,
+        "color": "#a87fff",
+        "major": true
+      },
+      {
+        "id": "mid",
+        "label": "Mid",
+        "x": 50.5,
+        "y": 46.8,
+        "color": "#ff8200"
+      }
     ]
   },
   "Lotus": {
     "zones": [
-      {"id":"atk-spawn","label":"Spawn ATK","x":8,"y":50,"color":"#ff4656"},
-      {"id":"def-spawn","label":"Spawn DEF","x":88,"y":50,"color":"#3fcfcf"},
-      {"id":"a-main","label":"A Main","x":20,"y":20,"color":"#f5c842"},
-      {"id":"a-site","label":"A SITE","x":38,"y":16,"color":"#f5c842","major":true},
-      {"id":"b-main","label":"B Main","x":30,"y":50,"color":"#ff8200"},
-      {"id":"b-site","label":"B SITE","x":50,"y":50,"color":"#ff8200","major":true},
-      {"id":"c-main","label":"C Main","x":20,"y":78,"color":"#a87fff"},
-      {"id":"c-site","label":"C SITE","x":38,"y":82,"color":"#a87fff","major":true},
-      {"id":"ct","label":"CT","x":70,"y":50,"color":"#3fcfcf"},
-      {"id":"a-roots","label":"A Roots","x":25,"y":30,"color":"#f5c842"},
-      {"id":"b-link","label":"B Link","x":42,"y":38,"color":"#ff8200"},
-      {"id":"c-link","label":"C Link","x":42,"y":65,"color":"#a87fff"},
-      {"id":"door-ab","label":"Porte A/B","x":35,"y":35,"color":"#888"},
-      {"id":"door-bc","label":"Porte B/C","x":35,"y":62,"color":"#888"}
+      {
+        "id": "atk-spawn",
+        "label": "Spawn ATK",
+        "x": 51.7,
+        "y": 82.1,
+        "color": "#ff4656"
+      },
+      {
+        "id": "def-spawn",
+        "label": "Spawn DEF",
+        "x": 61.8,
+        "y": 17.4,
+        "color": "#3fcfcf"
+      },
+      {
+        "id": "a-site",
+        "label": "A SITE",
+        "x": 89,
+        "y": 31,
+        "color": "#f5c842",
+        "major": true
+      },
+      {
+        "id": "b-site",
+        "label": "B SITE",
+        "x": 45.8,
+        "y": 44.9,
+        "color": "#a87fff",
+        "major": true
+      },
+      {
+        "id": "c-site",
+        "label": "C SITE",
+        "x": 12,
+        "y": 47.3,
+        "color": "#47ff75",
+        "major": true
+      }
     ]
   },
   "Bind": {
     "zones": [
-      {"id":"atk-spawn","label":"Spawn ATK","x":8,"y":50,"color":"#ff4656"},
-      {"id":"def-spawn","label":"Spawn DEF","x":88,"y":50,"color":"#3fcfcf"},
-      {"id":"a-lobby","label":"A Lobby","x":18,"y":22,"color":"#f5c842"},
-      {"id":"a-showers","label":"Showers","x":32,"y":18,"color":"#f5c842"},
-      {"id":"a-site","label":"A SITE","x":52,"y":20,"color":"#f5c842","major":true},
-      {"id":"b-long","label":"B Long","x":18,"y":75,"color":"#a87fff"},
-      {"id":"b-hookah","label":"Hookah","x":35,"y":78,"color":"#a87fff"},
-      {"id":"b-site","label":"B SITE","x":52,"y":76,"color":"#a87fff","major":true},
-      {"id":"tp-a","label":"TP → A","x":72,"y":22,"color":"#f5c842"},
-      {"id":"tp-b","label":"TP → B","x":22,"y":50,"color":"#a87fff"},
-      {"id":"ct","label":"CT","x":72,"y":50,"color":"#3fcfcf"},
-      {"id":"lamps","label":"Lamps","x":62,"y":38,"color":"#ff8200"},
-      {"id":"a-heaven","label":"A Heaven","x":60,"y":25,"color":"#f5c842"},
-      {"id":"b-fountain","label":"Fountain","x":30,"y":60,"color":"#a87fff"}
+      {
+        "id": "atk-spawn",
+        "label": "Spawn ATK",
+        "x": 60.3,
+        "y": 90.4,
+        "color": "#ff4656"
+      },
+      {
+        "id": "def-spawn",
+        "label": "Spawn DEF",
+        "x": 52.2,
+        "y": 9.7,
+        "color": "#3fcfcf"
+      },
+      {
+        "id": "a-site",
+        "label": "A SITE",
+        "x": 72.1,
+        "y": 30.8,
+        "color": "#f5c842",
+        "major": true
+      },
+      {
+        "id": "b-site",
+        "label": "B SITE",
+        "x": 28.2,
+        "y": 26.7,
+        "color": "#a87fff",
+        "major": true
+      }
     ]
   },
   "Split": {
     "zones": [
-      {"id":"atk-spawn","label":"Spawn ATK","x":8,"y":50,"color":"#ff4656"},
-      {"id":"def-spawn","label":"Spawn DEF","x":88,"y":50,"color":"#3fcfcf"},
-      {"id":"a-lobby","label":"A Lobby","x":18,"y":22,"color":"#f5c842"},
-      {"id":"a-ramp","label":"A Ramp","x":32,"y":22,"color":"#f5c842"},
-      {"id":"a-site","label":"A SITE","x":52,"y":18,"color":"#f5c842","major":true},
-      {"id":"a-heaven","label":"A Heaven","x":52,"y":10,"color":"#f5c842"},
-      {"id":"b-lobby","label":"B Lobby","x":18,"y":75,"color":"#a87fff"},
-      {"id":"b-alley","label":"B Alley","x":30,"y":72,"color":"#a87fff"},
-      {"id":"b-site","label":"B SITE","x":52,"y":78,"color":"#a87fff","major":true},
-      {"id":"b-heaven","label":"B Heaven","x":52,"y":88,"color":"#a87fff"},
-      {"id":"mid","label":"Mid","x":40,"y":50,"color":"#ff8200"},
-      {"id":"mid-vents","label":"Mid Vents","x":50,"y":50,"color":"#ff8200"},
-      {"id":"ct","label":"CT","x":70,"y":50,"color":"#3fcfcf"},
-      {"id":"mail","label":"Mail","x":60,"y":60,"color":"#3fcfcf"}
+      {
+        "id": "atk-spawn",
+        "label": "Spawn ATK",
+        "x": 86,
+        "y": 54.9,
+        "color": "#ff4656"
+      },
+      {
+        "id": "def-spawn",
+        "label": "Spawn DEF",
+        "x": 12.6,
+        "y": 53.1,
+        "color": "#3fcfcf"
+      },
+      {
+        "id": "a-site",
+        "label": "A SITE",
+        "x": 33.6,
+        "y": 11.9,
+        "color": "#f5c842",
+        "major": true
+      },
+      {
+        "id": "b-site",
+        "label": "B SITE",
+        "x": 32.2,
+        "y": 81.8,
+        "color": "#a87fff",
+        "major": true
+      },
+      {
+        "id": "mid",
+        "label": "Mid",
+        "x": 50.8,
+        "y": 54.2,
+        "color": "#ff8200"
+      }
     ]
   },
   "Pearl": {
     "zones": [
-      {"id":"atk-spawn","label":"Spawn ATK","x":8,"y":50,"color":"#ff4656"},
-      {"id":"def-spawn","label":"Spawn DEF","x":88,"y":50,"color":"#3fcfcf"},
-      {"id":"a-main","label":"A Main","x":18,"y":22,"color":"#f5c842"},
-      {"id":"a-art","label":"A Art","x":32,"y":18,"color":"#f5c842"},
-      {"id":"a-site","label":"A SITE","x":52,"y":18,"color":"#f5c842","major":true},
-      {"id":"mid-street","label":"Mid Street","x":38,"y":50,"color":"#ff8200"},
-      {"id":"mid","label":"Mid","x":50,"y":50,"color":"#ff8200","major":true},
-      {"id":"b-long","label":"B Long","x":18,"y":75,"color":"#a87fff"},
-      {"id":"b-hall","label":"B Hall","x":35,"y":78,"color":"#a87fff"},
-      {"id":"b-site","label":"B SITE","x":52,"y":78,"color":"#a87fff","major":true},
-      {"id":"ct","label":"CT","x":70,"y":50,"color":"#3fcfcf"},
-      {"id":"a-link","label":"A Link","x":60,"y":32,"color":"#f5c842"},
-      {"id":"b-link","label":"B Link","x":60,"y":68,"color":"#a87fff"},
-      {"id":"mid-shops","label":"Mid Shops","x":42,"y":38,"color":"#ff8200"}
+      {
+        "id": "atk-spawn",
+        "label": "Spawn ATK",
+        "x": 54.7,
+        "y": 87.3,
+        "color": "#ff4656"
+      },
+      {
+        "id": "def-spawn",
+        "label": "Spawn DEF",
+        "x": 56.8,
+        "y": 12.7,
+        "color": "#3fcfcf"
+      },
+      {
+        "id": "a-site",
+        "label": "A SITE",
+        "x": 84.6,
+        "y": 34,
+        "color": "#f5c842",
+        "major": true
+      },
+      {
+        "id": "b-site",
+        "label": "B SITE",
+        "x": 16.9,
+        "y": 41.4,
+        "color": "#a87fff",
+        "major": true
+      },
+      {
+        "id": "mid",
+        "label": "Mid",
+        "x": 55.1,
+        "y": 65.9,
+        "color": "#ff8200"
+      }
     ]
   }
 }
