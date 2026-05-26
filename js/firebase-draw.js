@@ -73,9 +73,27 @@ export async function initDrawBoard(mapName, container) {
 
   const canvas = container.querySelector('#draw-canvas');
   const wrap = container.querySelector('.draw-canvas-wrap');
+  // Load minimap
+  let minimapImg = null;
+  const loadMinimap = () => new Promise(res => {
+    fetch('https://valorant-api.com/v1/maps')
+      .then(r => r.json())
+      .then(data => {
+        const m = data.data?.find(m => m.displayName === mapName);
+        if (!m?.displayIcon) return res();
+        const img = new Image();
+        img.crossOrigin = 'anonymous';
+        img.onload = () => { minimapImg = img; res(); };
+        img.onerror = res;
+        img.src = m.displayIcon;
+      }).catch(res);
+  });
+
+  await loadMinimap();
+
   const resize = () => {
     canvas.width = wrap.clientWidth || 800;
-    canvas.height = Math.round(canvas.width * 0.75);
+    canvas.height = canvas.width; // square to match minimap
     redraw();
   };
   setTimeout(resize, 50);
@@ -138,6 +156,17 @@ export async function initDrawBoard(mapName, container) {
   function redraw() {
     const ctx = canvas.getContext('2d');
     ctx.clearRect(0, 0, canvas.width, canvas.height);
+    // Draw minimap background
+    if (minimapImg) {
+      ctx.globalAlpha = 1;
+      ctx.drawImage(minimapImg, 0, 0, canvas.width, canvas.height);
+      ctx.fillStyle = 'rgba(6,8,12,.25)';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+    } else {
+      ctx.fillStyle = '#0d1117';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+    }
+    ctx.globalAlpha = 1;
     Object.values(paths).forEach(p => drawSinglePath(ctx, p));
   }
 
