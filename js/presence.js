@@ -53,10 +53,15 @@ async function initPresence() {
       });
     }
     window._presenceLoaded = true;
-    // Refresh picker if open
-    const picker = document.getElementById('profile-picker');
-    if (picker && picker.style.display !== 'none') {
-      window.OLYCITY?._refreshPickerDots?.();
+    window._presenceReady = true;
+    // Open picker if pending, or refresh if open
+    if (window._pendingPicker) {
+      window.OLYCITY?._showProfilePicker();
+    } else {
+      const picker = document.getElementById('profile-picker');
+      if (picker && picker.style.display !== 'none') {
+        window.OLYCITY?._refreshPickerDots?.();
+      }
     }
   });
 
