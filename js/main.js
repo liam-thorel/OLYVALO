@@ -5,7 +5,7 @@
 
 import { valorantApi } from './api.js';
 
-const SITE_VERSION = '1779813754'; // Auto-updated on push
+const SITE_VERSION = '1779813856'; // Auto-updated on push
 import { syncPlayer as henrikSyncPlayer, syncAllPlayers as henrikSyncAll, persistPlayerStats } from './henrik.js';
 import { rosterHTML, guestCardHTML, mapSectionHTML, stierHTML, globalNotesHTML, navMapsHTML, agentPageHTML, miniRosterHTML, agentsFiltersHTML, agentsGridHTML, compCompareHTML, compBuilderHTML, savedCompsHTML, calloutsHTML } from './render.js';
 import { initTheme, initTilt, initParallax, initSearch, initKeyboard, updateFavCount, initHeroParticles, initWheelLogos } from './interactions.js';
@@ -752,7 +752,7 @@ window.OLYCITY = {
           // Check Firebase active sessions (set by firebase-draw.js)
           const isActive = window._activeProfiles?.has(p.name) && p.name !== localStorage.getItem('olycity-profile');
           const activeLabel = isActive ? `<div style="position:absolute;top:6px;right:6px;width:10px;height:10px;border-radius:50%;background:#3fcf6b;border:2px solid #0a0c10;box-shadow:0 0 6px rgba(63,207,107,.6)"></div>` : '';
-          return `<div class="profile-card" onclick="${isActive ? '' : `window.OLYCITY._selectProfile('${p.name}')`}" style="${isActive ? 'opacity:0.5;cursor:not-allowed' : ''}">
+          return `<div class="profile-card" data-profile="${p.name}" onclick="${isActive ? '' : `window.OLYCITY._selectProfile('${p.name}')`}" style="${isActive ? 'opacity:0.5;cursor:not-allowed' : ''}">
             <div class="profile-avatar" style="position:relative">${imgEl}${badge}</div>
             <div class="profile-name">${p.name}</div>
             <div class="profile-role">${p.tag || p.role || ''}</div>
@@ -767,11 +767,36 @@ window.OLYCITY = {
     picker.style.transition = '';
   },
 
+  _refreshPickerDots() {
+    const active = window._activeProfiles || new Set();
+    const currentProfile = localStorage.getItem('olycity-profile');
+    document.querySelectorAll('.profile-card').forEach(card => {
+      const name = card.dataset.profile;
+      if (!name) return;
+      const isActive = active.has(name) && name !== currentProfile;
+      let dot = card.querySelector('.online-dot');
+      if (isActive && !dot) {
+        dot = document.createElement('div');
+        dot.className = 'online-dot';
+        dot.style.cssText = 'position:absolute;top:6px;right:6px;width:10px;height:10px;border-radius:50%;background:#3fcf6b;border:2px solid #0a0c10;box-shadow:0 0 6px rgba(63,207,107,.6)';
+        card.querySelector('.profile-avatar').appendChild(dot);
+        card.style.opacity = '0.5';
+        card.style.cursor = 'not-allowed';
+        card.onclick = null;
+      } else if (!isActive && dot) {
+        dot.remove();
+        card.style.opacity = '1';
+        card.style.cursor = 'pointer';
+        card.onclick = () => window.OLYCITY._selectProfile(name);
+      }
+    });
+  },
+
   _selectProfile(name) {
     localStorage.setItem('olycity-profile', name);
     state.currentProfile = name;
     // Register presence
-    import('./firebase-draw.js').then(m => m.initSession()).catch(() => {});
+    window._initPresence?.();
     const picker = document.getElementById('profile-picker');
     if (picker) {
       picker.style.opacity = '0';
@@ -1087,7 +1112,7 @@ async function boot() {
   window.OLYCITY.showMap(0, null);
   // Start Firebase presence session
   if (localStorage.getItem('olycity-profile')) {
-    import('./firebase-draw.js').then(m => m.initSession()).catch(() => {});
+    window._initPresence?.();
   }
   console.log('[OLYCITY] Ready ✓');
 }
