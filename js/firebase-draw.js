@@ -105,11 +105,13 @@ export async function initDrawBoard(mapName, container) {
   await loadMinimap();
 
   const resize = () => {
-    const w = Math.min(wrap.clientWidth || 700, 650);
+    const w = Math.min(wrap.clientWidth || 680, 680);
     canvas.width = w;
     canvas.height = w;
     redraw();
   };
+  // Constrain wrap size like callouts section
+  wrap.style.maxWidth = '680px';
   setTimeout(resize, 50);
   window.addEventListener('resize', resize);
 
@@ -121,14 +123,16 @@ export async function initDrawBoard(mapName, container) {
 
   // Ctrl+Z = undo
   const ctrlZ = (e) => {
-    if ((e.ctrlKey || e.metaKey) && e.key === 'z') {
+    if ((e.ctrlKey || e.metaKey) && (e.key === 'z' || e.key === 'Z')) {
       e.preventDefault();
-      window._drawUndo?.();
+      e.stopPropagation();
+      if (myPathKeys.length) {
+        const key = myPathKeys.pop();
+        db.ref(`drawings/${mapName}/${key}`).remove();
+      }
     }
   };
   document.addEventListener('keydown', ctrlZ);
-  // Cleanup on tab switch
-  canvas.dataset.ctrlzbound = '1';
 
   canvas.addEventListener('mousedown', e => { drawing = true; currentPath = [pos(e)]; });
   canvas.addEventListener('mousemove', e => {
@@ -158,7 +162,7 @@ export async function initDrawBoard(mapName, container) {
     const lbl = document.getElementById('draw-size-label');
     if (lbl) lbl.textContent = v + 'px';
   };
-  let myPathKeys = []; // track keys pushed by this session for undo
+  let myPathKeys = [];
   window._drawUndo = () => {
     if (!myPathKeys.length) return;
     const key = myPathKeys.pop();
