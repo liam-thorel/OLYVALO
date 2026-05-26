@@ -41,8 +41,11 @@ export async function initDrawBoard(mapName, container) {
   let currentSize = 3;
   let paths = {};
 
+  // Make container full width
+  container.style.cssText = 'width:100%;display:block';
+
   container.innerHTML = `
-    <div class="draw-board">
+    <div class="draw-board" style="width:100%">
       <div class="draw-toolbar">
         <div class="draw-tool-group">
           ${['#ff4656','#3fcfcf','#f5c842','#a87fff','#ffffff','#ff8200'].map(c =>
