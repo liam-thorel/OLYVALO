@@ -5,7 +5,7 @@
 
 import { valorantApi } from './api.js';
 
-const SITE_VERSION = '1779828805'; // Auto-updated on push
+const SITE_VERSION = '1779828919'; // Auto-updated on push
 import { syncPlayer as henrikSyncPlayer, syncAllPlayers as henrikSyncAll, persistPlayerStats } from './henrik.js';
 import { rosterHTML, guestCardHTML, mapSectionHTML, stierHTML, globalNotesHTML, navMapsHTML, agentPageHTML, miniRosterHTML, agentsFiltersHTML, agentsGridHTML, compCompareHTML, compBuilderHTML, savedCompsHTML, calloutsHTML } from './render.js';
 import { initTheme, initTilt, initParallax, initSearch, initKeyboard, updateFavCount, initHeroParticles, initWheelLogos } from './interactions.js';
@@ -772,19 +772,9 @@ window.OLYCITY = {
 
   _selectProfile(name) {
     localStorage.setItem('olycity-profile', name);
-    window._changePresence?.(name);
-    // Mark this profile as active with a heartbeat
-    localStorage.setItem(`olycity-active-${name}`, Date.now());
-    state.currentProfile = name;
     const picker = document.getElementById('profile-picker');
-    if (picker) {
-      picker.style.opacity = '0';
-      picker.style.transition = 'opacity .3s';
-      setTimeout(() => picker.remove(), 300);
-    }
-    window.OLYCITY._applyProfileIndicator(name);
-    // Passer le profil explicitement pour éviter tout problème de timing
-    window.OLYCITY._renderBuilder(name);
+    if (picker) { picker.style.opacity = '0'; picker.style.transition = 'opacity .3s'; }
+    setTimeout(() => location.reload(), 300);
   },
 
   _applyProfileIndicator(name) {
