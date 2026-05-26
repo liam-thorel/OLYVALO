@@ -104,8 +104,11 @@ export async function initDrawBoard(mapName, container) {
 
   await loadMinimap();
 
-  // Constrain wrap
-  wrap.style.maxWidth = '680px';
+  // Center canvas in full-width wrap
+  wrap.style.maxWidth = '100%';
+  wrap.style.display = 'flex';
+  wrap.style.justifyContent = 'center';
+  wrap.style.background = 'var(--surf)';
 
   const resize = () => {
     const w = Math.min(wrap.clientWidth - 2, 500);
