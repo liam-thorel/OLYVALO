@@ -1732,6 +1732,6 @@ button.comp-tab.fun-tab {
 .draw-btn-danger:hover { color:var(--red); border-color:var(--red-mid); }
 .draw-canvas-wrap {
   position:relative; background:var(--surf); border:1px solid var(--border);
-  overflow:hidden;
+  overflow:hidden; display:flex; align-items:center; justify-content:center;
 }
-.draw-canvas-wrap canvas { display:block; width:100%; }
+.draw-canvas-wrap canvas { display:block; }
