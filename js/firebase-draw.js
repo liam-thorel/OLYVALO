@@ -108,14 +108,9 @@ export async function initDrawBoard(mapName, container) {
   wrap.style.maxWidth = '680px';
 
   const resize = () => {
-    const w = Math.min(wrap.clientWidth || 680, 680);
+    const w = Math.min(wrap.clientWidth - 2, 500);
     canvas.width = w;
-    // Use actual image ratio if available, else assume square
-    if (minimapImg && minimapImg.naturalWidth) {
-      canvas.height = Math.round(w * minimapImg.naturalHeight / minimapImg.naturalWidth);
-    } else {
-      canvas.height = Math.round(w * 0.75); // 4:3 fallback
-    }
+    canvas.height = w; // displayIcon is always square
     redraw();
   };
   setTimeout(resize, 50);
@@ -198,11 +193,7 @@ export async function initDrawBoard(mapName, container) {
       ctx.fillStyle = '#0d1117';
       ctx.fillRect(0, 0, canvas.width, canvas.height);
       // Draw centered/fitted
-      const iw = minimapImg.naturalWidth, ih = minimapImg.naturalHeight;
-      const scale = Math.min(canvas.width / iw, canvas.height / ih);
-      const dw = iw * scale, dh = ih * scale;
-      const ox = (canvas.width - dw) / 2, oy = (canvas.height - dh) / 2;
-      ctx.drawImage(minimapImg, ox, oy, dw, dh);
+      ctx.drawImage(minimapImg, 0, 0, canvas.width, canvas.height);
       ctx.fillStyle = 'rgba(6,8,12,.2)';
       ctx.fillRect(0, 0, canvas.width, canvas.height);
     } else {
