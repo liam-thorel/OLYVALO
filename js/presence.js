@@ -45,12 +45,14 @@ async function initPresence() {
   // Watch all sessions
   db.ref('sessions').on('value', snap => {
     window._activeProfiles = new Set();
-    if (!snap.exists()) return;
-    snap.forEach(profileSnap => {
-      let alive = false;
-      profileSnap.forEach(s => { if (Date.now() - (s.val()?.ts || 0) < 20000) alive = true; });
-      if (alive) window._activeProfiles.add(profileSnap.key);
-    });
+    if (snap.exists()) {
+      snap.forEach(profileSnap => {
+        let alive = false;
+        profileSnap.forEach(s => { if (Date.now() - (s.val()?.ts || 0) < 20000) alive = true; });
+        if (alive) window._activeProfiles.add(profileSnap.key);
+      });
+    }
+    window._presenceLoaded = true;
     // Refresh picker if open
     const picker = document.getElementById('profile-picker');
     if (picker && picker.style.display !== 'none') {
