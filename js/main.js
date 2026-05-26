@@ -5,7 +5,7 @@
 
 import { valorantApi } from './api.js';
 
-const SITE_VERSION = '1779828393'; // Auto-updated on push
+const SITE_VERSION = '1779828558'; // Auto-updated on push
 import { syncPlayer as henrikSyncPlayer, syncAllPlayers as henrikSyncAll, persistPlayerStats } from './henrik.js';
 import { rosterHTML, guestCardHTML, mapSectionHTML, stierHTML, globalNotesHTML, navMapsHTML, agentPageHTML, miniRosterHTML, agentsFiltersHTML, agentsGridHTML, compCompareHTML, compBuilderHTML, savedCompsHTML, calloutsHTML } from './render.js';
 import { initTheme, initTilt, initParallax, initSearch, initKeyboard, updateFavCount, initHeroParticles, initWheelLogos } from './interactions.js';
@@ -720,9 +720,12 @@ window.OLYCITY = {
   },
 
   _showProfilePicker() {
-    let picker = document.getElementById('profile-picker');
-    const needsBuild = !picker;
-    if (!picker) {
+    // Toujours rebuild pour avoir les données Firebase fraîches
+    const old = document.getElementById('profile-picker');
+    if (old) old.remove();
+    let picker = null;
+    const needsBuild = true;
+    if (true) {
       picker = document.createElement('div');
       picker.id = 'profile-picker';
       Object.assign(picker.style, {
