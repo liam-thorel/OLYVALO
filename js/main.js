@@ -5,7 +5,7 @@
 
 import { valorantApi } from './api.js';
 
-const SITE_VERSION = '1779813487'; // Auto-updated on push
+const SITE_VERSION = '1779813626'; // Auto-updated on push
 import { syncPlayer as henrikSyncPlayer, syncAllPlayers as henrikSyncAll, persistPlayerStats } from './henrik.js';
 import { rosterHTML, guestCardHTML, mapSectionHTML, stierHTML, globalNotesHTML, navMapsHTML, agentPageHTML, miniRosterHTML, agentsFiltersHTML, agentsGridHTML, compCompareHTML, compBuilderHTML, savedCompsHTML, calloutsHTML } from './render.js';
 import { initTheme, initTilt, initParallax, initSearch, initKeyboard, updateFavCount, initHeroParticles, initWheelLogos } from './interactions.js';
@@ -753,7 +753,7 @@ window.OLYCITY = {
           const lastActive = +localStorage.getItem(`olycity-active-${p.name}`) || 0;
           const currentProfile = localStorage.getItem('olycity-profile');
           const isActive = p.name !== currentProfile && Date.now() - lastActive < 10000;
-          const activeLabel = isActive ? `<div style="position:absolute;top:4px;left:4px;background:rgba(63,207,207,.9);color:#000;font-family:Tomorrow,sans-serif;font-size:7px;font-weight:700;letter-spacing:1px;padding:2px 6px;text-transform:uppercase">EN LIGNE</div>` : '';
+          const activeLabel = isActive ? `<div style="position:absolute;top:6px;right:6px;width:10px;height:10px;border-radius:50%;background:#3fcf6b;border:2px solid #0a0c10;box-shadow:0 0 6px rgba(63,207,107,.6)"></div>` : '';
           return `<div class="profile-card" onclick="${isActive ? '' : `window.OLYCITY._selectProfile('${p.name}')`}" style="${isActive ? 'opacity:0.5;cursor:not-allowed' : ''}">
             <div class="profile-avatar" style="position:relative">${imgEl}${badge}</div>
             <div class="profile-name">${p.name}</div>
