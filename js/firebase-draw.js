@@ -73,20 +73,33 @@ export async function initDrawBoard(mapName, container) {
 
   const canvas = container.querySelector('#draw-canvas');
   const wrap = container.querySelector('.draw-canvas-wrap');
-  // Load minimap
+  // Load minimap from valorantApi (already loaded in main app)
   let minimapImg = null;
+  const minimapUrl = window.OLYCITY?._getMapIcon?.(mapName);
   const loadMinimap = () => new Promise(res => {
-    fetch('https://valorant-api.com/v1/maps')
-      .then(r => r.json())
-      .then(data => {
-        const m = data.data?.find(m => m.displayName === mapName);
-        if (!m?.displayIcon) return res();
-        const img = new Image();
-        img.crossOrigin = 'anonymous';
-        img.onload = () => { minimapImg = img; res(); };
-        img.onerror = res;
-        img.src = m.displayIcon;
-      }).catch(res);
+    // Try to get URL from window.valorantApi first
+    let url = null;
+    try { url = window._valorantApiMaps?.[mapName]?.icon; } catch(e) {}
+    if (!url) {
+      // Fallback: fetch directly
+      fetch('https://valorant-api.com/v1/maps')
+        .then(r => r.json())
+        .then(data => {
+          const m = data.data?.find(d => d.displayName === mapName);
+          if (!m?.displayIcon) return res();
+          const img = new Image();
+          img.crossOrigin = 'anonymous';
+          img.onload = () => { minimapImg = img; res(); };
+          img.onerror = () => res();
+          img.src = m.displayIcon;
+        }).catch(() => res());
+      return;
+    }
+    const img = new Image();
+    img.crossOrigin = 'anonymous';
+    img.onload = () => { minimapImg = img; res(); };
+    img.onerror = () => res();
+    img.src = url;
   });
 
   await loadMinimap();
