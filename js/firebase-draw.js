@@ -105,9 +105,9 @@ export async function initDrawBoard(mapName, container) {
   await loadMinimap();
 
   const resize = () => {
-    const w = wrap.clientWidth || 700;
+    const w = Math.min(wrap.clientWidth || 700, 650);
     canvas.width = w;
-    canvas.height = w; // square — minimap is square
+    canvas.height = w;
     redraw();
   };
   setTimeout(resize, 50);
@@ -158,10 +158,11 @@ export async function initDrawBoard(mapName, container) {
     const lbl = document.getElementById('draw-size-label');
     if (lbl) lbl.textContent = v + 'px';
   };
+  let myPathKeys = []; // track keys pushed by this session for undo
   window._drawUndo = () => {
-    const keys = Object.keys(paths);
-    if (!keys.length) return;
-    db.ref(`drawings/${mapName}/${keys[keys.length-1]}`).remove();
+    if (!myPathKeys.length) return;
+    const key = myPathKeys.pop();
+    db.ref(`drawings/${mapName}/${key}`).remove();
   };
   window._drawClear = () => {
     if (!confirm('Effacer tous les dessins ?')) return;
@@ -174,7 +175,7 @@ export async function initDrawBoard(mapName, container) {
     db.ref(`drawings/${mapName}`).push({
       points: currentPath, color: currentColor, size: currentSize,
       author: localStorage.getItem('olycity-profile') || 'guest', ts: Date.now()
-    });
+    }).then(ref => { myPathKeys.push(ref.key); });
     currentPath = [];
   }
 
@@ -184,15 +185,10 @@ export async function initDrawBoard(mapName, container) {
     // Draw minimap background
     if (minimapImg) {
       ctx.globalAlpha = 1;
-      // Draw with contain — preserve aspect ratio
-      const iw = minimapImg.naturalWidth || minimapImg.width;
-      const ih = minimapImg.naturalHeight || minimapImg.height;
-      const scale = Math.min(canvas.width / iw, canvas.height / ih);
-      const dw = iw * scale, dh = ih * scale;
-      const dx = (canvas.width - dw) / 2, dy = (canvas.height - dh) / 2;
       ctx.fillStyle = '#0d1117';
       ctx.fillRect(0, 0, canvas.width, canvas.height);
-      ctx.drawImage(minimapImg, dx, dy, dw, dh);
+      // Always draw full image stretched to canvas — minimap is already square
+      ctx.drawImage(minimapImg, 0, 0, canvas.width, canvas.height);
       ctx.fillStyle = 'rgba(6,8,12,.2)';
       ctx.fillRect(0, 0, canvas.width, canvas.height);
     } else {
