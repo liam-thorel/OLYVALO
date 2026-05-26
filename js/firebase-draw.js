@@ -104,14 +104,20 @@ export async function initDrawBoard(mapName, container) {
 
   await loadMinimap();
 
+  // Constrain wrap
+  wrap.style.maxWidth = '680px';
+
   const resize = () => {
     const w = Math.min(wrap.clientWidth || 680, 680);
     canvas.width = w;
-    canvas.height = w;
+    // Use actual image ratio if available, else assume square
+    if (minimapImg && minimapImg.naturalWidth) {
+      canvas.height = Math.round(w * minimapImg.naturalHeight / minimapImg.naturalWidth);
+    } else {
+      canvas.height = Math.round(w * 0.75); // 4:3 fallback
+    }
     redraw();
   };
-  // Constrain wrap size like callouts section
-  wrap.style.maxWidth = '680px';
   setTimeout(resize, 50);
   window.addEventListener('resize', resize);
 
@@ -191,8 +197,12 @@ export async function initDrawBoard(mapName, container) {
       ctx.globalAlpha = 1;
       ctx.fillStyle = '#0d1117';
       ctx.fillRect(0, 0, canvas.width, canvas.height);
-      // Always draw full image stretched to canvas — minimap is already square
-      ctx.drawImage(minimapImg, 0, 0, canvas.width, canvas.height);
+      // Draw centered/fitted
+      const iw = minimapImg.naturalWidth, ih = minimapImg.naturalHeight;
+      const scale = Math.min(canvas.width / iw, canvas.height / ih);
+      const dw = iw * scale, dh = ih * scale;
+      const ox = (canvas.width - dw) / 2, oy = (canvas.height - dh) / 2;
+      ctx.drawImage(minimapImg, ox, oy, dw, dh);
       ctx.fillStyle = 'rgba(6,8,12,.2)';
       ctx.fillRect(0, 0, canvas.width, canvas.height);
     } else {
