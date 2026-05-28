@@ -140,7 +140,7 @@ function agilityHTML(agility) {
 export function compHTML(comp, mapIdx, compIdx) {
   const cid = `comp-${mapIdx}-${compIdx}`;
   const agents = comp.agents.map(n => agentCardHTML(n)).join('');
-  const tierCls = comp.tier === 'S' ? 'tier-s' : 'tier-a';
+  const tierCls = comp.tier === 'S' ? 'tier-s' : comp.tier === 'FUN' ? 'tier-f' : 'tier-a';
   const isFav = state.FAVS.includes(cid);
 
   // VODs/stats link — désactivé, en attente d'une meilleure source
