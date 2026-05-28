@@ -708,64 +708,56 @@
   "Ascent": {
     "Sova": [
       {
-        "name": "A Site depuis spawn",
+        "name": "Reveal A Site ATK",
+        "type": "ATK",
+        "diff": "Facile",
+        "videoId": "f4l3hg4pKNo",
+        "start": 15,
+        "desc": "Recon bolt reveal complet A Site depuis A Main — à lancer avant d'entrer"
+      },
+      {
+        "name": "Lineups Ascent 2025",
         "type": "ATK",
         "diff": "Moyen",
-        "videoId": "dRuRID5JoQY",
-        "start": 5,
-        "desc": "Reveal A Site complet depuis A Main — à lancer avant d'entrer"
+        "videoId": "Av-b456IsBM",
+        "start": 20,
+        "desc": "Toutes les flèches Sova sur Ascent — recon bolts et shock darts pour ATK et DEF"
       },
       {
-        "name": "B Site depuis mid",
-        "type": "ATK",
-        "diff": "Difficile",
-        "videoId": "BEpcN-eE8ms",
-        "start": 8,
-        "desc": "Reveal B derrière les boxes depuis Catwalk"
-      },
-      {
-        "name": "Post-plant A",
+        "name": "Defender Side Ascent",
         "type": "DEF",
-        "diff": "Facile",
-        "videoId": "Q4ZdRYQmHvM",
-        "start": 4,
-        "desc": "Shock dart sur spike A depuis CT pour retake"
+        "diff": "Moyen",
+        "videoId": "kdzAzmkiupA",
+        "start": 10,
+        "desc": "Recon bolts et shock darts côté DEF — contrôle mid et retakes A/B"
       }
     ],
     "Killjoy": [
       {
-        "name": "Setup B solo",
+        "name": "Setups & Lineups Ascent 2025",
         "type": "DEF",
         "diff": "Facile",
-        "videoId": "xU2U73Tk-DM",
-        "start": 6,
-        "desc": "Alarmbot + Nanoswarm pour défendre B seule — libère 4 joueurs mid"
+        "videoId": "NfuqxBeyBFM",
+        "start": 30,
+        "desc": "Guide complet Killjoy sur Ascent — setups B site, post-plant nanoswarms, lockdown"
       },
       {
-        "name": "Lockdown A execute",
-        "type": "ATK",
-        "diff": "Moyen",
-        "videoId": "2-uAL__pp_U",
-        "start": 10,
-        "desc": "Lockdown planté depuis A Lobby pour sécuriser le site"
+        "name": "RADIANT Killjoy Guide Ascent",
+        "type": "DEF",
+        "diff": "Difficile",
+        "videoId": "029xkWSBn10",
+        "start": 45,
+        "desc": "Setups Radiant sur Ascent — positions turret, alarmbot et nanoswarm optimaux"
       }
     ],
     "Omen": [
       {
-        "name": "Smoke standard A",
+        "name": "Smoke A Execute",
         "type": "ATK",
         "diff": "Facile",
-        "videoId": "dRuRID5JoQY",
-        "start": 3,
-        "desc": "Smoke Heaven + Generator depuis A Main pour execute propre"
-      },
-      {
-        "name": "Smoke B execute",
-        "type": "ATK",
-        "diff": "Facile",
-        "videoId": "BEpcN-eE8ms",
-        "start": 4,
-        "desc": "Smoke CT + Market depuis B Main"
+        "videoId": "JCj7gd_I6SY",
+        "start": 5,
+        "desc": "Smokes Omen pour execute A — Heaven + Generator depuis A Main"
       }
     ]
   }
