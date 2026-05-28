@@ -172,40 +172,6 @@
       }
     ]
   },
-  "Bind": {
-    "zones": [
-      {
-        "id": "atk-spawn",
-        "label": "Spawn ATK",
-        "x": 60.3,
-        "y": 90.4,
-        "color": "#ff4656"
-      },
-      {
-        "id": "def-spawn",
-        "label": "Spawn DEF",
-        "x": 52.2,
-        "y": 9.7,
-        "color": "#3fcfcf"
-      },
-      {
-        "id": "a-site",
-        "label": "A SITE",
-        "x": 72.1,
-        "y": 30.8,
-        "color": "#f5c842",
-        "major": true
-      },
-      {
-        "id": "b-site",
-        "label": "B SITE",
-        "x": 28.2,
-        "y": 26.7,
-        "color": "#a87fff",
-        "major": true
-      }
-    ]
-  },
   "Split": {
     "zones": [
       {

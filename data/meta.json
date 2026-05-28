@@ -4,5 +4,12 @@
   "patchNotes": "https://playvalorant.com/en-us/news/game-updates/",
   "lastUpdated": "Mai 2026",
   "season": "Episode 10 Act 3",
-  "mapsInRotation": ["Fracture", "Haven", "Breeze", "Lotus", "Bind", "Split", "Pearl"]
+  "mapsInRotation": [
+    "Fracture",
+    "Haven",
+    "Breeze",
+    "Lotus",
+    "Split",
+    "Pearl"
+  ]
 }
