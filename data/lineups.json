@@ -704,5 +704,69 @@
         "desc": "Hold B Long avec tripwires incontournables — info précoce sur les ATK B"
       }
     ]
+  },
+  "Ascent": {
+    "Sova": [
+      {
+        "name": "A Site depuis spawn",
+        "type": "ATK",
+        "diff": "Moyen",
+        "videoId": "dRuRID5JoQY",
+        "start": 5,
+        "desc": "Reveal A Site complet depuis A Main — à lancer avant d'entrer"
+      },
+      {
+        "name": "B Site depuis mid",
+        "type": "ATK",
+        "diff": "Difficile",
+        "videoId": "BEpcN-eE8ms",
+        "start": 8,
+        "desc": "Reveal B derrière les boxes depuis Catwalk"
+      },
+      {
+        "name": "Post-plant A",
+        "type": "DEF",
+        "diff": "Facile",
+        "videoId": "Q4ZdRYQmHvM",
+        "start": 4,
+        "desc": "Shock dart sur spike A depuis CT pour retake"
+      }
+    ],
+    "Killjoy": [
+      {
+        "name": "Setup B solo",
+        "type": "DEF",
+        "diff": "Facile",
+        "videoId": "xU2U73Tk-DM",
+        "start": 6,
+        "desc": "Alarmbot + Nanoswarm pour défendre B seule — libère 4 joueurs mid"
+      },
+      {
+        "name": "Lockdown A execute",
+        "type": "ATK",
+        "diff": "Moyen",
+        "videoId": "2-uAL__pp_U",
+        "start": 10,
+        "desc": "Lockdown planté depuis A Lobby pour sécuriser le site"
+      }
+    ],
+    "Omen": [
+      {
+        "name": "Smoke standard A",
+        "type": "ATK",
+        "diff": "Facile",
+        "videoId": "dRuRID5JoQY",
+        "start": 3,
+        "desc": "Smoke Heaven + Generator depuis A Main pour execute propre"
+      },
+      {
+        "name": "Smoke B execute",
+        "type": "ATK",
+        "diff": "Facile",
+        "videoId": "BEpcN-eE8ms",
+        "start": 4,
+        "desc": "Smoke CT + Market depuis B Main"
+      }
+    ]
   }
 }

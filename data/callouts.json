@@ -253,5 +253,61 @@
         "color": "#ff8200"
       }
     ]
+  },
+  "Ascent": {
+    "zones": [
+      {
+        "id": "atk-spawn",
+        "label": "Spawn ATK",
+        "x": 85,
+        "y": 50,
+        "color": "#ff4656"
+      },
+      {
+        "id": "def-spawn",
+        "label": "Spawn DEF",
+        "x": 15,
+        "y": 50,
+        "color": "#3fcfcf"
+      },
+      {
+        "id": "a-site",
+        "label": "A SITE",
+        "x": 25,
+        "y": 25,
+        "color": "#f5c842",
+        "major": true
+      },
+      {
+        "id": "b-site",
+        "label": "B SITE",
+        "x": 25,
+        "y": 75,
+        "color": "#a87fff",
+        "major": true
+      },
+      {
+        "id": "mid",
+        "label": "Mid",
+        "x": 55,
+        "y": 50,
+        "color": "#ff8200",
+        "major": true
+      },
+      {
+        "id": "catwalk",
+        "label": "Catwalk",
+        "x": 45,
+        "y": 30,
+        "color": "#f5c842"
+      },
+      {
+        "id": "market",
+        "label": "Market",
+        "x": 45,
+        "y": 70,
+        "color": "#a87fff"
+      }
+    ]
   }
 }

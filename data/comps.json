@@ -1210,5 +1210,161 @@
         "count": 5
       }
     ]
+  },
+  {
+    "map": "Ascent",
+    "region": "Two-site · Map ouverte avec mid central",
+    "tags": [
+      "Mid control crucial",
+      "Duelliste dominant",
+      "Retakes difficiles"
+    ],
+    "stats": {
+      "difficulty": "3.8/5",
+      "sides": "Équilibré · léger avantage CT",
+      "bestSite": "A Site"
+    },
+    "strategies": [
+      {
+        "name": "Mid to B",
+        "type": "default",
+        "icon": "▶",
+        "desc": "Contrôle mid via Catwalk avec Jett et Omen smoke B Main. Pivot rapide B à 25s si mid pris.",
+        "steps": [
+          "Jett dash mid Catwalk à 20s",
+          "Omen smoke B Main + CT",
+          "Sova dart sur B Link pour info",
+          "Rotate B si mid contesté",
+          "Killjoy sentinelle A pour info"
+        ]
+      },
+      {
+        "name": "A Execute",
+        "type": "execute",
+        "icon": "⚡",
+        "desc": "Exécute A coordonné avec Sova Shock + Omen smoke A Lobby. Jett entry A Main pendant que Breach stun A Heaven.",
+        "steps": [
+          "Omen smoke A Heaven + Generator",
+          "Breach stun A Heaven à 25s",
+          "Jett entry A Main sous le stun",
+          "Sova shock darts post-plant",
+          "Killjoy alarmbot défend flank"
+        ]
+      }
+    ],
+    "notes": [
+      "Mid control = victoire — prenez Catwalk ou Market en priorité",
+      "Jett + Sova est le duo le plus fort sur Ascent actuellement",
+      "Les portes A et B permettent de stall — utilisez-les en défense"
+    ],
+    "comps": [
+      {
+        "label": "Meta principale",
+        "tier": "S",
+        "tierLabel": "S-TIER",
+        "winrate": 56.2,
+        "updatedAt": "Mai 2026",
+        "agents": [
+          "Jett",
+          "Sova",
+          "Omen",
+          "Killjoy",
+          "Breach"
+        ],
+        "source": "VLR.gg · High Elo",
+        "tip": "Contrôle mid avec <strong>Jett + Sova</strong> — Jett prend Catwalk agressivement pendant que Sova dart couvre Market. Omen smoke Heaven + CT en execute A. Killjoy anchor B seule.",
+        "agility": {
+          "antiRush": 4,
+          "postPlant": 4,
+          "retake": 3,
+          "split": 3
+        },
+        "vods": [
+          {
+            "label": "Pick rates · Ascent",
+            "url": "https://dak.gg/valorant/agents?map=Ascent"
+          }
+        ]
+      },
+      {
+        "label": "Anti-rush défensif",
+        "tier": "A",
+        "tierLabel": "A-TIER",
+        "winrate": 52.1,
+        "updatedAt": "Mai 2026",
+        "agents": [
+          "Raze",
+          "Fade",
+          "Miks",
+          "Killjoy",
+          "Chamber"
+        ],
+        "source": "VLR.gg · Plat+",
+        "tip": "<strong>Double sentinelle</strong> Killjoy + Chamber pour verrouiller B et A simultanément. Fade Haunt sur mid dès le début du round pour info.",
+        "agility": {
+          "antiRush": 5,
+          "postPlant": 4,
+          "retake": 3,
+          "split": 2
+        },
+        "vods": [
+          {
+            "label": "Pick rates · Ascent",
+            "url": "https://dak.gg/valorant/agents?map=Ascent"
+          }
+        ]
+      },
+      {
+        "label": "Comp agressive mid",
+        "tier": "B",
+        "tierLabel": "B-TIER",
+        "winrate": 49.3,
+        "updatedAt": "Mai 2026",
+        "agents": [
+          "Jett",
+          "Raze",
+          "Skye",
+          "Omen",
+          "Cypher"
+        ],
+        "source": "VLR.gg · High Elo",
+        "tip": "Double duelliste pour dominer mid — <strong>Jett Catwalk + Raze Market</strong> simultanément pour split. Skye flash pour entrées rapides.",
+        "agility": {
+          "antiRush": 2,
+          "postPlant": 3,
+          "retake": 3,
+          "split": 5
+        },
+        "vods": [
+          {
+            "label": "Pick rates · Ascent",
+            "url": "https://dak.gg/valorant/agents?map=Ascent"
+          }
+        ]
+      },
+      {
+        "label": "5-Stack FUN",
+        "tier": "FUN",
+        "tierLabel": "FUN",
+        "winrate": 44.0,
+        "updatedAt": "Mai 2026",
+        "agents": [
+          "Neon",
+          "Jett",
+          "Raze",
+          "Phoenix",
+          "Reyna"
+        ],
+        "source": "OLYCITY Labs",
+        "tip": "5 duellistes — <strong>chaos total mid</strong>. Chacun rush un angle différent en même temps. Pas de smokes, juste des flashs et de l'ego.",
+        "agility": {
+          "antiRush": 1,
+          "postPlant": 1,
+          "retake": 2,
+          "split": 4
+        },
+        "vods": []
+      }
+    ]
   }
 ]
