@@ -958,7 +958,7 @@
         "vods": []
       },
       {
-        "label": "Fun — Double Sage Wall",
+        "label": "Fun — 5-Stack Rush B",
         "tier": "F",
         "tierLabel": "FUN",
         "winrate": 42.0,
@@ -967,11 +967,11 @@
           "Sage",
           "Raze",
           "Breach",
-          "Omen",
-          "Cypher"
+          "Neon",
+          "Reyna"
         ],
         "source": "OLYCITY Creativity Lab · Construction mode",
-        "tip": "Sage wall sur Ramp ET sur B Heaven en même temps. Les défenseurs ne peuvent aller nulle part. C'est techniquement une stratégie de contrôle total. En pratique c'est du pure désordre architectural.",
+        "tip": "<strong>Rush B total</strong> dès le début du round — Sage wall coupe l'accès à A, Neon sprint en tête, Breach stun B Heaven, Raze satchel sur site. Pas de réflexion, que de la vitesse.",
         "agility": {
           "antiRush": 5,
           "postPlant": 3,
