@@ -329,7 +329,7 @@
         "vods": []
       },
       {
-        "label": "Double Duelist 3 Sites",
+        "label": "Mid vers A/C Split",
         "tier": "B",
         "tierLabel": "B-TIER",
         "winrate": 51.5,
@@ -342,7 +342,7 @@
           "Killjoy"
         ],
         "source": "Esports Insider · S26 Act 1 Meta",
-        "tip": "<strong>Neon + Phoenix</strong> pressent deux sites simultanément. Sova recon dart pour savoir où la défense est concentrée. Omen flexible sur les 3 smokes. Killjoy anchor B.",
+        "tip": "<strong>Neon rush A</strong> pendant que Phoenix prend C avec Sova recon. Omen flexible mid pour couper les rotations entre les 3 sites. Killjoy anchor B seule — Haven se gagne en créant deux menaces simultanées.",
         "agility": {
           "antiRush": 3,
           "postPlant": 2,
