@@ -1267,15 +1267,15 @@
         "agents": [
           "Jett",
           "Sova",
+          "KAY/O",
           "Omen",
-          "Killjoy",
-          "Breach"
+          "Killjoy"
         ],
         "source": "VLR.gg · High Elo",
-        "tip": "Contrôle mid avec <strong>Jett + Sova</strong> — Jett prend Catwalk agressivement pendant que Sova dart couvre Market. Omen smoke Heaven + CT en execute A. Killjoy anchor B seule.",
+        "tip": "<strong>Killjoy anchor B seule</strong> pendant que Jett + Sova contrôlent mid. KAY/O flash + suppression pour les exécutes sur A. Omen smoke Heaven + Generator. La comp Ascent n'a quasiment pas changé depuis 2021 — c'est pour ça qu'elle est encore dominante.",
         "agility": {
           "antiRush": 4,
-          "postPlant": 4,
+          "postPlant": 5,
           "retake": 3,
           "split": 3
         },
@@ -1287,25 +1287,25 @@
         ]
       },
       {
-        "label": "Anti-rush défensif",
+        "label": "Alternative Clove",
         "tier": "A",
         "tierLabel": "A-TIER",
-        "winrate": 52.1,
+        "winrate": 52.5,
         "updatedAt": "Mai 2026",
         "agents": [
-          "Raze",
-          "Fade",
-          "Miks",
-          "Killjoy",
-          "Chamber"
+          "Jett",
+          "Sova",
+          "KAY/O",
+          "Clove",
+          "Killjoy"
         ],
-        "source": "VLR.gg · Plat+",
-        "tip": "<strong>Double sentinelle</strong> Killjoy + Chamber pour verrouiller B et A simultanément. Fade Haunt sur mid dès le début du round pour info.",
+        "source": "ValoHub · Patch 12.05",
+        "tip": "<strong>Clove remplace Omen</strong> — ses smokes rechargeables post-mort permettent de maintenir la pression même en désavantage numérique. Très efficace pour les rounds pistolet et anti-éco.",
         "agility": {
-          "antiRush": 5,
+          "antiRush": 3,
           "postPlant": 4,
-          "retake": 3,
-          "split": 2
+          "retake": 4,
+          "split": 3
         },
         "vods": [
           {
@@ -1315,25 +1315,25 @@
         ]
       },
       {
-        "label": "Comp agressive mid",
+        "label": "Viper mid control",
         "tier": "B",
         "tierLabel": "B-TIER",
-        "winrate": 49.3,
+        "winrate": 49.8,
         "updatedAt": "Mai 2026",
         "agents": [
           "Jett",
-          "Raze",
-          "Skye",
-          "Omen",
-          "Cypher"
+          "Sova",
+          "KAY/O",
+          "Viper",
+          "Killjoy"
         ],
-        "source": "VLR.gg · High Elo",
-        "tip": "Double duelliste pour dominer mid — <strong>Jett Catwalk + Raze Market</strong> simultanément pour split. Skye flash pour entrées rapides.",
+        "source": "VLR.gg · Discussion",
+        "tip": "<strong>Viper wall pour couper mid</strong> en deux dès le début du round — force les défenseurs à choisir entre A et B. Moins flexible qu'Omen mais domine mid en défense.",
         "agility": {
-          "antiRush": 2,
-          "postPlant": 3,
-          "retake": 3,
-          "split": 5
+          "antiRush": 4,
+          "postPlant": 5,
+          "retake": 2,
+          "split": 4
         },
         "vods": [
           {
@@ -1346,7 +1346,7 @@
         "label": "5-Stack FUN",
         "tier": "FUN",
         "tierLabel": "FUN",
-        "winrate": 44.0,
+        "winrate": 31.0,
         "updatedAt": "Mai 2026",
         "agents": [
           "Neon",
@@ -1356,7 +1356,7 @@
           "Reyna"
         ],
         "source": "OLYCITY Labs",
-        "tip": "5 duellistes — <strong>chaos total mid</strong>. Chacun rush un angle différent en même temps. Pas de smokes, juste des flashs et de l'ego.",
+        "tip": "5 duellistes — <strong>chaos total mid</strong>. Chacun rush un angle différent. Pas de smokes, juste des flashs et de l'ego. Pour les soirs où vous voulez juste fragger.",
         "agility": {
           "antiRush": 1,
           "postPlant": 1,
