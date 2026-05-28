@@ -335,7 +335,7 @@ export function mapSectionHTML(data, idx) {
     : `<div class="map-hero-img" style="background:var(--surf3)"></div>`;
   const tags = data.tags.map(t => `<span class="map-tag">${t}</span>`).join('');
   const tabs = data.comps.map((c, ci) => {
-    const isFun = c.tier === 'F';
+    const isFun = c.tier === 'FUN' || c.tier === 'F';
     const cls = isFun ? 'fun-tab' : '';
     const emoji = isFun ? '🎉 ' : '';
     return `<button class="comp-tab ${ci === 0 ? 'active' : ''} ${cls}"
