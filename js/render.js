@@ -164,11 +164,11 @@ export function compHTML(comp, mapIdx, compIdx) {
               : comp.updatedAt ? `<span class="comp-updated">Maj ${comp.updatedAt}</span>` : ''}
           </div>
           <div class="comp-meta">
-            <div class="winrate-pill">
+            ${comp.tier !== 'PRO' ? `<div class="winrate-pill">
               <div class="winrate-bar"><div class="winrate-bar-fill" style="width:${comp.winrate||0}%"></div></div>
-              <span class="winrate-val">${comp.winrate ? comp.winrate.toFixed(1)+'%' : 'Pro'}</span>
+              <span class="winrate-val">${comp.winrate ? comp.winrate.toFixed(1)+'%' : '—'}</span>
               <span class="winrate-lbl">WR</span>
-            </div>
+            </div>` : ''}
             <button class="fav-btn ${isFav ? 'active' : ''}" data-fav="${cid}" onclick="window.OLYCITY.toggleFav('${cid}')">★</button>
           </div>
         </div>
