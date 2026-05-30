@@ -165,8 +165,8 @@ export function compHTML(comp, mapIdx, compIdx) {
           </div>
           <div class="comp-meta">
             <div class="winrate-pill">
-              <div class="winrate-bar"><div class="winrate-bar-fill" style="width:${comp.winrate}%"></div></div>
-              <span class="winrate-val">${comp.winrate.toFixed(1)}%</span>
+              <div class="winrate-bar"><div class="winrate-bar-fill" style="width:${comp.winrate||0}%"></div></div>
+              <span class="winrate-val">${comp.winrate ? comp.winrate.toFixed(1)+'%' : 'Pro'}</span>
               <span class="winrate-lbl">WR</span>
             </div>
             <button class="fav-btn ${isFav ? 'active' : ''}" data-fav="${cid}" onclick="window.OLYCITY.toggleFav('${cid}')">★</button>
@@ -648,7 +648,7 @@ export function agentPageHTML(name) {
             <div class="usage-comp-label">${u.label}</div>
             <div class="usage-meta">
               <span class="usage-tier ${u.tier}">${u.tier}-TIER</span>
-              <span class="usage-wr">${u.winrate.toFixed(1)}% WR</span>
+              <span class="usage-wr">${u.winrate ? u.winrate.toFixed(1)+'% WR' : 'Pro'}</span>
               <span class="usage-go">→</span>
             </div>
           </div>
@@ -663,7 +663,7 @@ export function agentPageHTML(name) {
 
   const pickCount = usage.length;
   const avgWR = usage.length > 0
-    ? (usage.reduce((s, u) => s + u.winrate, 0) / usage.length).toFixed(1) : '—';
+    ? (usage.filter(u=>u.winrate).reduce((s, u) => s + u.winrate, 0) / (usage.filter(u=>u.winrate).length||1)).toFixed(1) : '—';
   const fullEl = fullPortrait
     ? `<img class="agent-portrait-full" src="${fullPortrait}" alt="${display}">`  : '';
   // Background cinématique : vidéo YouTube en loop si dispo, sinon background art

@@ -108,7 +108,7 @@
         "label": "Joue comme un pro",
         "tier": "PRO",
         "tierLabel": "PRO",
-        "winrate": null,
+        "winrate": 0,
         "updatedAt": "Mai 2026",
         "patch": "12.10",
         "agents": [
@@ -344,7 +344,7 @@
         "label": "Joue comme un pro",
         "tier": "PRO",
         "tierLabel": "PRO",
-        "winrate": null,
+        "winrate": 0,
         "updatedAt": "Mai 2026",
         "patch": "12.10",
         "agents": [
@@ -582,7 +582,7 @@
         "label": "Joue comme un pro",
         "tier": "PRO",
         "tierLabel": "PRO",
-        "winrate": null,
+        "winrate": 0,
         "updatedAt": "Mai 2026",
         "patch": "12.10",
         "agents": [
@@ -817,7 +817,7 @@
         "label": "Joue comme un pro",
         "tier": "PRO",
         "tierLabel": "PRO",
-        "winrate": null,
+        "winrate": 0,
         "updatedAt": "Mai 2026",
         "patch": "12.10",
         "agents": [
@@ -1052,7 +1052,7 @@
         "label": "Joue comme un pro",
         "tier": "PRO",
         "tierLabel": "PRO",
-        "winrate": null,
+        "winrate": 0,
         "updatedAt": "Mai 2026",
         "patch": "12.10",
         "agents": [
@@ -1289,7 +1289,7 @@
         "label": "Joue comme un pro",
         "tier": "PRO",
         "tierLabel": "PRO",
-        "winrate": null,
+        "winrate": 0,
         "updatedAt": "Mai 2026",
         "patch": "12.10",
         "agents": [
@@ -1495,7 +1495,7 @@
         "label": "Joue comme un pro",
         "tier": "PRO",
         "tierLabel": "PRO",
-        "winrate": null,
+        "winrate": 0,
         "updatedAt": "Mai 2026",
         "patch": "12.10",
         "agents": [
