@@ -146,7 +146,7 @@ export function compHTML(comp, mapIdx, compIdx) {
     // Wrap key agent with a "key pick" indicator
     return card.replace('class="agent-card"', 'class="agent-card key-agent"');
   }).join('');
-  const tierCls = comp.tier === 'S' ? 'tier-s' : comp.tier === 'FUN' ? 'tier-f' : 'tier-a';
+  const tierCls = comp.tier === 'S' ? 'tier-s' : comp.tier === 'FUN' ? 'tier-f' : comp.tier === 'PRO' ? 'tier-pro' : 'tier-a';
   const isFav = state.FAVS.includes(cid);
 
   // VODs/stats link — désactivé, en attente d'une meilleure source
@@ -342,8 +342,9 @@ export function mapSectionHTML(data, idx) {
   const tags = data.tags.map(t => `<span class="map-tag">${t}</span>`).join('');
   const tabs = data.comps.map((c, ci) => {
     const isFun = c.tier === 'FUN' || c.tier === 'F';
-    const cls = isFun ? 'fun-tab' : '';
-    const emoji = isFun ? '🎉 ' : '';
+    const isPro = c.tier === 'PRO';
+    const cls = isFun ? 'fun-tab' : isPro ? 'pro-tab' : '';
+    const emoji = isFun ? '🎉 ' : isPro ? '🏆 ' : '';
     return `<button class="comp-tab ${ci === 0 ? 'active' : ''} ${cls}"
       onclick="window.OLYCITY.switchComp(${idx},${ci},this)">${emoji}${c.label}</button>`;
   }).join('');

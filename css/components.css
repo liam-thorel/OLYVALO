@@ -42,6 +42,7 @@
 }
 .tier-s{ background:var(--gold-low); color:var(--gold); border:1px solid rgba(245,200,66,.4); }
 .tier-a{ background:rgba(63,207,207,.1); color:var(--S); border:1px solid rgba(63,207,207,.3); }
+.tier-pro{ background:rgba(30,120,255,.12); color:#4d9fff; border:1px solid rgba(30,120,255,.35); letter-spacing:2px; }
 .comp-name{
   font-family:'Tomorrow',sans-serif; font-size:18px; font-weight:600;
   color:var(--text); letter-spacing:1px; text-transform:uppercase;
@@ -1348,7 +1349,12 @@
 }
 .comp-tab:has(.tier-f),
 .comp-tab[style*="fun"],
-button.comp-tab.fun-tab {
+button.comp-tab.pro-tab {
+  background: rgba(30,120,255,.08) !important;
+  color: #4d9fff !important;
+  border-bottom-color: #4d9fff !important;
+}
+.fun-tab {
   background: linear-gradient(135deg, rgba(255,70,86,.15), rgba(168,127,255,.15));
   border-color: rgba(168,127,255,.4);
   color: var(--text);

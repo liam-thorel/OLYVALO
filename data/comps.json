@@ -105,6 +105,35 @@
         "key": "Breach"
       },
       {
+        "label": "Joue comme un pro",
+        "tier": "PRO",
+        "tierLabel": "PRO",
+        "winrate": null,
+        "updatedAt": "Mai 2026",
+        "patch": "12.10",
+        "agents": [
+          "Neon",
+          "Fade",
+          "Breach",
+          "Omen",
+          "Cypher"
+        ],
+        "source": "VLR.gg · EWC 2026 Amer Qualifier + VCT Stage 1 (post-nerf 12.09)",
+        "tip": "Comp pro sur Fracture — <strong>Neon ziplines</strong> des deux côtés simultanément, Fade Haunt couvre les deux spawns, Breach stun les accès A/B. Cypher sur B, Omen smoke central. Source : EWC Amer Qualifier 2026 post-nerf 12.09.",
+        "agility": {
+          "antiRush": 4,
+          "postPlant": 4,
+          "retake": 3,
+          "split": 5
+        },
+        "vods": [
+          {
+            "label": "EWC Amer Qualifier · Agents",
+            "url": "https://www.vlr.gg/event/agents/2953/esports-world-cup-2026-americas-qualifier"
+          }
+        ]
+      },
+      {
         "label": "Double initiateur",
         "tier": "A",
         "tierLabel": "A-TIER",
@@ -310,6 +339,35 @@
           }
         ],
         "key": "Sova"
+      },
+      {
+        "label": "Joue comme un pro",
+        "tier": "PRO",
+        "tierLabel": "PRO",
+        "winrate": null,
+        "updatedAt": "Mai 2026",
+        "patch": "12.10",
+        "agents": [
+          "Neon",
+          "Sova",
+          "Omen",
+          "Phoenix",
+          "Cypher"
+        ],
+        "source": "VLR.gg · EWC 2026 Amer Qualifier + VCT Stage 1 (post-nerf 12.09)",
+        "tip": "<strong>Sova 92% · Neon 75% · Omen 75% · Phoenix 42%</strong> sur Haven en pro. Sova dart surveille les 3 sites simultanément. Neon rush A ou C selon l'info. Phoenix flash B. Omen smoke mid. Source : VCT Stage 1 + EWC Amer Qualifier 2026.",
+        "agility": {
+          "antiRush": 3,
+          "postPlant": 4,
+          "retake": 3,
+          "split": 4
+        },
+        "vods": [
+          {
+            "label": "EWC Amer Qualifier · Agents",
+            "url": "https://www.vlr.gg/event/agents/2953/esports-world-cup-2026-americas-qualifier"
+          }
+        ]
       },
       {
         "label": "Double duelist agressif",
@@ -521,6 +579,35 @@
         "key": "Sova"
       },
       {
+        "label": "Joue comme un pro",
+        "tier": "PRO",
+        "tierLabel": "PRO",
+        "winrate": null,
+        "updatedAt": "Mai 2026",
+        "patch": "12.10",
+        "agents": [
+          "Neon",
+          "Sova",
+          "Harbor",
+          "Viper",
+          "Jett"
+        ],
+        "source": "VLR.gg · EWC 2026 Amer Qualifier + VCT Stage 1 (post-nerf 12.09)",
+        "tip": "<strong>Sova 100% · Harbor 79% · Neon 79%</strong> sur Breeze post-nerf. Harbor Cascade coupe B Main, Viper wall A. Sova récon total. Neon et Jett pour les duels longue portée. Source : EWC Amer Qualifier 2026 post-nerf 12.09.",
+        "agility": {
+          "antiRush": 3,
+          "postPlant": 5,
+          "retake": 3,
+          "split": 3
+        },
+        "vods": [
+          {
+            "label": "EWC Amer Qualifier · Agents",
+            "url": "https://www.vlr.gg/event/agents/2953/esports-world-cup-2026-americas-qualifier"
+          }
+        ]
+      },
+      {
         "label": "Longue portée",
         "tier": "A",
         "tierLabel": "A-TIER",
@@ -708,10 +795,10 @@
           "Fade",
           "Omen",
           "Miks",
-          "Killjoy"
+          "Vyse"
         ],
         "source": "VLR.gg · High Elo",
-        "tip": "<strong>Miks + Omen</strong> = double controller le plus efficace. Killjoy anchor C site seul pendant que les 4 autres exécutent A ou B. Fade isole le C site entier avec son ulti.",
+        "tip": "<strong>Vyse remplace Killjoy</strong> — Arc Rose pour stopper les retakes sur C, Steel Garden défend les accès. Miks double smoke sur les 3 sites. Fade isole les sites individuellement. Raze pour la mobilité entre A et B.",
         "agility": {
           "antiRush": 4,
           "postPlant": 5,
@@ -725,6 +812,35 @@
           }
         ],
         "key": "Fade"
+      },
+      {
+        "label": "Joue comme un pro",
+        "tier": "PRO",
+        "tierLabel": "PRO",
+        "winrate": null,
+        "updatedAt": "Mai 2026",
+        "patch": "12.10",
+        "agents": [
+          "Neon",
+          "Omen",
+          "Fade",
+          "Raze",
+          "Vyse"
+        ],
+        "source": "VLR.gg · EWC 2026 Amer Qualifier + VCT Stage 1 (post-nerf 12.09)",
+        "tip": "<strong>Omen 100% · Fade 88% · Vyse 88% · Neon 88%</strong> sur Lotus post-nerf. Killjoy absent du pro play (0%). Vyse Steel Garden sur C retakes. Fade isole les sites. Omen smoke les 3 sites. Source : EWC Amer Qualifier 2026 post-nerf 12.09.",
+        "agility": {
+          "antiRush": 4,
+          "postPlant": 4,
+          "retake": 3,
+          "split": 3
+        },
+        "vods": [
+          {
+            "label": "EWC Amer Qualifier · Agents",
+            "url": "https://www.vlr.gg/event/agents/2953/esports-world-cup-2026-americas-qualifier"
+          }
+        ]
       },
       {
         "label": "Variante Hotspawn",
@@ -931,6 +1047,35 @@
           }
         ],
         "key": "Breach"
+      },
+      {
+        "label": "Joue comme un pro",
+        "tier": "PRO",
+        "tierLabel": "PRO",
+        "winrate": null,
+        "updatedAt": "Mai 2026",
+        "patch": "12.10",
+        "agents": [
+          "Neon",
+          "Viper",
+          "Omen",
+          "Fade",
+          "Raze"
+        ],
+        "source": "VLR.gg · EWC 2026 Amer Qualifier + VCT Stage 1 (post-nerf 12.09)",
+        "tip": "<strong>Neon 90% · Viper 90% · Omen 90% · Fade 70%</strong> sur Split post-nerf. Viper wall coupe Ramp ou B Heaven. Neon double contrôleur avec Omen sur mid. Fade info sur les deux sites. Source : EWC Amer Qualifier 2026 post-nerf 12.09.",
+        "agility": {
+          "antiRush": 4,
+          "postPlant": 5,
+          "retake": 3,
+          "split": 4
+        },
+        "vods": [
+          {
+            "label": "EWC Amer Qualifier · Agents",
+            "url": "https://www.vlr.gg/event/agents/2953/esports-world-cup-2026-americas-qualifier"
+          }
+        ]
       },
       {
         "label": "Défensive solide",
@@ -1141,6 +1286,35 @@
         "key": "Fade"
       },
       {
+        "label": "Joue comme un pro",
+        "tier": "PRO",
+        "tierLabel": "PRO",
+        "winrate": null,
+        "updatedAt": "Mai 2026",
+        "patch": "12.10",
+        "agents": [
+          "Neon",
+          "Astra",
+          "Vyse",
+          "Fade",
+          "Phoenix"
+        ],
+        "source": "VLR.gg · EWC 2026 Amer Qualifier + VCT Stage 1 (post-nerf 12.09)",
+        "tip": "<strong>Neon 100% · Astra 100% · Vyse 83% · Fade 83%</strong> sur Pearl post-nerf. Astra globes mid Street obligatoire. Vyse piège les flancs. Fade + Neon pour les exécutes A ou B. Phoenix flash B. Source : EWC Amer Qualifier 2026 post-nerf 12.09.",
+        "agility": {
+          "antiRush": 4,
+          "postPlant": 4,
+          "retake": 4,
+          "split": 3
+        },
+        "vods": [
+          {
+            "label": "EWC Amer Qualifier · Agents",
+            "url": "https://www.vlr.gg/event/agents/2953/esports-world-cup-2026-americas-qualifier"
+          }
+        ]
+      },
+      {
         "label": "Longue portée",
         "tier": "A",
         "tierLabel": "A-TIER",
@@ -1297,12 +1471,12 @@
         "agents": [
           "Jett",
           "Sova",
-          "KAY/O",
+          "Phoenix",
           "Omen",
           "Killjoy"
         ],
         "source": "VLR.gg · High Elo",
-        "tip": "<strong>Killjoy anchor B seule</strong> pendant que Jett + Sova contrôlent mid. KAY/O flash + suppression pour les exécutes sur A. Omen smoke Heaven + Generator. La comp Ascent n'a quasiment pas changé depuis 2021 — c'est pour ça qu'elle est encore dominante.",
+        "tip": "<strong>Phoenix remplace KAY/O</strong> — Flash Curveball pour entrer sur A Main ou mid. Sova récon bolt sur A Site depuis Catwalk. Killjoy anchor B seule. Omen smoke Heaven + Generator. KAY/O retiré car peu joué pro (8% EWC).",
         "agility": {
           "antiRush": 4,
           "postPlant": 5,
@@ -1316,6 +1490,35 @@
           }
         ],
         "key": "Sova"
+      },
+      {
+        "label": "Joue comme un pro",
+        "tier": "PRO",
+        "tierLabel": "PRO",
+        "winrate": null,
+        "updatedAt": "Mai 2026",
+        "patch": "12.10",
+        "agents": [
+          "Jett",
+          "Sova",
+          "Phoenix",
+          "Omen",
+          "Killjoy"
+        ],
+        "source": "VLR.gg · EWC 2026 Amer Qualifier + VCT Stage 1 (post-nerf 12.09)",
+        "tip": "<strong>Omen 100% · Sova 100% · Jett 83% · Cypher/KJ 67%</strong> sur Ascent post-nerf. Jett op mid Catwalk, Sova récon A/B. Phoenix flash A Main. Omen smoke Heaven. KJ anchor B seule. Source : EWC Amer Qualifier 2026 post-nerf 12.09.",
+        "agility": {
+          "antiRush": 4,
+          "postPlant": 4,
+          "retake": 3,
+          "split": 3
+        },
+        "vods": [
+          {
+            "label": "EWC Amer Qualifier · Agents",
+            "url": "https://www.vlr.gg/event/agents/2953/esports-world-cup-2026-americas-qualifier"
+          }
+        ]
       },
       {
         "label": "Alternative Clove",
