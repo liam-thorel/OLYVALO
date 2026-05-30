@@ -1735,3 +1735,15 @@ button.comp-tab.fun-tab {
   overflow:hidden; text-align:center; padding:16px 0;
 }
 .draw-canvas-wrap canvas { display:inline-block; }
+
+/* Agent clé dans une comp */
+.agent-card.key-agent {
+  position: relative;
+}
+.agent-card.key-agent::after {
+  content: '★';
+  position: absolute; top: 4px; right: 4px;
+  font-size: 11px; color: var(--gold);
+  text-shadow: 0 0 6px rgba(245,200,66,.6);
+  line-height: 1;
+}

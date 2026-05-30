@@ -101,7 +101,8 @@
             "label": "Pick rates · Fracture",
             "url": "https://dak.gg/valorant/agents?map=Fracture"
           }
-        ]
+        ],
+        "key": "Breach"
       },
       {
         "label": "Double initiateur",
@@ -124,7 +125,8 @@
           "retake": 4,
           "split": 4
         },
-        "vods": []
+        "vods": [],
+        "key": "Breach"
       },
       {
         "label": "Double Duelist",
@@ -147,7 +149,8 @@
           "retake": 3,
           "split": 5
         },
-        "vods": []
+        "vods": [],
+        "key": "Fade"
       },
       {
         "label": "Fun — Full Chaos",
@@ -163,14 +166,16 @@
           "Iso"
         ],
         "source": "OLYCITY Creativity Lab · Ranked pour rire",
-        "tip": "5 Duelists. Pas de smokes. Pas de recon. Juste du skill pur et de la vitesse. Chacun prend un côté différent dès le début du round — bonne chance à la défense.",
+        "tip": "5 Duelists. Pas de smokes. Pas de recon. Juste du skill pur et de la vitesse. Chacun prend un côté différent dès le début du round — bonne chance à la défense. <em style=\"color:#f5c842;font-size:11px\">⚠ Neon nerfée 12.09 — mobilité réduite, moins agressive</em>",
         "agility": {
           "antiRush": 1,
           "postPlant": 1,
           "retake": 2,
           "split": 5
         },
-        "vods": []
+        "vods": [],
+        "patch": "12.08",
+        "key": "Raze"
       }
     ],
     "notes": [
@@ -303,7 +308,8 @@
             "label": "Pick rates · Haven",
             "url": "https://dak.gg/valorant/agents?map=Haven"
           }
-        ]
+        ],
+        "key": "Sova"
       },
       {
         "label": "Double duelist agressif",
@@ -319,14 +325,16 @@
           "Killjoy"
         ],
         "source": "Esports Insider 2026",
-        "tip": "<strong>Neon + Phoenix</strong> créent une pression simultanée sur deux sites. Envoyez Neon sur A et Phoenix sur C avec Sova recon pour split la défense.",
+        "tip": "<strong>Neon + Phoenix</strong> créent une pression simultanée sur deux sites. Envoyez Neon sur A et Phoenix sur C avec Sova recon pour split la défense. <em style=\"color:#f5c842;font-size:11px\">⚠ Neon nerfée 12.09 — mobilité réduite, moins agressive</em>",
         "agility": {
           "antiRush": 3,
           "postPlant": 2,
           "retake": 3,
           "split": 5
         },
-        "vods": []
+        "vods": [],
+        "patch": "12.08",
+        "key": "Sova"
       },
       {
         "label": "Mid vers A/C Split",
@@ -342,14 +350,16 @@
           "Killjoy"
         ],
         "source": "Esports Insider · S26 Act 1 Meta",
-        "tip": "<strong>Neon rush A</strong> pendant que Phoenix prend C avec Sova recon. Omen flexible mid pour couper les rotations entre les 3 sites. Killjoy anchor B seule — Haven se gagne en créant deux menaces simultanées.",
+        "tip": "<strong>Neon rush A</strong> pendant que Phoenix prend C avec Sova recon. Omen flexible mid pour couper les rotations entre les 3 sites. Killjoy anchor B seule — Haven se gagne en créant deux menaces simultanées. <em style=\"color:#f5c842;font-size:11px\">⚠ Neon nerfée 12.09 — mobilité réduite, moins agressive</em>",
         "agility": {
           "antiRush": 3,
           "postPlant": 2,
           "retake": 3,
           "split": 5
         },
-        "vods": []
+        "vods": [],
+        "patch": "12.08",
+        "key": "Sova"
       },
       {
         "label": "Fun — Triple Site Rush",
@@ -365,14 +375,16 @@
           "Gekko"
         ],
         "source": "OLYCITY Creativity Lab · Pour les soirs de tilte",
-        "tip": "Yoru fake sur C, Neon rush A, Jett rush B simultanément. Omen smoke au pif. Gekko fait n'importe quoi. Le chaos est le plan. Ça marche 1 fois sur 5 mais c'est <strong>épique</strong>.",
+        "tip": "Yoru fake sur C, Neon rush A, Jett rush B simultanément. Omen smoke au pif. Gekko fait n'importe quoi. Le chaos est le plan. Ça marche 1 fois sur 5 mais c'est <strong>épique</strong>. <em style=\"color:#f5c842;font-size:11px\">⚠ Neon nerfée 12.09 — mobilité réduite, moins agressive</em>",
         "agility": {
           "antiRush": 1,
           "postPlant": 1,
           "retake": 2,
           "split": 5
         },
-        "vods": []
+        "vods": [],
+        "patch": "12.08",
+        "key": "Omen"
       }
     ],
     "notes": [
@@ -505,7 +517,8 @@
             "label": "Pick rates · Breeze",
             "url": "https://dak.gg/valorant/agents?map=Breeze"
           }
-        ]
+        ],
+        "key": "Sova"
       },
       {
         "label": "Longue portée",
@@ -528,7 +541,8 @@
           "retake": 2,
           "split": 2
         },
-        "vods": []
+        "vods": [],
+        "key": "Sova"
       },
       {
         "label": "Double Duelist Longue Portée",
@@ -551,7 +565,8 @@
           "retake": 2,
           "split": 2
         },
-        "vods": []
+        "vods": [],
+        "key": "Sova"
       },
       {
         "label": "Fun — Yoru Teleporter Chaos",
@@ -574,7 +589,8 @@
           "retake": 2,
           "split": 3
         },
-        "vods": []
+        "vods": [],
+        "key": "Omen"
       }
     ],
     "notes": [
@@ -707,7 +723,8 @@
             "label": "Pick rates · Lotus",
             "url": "https://dak.gg/valorant/agents?map=Lotus"
           }
-        ]
+        ],
+        "key": "Fade"
       },
       {
         "label": "Variante Hotspawn",
@@ -730,7 +747,8 @@
           "retake": 4,
           "split": 3
         },
-        "vods": []
+        "vods": [],
+        "key": "Viper"
       },
       {
         "label": "Double Controller 3 Sites",
@@ -753,7 +771,8 @@
           "retake": 4,
           "split": 3
         },
-        "vods": []
+        "vods": [],
+        "key": "Fade"
       },
       {
         "label": "Fun — 5 Initiateurs",
@@ -776,7 +795,8 @@
           "retake": 4,
           "split": 3
         },
-        "vods": []
+        "vods": [],
+        "key": "Fade"
       }
     ],
     "notes": [
@@ -909,7 +929,8 @@
             "label": "Pick rates · Split",
             "url": "https://dak.gg/valorant/agents?map=Split"
           }
-        ]
+        ],
+        "key": "Breach"
       },
       {
         "label": "Défensive solide",
@@ -932,7 +953,8 @@
           "retake": 4,
           "split": 3
         },
-        "vods": []
+        "vods": [],
+        "key": "Breach"
       },
       {
         "label": "Triple Initiateur",
@@ -955,7 +977,8 @@
           "retake": 4,
           "split": 4
         },
-        "vods": []
+        "vods": [],
+        "key": "Fade"
       },
       {
         "label": "Fun — 5-Stack Rush B",
@@ -971,14 +994,16 @@
           "Reyna"
         ],
         "source": "OLYCITY Creativity Lab · Construction mode",
-        "tip": "<strong>Rush B total</strong> dès le début du round — Sage wall coupe l'accès à A, Neon sprint en tête, Breach stun B Heaven, Raze satchel sur site. Pas de réflexion, que de la vitesse.",
+        "tip": "<strong>Rush B total</strong> dès le début du round — Sage wall coupe l'accès à A, Neon sprint en tête, Breach stun B Heaven, Raze satchel sur site. Pas de réflexion, que de la vitesse. <em style=\"color:#f5c842;font-size:11px\">⚠ Neon nerfée 12.09 — mobilité réduite, moins agressive</em>",
         "agility": {
           "antiRush": 5,
           "postPlant": 3,
           "retake": 5,
           "split": 2
         },
-        "vods": []
+        "vods": [],
+        "patch": "12.08",
+        "key": "Breach"
       }
     ],
     "notes": [
@@ -1099,7 +1124,7 @@
           "Cypher"
         ],
         "source": "VLR.gg · High Elo",
-        "tip": "<strong>Astra globes sur mid Street</strong> = contrôle permanent de la zone centrale. Fade + Sova = double recon qui nettoie tous les angles. Neon rush dans les smokes.",
+        "tip": "<strong>Astra globes sur mid Street</strong> = contrôle permanent de la zone centrale. Fade + Sova = double recon qui nettoie tous les angles. Neon rush dans les smokes. <em style=\"color:#f5c842;font-size:11px\">⚠ Neon nerfée 12.09 — mobilité réduite, moins agressive</em>",
         "agility": {
           "antiRush": 4,
           "postPlant": 4,
@@ -1111,7 +1136,9 @@
             "label": "Pick rates · Pearl",
             "url": "https://dak.gg/valorant/agents?map=Pearl"
           }
-        ]
+        ],
+        "patch": "12.08",
+        "key": "Fade"
       },
       {
         "label": "Longue portée",
@@ -1134,7 +1161,8 @@
           "retake": 2,
           "split": 2
         },
-        "vods": []
+        "vods": [],
+        "key": "Sova"
       },
       {
         "label": "Double Duelist Mid Control",
@@ -1157,7 +1185,8 @@
           "retake": 3,
           "split": 4
         },
-        "vods": []
+        "vods": [],
+        "key": "Sova"
       },
       {
         "label": "Fun — 5 Controllers",
@@ -1180,7 +1209,8 @@
           "retake": 5,
           "split": 1
         },
-        "vods": []
+        "vods": [],
+        "key": "Omen"
       }
     ],
     "notes": [
@@ -1284,7 +1314,8 @@
             "label": "Pick rates · Ascent",
             "url": "https://dak.gg/valorant/agents?map=Ascent"
           }
-        ]
+        ],
+        "key": "Sova"
       },
       {
         "label": "Alternative Clove",
@@ -1312,7 +1343,8 @@
             "label": "Pick rates · Ascent",
             "url": "https://dak.gg/valorant/agents?map=Ascent"
           }
-        ]
+        ],
+        "key": "Sova"
       },
       {
         "label": "Viper mid control",
@@ -1340,7 +1372,8 @@
             "label": "Pick rates · Ascent",
             "url": "https://dak.gg/valorant/agents?map=Ascent"
           }
-        ]
+        ],
+        "key": "Sova"
       },
       {
         "label": "5-Stack FUN",
@@ -1363,7 +1396,8 @@
           "retake": 2,
           "split": 4
         },
-        "vods": []
+        "vods": [],
+        "key": "Neon"
       }
     ]
   }

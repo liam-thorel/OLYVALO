@@ -139,7 +139,13 @@ function agilityHTML(agility) {
 // ─── COMP PANEL ──────────────────────────────────
 export function compHTML(comp, mapIdx, compIdx) {
   const cid = `comp-${mapIdx}-${compIdx}`;
-  const agents = comp.agents.map(n => agentCardHTML(n)).join('');
+  const agents = comp.agents.map(n => {
+    const isKey = comp.key === n;
+    const card = agentCardHTML(n);
+    if (!isKey) return card;
+    // Wrap key agent with a "key pick" indicator
+    return card.replace('class="agent-card"', 'class="agent-card key-agent"');
+  }).join('');
   const tierCls = comp.tier === 'S' ? 'tier-s' : comp.tier === 'FUN' ? 'tier-f' : 'tier-a';
   const isFav = state.FAVS.includes(cid);
 
