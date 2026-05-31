@@ -1471,12 +1471,12 @@
         "agents": [
           "Jett",
           "Sova",
-          "Phoenix",
+          "KAY/O",
           "Omen",
           "Killjoy"
         ],
         "source": "VLR.gg · High Elo",
-        "tip": "<strong>Phoenix remplace KAY/O</strong> — Flash Curveball pour entrer sur A Main ou mid. Sova récon bolt sur A Site depuis Catwalk. Killjoy anchor B seule. Omen smoke Heaven + Generator. KAY/O retiré car peu joué pro (8% EWC).",
+        "tip": "<strong>Jett op mid Catwalk</strong> dès que possible — première info gratuite. Sova récon A depuis spawn. KAY/O flash pour entrer sur A Main. Killjoy anchor B seule. Omen smoke Heaven + Generator en execute.",
         "agility": {
           "antiRush": 4,
           "postPlant": 5,
