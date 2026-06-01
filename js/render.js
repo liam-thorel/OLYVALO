@@ -387,7 +387,6 @@ export function mapSectionHTML(data, idx) {
       <!-- Section tabs: Comps / Strats & Éco / Lineups -->
       <div class="map-section-tabs">
         <button class="map-section-tab active" onclick="window.OLYCITY.switchMapTab('${idx}','comps',this)">◈ Comps</button>
-        <button class="map-section-tab" onclick="window.OLYCITY.switchMapTab('${idx}','strats',this)">◆ Strats & Éco</button>
         ${hasLineups ? `<button class="map-section-tab" onclick="window.OLYCITY.switchMapTab('${idx}','lineups',this)">📹 Lineups</button>` : ''}
         <button class="map-section-tab" onclick="window.OLYCITY.switchMapTab('${idx}','draw',this)">✏ Dessin</button>
         <button class="map-section-tab" onclick="window.OLYCITY.switchMapTab('${idx}','notes',this)">★ Notes</button>
@@ -400,10 +399,7 @@ export function mapSectionHTML(data, idx) {
       </div>
 
       <!-- STRATS & ÉCO TAB -->
-      <div class="map-section-panel" id="maptab-${idx}-strats">
-        ${strategyHTML(data.strategies)}
-        ${ecoHTML(data.eco)}
-      </div>
+
 
       <!-- LINEUPS TAB -->
       ${hasLineups ? `<div class="map-section-panel" id="maptab-${idx}-lineups">
