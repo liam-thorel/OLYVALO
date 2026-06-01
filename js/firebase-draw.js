@@ -111,7 +111,8 @@ export async function initDrawBoard(mapName, container) {
           <button class="draw-btn" onclick="window._drawUndo()">↩ Undo</button>
           <button class="draw-btn draw-btn-danger" onclick="window._drawClear()">🗑 Effacer tout</button>
         </div>
-        <div class="draw-tool-group" style="margin-left:auto">
+        <div class="draw-tool-group" style="margin-left:auto;align-items:center;gap:10px">
+          <div id="draw-online-list" style="display:flex;align-items:center;gap:6px"></div>
           <span style="font-size:9px;letter-spacing:1px;color:#3fcfcf">● Live</span>
         </div>
       </div>
@@ -204,6 +205,32 @@ export async function initDrawBoard(mapName, container) {
   const mapRef = db.ref(`drawings/${mapName}`);
   mapRef.on('child_added', snap => { paths[snap.key] = snap.val(); redraw(); });
   mapRef.on('child_removed', snap => { delete paths[snap.key]; redraw(); });
+
+  // Update online players list in real-time
+  const updateOnlineList = () => {
+    const listEl = document.getElementById('draw-online-list');
+    if (!listEl) return;
+    const active = window._activeProfiles || new Set();
+    const COLORS = {
+      'Nico':'#ff4656','Liam':'#3fcfcf','Rayhan':'#f5c842',
+      'Mathis':'#a87fff','Noé':'#ff8200','Guest':'#ffffff'
+    };
+    listEl.innerHTML = [...active].map(name => {
+      const color = COLORS[name] || '#ffffff';
+      const isMe = name === profile;
+      return `<div style="display:flex;align-items:center;gap:4px;opacity:${isMe?'1':'0.7'}">
+        <div style="width:8px;height:8px;border-radius:50%;background:${color};box-shadow:0 0 4px ${color}"></div>
+        <span style="font-size:9px;letter-spacing:1px;text-transform:uppercase;color:${color};font-family:Tomorrow,sans-serif">${name}</span>
+      </div>`;
+    }).join('');
+  };
+  updateOnlineList();
+  // Poll every 3s (presence.js updates _activeProfiles)
+  const onlineInterval = setInterval(updateOnlineList, 3000);
+  // Cleanup when leaving tab
+  document.addEventListener('visibilitychange', () => {
+    if (document.hidden) clearInterval(onlineInterval);
+  });
 
   window._drawSetColor = (c, btn) => {
     currentColor = c;
