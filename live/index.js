@@ -1,29 +1,58 @@
 /**
- * OLYCITY LIVE — Valorant Local API Bridge v2
- * node index.js
+ * OLYCITY LIVE v3 — Valorant Local API (lockfile method)
  */
 
 const https = require('https');
+const fs    = require('fs');
+const path  = require('path');
 
 const FIREBASE_URL = 'https://realtime-database-5bb9f-default-rtdb.europe-west1.firebasedatabase.app';
-const VAL_PORT = 2999;
-const agent = new https.Agent({ rejectUnauthorized: false });
 
-// ─── HTTP helpers ─────────────────────────────────────
-function get(path) {
-  return new Promise((resolve) => {
+// Lockfile locations
+const LOCKFILE_PATHS = [
+  path.join(process.env.LOCALAPPDATA || '', 'Riot Games', 'Riot Client', 'Config', 'lockfile'),
+  path.join(process.env.APPDATA     || '', '..', 'Local', 'Riot Games', 'Riot Client', 'Config', 'lockfile'),
+  'C:\\Riot Games\\Riot Client\\Config\\lockfile',
+];
+
+const GAME_LOCKFILE_PATHS = [
+  path.join(process.env.LOCALAPPDATA || '', 'VALORANT', 'Saved', 'Logs', 'ShooterGame.log'),
+];
+
+function ts() { return new Date().toLocaleTimeString('fr-FR'); }
+
+// ─── Read lockfile ─────────────────────────────────────
+function readLockfile() {
+  for (const p of LOCKFILE_PATHS) {
+    try {
+      if (fs.existsSync(p)) {
+        const content = fs.readFileSync(p, 'utf8').trim();
+        const [name, pid, port, password, protocol] = content.split(':');
+        return { port: parseInt(port), password, protocol };
+      }
+    } catch {}
+  }
+  return null;
+}
+
+// ─── HTTPS with auth ───────────────────────────────────
+function getWithAuth(port, password, endpoint) {
+  const auth = Buffer.from(`riot:${password}`).toString('base64');
+  const agent = new https.Agent({ rejectUnauthorized: false });
+  return new Promise(resolve => {
     const req = https.get({
       hostname: '127.0.0.1',
-      port: VAL_PORT,
-      path,
+      port,
+      path: endpoint,
       agent,
       timeout: 2000,
+      headers: { Authorization: `Basic ${auth}` }
     }, res => {
       let data = '';
       res.on('data', c => data += c);
       res.on('end', () => {
-        try { resolve({ ok: true, data: JSON.parse(data) }); }
-        catch { resolve({ ok: false, err: 'JSON parse error', raw: data.slice(0,100) }); }
+        try { resolve({ ok: true, status: res.statusCode, data: JSON.parse(data) }); }
+        catch { resolve({ ok: true, status: res.statusCode, raw: data.slice(0,200) }); }
       });
     });
     req.on('error', e => resolve({ ok: false, err: e.message }));
@@ -31,134 +60,112 @@ function get(path) {
   });
 }
 
+// ─── Firebase ──────────────────────────────────────────
 function putFirebase(path, data) {
   const body = JSON.stringify(data);
-  return new Promise((resolve) => {
+  return new Promise(resolve => {
     const req = https.request({
       hostname: 'realtime-database-5bb9f-default-rtdb.europe-west1.firebasedatabase.app',
       path: `/${path}.json`,
       method: 'PUT',
-      headers: { 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(body) },
+      headers: { 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(body) }
     }, res => { res.on('data', () => {}); res.on('end', resolve); });
     req.on('error', () => resolve());
     req.write(body); req.end();
   });
 }
 
-// ─── State ────────────────────────────────────────────
-let inGame = false;
-let lastPhase = '';
+// ─── Main ──────────────────────────────────────────────
 let tries = 0;
-let connected = false;
+let lastPort = null;
+let inGame = false;
 
-function ts() { return new Date().toLocaleTimeString('fr-FR'); }
-
-// ─── Poll ─────────────────────────────────────────────
 async function poll() {
-  // 1. Check if Valorant API is up
-  const check = await get('/liveclientdata/activeplayer');
-
-  if (!check.ok) {
-    if (connected) {
-      connected = false;
-      inGame = false;
-      console.log(`[${ts()}] ❌ Connexion perdue (${check.err}) — en attente...`);
-      await putFirebase('live', { active: false, ts: Date.now() });
-    } else {
-      tries++;
-      if (tries % 10 === 1) {
-        console.log(`[${ts()}] ⏳ En attente de Valorant... (${check.err})`);
-        console.log('         → Lance Valorant et entre dans une game/range');
-      }
+  // 1. Find lockfile
+  const lock = readLockfile();
+  if (!lock) {
+    tries++;
+    if (tries % 10 === 1) {
+      console.log(`[${ts()}] ⏳ Lockfile introuvable — Riot Client pas lancé ?`);
+      console.log('         Chemins cherchés:');
+      LOCKFILE_PATHS.forEach(p => console.log(`         · ${p}`));
     }
     return;
   }
 
-  // API répond
-  if (!connected) {
-    connected = true;
-    tries = 0;
-    console.log(`[${ts()}] ✅ Connecté à Valorant !`);
+  if (lock.port !== lastPort) {
+    lastPort = lock.port;
+    console.log(`[${ts()}] ✅ Riot Client détecté — port ${lock.port}`);
   }
 
-  // 2. Fetch all data
-  const all = await get('/liveclientdata/allgamedata');
-  if (!all.ok) {
-    console.log(`[${ts()}] ⚠️  allgamedata: ${all.err}`);
+  // 2. Check if in game via presence
+  const presence = await getWithAuth(lock.port, lock.password, '/chat/v4/presences');
+  if (!presence.ok) {
+    tries++;
+    if (tries % 10 === 1) console.log(`[${ts()}] ⚠️  Presence API: ${presence.err}`);
     return;
   }
 
-  const d = all.data;
-  const phase = d?.gameData?.gameMode || d?.gameData?.roundPhase || '?';
-  const mapRaw = d?.gameData?.mapName || '?';
-  const map = mapRaw.split('/').pop().split('_').pop();
-  const players = d?.allPlayers || [];
-  const active = d?.activePlayer || {};
+  tries = 0;
 
-  // Log state changes
+  // 3. Find current player's presence
+  const presences = presence.data?.presences || [];
+  const me = presences.find(p => p.puuid && p.private);
+
+  if (!me) {
+    if (inGame) console.log(`[${ts()}] 🏠 Retour au lobby`);
+    inGame = false;
+    await putFirebase('live', { active: false, ts: Date.now() });
+    return;
+  }
+
+  // Decode private data (base64 JSON)
+  let privateData = {};
+  try {
+    privateData = JSON.parse(Buffer.from(me.private, 'base64').toString());
+  } catch {}
+
+  const sessionState = privateData.sessionLoopState || '';
+  console.log(`[${ts()}] 📍 État: ${sessionState} | ${JSON.stringify(privateData).slice(0,100)}`);
+
+  if (sessionState !== 'INGAME') {
+    if (inGame) console.log(`[${ts()}] 🏠 Plus en game (${sessionState})`);
+    inGame = false;
+    await putFirebase('live', { active: false, ts: Date.now() });
+    return;
+  }
+
   if (!inGame) {
     inGame = true;
-    console.log(`[${ts()}] 🎮 Game détectée — Map: ${map} | Mode: ${phase} | ${players.length} joueurs`);
-  }
-  if (phase !== lastPhase) {
-    lastPhase = phase;
-    console.log(`[${ts()}] 📍 Phase: ${phase}`);
+    console.log(`[${ts()}] 🎮 EN GAME ! Map: ${privateData.matchMap || '?'}`);
   }
 
-  // 3. Build payload
-  const payload = {
+  // 4. Get match details
+  const currentMatch = privateData.matchMap || '';
+  await putFirebase('live', {
     active: true,
     ts: Date.now(),
-    map: mapRaw,
-    mapClean: map,
-    phase: d?.gameData?.gameMode || '',
-    roundPhase: d?.gameData?.roundPhase || 'in-game',
-    gameTime: d?.gameData?.gameTime || 0,
-    roundTime: d?.gameData?.roundTime || 0,
+    map: currentMatch,
+    mapClean: currentMatch.split('/').pop() || currentMatch,
+    partySize: privateData.partySize || 1,
+    rank: privateData.competitiveTier || 0,
+    mode: privateData.queueId || '',
+    playerName: me.game_name + '#' + me.game_tag,
+    players: [], // will be expanded with match API
     activePlayer: {
-      name:   active?.summonerName || '',
-      agent:  active?.championName || '',
-      hp:     active?.stats?.currentHealth || 0,
-      maxHp:  active?.stats?.maxHealth || 150,
-      shield: active?.stats?.currentShield || 0,
-      credits: active?.currentGold || 0,
-      ultPts: active?.abilities?.ultimate?.currentCharges || 0,
-      ultMax: active?.abilities?.ultimate?.maxCharges || 1,
-      ult:    (active?.abilities?.ultimate?.currentCharges || 0) >= (active?.abilities?.ultimate?.maxCharges || 1),
-    },
-    players: players.map(p => ({
-      name:    p.summonerName || '',
-      agent:   p.championName || '',
-      team:    p.team || 'CHAOS',
-      alive:   !p.isDead,
-      hp:      p.stats?.currentHealth || 0,
-      maxHp:   p.stats?.maxHealth || 150,
-      shield:  p.stats?.currentShield || 0,
-      kills:   p.scores?.kills || 0,
-      deaths:  p.scores?.deaths || 0,
-      assists: p.scores?.assists || 0,
-      ultPts:  p.abilities?.ultimate?.currentCharges || 0,
-      ultMax:  p.abilities?.ultimate?.maxCharges || 1,
-      ult:     (p.abilities?.ultimate?.currentCharges || 0) >= (p.abilities?.ultimate?.maxCharges || 1),
-      x: p.position?.x || 0,
-      y: p.position?.y || 0,
-    })),
-  };
-
-  await putFirebase('live', payload);
+      name: me.game_name || '',
+      agent: privateData.characterId || '',
+      hp: 100,
+    }
+  });
 }
 
-// ─── Start ────────────────────────────────────────────
 console.log('');
 console.log('  ╔═══════════════════════════════╗');
-console.log('  ║   OLYCITY LIVE  v2  🔴        ║');
-console.log('  ║   Valorant → Firebase → Site  ║');
+console.log('  ║   OLYCITY LIVE  v3  🔴        ║');
+console.log('  ║   Via Riot Client lockfile    ║');
 console.log('  ╚═══════════════════════════════╝');
 console.log('');
-console.log('  Firebase: ✅');
-console.log('  Valorant: en attente...');
-console.log('  Ctrl+C pour arrêter');
-console.log('');
 
-setInterval(poll, 1000);
+setInterval(poll, 2000);
 poll();
