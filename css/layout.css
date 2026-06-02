@@ -424,3 +424,45 @@ body.agent-mode .footer{ display:none; }
 
 /* Map side arrows — fixed to viewport center */
 .map-side-right { right: 0; border-right: none; border-radius: 3px 0 0 3px; }
+
+/* ═══════════════ LIVE PAGE ═══════════════ */
+.live-page { min-height: 60vh; display: flex; align-items: center; justify-content: center; }
+.live-waiting { text-align: center; padding: 60px 32px; }
+.live-content { width: 100%; }
+.live-header {
+  display: flex; align-items: center; gap: 20px; padding: 16px 24px;
+  background: var(--surf); border: 1px solid var(--border);
+  margin-bottom: 16px;
+}
+.live-map-name {
+  font-family: 'Tomorrow', sans-serif; font-size: 18px; font-weight: 700;
+  letter-spacing: 4px; text-transform: uppercase; color: var(--text);
+}
+.live-phase {
+  font-family: 'Tomorrow', sans-serif; font-size: 10px; font-weight: 600;
+  letter-spacing: 2px; text-transform: uppercase; padding: 3px 10px;
+  border: 1px solid var(--border2); color: var(--muted);
+}
+.live-phase.combat { color: var(--red); border-color: var(--red-mid); background: var(--red-low); }
+.live-phase.planted { color: var(--gold); border-color: rgba(245,200,66,.4); background: var(--gold-low); }
+.live-timer {
+  margin-left: auto; font-family: 'Tomorrow', sans-serif; font-size: 24px;
+  font-weight: 700; color: var(--text); letter-spacing: 3px;
+}
+.live-body { display: grid; grid-template-columns: 1fr 420px; gap: 16px; align-items: start; }
+.live-players { display: flex; flex-direction: column; gap: 6px; }
+.live-player-row {
+  display: flex; align-items: center; gap: 12px; padding: 10px 14px;
+  background: var(--surf); border: 1px solid var(--border);
+  transition: border-color .2s;
+}
+.live-player-row.dead { opacity: .4; filter: grayscale(.6); }
+.live-player-row.me { border-color: var(--red-mid); background: var(--red-low); }
+.live-player-agent { width: 36px; height: 36px; object-fit: cover; }
+.live-player-name { font-family: 'Tomorrow',sans-serif; font-size: 11px; font-weight: 600; letter-spacing: 1px; flex: 1; }
+.live-player-hp { font-family: 'Tomorrow',sans-serif; font-size: 11px; color: var(--muted); min-width: 60px; text-align: right; }
+.live-hp-bar { height: 4px; background: var(--border); width: 100px; border-radius: 2px; overflow: hidden; }
+.live-hp-fill { height: 100%; background: #3fcf6b; transition: width .3s; border-radius: 2px; }
+.live-ult { font-size: 9px; padding: 2px 6px; border: 1px solid var(--border2); color: var(--dim); font-family: Tomorrow,sans-serif; letter-spacing: 1px; }
+.live-ult.ready { color: var(--gold); border-color: rgba(245,200,66,.4); background: var(--gold-low); }
+.live-minimap-wrap { background: var(--surf); border: 1px solid var(--border); }

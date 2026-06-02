@@ -335,3 +335,167 @@ export function initWheelLogos() {
   drawWheel(document.getElementById('logo-canvas-topbar'), 36, 0.008, 1);
   drawWheel(document.getElementById('logo-canvas-hero'), 300, 0.003, 0.12);
 }
+
+// ─── LIVE PAGE ────────────────────────────────────────
+export function initLivePage() {
+  const FIREBASE_URL = 'https://realtime-database-5bb9f-default-rtdb.europe-west1.firebasedatabase.app';
+  const AGENT_COLORS = {
+    'Jett':'#88c8ff','Raze':'#ff9a3c','Neon':'#5ae6ff','Phoenix':'#ff6b35',
+    'Reyna':'#c77dff','Yoru':'#5e60ce','Waylay':'#a8dadc',
+    'Sova':'#4361ee','Fade':'#7b2d8b','KAY/O':'#4cc9f0','Skye':'#80b918',
+    'Breach':'#f77f00','Gekko':'#99d98c',
+    'Viper':'#57cc99','Omen':'#9381ff','Miks':'#9381ff','Clove':'#f72585',
+    'Astra':'#480ca8','Harbor':'#4895ef','Brimstone':'#ef233c',
+    'Killjoy':'#f9c74f','Cypher':'#e9ecef','Vyse':'#b5838d','Chamber':'#cdb4db',
+    'Sage':'#80ffdb',
+  };
+
+  let mapImg = null;
+  let lastMapName = null;
+  let raf = null;
+  let liveData = null;
+
+  const canvas = document.getElementById('live-map-canvas');
+  const ctx = canvas?.getContext('2d');
+
+  // Firebase SSE listener
+  const evtSource = new EventSource(`${FIREBASE_URL}/live.json`);
+  evtSource.addEventListener('put', e => {
+    try {
+      const msg = JSON.parse(e.data);
+      liveData = msg.data;
+      updateUI(liveData);
+    } catch {}
+  });
+
+  async function loadMapImg(mapName) {
+    if (mapName === lastMapName) return;
+    lastMapName = mapName;
+    try {
+      const r = await fetch('https://valorant-api.com/v1/maps');
+      const d = await r.json();
+      const m = d.data?.find(m => m.displayName?.toLowerCase() === mapName?.toLowerCase()
+        || m.mapUrl?.toLowerCase().includes(mapName?.toLowerCase()));
+      if (m?.displayIcon) {
+        const img = new Image(); img.crossOrigin = 'anonymous';
+        img.onload = () => { mapImg = img; };
+        img.src = m.displayIcon;
+      }
+    } catch {}
+  }
+
+  function updateUI(data) {
+    const waiting = document.getElementById('live-waiting');
+    const content = document.getElementById('live-content');
+    const dot = document.getElementById('live-dot');
+
+    if (!data?.active) {
+      if (waiting) waiting.style.display = 'flex';
+      if (content) content.style.display = 'none';
+      if (dot) dot.style.display = 'none';
+      return;
+    }
+
+    if (waiting) waiting.style.display = 'none';
+    if (content) content.style.display = 'block';
+    if (dot) dot.style.display = 'block';
+
+    // Map name
+    const mapName = data.map?.split('/')?.pop()?.split('_')?.pop() || data.map || '—';
+    const mapEl = document.getElementById('live-map-name');
+    if (mapEl) mapEl.textContent = mapName;
+    loadMapImg(mapName);
+
+    // Phase
+    const phaseEl = document.getElementById('live-phase');
+    if (phaseEl) {
+      phaseEl.textContent = data.roundPhase || data.phase || '—';
+      phaseEl.className = 'live-phase';
+      if (data.roundPhase === 'combat') phaseEl.classList.add('combat');
+      if (data.roundPhase === 'bomb') phaseEl.classList.add('planted');
+    }
+
+    // Timer
+    const rt = Math.max(0, Math.round(data.roundTime || 0));
+    const timerEl = document.getElementById('live-timer');
+    if (timerEl) timerEl.textContent = `${Math.floor(rt/60)}:${String(rt%60).padStart(2,'0')}`;
+
+    // Players
+    const playersEl = document.getElementById('live-players');
+    const myName = localStorage.getItem('olycity-profile') || '';
+    const roster = JSON.parse(localStorage.getItem('olycity-roster') || '[]');
+    const allies = (data.players || []).filter(p => p.team === 'ORDER');
+    const enemies = (data.players || []).filter(p => p.team === 'CHAOS');
+
+    if (playersEl) {
+      playersEl.innerHTML = `
+        <div style="font-family:Tomorrow,sans-serif;font-size:9px;letter-spacing:2px;color:var(--dim);text-transform:uppercase;padding:4px 0">Alliés</div>
+        ${allies.map(p => playerRow(p, myName)).join('')}
+        <div style="font-family:Tomorrow,sans-serif;font-size:9px;letter-spacing:2px;color:var(--dim);text-transform:uppercase;padding:8px 0 4px">Ennemis</div>
+        ${enemies.map(p => playerRow(p, myName)).join('')}
+      `;
+    }
+
+    // Minimap
+    drawMinimap(data.players || []);
+  }
+
+  function playerRow(p, myName) {
+    const hpPct = p.maxHp ? Math.round((p.hp/p.maxHp)*100) : 0;
+    const hpColor = hpPct > 60 ? '#3fcf6b' : hpPct > 30 ? '#f9c74f' : '#ff4656';
+    const ultPct = p.ultMax ? Math.round((p.ultPts/p.ultMax)*100) : 0;
+    const isMe = p.name?.includes(myName) && myName;
+    const agentImg = `https://media.valorant-api.com/agents/${p.agent?.toLowerCase()}/displayicon.png`;
+    return `<div class="live-player-row ${p.alive ? '' : 'dead'} ${isMe ? 'me' : ''}">
+      <img class="live-player-agent" src="${agentImg}" onerror="this.style.display='none'">
+      <div style="flex:1">
+        <div class="live-player-name">${p.name || '—'} <span style="opacity:.5;font-size:9px">${p.agent||''}</span></div>
+        <div style="display:flex;align-items:center;gap:8px;margin-top:4px">
+          <div class="live-hp-bar"><div class="live-hp-fill" style="width:${hpPct}%;background:${hpColor}"></div></div>
+          <span style="font-size:10px;color:var(--muted)">${p.hp}/${p.maxHp}</span>
+        </div>
+      </div>
+      <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px">
+        <span style="font-family:Tomorrow,sans-serif;font-size:10px;color:var(--muted)">${p.kills}/${p.deaths}/${p.assists}</span>
+        <span class="live-ult ${p.ult?'ready':''}">ULT ${p.ult?'✓':p.ultPts+'/'+p.ultMax}</span>
+      </div>
+    </div>`;
+  }
+
+  function drawMinimap(players) {
+    if (!ctx) return;
+    ctx.clearRect(0, 0, 400, 400);
+    if (mapImg) {
+      ctx.drawImage(mapImg, 0, 0, 400, 400);
+      ctx.fillStyle = 'rgba(6,8,12,.3)';
+      ctx.fillRect(0, 0, 400, 400);
+    } else {
+      ctx.fillStyle = '#0d1117';
+      ctx.fillRect(0, 0, 400, 400);
+    }
+
+    // Draw player dots
+    players.forEach(p => {
+      if (!p.alive) return;
+      const isAlly = p.team === 'ORDER';
+      // Valorant coords are roughly -20000 to +20000 — normalize
+      const nx = (p.position.x + 20000) / 40000;
+      const ny = 1 - (p.position.y + 20000) / 40000; // Y inverted
+      const x = nx * 400, y = ny * 400;
+      const color = AGENT_COLORS[p.agent] || (isAlly ? '#3fcf6b' : '#ff4656');
+      const r = isAlly ? 8 : 7;
+
+      ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI*2);
+      ctx.fillStyle = color; ctx.fill();
+      ctx.strokeStyle = isAlly ? '#fff' : 'rgba(255,255,255,.4)';
+      ctx.lineWidth = 2; ctx.stroke();
+
+      // Agent initial
+      ctx.fillStyle = '#000'; ctx.font = `bold ${r}px Tomorrow`;
+      ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      ctx.fillText((p.agent||'?')[0], x, y);
+    });
+  }
+
+  return () => evtSource.close();
+}

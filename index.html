@@ -11,11 +11,11 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Tomorrow:wght@400;500;600;700&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="./css/tokens.css?v=1780329592">
-  <link rel="stylesheet" href="./css/layout.css?v=1780329592">
-  <link rel="stylesheet" href="./css/components.css?v=1780329592">
-  <link rel="stylesheet" href="./css/agent-page.css?v=1780329592">
-  <link rel="stylesheet" href="./css/responsive.css?v=1780329592">
+  <link rel="stylesheet" href="./css/tokens.css?v=1780431329">
+  <link rel="stylesheet" href="./css/layout.css?v=1780431329">
+  <link rel="stylesheet" href="./css/components.css?v=1780431329">
+  <link rel="stylesheet" href="./css/agent-page.css?v=1780431329">
+  <link rel="stylesheet" href="./css/responsive.css?v=1780431329">
 </head>
 <body>
 
@@ -177,6 +177,10 @@
         <button class="page-nav-btn" data-page="agents" onclick="window.OLYCITY?.nav('agents')">
           <span class="page-nav-icon">◈</span> Agents
         </button>
+        <button class="page-nav-btn" data-page="live" onclick="window.OLYCITY?.nav('live')" style="position:relative">
+          <span class="page-nav-icon">🔴</span> Live
+          <span id="live-dot" style="display:none;position:absolute;top:4px;right:4px;width:7px;height:7px;border-radius:50%;background:#ff4656;box-shadow:0 0 6px #ff4656"></span>
+        </button>
         <button class="page-nav-btn" data-page="builder" onclick="window.OLYCITY?.nav('builder')">
           <span class="page-nav-icon">⊕</span> Builder
         </button>
@@ -336,6 +340,34 @@
     </div>
   </div>
 
+  <!-- ═══════════ PAGE LIVE ═══════════ -->
+  <div id="page-live" class="spa-page">
+    <div class="live-page" id="live-page">
+      <div class="live-waiting" id="live-waiting">
+        <div style="font-size:40px;margin-bottom:16px">🎮</div>
+        <div style="font-family:Tomorrow,sans-serif;font-size:14px;font-weight:700;letter-spacing:4px;text-transform:uppercase;color:var(--text);margin-bottom:8px">Aucune game en cours</div>
+        <div style="font-size:12px;color:var(--dim);letter-spacing:1px;margin-bottom:24px">Lance le script OLYCITY Live sur ton PC, puis entre dans une partie</div>
+        <a href="https://github.com/liam-thorel/OLYVALO/raw/main/live/olycity-live.zip" class="btn-red-outline" style="font-family:Tomorrow,sans-serif;font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;padding:10px 20px;border:1px solid var(--red);color:var(--red);text-decoration:none">
+          ↓ Télécharger OLYCITY Live
+        </a>
+      </div>
+      <div class="live-content" id="live-content" style="display:none">
+        <!-- Map + players -->
+        <div class="live-header">
+          <div class="live-map-name" id="live-map-name">—</div>
+          <div class="live-phase" id="live-phase">—</div>
+          <div class="live-timer" id="live-timer">0:00</div>
+        </div>
+        <div class="live-body">
+          <div class="live-players" id="live-players"></div>
+          <div class="live-minimap-wrap">
+            <canvas id="live-map-canvas" width="400" height="400"></canvas>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- ═══════════ PAGE BUILDER ═══════════ -->
   <div id="page-builder" class="spa-page">
     <div class="builder-page-inner">
@@ -363,9 +395,9 @@
     }
   </script>
   <!-- Firebase SDK -->
-  <script type="module" src="./js/firebase-draw.js?v=1780329592"></script>
+  <script type="module" src="./js/firebase-draw.js?v=1780431329"></script>
   <!-- Présence Firebase -->
-  <script src="./js/presence.js?v=1780329592"></script>
-  <script type="module" src="./js/main.js?v=1780329592"></script>
+  <script src="./js/presence.js?v=1780431329"></script>
+  <script type="module" src="./js/main.js?v=1780431329"></script>
 </body>
 </html>

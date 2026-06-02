@@ -5,10 +5,10 @@
 
 import { valorantApi } from './api.js';
 
-const SITE_VERSION = '1780329592'; // Auto-updated on push
+const SITE_VERSION = '1780431329'; // Auto-updated on push
 import { syncPlayer as henrikSyncPlayer, syncAllPlayers as henrikSyncAll, persistPlayerStats } from './henrik.js';
 import { rosterHTML, guestCardHTML, mapSectionHTML, stierHTML, globalNotesHTML, agentPageHTML, miniRosterHTML, agentsFiltersHTML, agentsGridHTML, compCompareHTML, compBuilderHTML, savedCompsHTML } from './render.js';
-import { initTheme, initTilt, initParallax, initSearch, initKeyboard, updateFavCount, initHeroParticles, initWheelLogos } from './interactions.js';
+import { initTheme, initTilt, initParallax, initSearch, initKeyboard, updateFavCount, initHeroParticles, initWheelLogos, initLivePage } from './interactions.js';
 import { storage } from './storage.js';
 
 // ─── STATE ─────────────────────────────────────────
@@ -126,6 +126,11 @@ window.OLYCITY = {
     // Lazy render builder
     if (page === 'builder') {
       window.OLYCITY._renderBuilder();
+    }
+    if (page === 'live') {
+      if (!window._liveCleanup) {
+        window._liveCleanup = initLivePage();
+      }
     }
     const navBtn = document.querySelector(`.page-nav-btn[data-page="${page}"]`);
     if (navBtn) navBtn.classList.add('active');
