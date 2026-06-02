@@ -1,12 +1,7 @@
 {
   "name": "olycity-live",
-  "version": "1.0.0",
-  "description": "OLYCITY Live — Valorant local API bridge to Firebase",
+  "version": "2.0.0",
+  "description": "OLYCITY Live — Valorant → Firebase",
   "main": "index.js",
-  "scripts": { "start": "node index.js" },
-  "dependencies": {
-    "axios": "^1.6.0",
-    "firebase-admin": "^12.0.0",
-    "https": "*"
-  }
+  "scripts": { "start": "node index.js" }
 }
