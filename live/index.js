@@ -311,6 +311,8 @@ let authTokens = null;
 let wsConnected = false;
 let lastPlayerCount = -1;
 let lastScore = '';
+let ranksLoaded = false;
+let rankMap = {};
 let roundPhase = '';
 let roundStartTime = null;
 
@@ -507,6 +509,8 @@ async function poll() {
     matchDataLogged = false;
     gameDataLogged = false;
     authTokens = null;
+    ranksLoaded = false;
+    rankMap = {};
     connectWebSocket(lock.port, lock.password);
     console.log(`[${ts()}] 🎮 EN GAME — ${mapDisplay} (${mapRaw}) | ${queueId} | ${playerName}`);
   }
@@ -553,7 +557,7 @@ async function poll() {
           // Fetch player names from name service
           const puuids = match.Players.map(p => p.Subject).filter(Boolean);
           let nameMap = {};
-          let rankMap = {};
+          // rankMap is global — populated async
           try {
             const namesRes = await pdPost(authTokens, '/name-service/v2/players', puuids);
 
@@ -566,22 +570,25 @@ async function poll() {
             console.log(`[${ts()}] ⚠️  Names: ${e.message}`);
           }
 
-          // Fetch ranks via competitiveupdates (works in-game)
-          try {
-            await Promise.all(puuids.map(async puuid => {
-              const r = await pdGet(authTokens, `/mmr/v1/players/${puuid}/competitiveupdates?startIndex=0&endIndex=1&queue=competitive`);
-              if (r?.Matches?.length > 0) {
-                const last = r.Matches[0];
-                rankMap[puuid] = {
-                  tier: last.TierAfterUpdate,
-                  rr:   last.RankedRatingAfterUpdate || 0,
-                };
+          // Fetch ranks once per game — sequential to avoid rate limit
+          if (!ranksLoaded) {
+            ranksLoaded = true;
+            (async () => {
+              let count = 0;
+              for (const puuid of puuids) {
+                await new Promise(r => setTimeout(r, 300)); // 300ms between requests
+                const r = await pdGet(authTokens, `/mmr/v1/players/${puuid}/competitiveupdates?startIndex=0&endIndex=1&queue=competitive`);
+                if (r?.Matches?.length > 0) {
+                  const last = r.Matches[0];
+                  rankMap[puuid] = { tier: last.TierAfterUpdate, rr: last.RankedRatingAfterUpdate || 0 };
+                  count++;
+                }
               }
-            }));
-            const ranked = Object.keys(rankMap).length;
-            if (ranked > 0) console.log(`[${ts()}] 🏅 Rangs: ${ranked}/${puuids.length}`);
-          } catch(e) {
-            console.log(`[${ts()}] ⚠️  Ranks: ${e.message}`);
+              console.log(`[${ts()}] 🏅 Rangs chargés: ${count}/${puuids.length}`);
+              // Push updated players with ranks to Firebase
+              const updatedPlayers = players.map(p => ({...p, rank: rankMap[p.puuid] || null}));
+              await putFB('live/players', updatedPlayers);
+            })();
           }
 
           // Extract score
