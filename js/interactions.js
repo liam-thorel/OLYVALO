@@ -458,15 +458,16 @@ export function initLivePage() {
     const enemies = all.filter(p => p.team === 'CHAOS');
     const isDM = allies.length === all.length || enemies.length === 0;
 
-    const newHTML = isDM
-      ? all.map(p => playerRow(p, myName)).join('')
-      : `<div style="font-family:Tomorrow,sans-serif;font-size:9px;letter-spacing:2px;color:var(--dim);text-transform:uppercase;padding:4px 0 8px">Alliés</div>
-         ${allies.map(p => playerRow(p, myName)).join('')}
-         <div style="font-family:Tomorrow,sans-serif;font-size:9px;letter-spacing:2px;color:var(--dim);text-transform:uppercase;padding:12px 0 8px">Ennemis</div>
-         ${enemies.map(p => playerRow(p, myName)).join('')}`;
-
-    if (playersEl && playersEl.innerHTML !== newHTML) {
-      playersEl.innerHTML = newHTML;
+    // Stable key: only rebuild if player list (names+agents) actually changed
+    const stableKey = all.map(p => `${p.name}|${p.agent}|${p.team}`).join(',');
+    if (playersEl && playersEl.dataset.key !== stableKey) {
+      playersEl.dataset.key = stableKey;
+      playersEl.innerHTML = isDM
+        ? all.map(p => playerRow(p, myName)).join('')
+        : `<div style="font-family:Tomorrow,sans-serif;font-size:9px;letter-spacing:2px;color:var(--dim);text-transform:uppercase;padding:4px 0 8px">Alliés</div>
+           ${allies.map(p => playerRow(p, myName)).join('')}
+           <div style="font-family:Tomorrow,sans-serif;font-size:9px;letter-spacing:2px;color:var(--dim);text-transform:uppercase;padding:12px 0 8px">Ennemis</div>
+           ${enemies.map(p => playerRow(p, myName)).join('')}`;
     }
 
     // Minimap
