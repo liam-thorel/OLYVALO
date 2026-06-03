@@ -245,14 +245,15 @@ async function pdGet(tokens, apiPath) {
       let d = '';
       res.on('data', c => d += c);
       res.on('end', () => {
+        if (res.statusCode === 429) { resolve(null); return; } // rate limit — silent
         if (res.statusCode !== 200) {
-          console.log(`[pdGet] ${res.statusCode} pd.${tokens.region}.a.pvp.net${apiPath}: ${d.slice(0,80)}`);
+          if (res.statusCode !== 404) console.log(`[pdGet] ${res.statusCode} ${apiPath.split('?')[0]}: ${d.slice(0,60)}`);
           resolve(null); return;
         }
         try { resolve(JSON.parse(d)); } catch { resolve(null); }
       });
     });
-    r.on('error', e => { console.log(`[pdGet] error: ${e.message}`); resolve(null); });
+    r.on('error', e => { resolve(null); });
     r.setTimeout(3000); r.on('timeout', () => { r.destroy(); resolve(null); });
   });
 }
@@ -571,23 +572,31 @@ async function poll() {
           }
 
           // Fetch ranks once per game — sequential to avoid rate limit
-          if (!ranksLoaded) {
+          if (!ranksLoaded && puuids.length > 1) {
             ranksLoaded = true;
+            const puuidsCopy = [...puuids]; // capture full list
+            const tokensCopy = {...authTokens};
             (async () => {
+              await new Promise(r => setTimeout(r, 2000)); // wait 2s for rate limit cooldown
               let count = 0;
-              for (const puuid of puuids) {
-                await new Promise(r => setTimeout(r, 300)); // 300ms between requests
-                const r = await pdGet(authTokens, `/mmr/v1/players/${puuid}/competitiveupdates?startIndex=0&endIndex=1&queue=competitive`);
+              for (const puuid of puuidsCopy) {
+                await new Promise(r => setTimeout(r, 500)); // 500ms between requests
+                const r = await pdGet(tokensCopy, `/mmr/v1/players/${puuid}/competitiveupdates?startIndex=0&endIndex=1&queue=competitive`);
                 if (r?.Matches?.length > 0) {
                   const last = r.Matches[0];
                   rankMap[puuid] = { tier: last.TierAfterUpdate, rr: last.RankedRatingAfterUpdate || 0 };
                   count++;
                 }
               }
-              console.log(`[${ts()}] 🏅 Rangs chargés: ${count}/${puuids.length}`);
-              // Push updated players with ranks to Firebase
-              const updatedPlayers = players.map(p => ({...p, rank: rankMap[p.puuid] || null}));
-              await putFB('live/players', updatedPlayers);
+              if (count > 0) {
+                console.log(`[${ts()}] 🏅 Rangs chargés: ${count}/${puuidsCopy.length}`);
+                const updatedPlayers = Object.values(rankMap).length > 0
+                  ? puuidsCopy.map((puuid, i) => ({...(players[i]||{}), rank: rankMap[puuid] || null}))
+                  : players;
+                await putFB('live/players', updatedPlayers);
+              } else {
+                console.log(`[${ts()}] ⚠️  Rangs indisponibles (rate limit Riot)`);
+              }
             })();
           }
 
