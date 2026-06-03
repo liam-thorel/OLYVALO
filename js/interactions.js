@@ -506,6 +506,7 @@ export function initLivePage() {
       </div>
       <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px;flex-shrink:0">
         <span style="font-family:Tomorrow,sans-serif;font-size:10px;color:var(--muted)">${kda}</span>
+        ${!p.incognito && p.name && p.name.includes('#') ? `<a href="https://tracker.gg/valorant/profile/riot/${encodeURIComponent(p.name)}/overview" target="_blank" style="font-family:Tomorrow,sans-serif;font-size:8px;letter-spacing:1px;color:#ff4656;text-decoration:none;padding:2px 5px;border:1px solid rgba(255,70,86,.3);text-transform:uppercase">TRK</a>` : ''}
       </div>
     </div>`;
   }
