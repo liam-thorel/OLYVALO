@@ -363,7 +363,6 @@ export function initLivePage() {
   // Round timer using roundStartTime from Firebase
   let timerInterval = null;
   let lastRoundStart = null;
-  let lastRoundStart = null;
   function startRoundTimer(startTime, phase) {
     if (timerInterval) clearInterval(timerInterval);
     const PHASE_DURATION = { 'shopping': 30, 'combat': 100, 'end': 9, 'game_end': 9 };
