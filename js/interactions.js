@@ -363,6 +363,7 @@ export function initLivePage() {
   // Round timer using roundStartTime from Firebase
   let timerInterval = null;
   let lastRoundStart = null;
+  let lastMinimapKey = '';
   function startRoundTimer(startTime, phase) {
     if (timerInterval) clearInterval(timerInterval);
     const PHASE_DURATION = { 'shopping': 30, 'combat': 100, 'end': 9, 'game_end': 9 };
@@ -375,11 +376,24 @@ export function initLivePage() {
     }, 500);
   }
 
+  let lastDataKey = '';
   evtSource.addEventListener('put', e => {
     try {
       const msg = JSON.parse(e.data);
       liveData = msg.data;
-      updateUI(liveData);
+      // Only re-render if meaningful data changed (ignore ts)
+      const key = JSON.stringify({
+        active: liveData?.active,
+        map: liveData?.mapClean,
+        mode: liveData?.mode,
+        phase: liveData?.roundPhase,
+        roundStart: liveData?.roundStartTime,
+        players: (liveData?.players||[]).map(p=>`${p.name}|${p.agent}|${p.team}`)
+      });
+      if (key !== lastDataKey) {
+        lastDataKey = key;
+        updateUI(liveData);
+      }
     } catch {}
   });
 
@@ -473,8 +487,16 @@ export function initLivePage() {
            ${enemies.map(p => playerRow(p, myName)).join('')}`;
     }
 
-    // Minimap
-    drawMinimap(data.players || []);
+    // Minimap — only redraw if positions changed or map changed
+    const hasPositions = (data.players||[]).some(p => p.x !== 0 || p.y !== 0);
+    const minimapKey = (data.players||[]).map(p=>`${p.x},${p.y},${p.alive}`).join('|') + mapName;
+    if (hasPositions && minimapKey !== lastMinimapKey) {
+      lastMinimapKey = minimapKey;
+      drawMinimap(data.players || []);
+    } else if (!hasPositions && lastMinimapKey !== mapName) {
+      lastMinimapKey = mapName;
+      drawMinimap([]); // Draw map only, no dots
+    }
   }
 
   // Agent UUID → icon URL cache
