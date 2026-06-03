@@ -360,6 +360,20 @@ export function initLivePage() {
 
   // Firebase SSE listener
   const evtSource = new EventSource(`${FIREBASE_URL}/live.json`);
+  // Round timer using roundStartTime from Firebase
+  let timerInterval = null;
+  function startRoundTimer(startTime, phase) {
+    if (timerInterval) clearInterval(timerInterval);
+    const PHASE_DURATION = { 'shopping': 30, 'combat': 100, 'end': 9, 'game_end': 9 };
+    const duration = PHASE_DURATION[phase?.toLowerCase()] || 100;
+    timerInterval = setInterval(() => {
+      const elapsed = Math.floor((Date.now() - startTime) / 1000);
+      const remaining = Math.max(0, duration - elapsed);
+      const timerEl = document.getElementById('live-timer');
+      if (timerEl) timerEl.textContent = `${Math.floor(remaining/60)}:${String(remaining%60).padStart(2,'0')}`;
+    }, 500);
+  }
+
   evtSource.addEventListener('put', e => {
     try {
       const msg = JSON.parse(e.data);
@@ -418,12 +432,16 @@ export function initLivePage() {
       playerEl.textContent = data.playerName;
     }
 
-    // Phase
+    // Phase + timer
     const phaseEl = document.getElementById('live-phase');
+    const phase = data.roundPhase || data.mode || '—';
     if (phaseEl) {
-      const modeLabel = data.mode || data.phase || '—';
-      phaseEl.textContent = modeLabel.charAt(0).toUpperCase() + modeLabel.slice(1);
+      phaseEl.textContent = phase.charAt(0).toUpperCase() + phase.slice(1);
       phaseEl.className = 'live-phase';
+      if (['combat','bomb'].includes(phase.toLowerCase())) phaseEl.classList.add('combat');
+    }
+    if (data.roundStartTime) {
+      startRoundTimer(data.roundStartTime, phase);
     }
 
     // Timer
@@ -485,10 +503,6 @@ export function initLivePage() {
       ${imgUrl ? `<img class="live-player-agent" src="${imgUrl}" onerror="this.style.visibility='hidden'">` : '<div class="live-player-agent" style="background:var(--surf3)"></div>'}
       <div style="flex:1;min-width:0">
         <div class="live-player-name" style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${p.name || '—'} <span style="opacity:.4;font-size:9px;font-weight:400">${p.agent||''}</span></div>
-        <div style="display:flex;align-items:center;gap:8px;margin-top:4px">
-          <div class="live-hp-bar"><div class="live-hp-fill" style="width:${hpPct}%;background:${hpColor};transition:width .5s"></div></div>
-          <span style="font-size:10px;color:var(--muted)">${p.hp||100}/${p.maxHp||150}</span>
-        </div>
       </div>
       <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px;flex-shrink:0">
         <span style="font-family:Tomorrow,sans-serif;font-size:10px;color:var(--muted)">${kda}</span>
