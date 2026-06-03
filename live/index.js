@@ -216,6 +216,30 @@ async function pdPost(tokens, apiPath, body) {
   });
 }
 
+async function pdGet(tokens, apiPath) {
+  return new Promise(resolve => {
+    const r = https.get({
+      hostname: `pd.${tokens.region}.a.pvp.net`,
+      path: apiPath,
+      headers: {
+        'Authorization': `Bearer ${tokens.accessToken}`,
+        'X-Riot-Entitlements-JWT': tokens.entitlementsToken,
+        'X-Riot-ClientPlatform': 'ew0KCSJwbGF0Zm9ybVR5cGUiOiAiUEMiLA0KCSJwbGF0Zm9ybU9TIjogIldpbmRvd3MiLA0KCSJwbGF0Zm9ybU9TVmVyc2lvbiI6ICIxMC4wLjE5MDQyLjEuMjU2LjY0Yml0IiwNCgkicGxhdGZvcm1DaGlwc2V0IjogIlVua25vd24iDQp9',
+        'X-Riot-ClientVersion': tokens.clientVersion || 'unknown',
+      }
+    }, res => {
+      let d = '';
+      res.on('data', c => d += c);
+      res.on('end', () => {
+        if (res.statusCode !== 200) { resolve(null); return; }
+        try { resolve(JSON.parse(d)); } catch { resolve(null); }
+      });
+    });
+    r.on('error', () => resolve(null));
+    r.setTimeout(3000); r.on('timeout', () => { r.destroy(); resolve(null); });
+  });
+}
+
 async function pvpGet(tokens, apiPath) {
   // Correct format: glz-eu-1.eu.a.pvp.net (not glz-eu.a.pvp.net)
   const region = tokens.region; // 'eu', 'na', 'ap', 'kr', 'latam', 'br'
@@ -525,10 +549,10 @@ async function poll() {
             console.log(`[${ts()}] ⚠️  Names: ${e.message}`);
           }
 
-          // Fetch ranks for all players
+          // Fetch ranks for all players (pd server, not glz)
           try {
             await Promise.all(puuids.map(async puuid => {
-              const r = await pvpGet(authTokens, `/mmr/v1/players/${puuid}`);
+              const r = await pdGet(authTokens, `/mmr/v1/players/${puuid}`);
               if (r?.LatestCompetitiveUpdate?.TierAfterUpdate !== undefined) {
                 rankMap[puuid] = {
                   tier: r.LatestCompetitiveUpdate.TierAfterUpdate,
