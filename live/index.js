@@ -268,6 +268,7 @@ let inGame = false;
 let selfPuuid = null;
 let authTokens = null;
 let wsConnected = false;
+let lastPlayerCount = -1;
 let roundPhase = '';
 let roundStartTime = null;
 
@@ -365,6 +366,28 @@ async function poll() {
   let playerName = '';
   let matchData = null;
 
+  // Also scan all presences for OLYCITY roster games
+  const OLYCITY_ROSTER = ['Drew A Picasso', 'Wong Chi Ming', 'RayBaz', 'MrScooby', 'baby hayabusa', 'VENOM X RAMEEZ'];
+  const rosterGames = [];
+  for (const p of presences) {
+    if (!p.game_name) continue;
+    const isRoster = OLYCITY_ROSTER.some(name => p.game_name?.includes(name.split(' ')[0]) || p.game_name?.includes(name));
+    if (!isRoster || p.puuid === selfPuuid) continue;
+    for (const [, val] of Object.entries(p)) {
+      if (typeof val !== 'string' || val.length < 10) continue;
+      const d = tryDecodeBase64(val);
+      if (d?.location?.includes('/Game/Maps/')) {
+        const mapRaw = d.location.replace('social_location_', '').split('/').pop();
+        const mode = (d.mode || '').replace('social_mode_', '');
+        rosterGames.push({ name: `${p.game_name}#${p.game_tag}`, map: MAP_NAMES[mapRaw] || mapRaw, mode });
+        break;
+      }
+    }
+  }
+  if (rosterGames.length > 0) {
+    await putFB('live/rosterGames', rosterGames).catch(() => {});
+  }
+
   for (const p of myPresences) {
     let presenceHasGameData = false;
 
@@ -448,33 +471,35 @@ async function poll() {
     try {
       // Try core-game first, then pre-game
       let matchData = await pvpGet(authTokens, `/core-game/v1/players/${authTokens.puuid}`);
-      console.log(`[${ts()}] 🎮 core-game: ${JSON.stringify(matchData).slice(0,100)}`);
+
       if (!matchData?.MatchID) {
         matchData = await pvpGet(authTokens, `/pregame/v1/players/${authTokens.puuid}`);
-        console.log(`[${ts()}] 🎮 pre-game: ${JSON.stringify(matchData).slice(0,100)}`);
+
       }
       if (matchData?.MatchID) {
         const match = await pvpGet(authTokens, `/core-game/v1/matches/${matchData.MatchID}`);
-        if (!gameDataLogged) {
-          console.log(`[${ts()}] 🎯 Match complet:`);
-          console.log(JSON.stringify(match, null, 2).slice(0, 1500));
-        }
+
         if (match?.Players) {
           // Fetch player names from name service
           const puuids = match.Players.map(p => p.Subject).filter(Boolean);
           let nameMap = {};
           try {
             const namesRes = await pdPost(authTokens, '/name-service/v2/players', puuids);
-            console.log(`[${ts()}] 👤 Names response: ${JSON.stringify(namesRes).slice(0,200)}`);
+
             if (Array.isArray(namesRes)) {
               namesRes.forEach(n => { 
                 if (n.GameName) nameMap[n.Subject] = `${n.GameName}#${n.TagLine}`;
               });
-              console.log(`[${ts()}] 👤 ${Object.keys(nameMap).length} noms récupérés`);
             }
           } catch(e) {
             console.log(`[${ts()}] ⚠️  Names: ${e.message}`);
           }
+
+          // Extract score
+          const teams = match.Teams || [];
+          const blueScore = teams.find(t => t.TeamID === 'Blue')?.Score || 0;
+          const redScore  = teams.find(t => t.TeamID === 'Red')?.Score || 0;
+          await putFB('live/score', { blue: blueScore, red: redScore });
 
           players = match.Players.map(p => {
             // Match agent UUID (first 8 chars)
@@ -490,6 +515,7 @@ async function poll() {
               alive:   true, hp: 100, maxHp: 150,
               kills:   0, deaths: 0, assists: 0,
               ult: false, x: 0, y: 0,
+              incognito: !nameMap[p.Subject],
             };
           });
           if (!gameDataLogged) {
@@ -570,7 +596,10 @@ async function poll() {
     activePlayer,
   });
 
-  console.log(`[${ts()}] ✅ Firebase — ${mapDisplay} | ${queueId} | ${players.length} joueurs`);
+  if (!inGame || players.length !== lastPlayerCount) {
+    lastPlayerCount = players.length;
+    console.log(`[${ts()}] ✅ ${mapDisplay} | ${queueId} | ${players.length} joueurs | WS:${wsConnected?'✓':'✗'}`);
+  }
 }
 
 console.log('\n  ╔══════════════════════════════╗');
