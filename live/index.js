@@ -154,8 +154,22 @@ function reqNoAuth(port, endpoint) {
   });
 }
 
-// Load agent UUIDs dynamically from valorant-api.com
+// Load agent UUIDs + client version at startup
 let AGENT_UUIDS = {};
+let RIOT_CLIENT_VERSION = 'unknown';
+
+https.get('https://valorant-api.com/v1/version', res => {
+  let d = '';
+  res.on('data', c => d += c);
+  res.on('end', () => {
+    try {
+      const v = JSON.parse(d);
+      // Format: "branch-version-builddate-buildver"
+      RIOT_CLIENT_VERSION = v.data?.riotClientVersion || v.data?.version || 'unknown';
+      console.log(`[init] ✅ Client version: ${RIOT_CLIENT_VERSION.split('-').slice(0,2).join('-')}`);
+    } catch {}
+  });
+}).on('error', () => {});
 https.get('https://valorant-api.com/v1/agents?isPlayableCharacter=true', res => {
   let d = '';
   res.on('data', c => d += c);
@@ -231,11 +245,14 @@ async function pdGet(tokens, apiPath) {
       let d = '';
       res.on('data', c => d += c);
       res.on('end', () => {
-        if (res.statusCode !== 200) { resolve(null); return; }
+        if (res.statusCode !== 200) {
+          console.log(`[pdGet] ${res.statusCode} pd.${tokens.region}.a.pvp.net${apiPath}: ${d.slice(0,80)}`);
+          resolve(null); return;
+        }
         try { resolve(JSON.parse(d)); } catch { resolve(null); }
       });
     });
-    r.on('error', () => resolve(null));
+    r.on('error', e => { console.log(`[pdGet] error: ${e.message}`); resolve(null); });
     r.setTimeout(3000); r.on('timeout', () => { r.destroy(); resolve(null); });
   });
 }
@@ -549,21 +566,20 @@ async function poll() {
             console.log(`[${ts()}] ⚠️  Names: ${e.message}`);
           }
 
-          // Fetch ranks for all players (pd server, not glz)
+          // Fetch ranks via competitiveupdates (works in-game)
           try {
             await Promise.all(puuids.map(async puuid => {
-              const r = await pdGet(authTokens, `/mmr/v1/players/${puuid}`);
-              if (r?.LatestCompetitiveUpdate?.TierAfterUpdate !== undefined) {
+              const r = await pdGet(authTokens, `/mmr/v1/players/${puuid}/competitiveupdates?startIndex=0&endIndex=1&queue=competitive`);
+              if (r?.Matches?.length > 0) {
+                const last = r.Matches[0];
                 rankMap[puuid] = {
-                  tier: r.LatestCompetitiveUpdate.TierAfterUpdate,
-                  rr:   r.LatestCompetitiveUpdate.RankedRatingAfterUpdate || 0,
+                  tier: last.TierAfterUpdate,
+                  rr:   last.RankedRatingAfterUpdate || 0,
                 };
-              } else if (r?.QueueSkills?.competitive?.TierNumber !== undefined) {
-                rankMap[puuid] = { tier: r.QueueSkills.competitive.TierNumber, rr: 0 };
               }
             }));
             const ranked = Object.keys(rankMap).length;
-            if (ranked > 0) console.log(`[${ts()}] 🏅 Rangs récupérés: ${ranked}/${puuids.length}`);
+            if (ranked > 0) console.log(`[${ts()}] 🏅 Rangs: ${ranked}/${puuids.length}`);
           } catch(e) {
             console.log(`[${ts()}] ⚠️  Ranks: ${e.message}`);
           }
