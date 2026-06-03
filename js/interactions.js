@@ -362,6 +362,8 @@ export function initLivePage() {
   const evtSource = new EventSource(`${FIREBASE_URL}/live.json`);
   // Round timer using roundStartTime from Firebase
   let timerInterval = null;
+  let lastRoundStart = null;
+  let lastRoundStart = null;
   function startRoundTimer(startTime, phase) {
     if (timerInterval) clearInterval(timerInterval);
     const PHASE_DURATION = { 'shopping': 30, 'combat': 100, 'end': 9, 'game_end': 9 };
@@ -410,16 +412,19 @@ export function initLivePage() {
       return;
     }
 
-    if (waiting) waiting.style.display = 'none';
-    if (content) content.style.display = 'block';
-    if (dot) dot.style.display = 'block';
+    if (waiting?.style.display !== 'none')  waiting.style.display  = 'none';
+    if (content?.style.display !== 'block') content.style.display  = 'block';
+    if (dot?.style.display     !== 'block') dot.style.display      = 'block';
 
+    // Map — guard
     const mapName = data.mapClean || data.mapDisplay || data.map?.split('/')?.pop() || '—';
     const mapEl = document.getElementById('live-map-name');
-    if (mapEl) mapEl.textContent = mapName;
-    loadMapImg(data.mapInternal || mapName);
+    if (mapEl && mapEl.textContent !== mapName) {
+      mapEl.textContent = mapName;
+      loadMapImg(data.mapInternal || mapName);
+    }
 
-    // Show player name
+    // Player tag — guard
     const header = document.getElementById('live-header');
     if (header && data.playerName) {
       let playerEl = document.getElementById('live-player-tag');
@@ -429,25 +434,24 @@ export function initLivePage() {
         playerEl.style.cssText = 'font-family:Tomorrow,sans-serif;font-size:10px;letter-spacing:2px;color:var(--muted);text-transform:uppercase;margin-left:auto';
         header.appendChild(playerEl);
       }
-      playerEl.textContent = data.playerName;
+      if (playerEl.textContent !== data.playerName) playerEl.textContent = data.playerName;
     }
 
-    // Phase + timer
+    // Phase — guard
     const phaseEl = document.getElementById('live-phase');
     const phase = data.roundPhase || data.mode || '—';
     if (phaseEl) {
-      phaseEl.textContent = phase.charAt(0).toUpperCase() + phase.slice(1);
-      phaseEl.className = 'live-phase';
-      if (['combat','bomb'].includes(phase.toLowerCase())) phaseEl.classList.add('combat');
+      const label = phase.charAt(0).toUpperCase() + phase.slice(1);
+      if (phaseEl.textContent !== label) {
+        phaseEl.textContent = label;
+        phaseEl.className = 'live-phase' + (['combat','bomb'].includes(phase.toLowerCase()) ? ' combat' : '');
+      }
     }
-    if (data.roundStartTime) {
+    // Timer — guard on roundStartTime
+    if (data.roundStartTime && data.roundStartTime !== lastRoundStart) {
+      lastRoundStart = data.roundStartTime;
       startRoundTimer(data.roundStartTime, phase);
     }
-
-    // Timer
-    const rt = Math.max(0, Math.round(data.roundTime || 0));
-    const timerEl = document.getElementById('live-timer');
-    if (timerEl) timerEl.textContent = `${Math.floor(rt/60)}:${String(rt%60).padStart(2,'0')}`;
 
     // Players — rebuild only if player list changed
     const playersEl = document.getElementById('live-players');
