@@ -457,6 +457,20 @@ export function initLivePage() {
       if (playerEl.textContent !== data.playerName) playerEl.textContent = data.playerName;
     }
 
+    // Score
+    const score = data.score || {};
+    let scoreEl = document.getElementById('live-score');
+    if (!scoreEl && document.getElementById('live-header')) {
+      scoreEl = document.createElement('div');
+      scoreEl.id = 'live-score';
+      scoreEl.style.cssText = 'font-family:Tomorrow,sans-serif;font-size:20px;font-weight:700;letter-spacing:4px;color:var(--text)';
+      document.getElementById('live-header').insertBefore(scoreEl, document.getElementById('live-timer'));
+    }
+    if (scoreEl) {
+      const s = `${score.blue||0} — ${score.red||0}`;
+      if (scoreEl.textContent !== s) scoreEl.textContent = s;
+    }
+
     // Phase — guard
     const phaseEl = document.getElementById('live-phase');
     const phase = data.roundPhase || data.mode || '—';
@@ -506,6 +520,31 @@ export function initLivePage() {
     }
   }
 
+  const RANK_NAMES = [
+    'Unranked','Unranked','Unranked',
+    'Iron 1','Iron 2','Iron 3',
+    'Bronze 1','Bronze 2','Bronze 3',
+    'Silver 1','Silver 2','Silver 3',
+    'Gold 1','Gold 2','Gold 3',
+    'Platinum 1','Platinum 2','Platinum 3',
+    'Diamond 1','Diamond 2','Diamond 3',
+    'Ascendant 1','Ascendant 2','Ascendant 3',
+    'Immortal 1','Immortal 2','Immortal 3',
+    'Radiant'
+  ];
+  const RANK_COLORS = {
+    'Iron':'#8b9bb4','Bronze':'#cd7f32','Silver':'#c0c0c0',
+    'Gold':'#f5c842','Platinum':'#40c9c9','Diamond':'#9b59b6',
+    'Ascendant':'#2ecc71','Immortal':'#e74c3c','Radiant':'#ffd700','Unranked':'#555'
+  };
+  function rankDisplay(rank) {
+    if (!rank) return '';
+    const name = RANK_NAMES[rank.tier] || 'Unranked';
+    const base = name.split(' ')[0];
+    const color = RANK_COLORS[base] || '#888';
+    return `<span style="font-size:8px;font-family:Tomorrow,sans-serif;letter-spacing:1px;color:${color};opacity:.8">${name}</span>`;
+  }
+
   // Agent UUID → icon URL cache
   const agentIconCache = {};
   let agentUuidMap = {}; // name → uuid
@@ -536,6 +575,7 @@ export function initLivePage() {
       ${imgUrl ? `<img class="live-player-agent" src="${imgUrl}" onerror="this.style.visibility='hidden'">` : '<div class="live-player-agent" style="background:var(--surf3)"></div>'}
       <div style="flex:1;min-width:0">
         <div class="live-player-name" style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${p.name || '—'} <span style="opacity:.4;font-size:9px;font-weight:400">${p.agent||''}</span></div>
+        <div style="margin-top:2px">${rankDisplay(p.rank)}</div>
       </div>
       <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px;flex-shrink:0">
         <span style="font-family:Tomorrow,sans-serif;font-size:10px;color:var(--muted)">${kda}</span>
