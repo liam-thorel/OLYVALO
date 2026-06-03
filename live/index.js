@@ -269,6 +269,7 @@ let selfPuuid = null;
 let authTokens = null;
 let wsConnected = false;
 let lastPlayerCount = -1;
+let lastScore = '';
 let roundPhase = '';
 let roundStartTime = null;
 
@@ -293,20 +294,48 @@ function connectWebSocket(port, password) {
       const uri = evt?.uri || '';
       const data = evt?.data;
 
-      // Round phase from messaging service
-      if (uri.includes('ares-core-game') && data) {
-        const payload = data?.Payload ? JSON.parse(data.Payload) : data;
-        if (payload?.RoundPhase !== undefined) {
-          if (payload.RoundPhase !== roundPhase) {
-            roundPhase = payload.RoundPhase;
-            roundStartTime = Date.now();
-            console.log(`[${ts()}] ⏱  Phase: ${roundPhase}`);
-            // Push phase to Firebase immediately
-            putFB('live/roundPhase', roundPhase).catch(()=>{});
-            putFB('live/roundStartTime', roundStartTime).catch(()=>{});
-          }
+      // Parse payload
+      let payload = data;
+      if (data?.Payload) {
+        try { payload = JSON.parse(data.Payload); } catch {}
+      }
+
+      // Round phase
+      if (uri.includes('ares-core-game') && payload?.RoundPhase !== undefined) {
+        if (payload.RoundPhase !== roundPhase) {
+          roundPhase = payload.RoundPhase;
+          roundStartTime = Date.now();
+          console.log(`[${ts()}] ⏱  Phase: ${roundPhase}`);
+          putFB('live/roundPhase', roundPhase).catch(()=>{});
+          putFB('live/roundStartTime', roundStartTime).catch(()=>{});
         }
       }
+
+      // Score from match state
+      if (uri.includes('ares-core-game') && payload?.Teams) {
+        const blueTeam  = payload.Teams.find(t => t.TeamID === 'Blue');
+        const redTeam   = payload.Teams.find(t => t.TeamID === 'Red');
+        const score = {
+          blue: blueTeam?.RoundsWon || 0,
+          red:  redTeam?.RoundsWon  || 0,
+        };
+        if (JSON.stringify(score) !== lastScore) {
+          lastScore = JSON.stringify(score);
+          console.log(`[${ts()}] 📊 Score: ${score.blue} - ${score.red}`);
+          putFB('live/score', score).catch(()=>{});
+        }
+      }
+
+      // Kill feed from MUC messages
+      if (uri.includes('messaging-service') && payload?.Body) {
+        try {
+          const body = JSON.parse(payload.Body);
+          if (body?.kills) {
+            putFB('live/lastKills', body.kills).catch(()=>{});
+          }
+        } catch {}
+      }
+
     } catch {}
   });
 
@@ -483,6 +512,7 @@ async function poll() {
           // Fetch player names from name service
           const puuids = match.Players.map(p => p.Subject).filter(Boolean);
           let nameMap = {};
+          let rankMap = {};
           try {
             const namesRes = await pdPost(authTokens, '/name-service/v2/players', puuids);
 
@@ -493,6 +523,25 @@ async function poll() {
             }
           } catch(e) {
             console.log(`[${ts()}] ⚠️  Names: ${e.message}`);
+          }
+
+          // Fetch ranks for all players
+          try {
+            await Promise.all(puuids.map(async puuid => {
+              const r = await pvpGet(authTokens, `/mmr/v1/players/${puuid}`);
+              if (r?.LatestCompetitiveUpdate?.TierAfterUpdate !== undefined) {
+                rankMap[puuid] = {
+                  tier: r.LatestCompetitiveUpdate.TierAfterUpdate,
+                  rr:   r.LatestCompetitiveUpdate.RankedRatingAfterUpdate || 0,
+                };
+              } else if (r?.QueueSkills?.competitive?.TierNumber !== undefined) {
+                rankMap[puuid] = { tier: r.QueueSkills.competitive.TierNumber, rr: 0 };
+              }
+            }));
+            const ranked = Object.keys(rankMap).length;
+            if (ranked > 0) console.log(`[${ts()}] 🏅 Rangs récupérés: ${ranked}/${puuids.length}`);
+          } catch(e) {
+            console.log(`[${ts()}] ⚠️  Ranks: ${e.message}`);
           }
 
           // Extract score
@@ -516,6 +565,7 @@ async function poll() {
               kills:   0, deaths: 0, assists: 0,
               ult: false, x: 0, y: 0,
               incognito: !nameMap[p.Subject],
+              rank: rankMap[p.Subject] || null,
             };
           });
           if (!gameDataLogged) {
