@@ -30,8 +30,10 @@ async function initPresence() {
   await loadScript(`${FIREBASE_CDN_BASE}/firebase-app-compat.js`);
   await loadScript(`${FIREBASE_CDN_BASE}/firebase-database-compat.js`);
 
-  if (!window.firebase.apps.length) window.firebase.initializeApp(FIREBASE_CONFIG);
-  db = window.firebase.apps.length ? window.firebase.app().database() : window.firebase.database();
+  if (!window.firebase.apps.length) {
+    window.firebase.initializeApp(FIREBASE_CONFIG);
+  }
+  db = window.firebase.app().database();
 
   // Register session
   const sessionId = Math.random().toString(36).slice(2, 9);

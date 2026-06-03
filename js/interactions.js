@@ -431,44 +431,67 @@ export function initLivePage() {
     const timerEl = document.getElementById('live-timer');
     if (timerEl) timerEl.textContent = `${Math.floor(rt/60)}:${String(rt%60).padStart(2,'0')}`;
 
-    // Players
+    // Players — rebuild only if player list changed
     const playersEl = document.getElementById('live-players');
     const myName = localStorage.getItem('olycity-profile') || '';
-    const roster = JSON.parse(localStorage.getItem('olycity-roster') || '[]');
-    const allies = (data.players || []).filter(p => p.team === 'ORDER');
-    const enemies = (data.players || []).filter(p => p.team === 'CHAOS');
+    const all = (data.players || []);
+    // In deathmatch everyone is on same "team" — just show all
+    const allies = all.filter(p => p.team === 'ORDER');
+    const enemies = all.filter(p => p.team === 'CHAOS');
+    const isDM = allies.length === all.length || enemies.length === 0;
 
-    if (playersEl) {
-      playersEl.innerHTML = `
-        <div style="font-family:Tomorrow,sans-serif;font-size:9px;letter-spacing:2px;color:var(--dim);text-transform:uppercase;padding:4px 0">Alliés</div>
-        ${allies.map(p => playerRow(p, myName)).join('')}
-        <div style="font-family:Tomorrow,sans-serif;font-size:9px;letter-spacing:2px;color:var(--dim);text-transform:uppercase;padding:8px 0 4px">Ennemis</div>
-        ${enemies.map(p => playerRow(p, myName)).join('')}
-      `;
+    const newHTML = isDM
+      ? all.map(p => playerRow(p, myName)).join('')
+      : `<div style="font-family:Tomorrow,sans-serif;font-size:9px;letter-spacing:2px;color:var(--dim);text-transform:uppercase;padding:4px 0 8px">Alliés</div>
+         ${allies.map(p => playerRow(p, myName)).join('')}
+         <div style="font-family:Tomorrow,sans-serif;font-size:9px;letter-spacing:2px;color:var(--dim);text-transform:uppercase;padding:12px 0 8px">Ennemis</div>
+         ${enemies.map(p => playerRow(p, myName)).join('')}`;
+
+    if (playersEl && playersEl.innerHTML !== newHTML) {
+      playersEl.innerHTML = newHTML;
     }
 
     // Minimap
     drawMinimap(data.players || []);
   }
 
+  // Agent UUID → icon URL cache
+  const agentIconCache = {};
+  let agentUuidMap = {}; // name → uuid
+  fetch('https://valorant-api.com/v1/agents?isPlayableCharacter=true')
+    .then(r=>r.json()).then(d=>{
+      d.data?.forEach(a => { agentUuidMap[a.displayName] = a.uuid; });
+    }).catch(()=>{});
+
+  function agentIconUrl(agentName) {
+    if (!agentName) return '';
+    if (agentIconCache[agentName]) return agentIconCache[agentName];
+    const uuid = agentUuidMap[agentName];
+    if (uuid) {
+      const url = `https://media.valorant-api.com/agents/${uuid}/displayicon.png`;
+      agentIconCache[agentName] = url;
+      return url;
+    }
+    return '';
+  }
+
   function playerRow(p, myName) {
-    const hpPct = p.maxHp ? Math.round((p.hp/p.maxHp)*100) : 0;
+    const hpPct = (p.maxHp && p.hp !== undefined) ? Math.round((p.hp/p.maxHp)*100) : 100;
     const hpColor = hpPct > 60 ? '#3fcf6b' : hpPct > 30 ? '#f9c74f' : '#ff4656';
-    const ultPct = p.ultMax ? Math.round((p.ultPts/p.ultMax)*100) : 0;
-    const isMe = p.name?.includes(myName) && myName;
-    const agentImg = `https://media.valorant-api.com/agents/${p.agent?.toLowerCase()}/displayicon.png`;
-    return `<div class="live-player-row ${p.alive ? '' : 'dead'} ${isMe ? 'me' : ''}">
-      <img class="live-player-agent" src="${agentImg}" onerror="this.style.display='none'">
-      <div style="flex:1">
-        <div class="live-player-name">${p.name || '—'} <span style="opacity:.5;font-size:9px">${p.agent||''}</span></div>
+    const isMe = myName && p.name?.includes(myName.split('#')[0]);
+    const imgUrl = agentIconUrl(p.agent);
+    const kda = (p.kills !== undefined) ? `${p.kills}/${p.deaths}/${p.assists}` : '—';
+    return `<div class="live-player-row ${p.alive===false ? 'dead' : ''} ${isMe ? 'me' : ''}">
+      ${imgUrl ? `<img class="live-player-agent" src="${imgUrl}" onerror="this.style.visibility='hidden'">` : '<div class="live-player-agent" style="background:var(--surf3)"></div>'}
+      <div style="flex:1;min-width:0">
+        <div class="live-player-name" style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${p.name || '—'} <span style="opacity:.4;font-size:9px;font-weight:400">${p.agent||''}</span></div>
         <div style="display:flex;align-items:center;gap:8px;margin-top:4px">
-          <div class="live-hp-bar"><div class="live-hp-fill" style="width:${hpPct}%;background:${hpColor}"></div></div>
-          <span style="font-size:10px;color:var(--muted)">${p.hp}/${p.maxHp}</span>
+          <div class="live-hp-bar"><div class="live-hp-fill" style="width:${hpPct}%;background:${hpColor};transition:width .5s"></div></div>
+          <span style="font-size:10px;color:var(--muted)">${p.hp||100}/${p.maxHp||150}</span>
         </div>
       </div>
-      <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px">
-        <span style="font-family:Tomorrow,sans-serif;font-size:10px;color:var(--muted)">${p.kills}/${p.deaths}/${p.assists}</span>
-        <span class="live-ult ${p.ult?'ready':''}">ULT ${p.ult?'✓':p.ultPts+'/'+p.ultMax}</span>
+      <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px;flex-shrink:0">
+        <span style="font-family:Tomorrow,sans-serif;font-size:10px;color:var(--muted)">${kda}</span>
       </div>
     </div>`;
   }
