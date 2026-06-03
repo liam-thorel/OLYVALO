@@ -377,11 +377,11 @@ export function initLivePage() {
   }
 
   let lastDataKey = '';
-  evtSource.addEventListener('put', e => {
+  function handleSSE(e) {
     try {
       const msg = JSON.parse(e.data);
-      liveData = msg.data;
-      // Only re-render if meaningful data changed (ignore ts)
+      if (msg.data !== undefined) liveData = msg.data;
+      else if (msg.data === null) { liveData = null; }
       const key = JSON.stringify({
         active: liveData?.active,
         map: liveData?.mapClean,
@@ -390,12 +390,11 @@ export function initLivePage() {
         roundStart: liveData?.roundStartTime,
         players: (liveData?.players||[]).map(p=>`${p.name}|${p.agent}|${p.team}`)
       });
-      if (key !== lastDataKey) {
-        lastDataKey = key;
-        updateUI(liveData);
-      }
+      if (key !== lastDataKey) { lastDataKey = key; updateUI(liveData); }
     } catch {}
-  });
+  }
+  evtSource.addEventListener('put', handleSSE);
+  evtSource.addEventListener('patch', handleSSE);
 
   async function loadMapImg(mapName) {
     if (mapName === lastMapName) return;
@@ -419,11 +418,19 @@ export function initLivePage() {
     const dot = document.getElementById('live-dot');
 
     if (!data?.active) {
-      if (waiting) waiting.style.display = 'flex';
-      if (content) content.style.display = 'none';
-      if (dot) dot.style.display = 'none';
+      // Debounce — only hide after 3s to avoid Firebase reconnect flashes
+      if (!updateUI._hideTimer) {
+        updateUI._hideTimer = setTimeout(() => {
+          if (waiting) waiting.style.display = 'flex';
+          if (content) content.style.display = 'none';
+          if (dot) dot.style.display = 'none';
+          updateUI._hideTimer = null;
+        }, 3000);
+      }
       return;
     }
+    // Cancel pending hide if we got active data
+    if (updateUI._hideTimer) { clearTimeout(updateUI._hideTimer); updateUI._hideTimer = null; }
 
     if (waiting?.style.display !== 'none')  waiting.style.display  = 'none';
     if (content?.style.display !== 'block') content.style.display  = 'block';
