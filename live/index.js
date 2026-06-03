@@ -2,6 +2,7 @@ const https = require('https');
 const fs    = require('fs');
 const path  = require('path');
 const { execSync } = require('child_process');
+const WebSocket = require('ws');
 
 const FIREBASE_URL = 'https://realtime-database-5bb9f-default-rtdb.europe-west1.firebasedatabase.app';
 
@@ -266,6 +267,57 @@ function tryDecodeBase64(str) {
 let inGame = false;
 let selfPuuid = null;
 let authTokens = null;
+let wsConnected = false;
+let roundPhase = '';
+let roundStartTime = null;
+
+function connectWebSocket(port, password) {
+  if (wsConnected) return;
+  const ws = new WebSocket(`wss://riot:${password}@127.0.0.1:${port}`, {
+    rejectUnauthorized: false
+  });
+
+  ws.on('open', () => {
+    wsConnected = true;
+    console.log(`[${ts()}] 🔌 WebSocket connecté`);
+    // Subscribe to all events
+    ws.send(JSON.stringify([5, 'OnJsonApiEvent']));
+  });
+
+  ws.on('message', raw => {
+    try {
+      const msg = JSON.parse(raw);
+      if (!Array.isArray(msg) || msg[0] !== 8) return;
+      const evt = msg[2];
+      const uri = evt?.uri || '';
+      const data = evt?.data;
+
+      // Round phase from messaging service
+      if (uri.includes('ares-core-game') && data) {
+        const payload = data?.Payload ? JSON.parse(data.Payload) : data;
+        if (payload?.RoundPhase !== undefined) {
+          if (payload.RoundPhase !== roundPhase) {
+            roundPhase = payload.RoundPhase;
+            roundStartTime = Date.now();
+            console.log(`[${ts()}] ⏱  Phase: ${roundPhase}`);
+            // Push phase to Firebase immediately
+            putFB('live/roundPhase', roundPhase).catch(()=>{});
+            putFB('live/roundStartTime', roundStartTime).catch(()=>{});
+          }
+        }
+      }
+    } catch {}
+  });
+
+  ws.on('close', () => {
+    wsConnected = false;
+    console.log(`[${ts()}] 🔌 WebSocket fermé`);
+  });
+
+  ws.on('error', e => {
+    wsConnected = false;
+  });
+}
 let lastGamePort = null;
 let gameDataLogged = false;
 let matchDataLogged = false;
@@ -362,6 +414,7 @@ async function poll() {
     matchDataLogged = false;
     gameDataLogged = false;
     authTokens = null;
+    connectWebSocket(lock.port, lock.password);
     console.log(`[${ts()}] 🎮 EN GAME — ${mapDisplay} (${mapRaw}) | ${queueId} | ${playerName}`);
   }
 
