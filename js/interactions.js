@@ -574,7 +574,12 @@ export function initLivePage() {
     return `<div class="live-player-row ${p.alive===false ? 'dead' : ''} ${isMe ? 'me' : ''}">
       ${imgUrl ? `<img class="live-player-agent" src="${imgUrl}" onerror="this.style.visibility='hidden'">` : '<div class="live-player-agent" style="background:var(--surf3)"></div>'}
       <div style="flex:1;min-width:0">
-        <div class="live-player-name" style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${p.name || '—'} <span style="opacity:.4;font-size:9px;font-weight:400">${p.agent||''}</span></div>
+        <div class="live-player-name" style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">
+          ${p.incognito
+            ? `<span style="opacity:.5;font-style:italic">${p.agent||'?'}</span> <span style="font-size:8px;letter-spacing:1px;color:#888;border:1px solid #333;padding:1px 4px">ANONYME</span>`
+            : `${p.name || '—'} <span style="opacity:.4;font-size:9px;font-weight:400">${p.agent||''}</span>`
+          }
+        </div>
         <div style="margin-top:2px">${rankDisplay(p.rank)}</div>
       </div>
       <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px;flex-shrink:0">
