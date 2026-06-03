@@ -400,19 +400,30 @@ export function initLivePage() {
     if (content) content.style.display = 'block';
     if (dot) dot.style.display = 'block';
 
-    // Map name
-    const mapName = data.map?.split('/')?.pop()?.split('_')?.pop() || data.map || '—';
+    const mapName = data.mapClean || data.mapDisplay || data.map?.split('/')?.pop() || '—';
     const mapEl = document.getElementById('live-map-name');
     if (mapEl) mapEl.textContent = mapName;
-    loadMapImg(mapName);
+    loadMapImg(data.mapInternal || mapName);
+
+    // Show player name
+    const header = document.getElementById('live-header');
+    if (header && data.playerName) {
+      let playerEl = document.getElementById('live-player-tag');
+      if (!playerEl) {
+        playerEl = document.createElement('div');
+        playerEl.id = 'live-player-tag';
+        playerEl.style.cssText = 'font-family:Tomorrow,sans-serif;font-size:10px;letter-spacing:2px;color:var(--muted);text-transform:uppercase;margin-left:auto';
+        header.appendChild(playerEl);
+      }
+      playerEl.textContent = data.playerName;
+    }
 
     // Phase
     const phaseEl = document.getElementById('live-phase');
     if (phaseEl) {
-      phaseEl.textContent = data.roundPhase || data.phase || '—';
+      const modeLabel = data.mode || data.phase || '—';
+      phaseEl.textContent = modeLabel.charAt(0).toUpperCase() + modeLabel.slice(1);
       phaseEl.className = 'live-phase';
-      if (data.roundPhase === 'combat') phaseEl.classList.add('combat');
-      if (data.roundPhase === 'bomb') phaseEl.classList.add('planted');
     }
 
     // Timer
