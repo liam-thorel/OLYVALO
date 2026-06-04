@@ -1,20 +1,21 @@
 @echo off
+chcp 65001 >nul
 title OLYCITY LIVE
-color 0A
 
 echo.
-echo  ╔══════════════════════════════════════╗
-echo  ║         OLYCITY LIVE  v4  🔴         ║
-echo  ║    Valorant ^> Firebase ^> Site        ║
-echo  ╚══════════════════════════════════════╝
+echo   OLYCITY LIVE v4
+echo   ========================
+echo   Valorant --^> Firebase --^> Site
 echo.
-echo  Lance Valorant et entre dans une game.
-echo  Le site OLYCITY se met a jour en direct.
-echo  Ferme cette fenetre pour arreter.
+echo   Lance Valorant et entre dans une game.
+echo   Ouvre ensuite OLYCITY sur le site et va dans l'onglet Live.
+echo.
+echo   Ferme cette fenetre pour arreter.
+echo   ________________________
 echo.
 
 node index.js
 
 echo.
-echo  Script arrete. Appuie sur une touche.
-pause >nul
+echo   Script arrete.
+pause

@@ -1,45 +1,32 @@
 @echo off
+chcp 65001 >nul
 title OLYCITY LIVE — Installation
-color 0A
 
 echo.
-echo  ╔══════════════════════════════════════╗
-echo  ║        OLYCITY LIVE - SETUP          ║
-echo  ╚══════════════════════════════════════╝
+echo   OLYCITY LIVE — Setup
+echo   ========================
 echo.
 
-:: Check Node.js
 node --version >nul 2>&1
 if %errorlevel% neq 0 (
-    echo  [!] Node.js n'est pas installe.
+    echo   Node.js n'est pas installe.
     echo.
-    echo  Telechargement en cours...
+    echo   Le navigateur va s'ouvrir pour le telecharger.
+    echo   Installe-le, puis relance ce fichier.
+    echo.
     start https://nodejs.org/dist/v20.19.0/node-v20.19.0-x64.msi
-    echo.
-    echo  Installe Node.js puis relance ce fichier.
-    echo  Appuie sur une touche pour fermer.
-    pause >nul
+    pause
     exit
 )
 
-echo  [OK] Node.js detecte : 
-node --version
-
+echo   Node.js OK
+echo   Installation des modules...
 echo.
-echo  Installation des modules...
-call npm install --silent
 
-if %errorlevel% neq 0 (
-    echo  [ERREUR] npm install a echoue.
-    pause >nul
-    exit
-)
+call npm install --silent 2>nul
 
-echo  [OK] Installation terminee !
+echo   Installation terminee.
 echo.
-echo ══════════════════════════════════════════
-echo  Lance Valorant, entre dans une game,
-echo  puis ouvre le site OLYCITY ^> Live
-echo ══════════════════════════════════════════
+echo   Tu peux maintenant lancer LANCER.bat avant chaque game.
 echo.
-pause >nul
+pause
