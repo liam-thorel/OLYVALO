@@ -1,23 +1,22 @@
 # OLYCITY LIVE
 
-Affiche tes données de game Valorant en temps réel sur le site OLYCITY.
+Affiche ta game Valorant en temps réel sur le site OLYCITY.
 
-## Installation (une seule fois)
+## Première utilisation
 
-1. Installe [Node.js](https://nodejs.org/) (version 18+)
-2. Ouvre un terminal dans ce dossier
-3. Tape : `npm install`
+1. Double-clique sur **INSTALLER.bat**
+   - S'il te demande d'installer Node.js, fais-le puis relance INSTALLER.bat
+2. C'est prêt !
 
-## Utilisation
+## Chaque session
 
-1. Lance Valorant
-2. Dans ce dossier, tape : `node index.js`
-3. Entre dans une partie
-4. Va sur OLYCITY → onglet **Live** 🔴
-5. Ctrl+C pour arrêter après la game
+1. Lance **Valorant**
+2. Double-clique sur **LANCER.bat**
+3. Entre dans une game
+4. Va sur **OLYCITY → onglet Live 🔴**
 
 ## Notes
 
 - Fonctionne uniquement sur le PC qui fait tourner Valorant
-- Les autres joueurs voient les données via Firebase sur le site
-- Aucun risque Vanguard — utilise l'API officielle Riot (port 2999)
+- Les autres joueurs voient les données sur le site sans rien installer
+- Aucun risque Vanguard — API officielle Riot
