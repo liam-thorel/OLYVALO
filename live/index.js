@@ -315,6 +315,7 @@ let lastScore = '';
 let ranksLoaded = false;
 let rankMap = {};
 let stableSessionKey = null;
+let missedPolls = 0;
 let roundPhase = '';
 let roundStartTime = null;
 
@@ -497,14 +498,18 @@ async function poll() {
   const isInGame   = !!(mapRaw && mapRaw !== 'Range' && mapRaw !== '');
 
   if (!isInGame) {
-    if (inGame) {
+    missedPolls = (missedPolls || 0) + 1;
+    if (inGame && missedPolls >= 3) { // 3 missed polls = ~6s grace period
       inGame = false;
       lastMap = '';
+      missedPolls = 0;
       console.log(`[${ts()}] 🏠 Fin de game`);
-      await putFB('live', { active:false, ts:Date.now() });
+      const sKey = stableSessionKey || 'unknown';
+      if (sKey !== 'unknown') await putFB(`live/sessions/${sKey}`, { active:false, ts:Date.now(), playerName });
     }
     return;
   }
+  missedPolls = 0;
 
   if (!inGame || mapRaw !== lastMap) {
     inGame   = true;
