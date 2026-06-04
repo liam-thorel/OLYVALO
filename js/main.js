@@ -5,10 +5,10 @@
 
 import { valorantApi } from './api.js';
 
-const SITE_VERSION = '1780530738'; // Auto-updated on push
+const SITE_VERSION = '1780582587'; // Auto-updated on push
 import { syncPlayer as henrikSyncPlayer, syncAllPlayers as henrikSyncAll, persistPlayerStats } from './henrik.js';
 import { rosterHTML, guestCardHTML, mapSectionHTML, stierHTML, agentPageHTML, miniRosterHTML, agentsFiltersHTML, agentsGridHTML, compCompareHTML, compBuilderHTML, savedCompsHTML } from './render.js';
-import { initTheme, initTilt, initParallax, initSearch, initKeyboard, updateFavCount, initHeroParticles, initWheelLogos, initLivePage } from './interactions.js';
+import { initTheme, initTilt, initParallax, initSearch, initKeyboard, updateFavCount, initHeroParticles, initLivePage } from './interactions.js';
 import { storage } from './storage.js';
 
 // ─── STATE ─────────────────────────────────────────
@@ -938,7 +938,6 @@ async function boot() {
   }
 
   initHeroParticles();
-  initWheelLogos();
   initTheme();
   initParallax();
   initKeyboard(() => window.OLYCITY.closeAgentPage());

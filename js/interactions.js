@@ -333,7 +333,6 @@ function drawWheel(canvas, size, speed, alpha) {
 
 export function initWheelLogos() {
   drawWheel(document.getElementById('logo-canvas-topbar'), 36, 0.008, 1);
-  drawWheel(document.getElementById('logo-canvas-hero'), 300, 0.003, 0.12);
 }
 
 // ─── LIVE PAGE ────────────────────────────────────────
