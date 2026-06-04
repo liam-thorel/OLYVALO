@@ -381,16 +381,28 @@ export function initLivePage() {
   function handleSSE(e) {
     try {
       const msg = JSON.parse(e.data);
-      // patch = partial update, put = full replace
-      if (e.type === 'patch' && msg.data && typeof msg.data === 'object') {
-        // Deep merge patch into lastSessions
-        Object.entries(msg.data).forEach(([puuid, delta]) => {
-          if (!lastSessions[puuid]) lastSessions[puuid] = {};
-          if (delta && typeof delta === 'object') Object.assign(lastSessions[puuid], delta);
-          else lastSessions[puuid] = delta;
-        });
+      const path = msg.path || '/';
+      const data = msg.data;
+
+      if (path === '/') {
+        // Full replace
+        lastSessions = (data && typeof data === 'object') ? data : {};
       } else {
-        lastSessions = (msg.data && typeof msg.data === 'object') ? msg.data : {};
+        // Partial update — path is like '/d70bdb3f-...'
+        const puuid = path.replace(/^\//, '').split('/')[0];
+        const subPath = path.replace(/^\/[^/]+/, '');
+        if (puuid) {
+          if (!lastSessions[puuid]) lastSessions[puuid] = {};
+          if (subPath) {
+            // Deep field update like /d70bdb3f/ts
+            const field = subPath.replace(/^\//, '');
+            lastSessions[puuid][field] = data;
+          } else {
+            // Full session update
+            if (data && typeof data === 'object') Object.assign(lastSessions[puuid], data);
+            else lastSessions[puuid] = data;
+          }
+        }
       }
       const sessions = lastSessions;
       updateSessionPicker(sessions);
