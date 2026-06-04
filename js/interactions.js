@@ -395,7 +395,8 @@ export function initLivePage() {
       const sessions = lastSessions;
       updateSessionPicker(sessions);
 
-      const active = Object.entries(sessions).filter(([,s]) => s?.active && s?.map);
+      const now = Date.now();
+      const active = Object.entries(sessions).filter(([,s]) => s?.active && s?.map && (now - (s.ts||0)) < 30000);
       if (active.length === 1) selectedSession = active[0][0];
       
       const data = selectedSession && sessions[selectedSession]?.active 
