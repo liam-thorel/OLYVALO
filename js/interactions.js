@@ -381,8 +381,18 @@ export function initLivePage() {
   function handleSSE(e) {
     try {
       const msg = JSON.parse(e.data);
-      const sessions = (msg.data && typeof msg.data === 'object') ? msg.data : {};
-      lastSessions = sessions;
+      // patch = partial update, put = full replace
+      if (e.type === 'patch' && msg.data && typeof msg.data === 'object') {
+        // Deep merge patch into lastSessions
+        Object.entries(msg.data).forEach(([puuid, delta]) => {
+          if (!lastSessions[puuid]) lastSessions[puuid] = {};
+          if (delta && typeof delta === 'object') Object.assign(lastSessions[puuid], delta);
+          else lastSessions[puuid] = delta;
+        });
+      } else {
+        lastSessions = (msg.data && typeof msg.data === 'object') ? msg.data : {};
+      }
+      const sessions = lastSessions;
       updateSessionPicker(sessions);
 
       // Auto-select: if only 1 active, pick it; else keep selected
