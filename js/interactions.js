@@ -359,7 +359,8 @@ export function initLivePage() {
 
   // Firebase SSE listener
   const evtSource = new EventSource(`${FIREBASE_URL}/live/sessions.json`);
-  let selectedSession = null; // puuid of selected session
+  let selectedSession = null;
+  let lastSessions = {};
   // Round timer using roundStartTime from Firebase
   let timerInterval = null;
   let lastRoundStart = null;
@@ -380,7 +381,8 @@ export function initLivePage() {
   function handleSSE(e) {
     try {
       const msg = JSON.parse(e.data);
-      const sessions = msg.data || {};
+      const sessions = (msg.data && typeof msg.data === 'object') ? msg.data : {};
+      lastSessions = sessions;
       updateSessionPicker(sessions);
 
       // Auto-select: if only 1 active, pick it; else keep selected
@@ -448,7 +450,8 @@ export function initLivePage() {
 
   window._selectLiveSession = (puuid) => {
     selectedSession = puuid;
-    handleSSE({ data: JSON.stringify({ data: JSON.parse(evtSource._lastData || '{}') }) });
+    const data = lastSessions[puuid] || null;
+    if (data) updateUI(data);
   };
 
   async function loadMapImg(mapName) {
