@@ -395,13 +395,14 @@ export function initLivePage() {
       const sessions = lastSessions;
       updateSessionPicker(sessions);
 
-      // Auto-select: if only 1 active, pick it; else keep selected
       const active = Object.entries(sessions).filter(([,s]) => s?.active && s?.map);
       if (active.length === 1) selectedSession = active[0][0];
       
       const data = selectedSession && sessions[selectedSession]?.active 
         ? sessions[selectedSession] 
         : active.length > 0 ? active[0][1] : null;
+
+      console.log('[LIVE SSE]', e.type, 'sessions:', Object.keys(sessions).length, 'active:', active.length, 'data:', data?.active, data?.mapClean);
 
       const key = JSON.stringify({
         active: data?.active, map: data?.mapClean, mode: data?.mode,
