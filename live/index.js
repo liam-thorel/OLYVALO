@@ -314,6 +314,7 @@ let lastPlayerCount = -1;
 let lastScore = '';
 let ranksLoaded = false;
 let rankMap = {};
+let stableSessionKey = null;
 let roundPhase = '';
 let roundStartTime = null;
 
@@ -424,6 +425,7 @@ async function poll() {
     const session = await req(lock.port, lock.password, '/chat/v1/session');
     if (session.ok && session.data?.puuid) {
       selfPuuid = session.data.puuid;
+      stableSessionKey = selfPuuid;
       console.log(`[${ts()}] 👤 PUUID détecté: ${selfPuuid.slice(0,8)}...`);
     }
   }
@@ -689,7 +691,9 @@ async function poll() {
     }
   }
 
-  const sessionKey = authTokens?.puuid || selfPuuid || 'unknown';
+  if (!stableSessionKey && (authTokens?.puuid || selfPuuid)) stableSessionKey = authTokens?.puuid || selfPuuid;
+  const sessionKey = stableSessionKey || 'unknown';
+  if (sessionKey === 'unknown') return; // don't push until we have a real key
   await putFB(`live/sessions/${sessionKey}`, {
     active:      true,
     ts:          Date.now(),
