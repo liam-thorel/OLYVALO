@@ -366,7 +366,7 @@ function connectWebSocket(port, password) {
         if (JSON.stringify(score) !== lastScore) {
           lastScore = JSON.stringify(score);
           console.log(`[${ts()}] 📊 Score: ${score.blue} - ${score.red}`);
-          putFB('live/score', score).catch(()=>{});
+          putFB(`live/sessions/${authTokens?.puuid || selfPuuid || 'unknown'}/score`, score).catch(()=>{});
         }
       }
 
@@ -593,7 +593,7 @@ async function poll() {
                 const updatedPlayers = Object.values(rankMap).length > 0
                   ? puuidsCopy.map((puuid, i) => ({...(players[i]||{}), rank: rankMap[puuid] || null}))
                   : players;
-                await putFB('live/players', updatedPlayers);
+                await putFB(`live/sessions/${tokensCopy.puuid || 'unknown'}/players`, updatedPlayers);
               } else {
                 console.log(`[${ts()}] ⚠️  Rangs indisponibles (rate limit Riot)`);
               }
@@ -689,7 +689,8 @@ async function poll() {
     }
   }
 
-  await putFB('live', {
+  const sessionKey = authTokens?.puuid || selfPuuid || 'unknown';
+  await putFB(`live/sessions/${sessionKey}`, {
     active:      true,
     ts:          Date.now(),
     map:         mapRaw,
@@ -697,6 +698,7 @@ async function poll() {
     mapInternal: mapRaw,
     mapClean:    mapDisplay,
     mode:        queueId,
+    matchId:     matchData?.MatchID || '',
     playerName:  playerName,
     players,
     activePlayer,
