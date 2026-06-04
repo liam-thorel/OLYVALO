@@ -358,7 +358,8 @@ export function initLivePage() {
   const ctx = canvas?.getContext('2d');
 
   // Firebase SSE listener
-  const evtSource = new EventSource(`${FIREBASE_URL}/live.json`);
+  const evtSource = new EventSource(`${FIREBASE_URL}/live/sessions.json`);
+  let selectedSession = null; // puuid of selected session
   // Round timer using roundStartTime from Firebase
   let timerInterval = null;
   let lastRoundStart = null;
@@ -379,21 +380,76 @@ export function initLivePage() {
   function handleSSE(e) {
     try {
       const msg = JSON.parse(e.data);
-      if (msg.data !== undefined) liveData = msg.data;
-      else if (msg.data === null) { liveData = null; }
+      const sessions = msg.data || {};
+      updateSessionPicker(sessions);
+
+      // Auto-select: if only 1 active, pick it; else keep selected
+      const active = Object.entries(sessions).filter(([,s]) => s?.active && s?.map);
+      if (active.length === 1) selectedSession = active[0][0];
+      
+      const data = selectedSession && sessions[selectedSession]?.active 
+        ? sessions[selectedSession] 
+        : active.length > 0 ? active[0][1] : null;
+
       const key = JSON.stringify({
-        active: liveData?.active,
-        map: liveData?.mapClean,
-        mode: liveData?.mode,
-        phase: liveData?.roundPhase,
-        roundStart: liveData?.roundStartTime,
-        players: (liveData?.players||[]).map(p=>`${p.name}|${p.agent}|${p.team}`)
+        active: data?.active, map: data?.mapClean, mode: data?.mode,
+        phase: data?.roundPhase, matchId: data?.matchId,
+        roundStart: data?.roundStartTime,
+        players: (data?.players||[]).map(p=>`${p.name}|${p.agent}|${p.team}`)
       });
-      if (key !== lastDataKey) { lastDataKey = key; updateUI(liveData); }
-    } catch {}
+      if (key !== lastDataKey) { lastDataKey = key; updateUI(data); }
+    } catch(err) { console.error(err); }
   }
   evtSource.addEventListener('put', handleSSE);
   evtSource.addEventListener('patch', handleSSE);
+
+  function updateSessionPicker(sessions) {
+    let picker = document.getElementById('live-session-picker');
+    const page = document.getElementById('page-live');
+    if (!page) return;
+
+    const active = Object.entries(sessions).filter(([,s]) => s?.active && s?.map);
+    
+    // Remove picker if 0 or 1 session
+    if (active.length <= 1) {
+      if (picker) picker.remove();
+      return;
+    }
+
+    // Group by matchId
+    const byMatch = {};
+    active.forEach(([puuid, s]) => {
+      const mid = s.matchId || puuid;
+      if (!byMatch[mid]) byMatch[mid] = [];
+      byMatch[mid].push({ puuid, ...s });
+    });
+
+    if (!picker) {
+      picker = document.createElement('div');
+      picker.id = 'live-session-picker';
+      picker.style.cssText = 'display:flex;gap:8px;flex-wrap:wrap;padding:12px 0 16px';
+      page.querySelector('.live-page')?.prepend(picker);
+    }
+
+    picker.innerHTML = Object.entries(byMatch).map(([mid, players]) => {
+      const first = players[0];
+      const isSelected = players.some(p => p.puuid === selectedSession);
+      const label = players.length > 1 
+        ? `${first.mapClean} · ${players.map(p=>p.playerName?.split('#')[0]).join(' & ')}`
+        : `${first.mapClean} · ${first.playerName?.split('#')[0]}`;
+      return `<button onclick="window._selectLiveSession('${players[0].puuid}')"
+        style="font-family:Tomorrow,sans-serif;font-size:9px;letter-spacing:2px;text-transform:uppercase;
+               padding:6px 14px;border:1px solid ${isSelected ? 'var(--red)' : 'var(--border2)'};
+               color:${isSelected ? 'var(--red)' : 'var(--muted)'};background:${isSelected ? 'var(--red-low)' : 'transparent'};cursor:pointer">
+        🔴 ${label}
+      </button>`;
+    }).join('');
+  }
+
+  window._selectLiveSession = (puuid) => {
+    selectedSession = puuid;
+    handleSSE({ data: JSON.stringify({ data: JSON.parse(evtSource._lastData || '{}') }) });
+  };
 
   async function loadMapImg(mapName) {
     if (mapName === lastMapName) return;
