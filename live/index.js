@@ -601,28 +601,45 @@ async function poll() {
           // Fetch ranks once per game — sequential to avoid rate limit
           if (!ranksLoaded && puuids.length > 1) {
             ranksLoaded = true;
-            const puuidsCopy = [...puuids]; // capture full list
+            const puuidsCopy = [...puuids];
             const tokensCopy = {...authTokens};
             (async () => {
-              await new Promise(r => setTimeout(r, 2000)); // wait 2s for rate limit cooldown
+              await new Promise(r => setTimeout(r, 2000));
               let count = 0;
               for (const puuid of puuidsCopy) {
-                await new Promise(r => setTimeout(r, 500)); // 500ms between requests
-                const r = await pdGet(tokensCopy, `/mmr/v1/players/${puuid}/competitiveupdates?startIndex=0&endIndex=1&queue=competitive`);
+                await new Promise(r => setTimeout(r, 500));
+                // Last 5 games — RR history + peak
+                const r = await pdGet(tokensCopy, `/mmr/v1/players/${puuid}/competitiveupdates?startIndex=0&endIndex=5&queue=competitive`);
                 if (r?.Matches?.length > 0) {
                   const last = r.Matches[0];
-                  rankMap[puuid] = { tier: last.TierAfterUpdate, rr: last.RankedRatingAfterUpdate || 0 };
+                  const peakTier = Math.max(...r.Matches.map(m => m.TierAfterUpdate || 0));
+                  const rrHistory = r.Matches.slice(0,5).map(m => m.RankedRatingEarned || 0);
+                  rankMap[puuid] = {
+                    tier:     last.TierAfterUpdate,
+                    rr:       last.RankedRatingAfterUpdate || 0,
+                    rrEarned: last.RankedRatingEarned || 0,
+                    rrHistory,
+                    peakTier,
+                  };
                   count++;
+                }
+                // Account level
+                const xp = await pdGet(tokensCopy, `/account-xp/v1/players/${puuid}`);
+                if (xp?.Progress) {
+                  if (!rankMap[puuid]) rankMap[puuid] = { tier: 0, rr: 0 };
+                  rankMap[puuid].level = xp.Progress.Level || 0;
                 }
               }
               if (count > 0) {
                 console.log(`[${ts()}] 🏅 Rangs chargés: ${count}/${puuidsCopy.length}`);
-                const updatedPlayers = Object.values(rankMap).length > 0
-                  ? puuidsCopy.map((puuid, i) => ({...(players[i]||{}), rank: rankMap[puuid] || null}))
-                  : players;
-                await putFB(`live/sessions/${tokensCopy.puuid || 'unknown'}/players`, updatedPlayers);
+                const updatedPlayers = puuidsCopy.map((puuid, i) => ({
+                  ...(players[i] || {}),
+                  rank: rankMap[puuid] || null,
+                }));
+                const sKey = tokensCopy.puuid || 'unknown';
+                if (sKey !== 'unknown') await putFB(`live/sessions/${sKey}/players`, updatedPlayers);
               } else {
-                console.log(`[${ts()}] ⚠️  Rangs indisponibles (rate limit Riot)`);
+                console.log(`[${ts()}] ⚠️  Rangs indisponibles`);
               }
             })();
           }
