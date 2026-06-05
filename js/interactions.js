@@ -624,6 +624,38 @@ export function initLivePage() {
 
   }
 
+  function rrDisplay(rank) {
+    if (!rank?.rrEarned) return '';
+    const v = rank.rrEarned;
+    const color = v > 0 ? '#3fcf6b' : v < 0 ? '#ff4656' : '#888';
+    const sign = v > 0 ? '+' : '';
+    return `<span style="font-size:9px;font-family:Tomorrow,sans-serif;color:${color};letter-spacing:1px">${sign}${v} RR</span>`;
+  }
+
+  function smurfBadge(rank) {
+    if (!rank) return '';
+    const tier = rank.tier || 0;
+    const peak = rank.peakTier || tier;
+    const level = rank.level || 999;
+    const gap = peak - tier;
+
+    // Smurf indicators
+    // Tier names: 0-2=unranked, 3-5=iron, 6-8=bronze, 9-11=silver, 12-14=gold
+    // 15-17=plat, 18-20=diamond, 21-23=ascendant, 24-26=immortal, 27=radiant
+    const isLowRank = tier <= 14; // gold or below
+    const isHighPeak = peak >= 21; // ascendant or above
+    const isNewAccount = level < 60;
+    const bigGap = gap >= 9; // 3 full ranks gap
+
+    if (isLowRank && isHighPeak && (isNewAccount || bigGap)) {
+      return `<span style="font-size:8px;font-family:Tomorrow,sans-serif;letter-spacing:1px;color:#ff4656;border:1px solid rgba(255,70,86,.4);padding:1px 4px">SMURF</span>`;
+    }
+    if (bigGap && isHighPeak) {
+      return `<span style="font-size:8px;font-family:Tomorrow,sans-serif;letter-spacing:1px;color:#f5c842;border:1px solid rgba(245,200,66,.3);padding:1px 4px">⚠</span>`;
+    }
+    return '';
+  }
+
   const RANK_NAMES = [
     'Unranked','Unranked','Unranked',
     'Iron 1','Iron 2','Iron 3',
@@ -684,7 +716,11 @@ export function initLivePage() {
             : `${p.name || '—'} <span style="opacity:.4;font-size:9px;font-weight:400">${p.agent||''}</span>`
           }
         </div>
-        <div style="margin-top:2px">${rankDisplay(p.rank)}</div>
+        <div style="margin-top:3px;display:flex;align-items:center;gap:6px">
+          ${rankDisplay(p.rank)}
+          ${rrDisplay(p.rank)}
+          ${smurfBadge(p.rank)}
+        </div>
       </div>
       <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px;flex-shrink:0">
 
