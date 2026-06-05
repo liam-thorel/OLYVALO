@@ -11,11 +11,11 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Tomorrow:wght@400;500;600;700&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="./css/tokens.css?v=1780617745">
-  <link rel="stylesheet" href="./css/layout.css?v=1780617745">
-  <link rel="stylesheet" href="./css/components.css?v=1780617745">
-  <link rel="stylesheet" href="./css/agent-page.css?v=1780617745">
-  <link rel="stylesheet" href="./css/responsive.css?v=1780617745">
+  <link rel="stylesheet" href="./css/tokens.css?v=1780618101">
+  <link rel="stylesheet" href="./css/layout.css?v=1780618101">
+  <link rel="stylesheet" href="./css/components.css?v=1780618101">
+  <link rel="stylesheet" href="./css/agent-page.css?v=1780618101">
+  <link rel="stylesheet" href="./css/responsive.css?v=1780618101">
 </head>
 <body>
 
@@ -355,12 +355,11 @@
         <div class="live-header">
           <div class="live-map-name" id="live-map-name">—</div>
           <div class="live-phase" id="live-phase">—</div>
-          <div class="live-timer" id="live-timer">0:00</div>
         </div>
         <div class="live-body">
           <div class="live-players" id="live-players"></div>
-          <div class="live-minimap-wrap">
-            <canvas id="live-map-canvas" width="400" height="400"></canvas>
+          <div class="live-minimap-wrap" style="overflow:hidden">
+            <img id="live-map-img" style="width:100%;height:100%;object-fit:cover;opacity:.9;display:block" src="" alt="">
           </div>
         </div>
       </div>
@@ -394,9 +393,9 @@
     }
   </script>
   <!-- Firebase SDK -->
-  <script type="module" src="./js/firebase-draw.js?v=1780617745"></script>
+  <script type="module" src="./js/firebase-draw.js?v=1780618101"></script>
   <!-- Présence Firebase -->
-  <script src="./js/presence.js?v=1780617745"></script>
-  <script type="module" src="./js/main.js?v=1780617745"></script>
+  <script src="./js/presence.js?v=1780618101"></script>
+  <script type="module" src="./js/main.js?v=1780618101"></script>
 </body>
 </html>

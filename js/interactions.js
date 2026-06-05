@@ -484,11 +484,9 @@ export function initLivePage() {
       const d = await r.json();
       const m = d.data?.find(m => m.displayName?.toLowerCase() === mapName?.toLowerCase()
         || m.mapUrl?.toLowerCase().includes(mapName?.toLowerCase()));
-      if (m?.displayIcon) {
-        const img = new Image(); img.crossOrigin = 'anonymous';
-        img.onload = () => { mapImg = img; };
-        img.src = m.displayIcon;
-      }
+      const imgEl = document.getElementById('live-map-img');
+      if (m?.splash && imgEl) imgEl.src = m.splash;
+      else if (m?.displayIcon && imgEl) imgEl.src = m.displayIcon;
     } catch {}
   }
 
@@ -562,10 +560,7 @@ export function initLivePage() {
       }
     }
     // Timer — guard on roundStartTime
-    if (data.roundStartTime && data.roundStartTime !== lastRoundStart) {
-      lastRoundStart = data.roundStartTime;
-      startRoundTimer(data.roundStartTime, phase);
-    }
+    lastRoundStart = data.roundStartTime || lastRoundStart;
 
     // Players — rebuild only if player list changed
     const playersEl = document.getElementById('live-players');
@@ -588,16 +583,7 @@ export function initLivePage() {
            ${enemies.map(p => playerRow(p, myName)).join('')}`;
     }
 
-    // Minimap — only redraw if positions changed or map changed
-    const hasPositions = (data.players||[]).some(p => p.x !== 0 || p.y !== 0);
-    const minimapKey = (data.players||[]).map(p=>`${p.x},${p.y},${p.alive}`).join('|') + mapName;
-    if (hasPositions && minimapKey !== lastMinimapKey) {
-      lastMinimapKey = minimapKey;
-      drawMinimap(data.players || []);
-    } else if (!hasPositions && lastMinimapKey !== mapName) {
-      lastMinimapKey = mapName;
-      drawMinimap([]); // Draw map only, no dots
-    }
+
   }
 
   const RANK_NAMES = [
