@@ -521,6 +521,10 @@ export function initLivePage() {
       mapEl.textContent = mapName;
       loadMapImg(data.mapInternal || mapName);
     }
+    const mapLabel = document.getElementById('live-map-label');
+    const modeLabel = document.getElementById('live-mode-label');
+    if (mapLabel && mapLabel.textContent !== mapName) mapLabel.textContent = mapName;
+    if (modeLabel && modeLabel.textContent !== (data.mode||'')) modeLabel.textContent = data.mode || '';
 
     // Player tag — guard
     const header = document.getElementById('live-header');
@@ -636,7 +640,7 @@ export function initLivePage() {
     const hpColor = hpPct > 60 ? '#3fcf6b' : hpPct > 30 ? '#f9c74f' : '#ff4656';
     const isMe = myName && p.name?.includes(myName.split('#')[0]);
     const imgUrl = agentIconUrl(p.agent);
-    const kda = (p.kills !== undefined) ? `${p.kills}/${p.deaths}/${p.assists}` : '—';
+
     return `<div class="live-player-row ${p.alive===false ? 'dead' : ''} ${isMe ? 'me' : ''}">
       ${imgUrl ? `<img class="live-player-agent" src="${imgUrl}" onerror="this.style.visibility='hidden'">` : '<div class="live-player-agent" style="background:var(--surf3)"></div>'}
       <div style="flex:1;min-width:0">
@@ -649,7 +653,7 @@ export function initLivePage() {
         <div style="margin-top:2px">${rankDisplay(p.rank)}</div>
       </div>
       <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px;flex-shrink:0">
-        <span style="font-family:Tomorrow,sans-serif;font-size:10px;color:var(--muted)">${kda}</span>
+
         ${!p.incognito && p.name && p.name.includes('#') ? `<a href="https://tracker.gg/valorant/profile/riot/${encodeURIComponent(p.name)}/overview" target="_blank" style="font-family:Tomorrow,sans-serif;font-size:8px;letter-spacing:1px;color:#ff4656;text-decoration:none;padding:2px 6px;border:1px solid rgba(255,70,86,.3);text-transform:uppercase">TRACKER</a>` : ''}
       </div>
     </div>`;
