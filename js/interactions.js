@@ -408,7 +408,7 @@ export function initLivePage() {
       updateSessionPicker(sessions);
 
       const now = Date.now();
-      const active = Object.entries(sessions).filter(([,s]) => s?.active && (s?.mapClean || s?.map) && (now - (s.ts||0)) < 30000);
+      const active = Object.entries(sessions).filter(([,s]) => s?.active && (s?.mapClean || s?.map) && (now - (s.ts||0)) < 300000);
       if (active.length === 1) selectedSession = active[0][0];
       
       const liveData = selectedSession && sessions[selectedSession]?.active 
@@ -455,18 +455,20 @@ export function initLivePage() {
       page.querySelector('.live-page')?.prepend(picker);
     }
 
-    // Auto-select first session if none selected or selected is gone
+    // Only auto-select if nothing selected or current selection disappeared
     const allPuuids = active.map(([p]) => p);
     if (!selectedSession || !allPuuids.includes(selectedSession)) {
       selectedSession = allPuuids[0];
     }
+    // Snapshot selected at render time so isSelected is stable
+    const renderSelected = selectedSession;
 
     picker.innerHTML = `
       <div style="font-family:Tomorrow,sans-serif;font-size:9px;letter-spacing:2px;color:var(--dim);text-transform:uppercase;margin-bottom:8px">Games en cours</div>
       <div style="display:flex;gap:8px;flex-wrap:wrap">
       ${Object.entries(byMatch).map(([mid, players]) => {
         const first = players[0];
-        const isSelected = players.some(p => p.puuid === selectedSession);
+        const isSelected = players.some(p => p.puuid === renderSelected);
         const map = first.mapClean || first.map || '?';
         const names = players.length > 1
           ? players.map(p => p.playerName?.split('#')[0]).join(' & ')
