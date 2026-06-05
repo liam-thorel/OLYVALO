@@ -1,103 +1,71 @@
-# OLYCITY — Valorant Meta Comps
+# OLYCITY — Valorant Five Stack HQ
 
-Site de référence des compositions Valorant pour l'équipe OLYCITY (Nico, Liam, Rayhan, Mathis, Noé). Patch 12.09 · 2026.
+Site privé pour le five stack OLYCITY. Comps meta, stats live, roster et outils de session.
+
+**→ [olycity.gg](https://liam-thorel.github.io/OLYVALO)**
+
+---
 
 ## Features
 
-- 7 maps avec compositions S-Tier et A-Tier sourcées (VLR.gg, Hotspawn, Reddit, dak.gg)
-- Page agent immersive avec abilities en français, bio, compositions liées
-- Sync live des stats joueurs via API HenrikDev (rank, win rate, agents joués)
-- Recherche par agent, favoris, mode sombre/clair
-- Effets 3D (tilt, parallax, glow atmosphérique)
+**Comps & Meta**
+- 7 maps en rotation — Fracture, Haven, Breeze, Lotus, Split, Pearl, Ascent
+- 5 comps par map : S-Tier, PRO (données VLR.gg EWC 2026), A, B, FUN
+- Comps PRO basées sur EWC Americas Qualifier 2026 post-nerf 12.09
+- Agent clé ★ par comp · Badge patch ⚠ si comp outdatée
+- Lineups YouTube par agent et par map
 
-## Installation locale
+**Live 🔴**
+- Agents, noms réels et rangs des 12 joueurs en temps réel
+- Score de la game · Image de la map
+- Mode streamer géré (affiche l'agent + ANONYME)
+- Bouton Tracker.gg par joueur
+- Multi-sessions : plusieurs membres peuvent lancer une game simultanément
+- Groupement automatique si deux joueurs sont dans la même game
 
-### 1. Cloner le repo
+**Roster & Profils**
+- 5 profils joueurs avec présence Firebase (point vert en temps réel)
+- Dessin collaboratif par map (canvas Firebase, couleurs par profil)
 
-```bash
-git clone https://github.com/<ton-username>/olycity.git
-cd olycity
-```
+**Agents**
+- Fiche complète par agent · Filtres par rôle
+- Comparateur de comps · Builder de comp · Comps sauvegardées
 
-### 2. Configurer la clé API
+---
 
-```bash
-cp config.example.js config.js
-```
+## OLYCITY Live
 
-Édite `config.js` et remplace `HDEV-XXXX-XXXX-XXXX-XXXX` par ta clé HenrikDev.
-Obtiens une clé gratuite ici : https://api.henrikdev.xyz/dashboard
-
-### 3. Lancer un serveur local
-
-Les modules ES6 nécessitent un serveur HTTP (pas de `file://`).
-
-**Avec Python (recommandé, déjà installé sur la plupart des machines) :**
-```bash
-python -m http.server 8000
-```
-
-**Avec Node :**
-```bash
-npx serve
-```
-
-**Avec VS Code :** installe l'extension "Live Server" et clique droit sur `index.html` → "Open with Live Server".
-
-Puis ouvre **http://localhost:8000** dans ton navigateur.
-
-## Déploiement sur GitHub Pages
-
-1. Push le projet sur un repo GitHub (la clé est protégée par `.gitignore`)
-2. Settings → Pages → Source : `main` branch, dossier `/` (root)
-3. Le site sera live sur `https://<ton-username>.github.io/<nom-du-repo>/`
-
-⚠️ **Sur un repo public, les utilisateurs devront créer leur propre `config.js`.**
-Sinon, mets le repo en privé.
-
-## Structure du projet
+Script Node.js qui lit l'API locale Valorant et envoie les données en temps réel sur le site via Firebase.
 
 ```
-olycity/
-├── index.html              Structure HTML
-├── config.js               Clé API (gitignored)
-├── config.example.js       Template de config
-├── css/
-│   ├── tokens.css          Variables theme
-│   ├── layout.css          Topbar, hero, sections
-│   ├── components.css      Cards, buttons, badges
-│   ├── agent-page.css      Page agent immersive
-│   └── responsive.css      Media queries
-├── js/
-│   ├── main.js             Point d'entrée
-│   ├── api.js              valorant-api.com
-│   ├── henrik.js           HenrikDev sync
-│   ├── render.js           Tous les renderers HTML
-│   ├── interactions.js     Clicks, tilt, parallax
-│   └── storage.js          localStorage
-└── data/
-    ├── comps.json          7 maps + compositions
-    ├── roster.json         Roster OLYCITY
-    ├── roles.json          Mapping agents → rôles
-    └── agents-fr.json      Traductions FR
+live/
+├── index.js          Script principal
+├── INSTALLER.bat     Installation + tâche planifiée Windows (admin requis)
+├── VERIFIER.bat      Vérifier si le script tourne + voir les logs
+├── REINSTALLER.bat   Clean reinstall
+├── DESINSTALLER.bat  Tout supprimer
+└── silent.vbs        Lanceur silencieux (no window)
 ```
 
-## Mise à jour des données
+**Setup :**
+1. Clic droit → Exécuter en tant qu'administrateur sur `INSTALLER.bat`
+2. C'est tout — le script démarre automatiquement à chaque allumage Windows
 
-Pour ajouter une nouvelle composition ou modifier les notes meta, édite simplement `data/comps.json`. Le site se met à jour automatiquement au rechargement.
+Requiert Node.js 18+ · Aucun risque Vanguard (API officielle Riot)
 
-Pour ajouter un nouveau joueur, édite `data/roster.json`.
+---
 
-## Sources
+## Stack
 
-- [VLR.gg](https://vlr.gg) — Esports & meta
-- [Hotspawn](https://www.hotspawn.com/valorant/guide/valorant-best-team-comps)
-- [Reddit r/ValorantCompetitive](https://reddit.com/r/ValorantCompetitive)
-- [dak.gg](https://dak.gg/valorant)
-- [valorant-api.com](https://valorant-api.com) — Assets officiels
-- [HenrikDev API](https://docs.henrikdev.xyz) — Stats joueurs
+- Vanilla JS (ES modules) · CSS custom properties
+- Firebase Realtime Database (présence + live data + dessin)
+- Valorant API : Riot Client lockfile · PVP.net `glz-eu-1.eu.a.pvp.net` · `pd.eu.a.pvp.net`
+- GitHub Pages
 
-## Crédits
+---
 
-Site fait par et pour l'équipe **OLYCITY**.
-Non affilié à Riot Games. Valorant et tous les assets associés sont propriété de Riot Games, Inc.
+## Données
+
+- Comps : VLR.gg · EWC Americas Qualifier 2026 · VCT Stage 1 2026
+- Agents : valorant-api.com
+- Stats joueurs : HenrikDev API
