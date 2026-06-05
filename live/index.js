@@ -330,6 +330,7 @@ function connectWebSocket(port, password) {
     console.log(`[${ts()}] 🔌 WebSocket connecté`);
     // Subscribe to all events
     ws.send(JSON.stringify([5, 'OnJsonApiEvent']));
+    ws.send(JSON.stringify([5, 'OnJsonApiEvent_riot-messaging-service_v1_message']));
   });
 
   ws.on('message', raw => {
@@ -372,12 +373,31 @@ function connectWebSocket(port, password) {
         }
       }
 
-      // Kill feed from MUC messages
-      if (uri.includes('messaging-service') && payload?.Body) {
+      // Kill feed via XMPP/MUC messages
+      if (uri.includes('riot-messaging-service') || uri.includes('ares-coregame')) {
         try {
-          const body = JSON.parse(payload.Body);
-          if (body?.kills) {
-            putFB('live/lastKills', body.kills).catch(()=>{});
+          const msgBody = payload?.Body || payload?.body || '';
+          if (typeof msgBody === 'string' && msgBody.includes('kill')) {
+            const parsed = JSON.parse(msgBody);
+            if (parsed?.killFeedEvents || parsed?.kills) {
+              const kills = parsed.killFeedEvents || parsed.kills;
+              const sKey = stableSessionKey || 'unknown';
+              if (sKey !== 'unknown') putFB(`live/sessions/${sKey}/kills`, kills).catch(()=>{});
+            }
+          }
+          // Match state events (round end scores etc)
+          if (payload?.MessageType === 'V1MatchStarted' || payload?.MessageType === 'V1RoundStarted') {
+            console.log(`[${ts()}] 📡 Event: ${payload.MessageType}`);
+          }
+          if (payload?.KilledBy !== undefined || payload?.Killer !== undefined) {
+            const kill = {
+              killer: payload.Killer || payload.KillerDisplayName || '?',
+              victim: payload.Deceased || payload.VictimDisplayName || '?',
+              ts: Date.now()
+            };
+            console.log(`[${ts()}] 💀 Kill: ${kill.killer} → ${kill.victim}`);
+            const sKey = stableSessionKey || 'unknown';
+            if (sKey !== 'unknown') putFB(`live/sessions/${sKey}/lastKill`, kill).catch(()=>{});
           }
         } catch {}
       }
