@@ -569,6 +569,24 @@ export function initLivePage() {
       if (scoreEl.textContent !== s) scoreEl.textContent = s;
     }
 
+    // Kill feed
+    const lastKill = data.lastKill;
+    if (lastKill && lastKill.ts !== window._lastKillTs) {
+      window._lastKillTs = lastKill.ts;
+      let feedEl = document.getElementById('live-kill-feed');
+      if (!feedEl) {
+        feedEl = document.createElement('div');
+        feedEl.id = 'live-kill-feed';
+        feedEl.style.cssText = 'position:fixed;top:80px;right:16px;display:flex;flex-direction:column;gap:4px;z-index:100;pointer-events:none';
+        document.body.appendChild(feedEl);
+      }
+      const item = document.createElement('div');
+      item.style.cssText = 'font-family:Tomorrow,sans-serif;font-size:10px;letter-spacing:1px;background:rgba(6,8,12,.9);border:1px solid var(--border);padding:5px 10px;color:var(--text);animation:fadeInOut 3s forwards';
+      item.innerHTML = `<span style="color:var(--red)">${lastKill.killer}</span> <span style="opacity:.5">→</span> ${lastKill.victim}`;
+      feedEl.appendChild(item);
+      setTimeout(() => item.remove(), 3000);
+    }
+
     // Phase — guard
     const phaseEl = document.getElementById('live-phase');
     const phase = data.roundPhase || data.mode || '—';
