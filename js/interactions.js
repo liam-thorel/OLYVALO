@@ -455,19 +455,34 @@ export function initLivePage() {
       page.querySelector('.live-page')?.prepend(picker);
     }
 
-    picker.innerHTML = Object.entries(byMatch).map(([mid, players]) => {
-      const first = players[0];
-      const isSelected = players.some(p => p.puuid === selectedSession);
-      const label = players.length > 1 
-        ? `${first.mapClean} · ${players.map(p=>p.playerName?.split('#')[0]).join(' & ')}`
-        : `${first.mapClean} · ${first.playerName?.split('#')[0]}`;
-      return `<button onclick="window._selectLiveSession('${players[0].puuid}')"
-        style="font-family:Tomorrow,sans-serif;font-size:9px;letter-spacing:2px;text-transform:uppercase;
-               padding:6px 14px;border:1px solid ${isSelected ? 'var(--red)' : 'var(--border2)'};
-               color:${isSelected ? 'var(--red)' : 'var(--muted)'};background:${isSelected ? 'var(--red-low)' : 'transparent'};cursor:pointer">
-        🔴 ${label}
-      </button>`;
-    }).join('');
+    // Auto-select first session if none selected or selected is gone
+    const allPuuids = active.map(([p]) => p);
+    if (!selectedSession || !allPuuids.includes(selectedSession)) {
+      selectedSession = allPuuids[0];
+    }
+
+    picker.innerHTML = `
+      <div style="font-family:Tomorrow,sans-serif;font-size:9px;letter-spacing:2px;color:var(--dim);text-transform:uppercase;margin-bottom:8px">Games en cours</div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+      ${Object.entries(byMatch).map(([mid, players]) => {
+        const first = players[0];
+        const isSelected = players.some(p => p.puuid === selectedSession);
+        const map = first.mapClean || first.map || '?';
+        const names = players.length > 1
+          ? players.map(p => p.playerName?.split('#')[0]).join(' & ')
+          : first.playerName?.split('#')[0] || '?';
+        const mode = first.mode || '';
+        return `<button onclick="window._selectLiveSession('${players[0].puuid}')" style="
+          font-family:Tomorrow,sans-serif;cursor:pointer;text-align:left;
+          padding:10px 14px;border:1px solid ${isSelected ? 'var(--red)' : 'var(--border)'};
+          background:${isSelected ? 'var(--red-low)' : 'var(--surf)'};
+          transition:border-color .15s,background .15s;min-width:160px">
+          <div style="font-size:11px;font-weight:700;letter-spacing:3px;color:${isSelected ? 'var(--red)' : 'var(--text)'};margin-bottom:3px">${map.toUpperCase()}</div>
+          <div style="font-size:9px;letter-spacing:1px;color:var(--muted)">${names}</div>
+          <div style="font-size:8px;letter-spacing:1px;color:var(--dim);margin-top:2px;text-transform:uppercase">${mode}</div>
+        </button>`;
+      }).join('')}
+      </div>`;
   }
 
   window._selectLiveSession = (puuid) => {
