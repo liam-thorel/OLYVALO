@@ -194,14 +194,14 @@
         "winrate": 55.3,
         "updatedAt": "Mai 2026",
         "agents": [
-          "Jett",
+          "Neon",
           "Sova",
           "Breach",
           "Omen",
-          "Cypher"
+          "Killjoy"
         ],
         "source": "VLR.gg · Hotspawn",
-        "tip": "Omen teleport sur les angles imprévus entre les 3 sites. <strong>Cypher cam sur B</strong> peut surveiller A et C en même temps. En five stack, appelez les rotations à voix haute — Haven se gagne à la communication.",
+        "tip": "<strong>Breach stun A Long + A Short</strong> en simultané pour forcer les 3 sites. Neon speed rush C avec Omen smoke. Killjoy anchor B seule. Sova récon pour info constante sur les 3 sites. Breach est le pick five stack — coordination indispensable.",
         "agility": {
           "antiRush": 4,
           "postPlant": 3,
