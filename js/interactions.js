@@ -455,12 +455,10 @@ export function initLivePage() {
       page.querySelector('.live-page')?.prepend(picker);
     }
 
-    // Only auto-select if nothing selected or current selection disappeared
     const allPuuids = active.map(([p]) => p);
     if (!selectedSession || !allPuuids.includes(selectedSession)) {
-      selectedSession = allPuuids[0];
+      selectedSession = allPuuids[0] || null;
     }
-    // Snapshot selected at render time so isSelected is stable
     const renderSelected = selectedSession;
 
     picker.innerHTML = `
@@ -489,6 +487,7 @@ export function initLivePage() {
 
   window._selectLiveSession = (puuid) => {
     selectedSession = puuid;
+    updateSessionPicker(lastSessions); // re-render picker immediately with new selection
     const data = lastSessions[puuid] || null;
     if (data) updateUI(data);
   };
