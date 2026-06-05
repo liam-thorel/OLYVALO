@@ -419,7 +419,7 @@ export function initLivePage() {
         active: liveData?.active, map: liveData?.mapClean, mode: liveData?.mode,
         phase: liveData?.roundPhase, matchId: liveData?.matchId,
         roundStart: liveData?.roundStartTime,
-        players: (liveData?.players||[]).map(p=>`${p.name}|${p.agent}|${p.team}`)
+        players: (liveData?.players||[]).map(p=>`${p.name}|${p.agent}|${p.team}|${p.rank?.tier||0}`)
       });
       if (key !== lastDataKey) { lastDataKey = key; updateUI(liveData); }
     } catch(err) { console.error(err); }

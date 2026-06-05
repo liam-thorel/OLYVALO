@@ -100,6 +100,7 @@ function setSyncStatus(html, type = 'info') {
 window.OLYCITY = {
 
   nav(page, pushHistory = true) {
+    sessionStorage.setItem('olycity-page', page);
     // Dynamic title
     const titles = {
       home: 'OLYCITY — Accueil',
@@ -925,6 +926,8 @@ function renderAll() {
 
 // ─── BOOT ─────────────────────────────────────────
 async function boot() {
+  const savedPage = sessionStorage.getItem('olycity-page');
+  if (savedPage && savedPage !== 'home') setTimeout(() => window.OLYCITY?.nav(savedPage), 200);
   // Auto-clear localStorage if version changed
   const storedVersion = localStorage.getItem('olycity-version');
   if (storedVersion !== SITE_VERSION) {
