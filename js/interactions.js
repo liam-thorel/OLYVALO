@@ -411,19 +411,17 @@ export function initLivePage() {
       const active = Object.entries(sessions).filter(([,s]) => s?.active && s?.map && (now - (s.ts||0)) < 30000);
       if (active.length === 1) selectedSession = active[0][0];
       
-      const data = selectedSession && sessions[selectedSession]?.active 
+      const liveData = selectedSession && sessions[selectedSession]?.active 
         ? sessions[selectedSession] 
         : active.length > 0 ? active[0][1] : null;
 
-      console.log('[LIVE SSE]', e.type, 'sessions:', Object.keys(sessions).length, 'active:', active.length, 'data:', data?.active, data?.mapClean);
-
       const key = JSON.stringify({
-        active: data?.active, map: data?.mapClean, mode: data?.mode,
-        phase: data?.roundPhase, matchId: data?.matchId,
-        roundStart: data?.roundStartTime,
-        players: (data?.players||[]).map(p=>`${p.name}|${p.agent}|${p.team}`)
+        active: liveData?.active, map: liveData?.mapClean, mode: liveData?.mode,
+        phase: liveData?.roundPhase, matchId: liveData?.matchId,
+        roundStart: liveData?.roundStartTime,
+        players: (liveData?.players||[]).map(p=>`${p.name}|${p.agent}|${p.team}`)
       });
-      if (key !== lastDataKey) { lastDataKey = key; updateUI(data); }
+      if (key !== lastDataKey) { lastDataKey = key; updateUI(liveData); }
     } catch(err) { console.error(err); }
   }
   evtSource.addEventListener('put', handleSSE);
