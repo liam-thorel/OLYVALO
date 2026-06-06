@@ -462,6 +462,7 @@ async function poll() {
   let playerName = '';
   let matchData = null;
   let realMatchId = '';
+let lastPregameMap = '';
 
   // Also scan all presences for OLYCITY roster games
   const OLYCITY_ROSTER = ['Drew A Picasso', 'Wong Chi Ming', 'RayBaz', 'MrScooby', 'baby hayabusa', 'VENOM X RAMEEZ'];
@@ -579,6 +580,28 @@ async function poll() {
         matchData = await pvpGet(authTokens, `/pregame/v1/players/${authTokens.puuid}`);
 
       }
+      // Pregame detection (agent select phase)
+      if (!matchData?.MatchID) {
+        const pregame = await pvpGet(authTokens, `/pregame/v1/players/${authTokens.puuid}`);
+        if (pregame?.MatchID) {
+          const pregameMatch = await pvpGet(authTokens, `/pregame/v1/matches/${pregame.MatchID}`);
+          if (pregameMatch) {
+            const pgMap = pregameMatch.MapID?.split('/')?.pop() || '';
+            const pgMapDisplay = MAP_NAMES[pgMap] || pgMap;
+            if (pgMapDisplay !== lastPregameMap) {
+              lastPregameMap = pgMapDisplay;
+              console.log(`[${ts()}] 🗺  Agent Select — ${pgMapDisplay}`);
+            }
+            await putFB(`live/sessions/${stableSessionKey}`, {
+              active: true, ts: Date.now(),
+              map: pgMap, mapClean: pgMapDisplay, mapInternal: pgMap,
+              mode: 'agent-select', matchId: pregame.MatchID,
+              playerName, phase: 'pregame', players: [], activePlayer: {},
+            });
+          }
+        }
+      }
+
       if (matchData?.MatchID) {
         realMatchId = matchData.MatchID;
         const match = await pvpGet(authTokens, `/core-game/v1/matches/${matchData.MatchID}`);
