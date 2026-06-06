@@ -758,11 +758,19 @@ export function initLivePage() {
   }
 
   function rrDisplay(rank) {
-    if (!rank?.rrEarned) return '';
-    const v = rank.rrEarned;
+    if (!rank) return '';
+    // Use average of last 5 games if available, else last game
+    let v = null;
+    if (rank.rrHistory?.length > 0) {
+      v = Math.round(rank.rrHistory.reduce((s,r) => s+r, 0) / rank.rrHistory.length);
+    } else if (rank.rrEarned !== undefined) {
+      v = rank.rrEarned;
+    }
+    if (v === null) return '';
     const color = v > 0 ? '#3fcf6b' : v < 0 ? '#ff4656' : '#888';
     const sign = v > 0 ? '+' : '';
-    return `<span style="font-size:9px;font-family:Tomorrow,sans-serif;color:${color};letter-spacing:1px">${sign}${v} RR</span>`;
+    const label = rank.rrHistory?.length > 1 ? 'moy' : 'RR';
+    return `<span style="font-size:9px;font-family:Tomorrow,sans-serif;color:${color};letter-spacing:1px;opacity:.85">${sign}${v} <span style="opacity:.6;font-size:8px">${label}</span></span>`;
   }
 
   function smurfBadge(rank) {
