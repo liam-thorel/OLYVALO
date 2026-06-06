@@ -461,6 +461,7 @@ async function poll() {
   let found = null;
   let playerName = '';
   let matchData = null;
+  let realMatchId = '';
 
   // Also scan all presences for OLYCITY roster games
   const OLYCITY_ROSTER = ['Drew A Picasso', 'Wong Chi Ming', 'RayBaz', 'MrScooby', 'baby hayabusa', 'VENOM X RAMEEZ'];
@@ -579,6 +580,7 @@ async function poll() {
 
       }
       if (matchData?.MatchID) {
+        realMatchId = matchData.MatchID;
         const match = await pvpGet(authTokens, `/core-game/v1/matches/${matchData.MatchID}`);
 
         if (match?.Players) {
@@ -603,6 +605,11 @@ async function poll() {
             ranksLoaded = true;
             const puuidsCopy = [...puuids];
             const tokensCopy = {...authTokens};
+            const stableMapRaw = mapRaw;
+            const stableMapDisplay = mapDisplay;
+            const stableMode = queueId;
+            const stableMatchId = realMatchId;
+            const stablePlayerName = playerName;
             (async () => {
               await new Promise(r => setTimeout(r, 2000));
               let count = 0;
@@ -637,7 +644,18 @@ async function poll() {
                   rank: rankMap[puuid] || null,
                 }));
                 const sKey = tokensCopy.puuid || 'unknown';
-                if (sKey !== 'unknown') await putFB(`live/sessions/${sKey}/players`, updatedPlayers);
+                if (sKey !== 'unknown') {
+                  // Push full session to guarantee SSE detects the change
+                  await putFB(`live/sessions/${sKey}`, {
+                    active: true,
+                    ts: Date.now(),
+                    map: stableMapRaw, mapClean: stableMapDisplay, mapInternal: stableMapRaw,
+                    mode: stableMode, matchId: stableMatchId,
+                    playerName: stablePlayerName,
+                    players: updatedPlayers,
+                    activePlayer: { name: stablePlayerName },
+                  });
+                }
               } else {
                 console.log(`[${ts()}] ⚠️  Rangs indisponibles`);
               }
@@ -744,7 +762,7 @@ async function poll() {
     mapInternal: mapRaw,
     mapClean:    mapDisplay,
     mode:        queueId,
-    matchId:     matchData?.MatchID || '',
+    matchId:     realMatchId || matchData?.MatchID || '',
     playerName:  playerName,
     players,
     activePlayer,
