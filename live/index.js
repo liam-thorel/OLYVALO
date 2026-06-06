@@ -463,6 +463,7 @@ async function poll() {
   let matchData = null;
   let realMatchId = '';
 let lastPregameMap = '';
+let persistentMatchId = '';
 
   // Also scan all presences for OLYCITY roster games
   const OLYCITY_ROSTER = ['Drew A Picasso', 'Wong Chi Ming', 'RayBaz', 'MrScooby', 'baby hayabusa', 'VENOM X RAMEEZ'];
@@ -604,6 +605,7 @@ let lastPregameMap = '';
 
       if (matchData?.MatchID) {
         realMatchId = matchData.MatchID;
+        persistentMatchId = realMatchId; // persist across polls
         const match = await pvpGet(authTokens, `/core-game/v1/matches/${matchData.MatchID}`);
 
         if (match?.Players) {
@@ -785,7 +787,7 @@ let lastPregameMap = '';
     mapInternal: mapRaw,
     mapClean:    mapDisplay,
     mode:        queueId,
-    matchId:     realMatchId || matchData?.MatchID || '',
+    matchId:     persistentMatchId || realMatchId || '',
     playerName:  playerName,
     players,
     activePlayer,
