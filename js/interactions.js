@@ -572,6 +572,44 @@ export function initLivePage() {
       if (scoreEl.textContent !== s) scoreEl.textContent = s;
     }
 
+    // Pregame — show map comps during agent select
+    const isPregame = liveData?.phase === 'pregame' || liveData?.mode === 'agent-select';
+    let compsEl = document.getElementById('live-comps-panel');
+    if (isPregame && liveData?.mapClean) {
+      if (!compsEl) {
+        compsEl = document.createElement('div');
+        compsEl.id = 'live-comps-panel';
+        compsEl.style.cssText = 'margin:16px 0;display:flex;flex-direction:column;gap:8px';
+        const livePage = document.getElementById('live-content');
+        if (livePage) livePage.prepend(compsEl);
+      }
+      if (compsEl.dataset.map !== liveData.mapClean) {
+        compsEl.dataset.map = liveData.mapClean;
+        fetch('./data/comps.json').then(r=>r.json()).then(comps => {
+          const mapData = comps.find(m => m.map === liveData.mapClean);
+          if (!mapData) return;
+          const show = ['S','PRO','FUN','F'].map(tier => mapData.comps.find(c => c.tier === tier || c.tierLabel === 'FUN')).filter(Boolean).slice(0,3);
+          compsEl.innerHTML = `
+            <div style="font-family:Tomorrow,sans-serif;font-size:9px;letter-spacing:3px;color:var(--dim);text-transform:uppercase;padding:4px 0">
+              Agent Select — ${liveData.mapClean} — Comps recommandées
+            </div>
+            <div style="display:flex;gap:8px;flex-wrap:wrap">
+            ${show.map(c => `
+              <div style="flex:1;min-width:200px;background:var(--surf);border:1px solid var(--border);padding:10px 12px">
+                <div style="font-family:Tomorrow,sans-serif;font-size:8px;letter-spacing:2px;color:var(--muted);text-transform:uppercase;margin-bottom:6px">${c.tierLabel}</div>
+                <div style="display:flex;gap:6px;align-items:center">
+                  ${c.agents.map(a => `<img src="https://media.valorant-api.com/agents/${encodeURIComponent(a.toLowerCase())}/displayicon.png" style="width:28px;height:28px;object-fit:cover" title="${a}" onerror="this.style.display='none'">`).join('')}
+                </div>
+                <div style="font-family:Tomorrow,sans-serif;font-size:9px;color:var(--dim);margin-top:6px;letter-spacing:1px">${c.agents.join(' · ')}</div>
+              </div>
+            `).join('')}
+            </div>`;
+        }).catch(()=>{});
+      }
+    } else if (!isPregame && compsEl) {
+      compsEl.remove();
+    }
+
     // Kill feed
     const lastKill = data.lastKill;
     if (lastKill && lastKill.ts !== window._lastKillTs) {
