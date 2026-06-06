@@ -487,22 +487,52 @@ export function initLivePage() {
     }
     const renderSelected = selectedSession;
 
+    // Build roster lookup: riot name#tag → avatar
+    const rosterMap = {};
+    try {
+      const r = JSON.parse(localStorage.getItem('olycity-roster-cache') || 'null');
+      if (r) r.forEach(p => { rosterMap[`${p.riot?.name}#${p.riot?.tag}`.toLowerCase()] = p.avatar; });
+    } catch {}
+    // Also fetch roster if not cached
+    if (!Object.keys(rosterMap).length) {
+      fetch('./data/roster.json').then(r=>r.json()).then(roster => {
+        roster.forEach(p => { rosterMap[`${p.riot?.name}#${p.riot?.tag}`.toLowerCase()] = p.avatar; });
+        localStorage.setItem('olycity-roster-cache', JSON.stringify(roster));
+      }).catch(()=>{});
+    }
+
     picker.innerHTML = `
       <div style="font-family:Tomorrow,sans-serif;font-size:9px;letter-spacing:2px;color:var(--dim);text-transform:uppercase;margin-bottom:8px">Games en cours</div>
       <div style="display:flex;gap:8px;flex-wrap:wrap">
-      ${Object.entries(byMatch).map(([mid, players]) => {
-        const first = players[0];
-        const isSelected = players.some(p => p.puuid === renderSelected);
+      ${Object.entries(byMatch).map(([mid, sessions]) => {
+        const first = sessions[0];
+        const isSelected = sessions.some(p => p.puuid === renderSelected);
         const map = first.mapClean || first.map || '?';
-        const names = players.length > 1
-          ? players.map(p => p.playerName?.split('#')[0]).join(' & ')
-          : first.playerName?.split('#')[0] || '?';
         const mode = first.mode || '';
-        return `<button onclick="window._selectLiveSession('${players[0].puuid}')" style="
+
+        // Find roster avatars for players in this game
+        const allPlayers = sessions.flatMap(s => s.players || []);
+        const rosterAvatars = sessions.map(s => {
+          const name = s.playerName || '';
+          const key = name.toLowerCase();
+          // Try exact match or partial
+          const avatar = rosterMap[key] || Object.entries(rosterMap).find(([k]) => k.split('#')[0] === name.toLowerCase().split('#')[0])?.[1];
+          return avatar || null;
+        }).filter(Boolean);
+
+        const avatarsHtml = rosterAvatars.length
+          ? `<div style="display:flex;margin-bottom:8px">
+              ${rosterAvatars.map((url, i) => `<img src="${url}" style="width:28px;height:28px;border-radius:50%;border:2px solid ${isSelected ? 'var(--red)' : 'var(--border)'};margin-left:${i>0?'-8px':'0'};object-fit:cover;background:var(--surf3)" onerror="this.style.display='none'">`).join('')}
+            </div>`
+          : '';
+
+        const names = sessions.map(s => s.playerName?.split('#')[0]).join(' & ');
+        return `<button onclick="window._selectLiveSession('${sessions[0].puuid}')" style="
           font-family:Tomorrow,sans-serif;cursor:pointer;text-align:left;
           padding:10px 14px;border:1px solid ${isSelected ? 'var(--red)' : 'var(--border)'};
           background:${isSelected ? 'var(--red-low)' : 'var(--surf)'};
           transition:border-color .15s,background .15s;min-width:160px">
+          ${avatarsHtml}
           <div style="font-size:11px;font-weight:700;letter-spacing:3px;color:${isSelected ? 'var(--red)' : 'var(--text)'};margin-bottom:3px">${map.toUpperCase()}</div>
           <div style="font-size:9px;letter-spacing:1px;color:var(--muted)">${names}</div>
           <div style="font-size:8px;letter-spacing:1px;color:var(--dim);margin-top:2px;text-transform:uppercase">${mode}</div>
