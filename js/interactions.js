@@ -545,6 +545,45 @@ export function initLivePage() {
     if (mapLabel && mapLabel.textContent !== mapName) mapLabel.textContent = mapName;
     if (modeLabel && modeLabel.textContent !== (data.mode||'')) modeLabel.textContent = data.mode || '';
 
+    // Average rank display under map image
+    const players = data.players || [];
+    const rankedPlayers = players.filter(p => p.rank?.tier > 2);
+    if (rankedPlayers.length > 0) {
+      const avgTier = Math.round(rankedPlayers.reduce((s,p) => s + (p.rank?.tier||0), 0) / rankedPlayers.length);
+      const avgName = RANK_NAMES[avgTier] || '';
+      let avgEl = document.getElementById('live-avg-rank');
+      if (!avgEl) {
+        avgEl = document.createElement('div');
+        avgEl.id = 'live-avg-rank';
+        avgEl.style.cssText = 'position:absolute;top:12px;right:12px;display:flex;align-items:center;gap:8px;background:rgba(6,8,12,.7);padding:6px 10px;backdrop-filter:blur(4px)';
+        document.querySelector('.live-minimap-wrap')?.appendChild(avgEl);
+      }
+      if (avgEl.dataset.tier !== String(avgTier)) {
+        avgEl.dataset.tier = avgTier;
+        avgEl.innerHTML = `
+          <img id="live-rank-icon" src="" style="width:28px;height:28px;object-fit:contain" alt="">
+          <div>
+            <div style="font-family:Tomorrow,sans-serif;font-size:8px;letter-spacing:1px;color:rgba(255,255,255,.5);text-transform:uppercase">Rang moyen</div>
+            <div style="font-family:Tomorrow,sans-serif;font-size:11px;font-weight:700;letter-spacing:2px;color:#fff">${avgName.toUpperCase()}</div>
+          </div>`;
+        // Load rank icon from valorant-api
+        if (!window._rankIconsCache) window._rankIconsCache = {};
+        if (window._rankIconsCache[avgTier]) {
+          avgEl.querySelector('#live-rank-icon').src = window._rankIconsCache[avgTier];
+        } else {
+          fetch('https://valorant-api.com/v1/competitivetiers').then(r=>r.json()).then(d => {
+            const latest = d.data?.[d.data.length-1];
+            const tier = latest?.tiers?.find(t => t.tier === avgTier);
+            if (tier?.largeIcon) {
+              window._rankIconsCache[avgTier] = tier.largeIcon;
+              const img = document.getElementById('live-rank-icon');
+              if (img) img.src = tier.largeIcon;
+            }
+          }).catch(()=>{});
+        }
+      }
+    }
+
     // Player tag — guard
     const header = document.getElementById('live-header');
     if (header && data.playerName) {
