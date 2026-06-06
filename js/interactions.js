@@ -419,9 +419,12 @@ export function initLivePage() {
         active: liveData?.active, map: liveData?.mapClean, mode: liveData?.mode,
         phase: liveData?.roundPhase, matchId: liveData?.matchId,
         roundStart: liveData?.roundStartTime,
-        players: (liveData?.players||[]).map(p=>`${p.name}|${p.agent}|${p.team}|${p.rank?.tier||0}`)
+        players: (liveData?.players||[]).map(p=>`${p.name}|${p.agent}|${p.team}|${p.rank?.tier||0}|${p.rank?.rrEarned||''}`)
       });
-      if (key !== lastDataKey) { lastDataKey = key; updateUI(liveData); }
+      if (key !== lastDataKey) {
+        lastDataKey = key;
+        updateUI(liveData);
+      }
     } catch(err) { console.error(err); }
   }
   evtSource.addEventListener('put', handleSSE);
