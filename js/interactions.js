@@ -361,6 +361,7 @@ export function initLivePage() {
   const evtSource = new EventSource(`${FIREBASE_URL}/live/sessions.json`);
   let selectedSession = null;
   let lastSessions = {};
+  let byMatchCache = {};
   // Round timer using roundStartTime from Firebase
   let timerInterval = null;
   let lastRoundStart = null;
@@ -416,7 +417,7 @@ export function initLivePage() {
         ? sessions[selectedSession]
         : active.length > 0 ? active[0][1] : null;
       if (liveData && !liveData.players?.length) {
-        const grouped = Object.values(byMatch).find(g => g.some(s => s.puuid === selectedSession));
+        const grouped = Object.values(byMatchCache).find(g => g.some(s => s.puuid === selectedSession));
         const sibling = grouped?.find(s => s.puuid !== selectedSession && s.players?.length > 0);
         if (sibling) liveData = {...liveData, players: sibling.players, score: sibling.score || liveData.score};
       }
@@ -450,7 +451,8 @@ export function initLivePage() {
     }
 
     // Group by matchId first, then by player overlap as fallback
-    const byMatch = {};
+    byMatchCache = {};
+    const byMatch = byMatchCache;
 
     active.forEach(([puuid, s]) => {
       const mid = s.matchId || null;
