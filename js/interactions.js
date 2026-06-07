@@ -412,17 +412,12 @@ export function initLivePage() {
       if (active.length === 1) selectedSession = active[0][0];
       
       // For grouped games, pick the session with the most players
-      // Find best session: selected one, but use players from whichever has the most
-      const bestSession = active.reduce((best, [,s]) => 
-        (!best || (s.players?.length||0) > (best.players?.length||0)) ? s : best, null);
-      
+      // Simple: use selected session, fallback to first active
       let liveData = null;
       if (selectedSession && sessions[selectedSession]?.active) {
-        const sel = sessions[selectedSession];
-        // Merge: use selected session's metadata but best session's players if ours is empty
-        liveData = (sel.players?.length > 0) ? sel : {...sel, players: bestSession?.players||[], score: bestSession?.score||sel.score};
-      } else {
-        liveData = bestSession;
+        liveData = sessions[selectedSession];
+      } else if (active.length > 0) {
+        liveData = active[0][1];
       }
       currentLiveData = liveData;
 
