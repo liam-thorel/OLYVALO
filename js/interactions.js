@@ -430,7 +430,15 @@ export function initLivePage() {
         // Re-resolve liveData with sibling players if needed
         if (liveData && !liveData.players?.length) {
           const sibling = active.find(([p,s]) => p !== selectedSession && s.players?.length > 0)?.[1];
-          if (sibling) liveData = {...liveData, players: sibling.players, score: sibling.score || liveData.score};
+          if (sibling) liveData = {
+            ...sibling,
+            ...liveData,
+            players: sibling.players,
+            score: sibling.score || liveData.score,
+            mapClean: liveData.mapClean || sibling.mapClean,
+            mapInternal: liveData.mapInternal || sibling.mapInternal,
+            mode: liveData.mode || sibling.mode,
+          };
         }
         updateUI(liveData);
       }
