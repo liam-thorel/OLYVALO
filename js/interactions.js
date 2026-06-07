@@ -774,23 +774,17 @@ export function initLivePage() {
 
   function rrDisplay(rank) {
     if (!rank) return '';
-    if (rank.rrHistory?.length >= 2) {
-      const wins   = rank.rrHistory.filter(r => r > 0);
-      const losses = rank.rrHistory.filter(r => r < 0);
-      const avgW   = wins.length   ? Math.round(wins.reduce((s,r)=>s+r,0)/wins.length)   : null;
-      const avgL   = losses.length ? Math.round(losses.reduce((s,r)=>s+r,0)/losses.length) : null;
-      const parts  = [];
-      if (avgW !== null) parts.push(`<span style="color:#3fcf6b">+${avgW}</span>`);
-      if (avgL !== null) parts.push(`<span style="color:#ff4656">${avgL}</span>`);
-      if (!parts.length) return '';
-      return `<span style="font-size:9px;font-family:Tomorrow,sans-serif;letter-spacing:1px;opacity:.85">${parts.join('<span style="opacity:.3"> / </span>')}</span>`;
-    }
-    if (rank.rrEarned !== undefined && rank.rrEarned !== 0) {
-      const v = rank.rrEarned;
-      const color = v > 0 ? '#3fcf6b' : '#ff4656';
-      return `<span style="font-size:9px;font-family:Tomorrow,sans-serif;color:${color};letter-spacing:1px">${v>0?'+':''}${v} RR</span>`;
-    }
-    return '';
+    const history = rank.rrHistory || (rank.rrEarned !== undefined ? [rank.rrEarned] : []);
+    if (!history.length) return '';
+    const wins   = history.filter(r => r > 0);
+    const losses = history.filter(r => r < 0);
+    const avgW   = wins.length   ? Math.round(wins.reduce((s,r)=>s+r,0)/wins.length)   : null;
+    const avgL   = losses.length ? Math.round(losses.reduce((s,r)=>s+r,0)/losses.length) : null;
+    const parts  = [];
+    if (avgW !== null) parts.push(`<span style="color:#3fcf6b">+${avgW}</span>`);
+    if (avgL !== null) parts.push(`<span style="color:#ff4656">${avgL}</span>`);
+    if (!parts.length) return '';
+    return `<span style="font-size:9px;font-family:Tomorrow,sans-serif;letter-spacing:1px;opacity:.85">${parts.join('<span style="opacity:.3"> / </span>')}</span>`;
   }
 
   function smurfBadge(rank) {
