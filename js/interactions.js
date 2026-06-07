@@ -416,20 +416,22 @@ export function initLivePage() {
       let liveData = selectedSession && sessions[selectedSession]?.active
         ? sessions[selectedSession]
         : active.length > 0 ? active[0][1] : null;
-      if (liveData && !liveData.players?.length) {
-        const grouped = Object.values(byMatchCache).find(g => g.some(s => s.puuid === selectedSession));
-        const sibling = grouped?.find(s => s.puuid !== selectedSession && s.players?.length > 0);
-        if (sibling) liveData = {...liveData, players: sibling.players, score: sibling.score || liveData.score};
-      }
 
+
+      // Key tracks ALL active sessions so any update triggers re-render
       const key = JSON.stringify({
         active: liveData?.active, map: liveData?.mapClean, mode: liveData?.mode,
         phase: liveData?.roundPhase, matchId: liveData?.matchId,
-        roundStart: liveData?.roundStartTime,
-        players: (liveData?.players||[]).map(p=>`${p.name}|${p.agent}|${p.team}|${p.rank?.tier||0}|${p.rank?.rrEarned||''}`)
+        allPlayers: active.map(([,s]) => (s.players||[]).length).join(','),
+        players: (liveData?.players||[]).map(p=>`${p.name}|${p.agent}|${p.team}|${p.rank?.tier||0}`)
       });
       if (key !== lastDataKey) {
         lastDataKey = key;
+        // Re-resolve liveData with sibling players if needed
+        if (liveData && !liveData.players?.length) {
+          const sibling = active.find(([p,s]) => p !== selectedSession && s.players?.length > 0)?.[1];
+          if (sibling) liveData = {...liveData, players: sibling.players, score: sibling.score || liveData.score};
+        }
         updateUI(liveData);
       }
     } catch(err) { console.error(err); }
