@@ -443,36 +443,37 @@ export function initLivePage() {
       return;
     }
 
-    // Group by matchId, with fallback: group sessions that share players
+    // Group by matchId first, then by player overlap as fallback
     const byMatch = {};
-    const assigned = new Set();
 
     active.forEach(([puuid, s]) => {
-      if (assigned.has(puuid)) return;
-      const mid = s.matchId || puuid;
-      if (!byMatch[mid]) byMatch[mid] = [];
-      byMatch[mid].push({ puuid, ...s });
-      assigned.add(puuid);
-    });
-
-    // Merge sessions with overlapping players (same game, different matchId)
-    const sessionPuuids = (s) => new Set((s.players||[]).map(p => p.puuid).filter(Boolean));
-    const keys = Object.keys(byMatch);
-    for (let i = 0; i < keys.length; i++) {
-      for (let j = i + 1; j < keys.length; j++) {
-        const groupA = byMatch[keys[i]];
-        const groupB = byMatch[keys[j]];
-        if (!groupA || !groupB) continue;
-        // Check if any session in A shares players with any session in B
-        const puuidsA = new Set(groupA.flatMap(s => [...sessionPuuids(s)]));
-        const puuidsB = groupB.flatMap(s => [...sessionPuuids(s)]);
-        const overlap = puuidsB.some(p => puuidsA.has(p));
-        if (overlap || (groupA[0].matchId && groupA[0].matchId === groupB[0].matchId)) {
-          byMatch[keys[i]] = [...groupA, ...groupB];
-          delete byMatch[keys[j]];
+      const mid = s.matchId || null;
+      // Try to merge into existing group with same matchId
+      if (mid) {
+        const existing = Object.entries(byMatch).find(([k, g]) => 
+          g[0].matchId === mid
+        );
+        if (existing) {
+          existing[1].push({ puuid, ...s });
+          return;
         }
       }
-    }
+      // Try player overlap
+      const playerPuuids = new Set((s.players||[]).map(p=>p.puuid).filter(Boolean));
+      if (playerPuuids.size > 0) {
+        const existing = Object.entries(byMatch).find(([k, g]) => {
+          const gPuuids = g.flatMap(gs => (gs.players||[]).map(p=>p.puuid));
+          return gPuuids.some(p => playerPuuids.has(p));
+        });
+        if (existing) {
+          existing[1].push({ puuid, ...s });
+          return;
+        }
+      }
+      // New group
+      const key = mid || puuid;
+      byMatch[key] = [{ puuid, ...s }];
+    });
 
     if (!picker) {
       picker = document.createElement('div');
