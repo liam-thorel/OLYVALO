@@ -411,9 +411,15 @@ export function initLivePage() {
       const active = Object.entries(sessions).filter(([,s]) => s?.active && (s?.mapClean || s?.map) && (now - (s.ts||0)) < 300000);
       if (active.length === 1) selectedSession = active[0][0];
       
-      const liveData = selectedSession && sessions[selectedSession]?.active 
-        ? sessions[selectedSession] 
+      // Pick session: use selected, but borrow players from grouped sibling if empty
+      let liveData = selectedSession && sessions[selectedSession]?.active
+        ? sessions[selectedSession]
         : active.length > 0 ? active[0][1] : null;
+      if (liveData && !liveData.players?.length) {
+        const grouped = Object.values(byMatch).find(g => g.some(s => s.puuid === selectedSession));
+        const sibling = grouped?.find(s => s.puuid !== selectedSession && s.players?.length > 0);
+        if (sibling) liveData = {...liveData, players: sibling.players, score: sibling.score || liveData.score};
+      }
 
       const key = JSON.stringify({
         active: liveData?.active, map: liveData?.mapClean, mode: liveData?.mode,
