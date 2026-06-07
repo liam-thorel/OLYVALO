@@ -706,9 +706,8 @@ let persistentMatchId = '';
           players = match.Players.map(p => {
             // Match agent UUID (first 8 chars)
             const charId = (p.CharacterID || '').toLowerCase();
-            const agentName = AGENT_UUIDS[charId] ||
-              Object.entries(AGENT_UUIDS).find(([k]) => charId.startsWith(k.slice(0,8)))?.[1] ||
-              charId.slice(0,8) || '?';
+            // Exact UUID match only — no partial matching (causes wrong agents)
+            const agentName = AGENT_UUIDS[charId] || '?';
             return {
               name:    nameMap[p.Subject] || p.Subject?.slice(0,8) || '?',
               puuid:   p.Subject || '',

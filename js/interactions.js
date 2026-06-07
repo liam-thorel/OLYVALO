@@ -843,9 +843,11 @@ export function initLivePage() {
     }).catch(()=>{});
 
   function agentIconUrl(agentName) {
-    if (!agentName) return '';
+    if (!agentName || agentName === '?') return '';
     if (agentIconCache[agentName]) return agentIconCache[agentName];
-    const uuid = agentUuidMap[agentName];
+    // Exact match first, then case-insensitive fallback
+    const uuid = agentUuidMap[agentName] ||
+      Object.entries(agentUuidMap).find(([k]) => k.toLowerCase() === agentName.toLowerCase())?.[1];
     if (uuid) {
       const url = `https://media.valorant-api.com/agents/${uuid}/displayicon.png`;
       agentIconCache[agentName] = url;
