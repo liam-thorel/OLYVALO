@@ -604,8 +604,11 @@ export function initLivePage() {
     if (content?.style.display !== 'block') content.style.display  = 'block';
     if (dot?.style.display     !== 'block') dot.style.display      = 'block';
 
-    // Map — guard
-    const mapName = data.mapClean || data.mapDisplay || data.map?.split('/')?.pop() || '—';
+    // Map — guard + internal name conversion
+    const _MAP_DISPLAY = {'Jam':'Split','Bonsai':'Ascent','Triad':'Haven','Duality':'Bind','Foxtrot':'Breeze','Canyon':'Fracture','Pitt':'Pearl','Lotus':'Lotus','Juliett':'Sunset','Infinity':'Icebox','Poveglia':'Abyss','Whisper':'Abyss'};
+    const _rawMap = data.mapClean || data.mapDisplay || data.map?.split('/')?.pop() || '';
+    const mapName = _MAP_DISPLAY[_rawMap] || _rawMap || '—';
+    console.log('[MAP]', _rawMap, '→', mapName, 'players:', data.players?.length);
     const mapEl = document.getElementById('live-map-name');
     if (mapEl && mapEl.textContent !== mapName) {
       mapEl.textContent = mapName;
