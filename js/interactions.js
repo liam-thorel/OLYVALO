@@ -412,19 +412,19 @@ export function initLivePage() {
       if (active.length === 1) selectedSession = active[0][0];
       
       // For grouped games, pick the session with the most players
+      // Find best session: selected one, but use players from whichever has the most
+      const bestSession = active.reduce((best, [,s]) => 
+        (!best || (s.players?.length||0) > (best.players?.length||0)) ? s : best, null);
+      
       let liveData = null;
       if (selectedSession && sessions[selectedSession]?.active) {
         const sel = sessions[selectedSession];
-        // If selected session has no players, check grouped sessions for one that does
-        if ((!sel.players || sel.players.length === 0) && active.length > 1) {
-          const withPlayers = active.find(([,s]) => s.players?.length > 0);
-          liveData = withPlayers ? {...sel, players: withPlayers[1].players, score: withPlayers[1].score || sel.score} : sel;
-        } else {
-          liveData = sel;
-        }
-      } else if (active.length > 0) {
-        liveData = active.reduce((best, [,s]) => (!best || (s.players?.length||0) > (best.players?.length||0)) ? s : best, null);
+        // Merge: use selected session's metadata but best session's players if ours is empty
+        liveData = (sel.players?.length > 0) ? sel : {...sel, players: bestSession?.players||[], score: bestSession?.score||sel.score};
+      } else {
+        liveData = bestSession;
       }
+      currentLiveData = liveData;
 
       const key = JSON.stringify({
         active: liveData?.active, map: liveData?.mapClean, mode: liveData?.mode,
@@ -848,6 +848,8 @@ export function initLivePage() {
   fetch('https://valorant-api.com/v1/agents?isPlayableCharacter=true')
     .then(r=>r.json()).then(d=>{
       d.data?.forEach(a => { agentUuidMap[a.displayName] = a.uuid; });
+      // Re-render players now that we have icons
+      if (currentLiveData) { lastDataKey = ''; updateUI(currentLiveData); }
     }).catch(()=>{});
 
   function agentIconUrl(agentName) {
