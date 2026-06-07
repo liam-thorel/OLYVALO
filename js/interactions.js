@@ -411,9 +411,20 @@ export function initLivePage() {
       const active = Object.entries(sessions).filter(([,s]) => s?.active && (s?.mapClean || s?.map) && (now - (s.ts||0)) < 300000);
       if (active.length === 1) selectedSession = active[0][0];
       
-      const liveData = selectedSession && sessions[selectedSession]?.active 
-        ? sessions[selectedSession] 
-        : active.length > 0 ? active[0][1] : null;
+      // For grouped games, pick the session with the most players
+      let liveData = null;
+      if (selectedSession && sessions[selectedSession]?.active) {
+        const sel = sessions[selectedSession];
+        // If selected session has no players, check grouped sessions for one that does
+        if ((!sel.players || sel.players.length === 0) && active.length > 1) {
+          const withPlayers = active.find(([,s]) => s.players?.length > 0);
+          liveData = withPlayers ? {...sel, players: withPlayers[1].players, score: withPlayers[1].score || sel.score} : sel;
+        } else {
+          liveData = sel;
+        }
+      } else if (active.length > 0) {
+        liveData = active.reduce((best, [,s]) => (!best || (s.players?.length||0) > (best.players?.length||0)) ? s : best, null);
+      }
 
       const key = JSON.stringify({
         active: liveData?.active, map: liveData?.mapClean, mode: liveData?.mode,
@@ -690,7 +701,11 @@ export function initLivePage() {
               <div style="flex:1;min-width:200px;background:var(--surf);border:1px solid var(--border);padding:10px 12px">
                 <div style="font-family:Tomorrow,sans-serif;font-size:8px;letter-spacing:2px;color:var(--muted);text-transform:uppercase;margin-bottom:6px">${c.tierLabel}</div>
                 <div style="display:flex;gap:6px;align-items:center">
-                  ${c.agents.map(a => `<img src="https://media.valorant-api.com/agents/${encodeURIComponent(a.toLowerCase())}/displayicon.png" style="width:28px;height:28px;object-fit:cover" title="${a}" onerror="this.style.display='none'">`).join('')}
+                  ${c.agents.map(a => {
+                    const uuid = agentUuidMap[a];
+                    const src = uuid ? `https://media.valorant-api.com/agents/${uuid}/displayicon.png` : '';
+                    return src ? `<img src="${src}" style="width:28px;height:28px;object-fit:cover" title="${a}" onerror="this.style.display='none'">` : `<span style="font-size:9px;opacity:.5">${a[0]}</span>`;
+                  }).join('')}
                 </div>
                 <div style="font-family:Tomorrow,sans-serif;font-size:9px;color:var(--dim);margin-top:6px;letter-spacing:1px">${c.agents.join(' · ')}</div>
               </div>
