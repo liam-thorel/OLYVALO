@@ -645,19 +645,11 @@ let persistentMatchId = '';
                 if (r?.Matches?.length > 0) {
                   const last = r.Matches[0];
                   const peakTier = Math.max(...r.Matches.map(m => m.TierAfterUpdate || 0));
-                  // Calculate RR delta: after - before (RankedRatingEarned may not exist)
-                  const rrDelta = m => {
-                    if (m.RankedRatingEarned !== undefined && m.RankedRatingEarned !== 0) return m.RankedRatingEarned;
-                    if (m.RankedRatingAfterUpdate !== undefined && m.RankedRatingBeforeUpdate !== undefined)
-                      return m.RankedRatingAfterUpdate - m.RankedRatingBeforeUpdate;
-                    return null;
-                  };
-                  const rrHistory = r.Matches.slice(0,5).map(rrDelta).filter(v => v !== null);
-                  const lastRR = rrDelta(last);
+                  const rrHistory = r.Matches.slice(0,5).map(m => m.RankedRatingEarned || 0);
                   rankMap[puuid] = {
                     tier:     last.TierAfterUpdate,
                     rr:       last.RankedRatingAfterUpdate || 0,
-                    rrEarned: lastRR,
+                    rrEarned: last.RankedRatingEarned || 0,
                     rrHistory,
                     peakTier,
                   };

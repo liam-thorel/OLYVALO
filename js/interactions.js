@@ -411,15 +411,9 @@ export function initLivePage() {
       const active = Object.entries(sessions).filter(([,s]) => s?.active && (s?.mapClean || s?.map) && (now - (s.ts||0)) < 300000);
       if (active.length === 1) selectedSession = active[0][0];
       
-      // For grouped games, pick the session with the most players
-      // Simple: use selected session, fallback to first active
-      let liveData = null;
-      if (selectedSession && sessions[selectedSession]?.active) {
-        liveData = sessions[selectedSession];
-      } else if (active.length > 0) {
-        liveData = active[0][1];
-      }
-      currentLiveData = liveData;
+      const liveData = selectedSession && sessions[selectedSession]?.active 
+        ? sessions[selectedSession] 
+        : active.length > 0 ? active[0][1] : null;
 
       const key = JSON.stringify({
         active: liveData?.active, map: liveData?.mapClean, mode: liveData?.mode,
@@ -696,11 +690,7 @@ export function initLivePage() {
               <div style="flex:1;min-width:200px;background:var(--surf);border:1px solid var(--border);padding:10px 12px">
                 <div style="font-family:Tomorrow,sans-serif;font-size:8px;letter-spacing:2px;color:var(--muted);text-transform:uppercase;margin-bottom:6px">${c.tierLabel}</div>
                 <div style="display:flex;gap:6px;align-items:center">
-                  ${c.agents.map(a => {
-                    const uuid = agentUuidMap[a];
-                    const src = uuid ? `https://media.valorant-api.com/agents/${uuid}/displayicon.png` : '';
-                    return src ? `<img src="${src}" style="width:28px;height:28px;object-fit:cover" title="${a}" onerror="this.style.display='none'">` : `<span style="font-size:9px;opacity:.5">${a[0]}</span>`;
-                  }).join('')}
+                  ${c.agents.map(a => `<img src="https://media.valorant-api.com/agents/${encodeURIComponent(a.toLowerCase())}/displayicon.png" style="width:28px;height:28px;object-fit:cover" title="${a}" onerror="this.style.display='none'">`).join('')}
                 </div>
                 <div style="font-family:Tomorrow,sans-serif;font-size:9px;color:var(--dim);margin-top:6px;letter-spacing:1px">${c.agents.join(' · ')}</div>
               </div>
@@ -769,17 +759,23 @@ export function initLivePage() {
 
   function rrDisplay(rank) {
     if (!rank) return '';
-    const history = rank.rrHistory || (rank.rrEarned !== undefined ? [rank.rrEarned] : []);
-    if (!history.length) return '';
-    const wins   = history.filter(r => r > 0);
-    const losses = history.filter(r => r < 0);
-    const avgW   = wins.length   ? Math.round(wins.reduce((s,r)=>s+r,0)/wins.length)   : null;
-    const avgL   = losses.length ? Math.round(losses.reduce((s,r)=>s+r,0)/losses.length) : null;
-    const parts  = [];
-    if (avgW !== null) parts.push(`<span style="color:#3fcf6b">+${avgW}</span>`);
-    if (avgL !== null) parts.push(`<span style="color:#ff4656">${avgL}</span>`);
-    if (!parts.length) return '';
-    return `<span style="font-size:9px;font-family:Tomorrow,sans-serif;letter-spacing:1px;opacity:.85">${parts.join('<span style="opacity:.3"> / </span>')}</span>`;
+    if (rank.rrHistory?.length >= 2) {
+      const wins   = rank.rrHistory.filter(r => r > 0);
+      const losses = rank.rrHistory.filter(r => r < 0);
+      const avgW   = wins.length   ? Math.round(wins.reduce((s,r)=>s+r,0)/wins.length)   : null;
+      const avgL   = losses.length ? Math.round(losses.reduce((s,r)=>s+r,0)/losses.length) : null;
+      const parts  = [];
+      if (avgW !== null) parts.push(`<span style="color:#3fcf6b">+${avgW}</span>`);
+      if (avgL !== null) parts.push(`<span style="color:#ff4656">${avgL}</span>`);
+      if (!parts.length) return '';
+      return `<span style="font-size:9px;font-family:Tomorrow,sans-serif;letter-spacing:1px;opacity:.85">${parts.join('<span style="opacity:.3"> / </span>')}</span>`;
+    }
+    if (rank.rrEarned !== undefined && rank.rrEarned !== 0) {
+      const v = rank.rrEarned;
+      const color = v > 0 ? '#3fcf6b' : '#ff4656';
+      return `<span style="font-size:9px;font-family:Tomorrow,sans-serif;color:${color};letter-spacing:1px">${v>0?'+':''}${v} RR</span>`;
+    }
+    return '';
   }
 
   function smurfBadge(rank) {
@@ -837,8 +833,6 @@ export function initLivePage() {
   fetch('https://valorant-api.com/v1/agents?isPlayableCharacter=true')
     .then(r=>r.json()).then(d=>{
       d.data?.forEach(a => { agentUuidMap[a.displayName] = a.uuid; });
-      // Re-render players now that we have icons
-      if (currentLiveData) { lastDataKey = ''; updateUI(currentLiveData); }
     }).catch(()=>{});
 
   function agentIconUrl(agentName) {
