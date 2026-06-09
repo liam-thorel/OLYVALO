@@ -705,25 +705,7 @@ window.OLYCITY = {
     window.OLYCITY._showProfilePicker(); // refresh picker with new player
   },
 
-  toggleAudio() {
-    const audio = document.getElementById('site-audio');
-    const btn = document.getElementById('audio-toggle');
-    if (!audio) { console.error('audio element not found'); return; }
-    if (audio.paused) {
-      audio.volume = (document.getElementById('audio-vol')?.value || 30) / 100;
-      audio.play().then(() => {
-        if (btn) btn.innerHTML = '⏸';
-      }).catch(() => {});
-    } else {
-      audio.pause();
-      if (btn) btn.innerHTML = '▶';
-    }
-  },
 
-  setVolume(val) {
-    const audio = document.getElementById('site-audio');
-    if (audio) audio.volume = val / 100;
-  },
 
   _showProfilePicker() {
     // Toujours rebuild pour avoir les données Firebase fraîches

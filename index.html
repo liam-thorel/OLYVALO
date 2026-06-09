@@ -113,33 +113,6 @@
   <!-- MAP ARROWS — must be before any transform/filter elements -->
 
 
-  <!-- AUDIO PLAYER -->
-  <audio id="site-audio" src="./assets/audio/theme.mp3" loop preload="none"></audio>
-  <div id="audio-player" style="
-    position:fixed; bottom:20px; right:20px; z-index:8000;
-    display:flex; align-items:center; gap:10px;
-    background:rgba(10,12,16,.92); border:1px solid rgba(255,70,86,.3);
-    padding:8px 14px; backdrop-filter:blur(12px);
-    font-family:'Tomorrow',sans-serif;
-  ">
-    <button id="audio-toggle" onclick="window.OLYCITY.toggleAudio()" style="
-      background:none; border:none; cursor:pointer; color:#ff4656;
-      font-size:16px; width:24px; display:flex; align-items:center; justify-content:center;
-      padding:0; transition:opacity .15s;
-    ">▶</button>
-    <div style="display:flex;flex-direction:column;gap:2px;min-width:100px">
-      <div style="font-size:8px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(255,255,255,.9);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:140px">Ran To Atlanta</div>
-      <div style="font-size:7px;letter-spacing:1px;text-transform:uppercase;color:rgba(255,255,255,.35)">Drake · Future</div>
-    </div>
-    <input id="audio-vol" type="range" min="0" max="100" value="30"
-      oninput="window.OLYCITY.setVolume(this.value)"
-      style="width:60px;accent-color:#ff4656;cursor:pointer">
-    <button onclick="document.getElementById('audio-player').style.display='none'" style="
-      background:none; border:none; cursor:pointer; color:rgba(255,255,255,.3);
-      font-size:12px; padding:0; line-height:1;
-    ">✕</button>
-  </div>
-
   <!-- Background layers -->
   <div class="bg-layer bg-grid"></div>
   <div class="bg-layer">
@@ -347,7 +320,7 @@
         <div style="font-family:Tomorrow,sans-serif;font-size:14px;font-weight:700;letter-spacing:4px;text-transform:uppercase;color:var(--text);margin-bottom:8px">Aucune game en cours</div>
         <div style="font-size:12px;color:var(--dim);letter-spacing:1px;margin-bottom:24px">Lance le script OLYCITY Live sur ton PC, puis entre dans une partie</div>
         <a href="https://github.com/liam-thorel/OLYVALO/raw/main/live/olycity-live.zip" download class="btn-red-outline" style="font-family:Tomorrow,sans-serif;font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;padding:10px 20px;border:1px solid var(--red);color:var(--red);text-decoration:none">
-          ↓ OLYCITY Live v4.1
+          ↓ OLYCITY Live v4.2
         </a>
       </div>
       <div class="live-content" id="live-content" style="display:none">
