@@ -733,11 +733,11 @@ export function initLivePage() {
       // Default
     };
     const getScore = (p) => META_SCORES[p.agent] || 6;
-    const allies = (data.players||[]).filter(p => p.team === 'ORDER');
-    const enemies = (data.players||[]).filter(p => p.team === 'CHAOS');
-    if (allies.length >= 5 && enemies.length >= 5) {
-      const allyScore   = allies.reduce((s,p)=>s+getScore(p),0) / allies.length;
-      const enemyScore  = enemies.reduce((s,p)=>s+getScore(p),0) / enemies.length;
+    const allyTeam = (data.players||[]).filter(p => p.team === 'ORDER');
+    const enemyTeam = (data.players||[]).filter(p => p.team === 'CHAOS');
+    if (allyTeam.length >= 5 && enemyTeam.length >= 5) {
+      const allyScore   = allyTeam.reduce((s,p)=>s+getScore(p),0) / allyTeam.length;
+      const enemyScore  = enemyTeam.reduce((s,p)=>s+getScore(p),0) / enemyTeam.length;
       const winPct      = Math.round((allyScore / (allyScore + enemyScore)) * 100);
       const color       = winPct >= 55 ? '#3fcf6b' : winPct <= 45 ? '#ff4656' : '#f5c842';
       let winEl = document.getElementById('live-winpct');
