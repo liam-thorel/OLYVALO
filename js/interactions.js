@@ -722,6 +722,45 @@ export function initLivePage() {
       compsEl.remove();
     }
 
+    // Win % based on agent meta scores (client-side only, no Firebase)
+    const META_SCORES = {
+      // S-tier
+      'Jett':9,'Neon':8,'Raze':8,'Viper':9,'Omen':8,'Astra':8,'Killjoy':9,'Cypher':8,
+      'Sova':9,'Breach':8,'Fade':8,'Gekko':8,'Chamber':7,'Skye':8,'Clove':8,
+      // A-tier
+      'Reyna':7,'Iso':7,'Sage':7,'Brimstone':7,'Harbor':7,'KAY/O':7,'Tejo':8,
+      'Deadlock':7,'Vyse':7,'Veto':8,'Phoenix':6,'Yoru':7,'Waylay':7,'Miks':7,
+      // Default
+    };
+    const getScore = (p) => META_SCORES[p.agent] || 6;
+    const allies = (data.players||[]).filter(p => p.team === 'ORDER');
+    const enemies = (data.players||[]).filter(p => p.team === 'CHAOS');
+    if (allies.length >= 5 && enemies.length >= 5) {
+      const allyScore   = allies.reduce((s,p)=>s+getScore(p),0) / allies.length;
+      const enemyScore  = enemies.reduce((s,p)=>s+getScore(p),0) / enemies.length;
+      const winPct      = Math.round((allyScore / (allyScore + enemyScore)) * 100);
+      const color       = winPct >= 55 ? '#3fcf6b' : winPct <= 45 ? '#ff4656' : '#f5c842';
+      let winEl = document.getElementById('live-winpct');
+      if (!winEl) {
+        winEl = document.createElement('div');
+        winEl.id = 'live-winpct';
+        winEl.style.cssText = 'display:flex;align-items:center;gap:8px;padding:8px 0 4px';
+        const playersEl = document.getElementById('live-players');
+        if (playersEl) playersEl.before(winEl);
+      }
+      const bar = Math.round(winPct * 1.4); // 0→140px
+      winEl.innerHTML = `
+        <div style="font-family:Tomorrow,sans-serif;font-size:8px;letter-spacing:2px;color:var(--dim);text-transform:uppercase;flex-shrink:0">Compo</div>
+        <div style="flex:1;height:3px;background:var(--border);position:relative">
+          <div style="position:absolute;left:0;top:0;height:100%;width:${winPct}%;background:${color};transition:width .5s"></div>
+          <div style="position:absolute;left:50%;top:-4px;height:11px;width:1px;background:var(--border2)"></div>
+        </div>
+        <div style="font-family:Tomorrow,sans-serif;font-size:10px;font-weight:700;color:${color};flex-shrink:0">${winPct}%</div>`;
+    } else {
+      const winEl = document.getElementById('live-winpct');
+      if (winEl) winEl.remove();
+    }
+
     // Kill feed
     const lastKill = data.lastKill;
     if (lastKill && lastKill.ts !== window._lastKillTs) {
