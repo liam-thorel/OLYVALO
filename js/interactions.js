@@ -744,9 +744,9 @@ export function initLivePage() {
       if (!winEl) {
         winEl = document.createElement('div');
         winEl.id = 'live-winpct';
-        winEl.style.cssText = 'display:flex;align-items:center;gap:8px;padding:8px 0 4px';
-        const playersEl = document.getElementById('live-players');
-        if (playersEl) playersEl.before(winEl);
+        winEl.style.cssText = 'display:flex;align-items:center;gap:6px;padding:6px 2px 0;margin-top:4px';
+        const minimapWrap = document.querySelector('.live-minimap-wrap');
+        if (minimapWrap) minimapWrap.after(winEl);
       }
       const bar = Math.round(winPct * 1.4); // 0→140px
       winEl.innerHTML = `
