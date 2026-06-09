@@ -855,10 +855,11 @@ export function initLivePage() {
       d.data?.forEach(a => { agentUuidMap[a.displayName] = a.uuid; });
     }).catch(()=>{});
 
-  function agentIconUrl(agentName) {
+  function agentIconUrl(agentName, agentId) {
+    // Use UUID directly if available (most reliable)
+    if (agentId) return `https://media.valorant-api.com/agents/${agentId}/displayicon.png`;
     if (!agentName || agentName === '?') return '';
     if (agentIconCache[agentName]) return agentIconCache[agentName];
-    // Exact match first, then case-insensitive fallback
     const uuid = agentUuidMap[agentName] ||
       Object.entries(agentUuidMap).find(([k]) => k.toLowerCase() === agentName.toLowerCase())?.[1];
     if (uuid) {
@@ -873,7 +874,7 @@ export function initLivePage() {
     const hpPct = (p.maxHp && p.hp !== undefined) ? Math.round((p.hp/p.maxHp)*100) : 100;
     const hpColor = hpPct > 60 ? '#3fcf6b' : hpPct > 30 ? '#f9c74f' : '#ff4656';
     const isMe = myName && p.name?.includes(myName.split('#')[0]);
-    const imgUrl = agentIconUrl(p.agent);
+    const imgUrl = agentIconUrl(p.agent, p.agentId);
 
     return `<div class="live-player-row ${p.alive===false ? 'dead' : ''} ${isMe ? 'me' : ''}">
       ${imgUrl ? `<img class="live-player-agent" src="${imgUrl}" onerror="this.style.visibility='hidden'">` : '<div class="live-player-agent" style="background:var(--surf3)"></div>'}

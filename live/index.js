@@ -698,6 +698,7 @@ let persistentMatchId = '';
               name:    nameMap[p.Subject] || p.Subject?.slice(0,8) || '?',
               puuid:   p.Subject || '',
               agent:   agentName,
+              agentId: charId,
               team:    p.TeamID === 'Blue' ? 'ORDER' : 'CHAOS',
               alive:   true, hp: 100, maxHp: 150,
               kills:   0, deaths: 0, assists: 0,
