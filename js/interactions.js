@@ -894,6 +894,26 @@ export function initLivePage() {
       d.data?.forEach(a => { agentUuidMap[a.displayName] = a.uuid; });
     }).catch(()=>{});
 
+  // Correction des agents mal détectés par les vieux scripts
+  // Mapping prefix UUID → vrai nom (source: valorant-api.com + rapports utilisateur)
+  const AGENT_ID_FIXES = {
+    'b444168c': 'Tejo',
+    '92eeef5d': 'Veto',
+    'a3bfb853': 'Clove',
+    '1dbf2edd': 'Breach',
+    'f94c3b30': 'Reyna',
+    'efba5359': 'Vyse',
+    'cc8b64c8': 'Deadlock',
+    '0e38b510': 'Iso',
+  };
+  function fixAgentName(p) {
+    if (p.agentId) {
+      const prefix = p.agentId.slice(0, 8).toLowerCase();
+      if (AGENT_ID_FIXES[prefix]) return AGENT_ID_FIXES[prefix];
+    }
+    return p.agent;
+  }
+
   function agentIconUrl(agentName, agentId) {
     // Use UUID directly if available (most reliable)
     if (agentId) return `https://media.valorant-api.com/agents/${agentId}/displayicon.png`;
@@ -913,15 +933,16 @@ export function initLivePage() {
     const hpPct = (p.maxHp && p.hp !== undefined) ? Math.round((p.hp/p.maxHp)*100) : 100;
     const hpColor = hpPct > 60 ? '#3fcf6b' : hpPct > 30 ? '#f9c74f' : '#ff4656';
     const isMe = myName && p.name?.includes(myName.split('#')[0]);
-    const imgUrl = agentIconUrl(p.agent, p.agentId);
+    const fixedAgent = fixAgentName(p);
+    const imgUrl = agentIconUrl(fixedAgent, p.agentId);
 
     return `<div class="live-player-row ${p.alive===false ? 'dead' : ''} ${isMe ? 'me' : ''}">
       ${imgUrl ? `<img class="live-player-agent" src="${imgUrl}" onerror="this.style.visibility='hidden'">` : '<div class="live-player-agent" style="background:var(--surf3)"></div>'}
       <div style="flex:1;min-width:0">
         <div class="live-player-name" style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">
           ${p.incognito
-            ? `<span style="opacity:.5;font-style:italic">${p.agent||'?'}</span> <span style="font-size:8px;letter-spacing:1px;color:#888;border:1px solid #333;padding:1px 4px">ANONYME</span>`
-            : `${p.name || '—'} <span style="opacity:.4;font-size:9px;font-weight:400">${p.agent||''}</span>`
+            ? `<span style="opacity:.5;font-style:italic">${fixedAgent||'?'}</span> <span style="font-size:8px;letter-spacing:1px;color:#888;border:1px solid #333;padding:1px 4px">ANONYME</span>`
+            : `${p.name || '—'} <span style="opacity:.4;font-size:9px;font-weight:400">${fixedAgent||''}</span>`
           }
         </div>
         <div style="margin-top:3px;display:flex;align-items:center;gap:6px">
