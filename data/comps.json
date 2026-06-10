@@ -48,7 +48,7 @@
         "tierLabel": "PRO",
         "winrate": 0,
         "updatedAt": "Mai 2026",
-        "patch": "12.10",
+        "patch": "12.11",
         "agents": [
           "Neon",
           "Fade",
@@ -141,7 +141,7 @@
           "split": 5
         },
         "vods": [],
-        "patch": "12.08",
+        "patch": "12.11",
         "key": "Raze"
       }
     ],
@@ -222,7 +222,7 @@
         "tierLabel": "PRO",
         "winrate": 0,
         "updatedAt": "Mai 2026",
-        "patch": "12.10",
+        "patch": "12.11",
         "agents": [
           "Neon",
           "Sova",
@@ -267,7 +267,7 @@
           "split": 5
         },
         "vods": [],
-        "patch": "12.08",
+        "patch": "12.11",
         "key": "Sova"
       },
       {
@@ -292,7 +292,7 @@
           "split": 5
         },
         "vods": [],
-        "patch": "12.08",
+        "patch": "12.11",
         "key": "Sova"
       },
       {
@@ -317,7 +317,7 @@
           "split": 5
         },
         "vods": [],
-        "patch": "12.08",
+        "patch": "12.11",
         "key": "Omen"
       }
     ],
@@ -398,7 +398,7 @@
         "tierLabel": "PRO",
         "winrate": 0,
         "updatedAt": "Mai 2026",
-        "patch": "12.10",
+        "patch": "12.11",
         "agents": [
           "Neon",
           "Sova",
@@ -571,7 +571,7 @@
         "tierLabel": "PRO",
         "winrate": 0,
         "updatedAt": "Mai 2026",
-        "patch": "12.10",
+        "patch": "12.11",
         "agents": [
           "Neon",
           "Omen",
@@ -744,7 +744,7 @@
         "tierLabel": "PRO",
         "winrate": 0,
         "updatedAt": "Mai 2026",
-        "patch": "12.10",
+        "patch": "12.11",
         "agents": [
           "Neon",
           "Viper",
@@ -837,7 +837,7 @@
           "split": 2
         },
         "vods": [],
-        "patch": "12.08",
+        "patch": "12.11",
         "key": "Breach"
       }
     ],
@@ -910,7 +910,7 @@
             "url": "https://dak.gg/valorant/agents?map=Pearl"
           }
         ],
-        "patch": "12.08",
+        "patch": "12.11",
         "key": "Fade"
       },
       {
@@ -919,7 +919,7 @@
         "tierLabel": "PRO",
         "winrate": 0,
         "updatedAt": "Mai 2026",
-        "patch": "12.10",
+        "patch": "12.11",
         "agents": [
           "Neon",
           "Astra",
@@ -1097,7 +1097,7 @@
         "tierLabel": "PRO",
         "winrate": 0,
         "updatedAt": "Mai 2026",
-        "patch": "12.10",
+        "patch": "12.11",
         "agents": [
           "Jett",
           "Sova",
