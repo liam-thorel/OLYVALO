@@ -422,6 +422,7 @@ export function initLivePage() {
       const key = JSON.stringify({
         active: liveData?.active, map: liveData?.mapClean, mode: liveData?.mode,
         phase: liveData?.roundPhase, matchId: liveData?.matchId,
+        activeCount: active.length,
         allPlayers: active.map(([,s]) => (s.players||[]).length).join(','),
         players: (liveData?.players||[]).map(p=>`${p.name}|${p.agent}|${p.team}|${p.rank?.tier||0}`)
       });
@@ -445,6 +446,11 @@ export function initLivePage() {
   }
   evtSource.addEventListener('put', handleSSE);
   evtSource.addEventListener('patch', handleSSE);
+
+  // Periodic staleness check — re-evaluate even without new SSE events
+  const staleChecker = setInterval(() => {
+    try { handleSSE({ type: 'tick', data: JSON.stringify({ path: '/', data: lastSessions }) }); } catch {}
+  }, 10000);
 
   function updateSessionPicker(sessions) {
     let picker = document.getElementById('live-session-picker');
