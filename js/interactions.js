@@ -409,7 +409,7 @@ export function initLivePage() {
       updateSessionPicker(sessions);
 
       const now = Date.now();
-      const active = Object.entries(sessions).filter(([,s]) => s?.active && (s?.mapClean || s?.map) && (now - (s.ts||0)) < 300000);
+      const active = Object.entries(sessions).filter(([,s]) => s?.active && (s?.mapClean || s?.map) && (now - (s.ts||0)) < 30000);
       if (active.length === 1) selectedSession = active[0][0];
       
       // Pick session: use selected, but borrow players from grouped sibling if empty
@@ -451,7 +451,8 @@ export function initLivePage() {
     const page = document.getElementById('page-live');
     if (!page) return;
 
-    const active = Object.entries(sessions).filter(([,s]) => s?.active && (s?.mapClean || s?.map));
+    const _now = Date.now();
+    const active = Object.entries(sessions).filter(([,s]) => s?.active && (s?.mapClean || s?.map) && (_now - (s.ts||0)) < 30000);
     
     // Remove picker if 0 or 1 session
     if (active.length <= 1) {
