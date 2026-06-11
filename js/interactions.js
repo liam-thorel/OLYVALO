@@ -622,7 +622,7 @@ export function initLivePage() {
     if (dot?.style.display     !== 'block') dot.style.display      = 'block';
 
     // Map — guard + internal name conversion
-    const _MAP_DISPLAY = {'Jam':'Split','Bonsai':'Ascent','Triad':'Haven','Duality':'Bind','Foxtrot':'Breeze','Canyon':'Fracture','Pitt':'Pearl','Lotus':'Lotus','Juliett':'Sunset','Infinity':'Icebox','Poveglia':'Abyss','Whisper':'Abyss'};
+    const _MAP_DISPLAY = {'Ascent':'Ascent','Bonsai':'Split','Duality':'Bind','Triad':'Haven','Port':'Icebox','Foxtrot':'Breeze','Canyon':'Fracture','Pitt':'Pearl','Jam':'Lotus','Juliett':'Sunset','Infinity':'Abyss','Rook':'Corrode','HURM_Alley':'District','HURM_Yard':'Piazza','HURM_Bowl':'Kasbah','HURM_Helix':'Drift','HURM_HighTide':'Glitch'};
     const _rawMap = data.mapClean || data.mapDisplay || data.map?.split('/')?.pop() || '';
     const mapName = _MAP_DISPLAY[_rawMap] || _rawMap || '—';
     const mapEl = document.getElementById('live-map-name');

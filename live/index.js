@@ -81,10 +81,12 @@ const LOCKFILE_PATHS = [
 ];
 
 const MAP_NAMES = {
-  'Jam':'Split','Bonsai':'Ascent','Triad':'Haven','Duality':'Bind',
-  'Foxtrot':'Breeze','Canyon':'Fracture','Pitt':'Pearl','Lotus':'Lotus',
-  'Range':'Range','Juliett':'Sunset','Infinity':'Icebox','Poveglia':'Abyss',
-  'Whisper':'Abyss',
+  'Ascent':'Ascent','Bonsai':'Split','Duality':'Bind','Triad':'Haven',
+  'Port':'Icebox','Foxtrot':'Breeze','Canyon':'Fracture','Pitt':'Pearl',
+  'Jam':'Lotus','Juliett':'Sunset','Infinity':'Abyss','Rook':'Corrode',
+  'Range':'Range','Poveglia':'Range',
+  'HURM_Alley':'District','HURM_Yard':'Piazza','HURM_Bowl':'Kasbah',
+  'HURM_Helix':'Drift','HURM_HighTide':'Glitch',
 };
 
 function ts() { return new Date().toLocaleTimeString('fr-FR'); }
