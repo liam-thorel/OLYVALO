@@ -362,6 +362,9 @@ export function initLivePage() {
   let selectedSession = null;
   let lastSessions = {};
   let byMatchCache = {};
+  const _rosterCache = {};
+  let _rosterFetched = false;
+  let _mapsCache = null;
   // Round timer using roundStartTime from Firebase
   let timerInterval = null;
   let lastRoundStart = null;
@@ -521,17 +524,13 @@ export function initLivePage() {
     }
     const renderSelected = selectedSession;
 
-    // Build roster lookup: riot name#tag → avatar
-    const rosterMap = {};
-    try {
-      const r = JSON.parse(localStorage.getItem('olycity-roster-cache') || 'null');
-      if (r) r.forEach(p => { rosterMap[`${p.riot?.name}#${p.riot?.tag}`.toLowerCase()] = p.avatar; });
-    } catch {}
-    // Also fetch roster if not cached
-    if (!Object.keys(rosterMap).length) {
+    // Roster lookup — fetched once per page load (module cache)
+    const rosterMap = _rosterCache;
+    if (!_rosterFetched) {
+      _rosterFetched = true;
       fetch('./data/roster.json').then(r=>r.json()).then(roster => {
-        roster.forEach(p => { rosterMap[`${p.riot?.name}#${p.riot?.tag}`.toLowerCase()] = p.avatar; });
-        localStorage.setItem('olycity-roster-cache', JSON.stringify(roster));
+        roster.forEach(p => { _rosterCache[`${p.riot?.name}#${p.riot?.tag}`.toLowerCase()] = p.avatar; });
+        updateSessionPicker(lastSessions); // re-render with avatars
       }).catch(()=>{});
     }
 
@@ -586,14 +585,16 @@ export function initLivePage() {
     if (mapName === lastMapName) return;
     lastMapName = mapName;
     try {
-      const r = await fetch('https://valorant-api.com/v1/maps');
-      const d = await r.json();
-      const m = d.data?.find(m => m.displayName?.toLowerCase() === mapName?.toLowerCase()
+      if (!_mapsCache) {
+        const r = await fetch('https://valorant-api.com/v1/maps');
+        _mapsCache = (await r.json()).data || [];
+      }
+      const m = _mapsCache.find(m => m.displayName?.toLowerCase() === mapName?.toLowerCase()
         || m.mapUrl?.toLowerCase().includes(mapName?.toLowerCase()));
       const imgEl = document.getElementById('live-map-img');
       if (m?.splash && imgEl) imgEl.src = m.splash;
       else if (m?.displayIcon && imgEl) imgEl.src = m.displayIcon;
-    } catch {}
+    } catch { _mapsCache = null; }
   }
 
   function updateUI(data) {
