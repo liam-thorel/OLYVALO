@@ -1012,3 +1012,105 @@ export function initLivePage() {
 
   return () => evtSource.close();
 }
+
+export async function initHistoryPage() {
+  const FIREBASE_URL = 'https://realtime-database-5bb9f-default-rtdb.europe-west1.firebasedatabase.app';
+  const el = document.getElementById('history-content');
+  if (!el) return;
+  el.innerHTML = '<div style="font-family:Tomorrow,sans-serif;font-size:10px;letter-spacing:2px;color:var(--dim);padding:24px 0">Chargement…</div>';
+
+  let games = [];
+  try {
+    const r = await fetch(`${FIREBASE_URL}/live/history.json`);
+    const data = await r.json();
+    if (data) games = Object.values(data).filter(g => g && g.map);
+  } catch {}
+
+  if (!games.length) {
+    el.innerHTML = '<div style="font-family:Tomorrow,sans-serif;font-size:11px;letter-spacing:2px;color:var(--muted);padding:32px 0;text-align:center">Aucune game enregistrée pour l\'instant.<br><span style="font-size:9px;color:var(--dim)">Les games se sauvegardent automatiquement à la fin de chaque partie (script v4.3+).</span></div>';
+    return;
+  }
+
+  games.sort((a,b) => (b.ts||0) - (a.ts||0));
+
+  // ===== Stats =====
+  const comp = games.filter(g => (g.mode||'').toLowerCase().includes('comp'));
+  const withResult = comp.filter(g => g.result === 'win' || g.result === 'loss');
+  const wins = withResult.filter(g => g.result === 'win').length;
+  const wr = withResult.length ? Math.round(wins / withResult.length * 100) : null;
+
+  // Per-map winrate
+  const byMap = {};
+  withResult.forEach(g => {
+    if (!byMap[g.map]) byMap[g.map] = { w:0, n:0 };
+    byMap[g.map].n++;
+    if (g.result === 'win') byMap[g.map].w++;
+  });
+  const mapStats = Object.entries(byMap).map(([m,s]) => ({map:m, wr:Math.round(s.w/s.n*100), n:s.n}))
+    .sort((a,b) => b.n - a.n);
+
+  // Top agents (self player rows only — players whose name matches g.player)
+  const agentCount = {};
+  games.forEach(g => {
+    const self = (g.players||[]).find(p => p.name === g.player);
+    if (self?.agent && self.agent !== '?') agentCount[self.agent] = (agentCount[self.agent]||0)+1;
+  });
+  const topAgents = Object.entries(agentCount).sort((a,b)=>b[1]-a[1]).slice(0,5);
+
+  const wrColor = v => v >= 55 ? '#3fcf6b' : v <= 45 ? '#ff4656' : '#f5c842';
+  const relTime = ts => {
+    const d = Date.now() - ts;
+    if (d < 3600000) return Math.round(d/60000) + ' min';
+    if (d < 86400000) return Math.round(d/3600000) + ' h';
+    return Math.round(d/86400000) + ' j';
+  };
+
+  el.innerHTML = `
+    <div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:24px">
+      <div style="background:var(--surf);border:1px solid var(--border);padding:14px 18px;min-width:120px">
+        <div style="font-family:Tomorrow,sans-serif;font-size:8px;letter-spacing:2px;color:var(--dim);text-transform:uppercase">Games</div>
+        <div style="font-family:Tomorrow,sans-serif;font-size:22px;font-weight:700;color:var(--text)">${games.length}</div>
+      </div>
+      ${wr !== null ? `
+      <div style="background:var(--surf);border:1px solid var(--border);padding:14px 18px;min-width:120px">
+        <div style="font-family:Tomorrow,sans-serif;font-size:8px;letter-spacing:2px;color:var(--dim);text-transform:uppercase">Winrate compét</div>
+        <div style="font-family:Tomorrow,sans-serif;font-size:22px;font-weight:700;color:${wrColor(wr)}">${wr}%</div>
+      </div>` : ''}
+      ${topAgents.length ? `
+      <div style="background:var(--surf);border:1px solid var(--border);padding:14px 18px;flex:1;min-width:180px">
+        <div style="font-family:Tomorrow,sans-serif;font-size:8px;letter-spacing:2px;color:var(--dim);text-transform:uppercase;margin-bottom:6px">Agents joués</div>
+        <div style="font-family:Tomorrow,sans-serif;font-size:10px;letter-spacing:1px;color:var(--muted)">${topAgents.map(([a,n])=>`${a} <span style="opacity:.4">×${n}</span>`).join(' · ')}</div>
+      </div>` : ''}
+    </div>
+
+    ${mapStats.length ? `
+    <div style="font-family:Tomorrow,sans-serif;font-size:9px;letter-spacing:3px;color:var(--dim);text-transform:uppercase;margin-bottom:10px">Winrate par map</div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:28px">
+      ${mapStats.map(s => `
+        <div style="background:var(--surf);border:1px solid var(--border);padding:10px 14px">
+          <div style="font-family:Tomorrow,sans-serif;font-size:10px;font-weight:700;letter-spacing:2px;color:var(--text)">${s.map.toUpperCase()}</div>
+          <div style="font-family:Tomorrow,sans-serif;font-size:14px;font-weight:700;color:${wrColor(s.wr)}">${s.wr}% <span style="font-size:8px;color:var(--dim);font-weight:400">${s.n} games</span></div>
+        </div>`).join('')}
+    </div>` : ''}
+
+    <div style="font-family:Tomorrow,sans-serif;font-size:9px;letter-spacing:3px;color:var(--dim);text-transform:uppercase;margin-bottom:10px">Dernières games</div>
+    <div style="display:flex;flex-direction:column;gap:6px">
+      ${games.slice(0,30).map(g => {
+        const r = g.result;
+        const rColor = r==='win' ? '#3fcf6b' : r==='loss' ? '#ff4656' : 'var(--dim)';
+        const rLabel = r==='win' ? 'W' : r==='loss' ? 'L' : '—';
+        const score = g.score ? `${g.score.blue}–${g.score.red}` : '';
+        return `
+        <div style="display:flex;align-items:center;gap:14px;background:var(--surf);border:1px solid var(--border);padding:10px 14px">
+          <div style="font-family:Tomorrow,sans-serif;font-size:14px;font-weight:700;color:${rColor};width:18px;text-align:center">${rLabel}</div>
+          <div style="flex:1;min-width:0">
+            <span style="font-family:Tomorrow,sans-serif;font-size:11px;font-weight:700;letter-spacing:2px;color:var(--text)">${(g.map||'?').toUpperCase()}</span>
+            <span style="font-family:Tomorrow,sans-serif;font-size:8px;letter-spacing:1px;color:var(--dim);text-transform:uppercase;margin-left:8px">${g.mode||''}</span>
+          </div>
+          ${score ? `<div style="font-family:Tomorrow,sans-serif;font-size:11px;font-weight:700;color:var(--muted)">${score}</div>` : ''}
+          <div style="font-family:Tomorrow,sans-serif;font-size:9px;color:var(--muted);max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${(g.player||'').split('#')[0]}</div>
+          <div style="font-family:Tomorrow,sans-serif;font-size:8px;color:var(--dim);flex-shrink:0">${g.ts ? relTime(g.ts) : ''}</div>
+        </div>`;
+      }).join('')}
+    </div>`;
+}

@@ -8,7 +8,7 @@ import { valorantApi } from './api.js';
 const SITE_VERSION = '1780619461'; // Auto-updated on push
 import { syncPlayer as henrikSyncPlayer, syncAllPlayers as henrikSyncAll, persistPlayerStats } from './henrik.js';
 import { rosterHTML, guestCardHTML, mapSectionHTML, stierHTML, agentPageHTML, miniRosterHTML, agentsFiltersHTML, agentsGridHTML, compCompareHTML, compBuilderHTML, savedCompsHTML } from './render.js';
-import { initTheme, initTilt, initParallax, initSearch, initKeyboard, updateFavCount, initHeroParticles, initWheelLogos, initLivePage } from './interactions.js';
+import { initTheme, initTilt, initParallax, initSearch, initKeyboard, updateFavCount, initHeroParticles, initWheelLogos, initLivePage, initHistoryPage } from './interactions.js';
 import { storage } from './storage.js';
 
 // ─── STATE ─────────────────────────────────────────
@@ -108,6 +108,7 @@ window.OLYCITY = {
       roster: 'OLYCITY — Roster',
       agents: 'OLYCITY — Agents',
       builder: 'OLYCITY — Comp Builder',
+      history: 'OLYCITY — Historique',
     };
     document.title = titles[page] || 'OLYCITY — Valorant Meta Comps';
     // Close agent page if open
@@ -132,6 +133,9 @@ window.OLYCITY = {
       if (!window._liveCleanup) {
         window._liveCleanup = initLivePage();
       }
+    }
+    if (page === 'history') {
+      initHistoryPage();
     }
     const navBtn = document.querySelector(`.page-nav-btn[data-page="${page}"]`);
     if (navBtn) navBtn.classList.add('active');

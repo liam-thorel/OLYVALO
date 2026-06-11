@@ -297,6 +297,7 @@ let authTokens = null;
 let wsConnected = false;
 let lastPlayerCount = -1;
 let lastScore = '';
+let lastGameInfo = null; // snapshot for history push
 let ranksLoaded = false;
 let rankMap = {};
 let stableSessionKey = null;
@@ -515,6 +516,29 @@ let persistentMatchId = '';
       console.log(`[${ts()}] 🏠 Fin de game`);
       const sKey = stableSessionKey || 'unknown';
       if (sKey !== 'unknown') await putFB(`live/sessions/${sKey}`, { active:false, ts:Date.now(), playerName });
+
+      // Push game to history (deduped by matchId)
+      if (lastGameInfo && lastGameInfo.matchId) {
+        let result = 'unknown';
+        try {
+          const sc = JSON.parse(lastScore || '{}');
+          if (sc.blue !== undefined && lastGameInfo.selfTeam) {
+            const mine   = lastGameInfo.selfTeam === 'ORDER' ? sc.blue : sc.red;
+            const theirs = lastGameInfo.selfTeam === 'ORDER' ? sc.red  : sc.blue;
+            if (mine > theirs) result = 'win';
+            else if (mine < theirs) result = 'loss';
+            else result = 'draw';
+            lastGameInfo.score = sc;
+          }
+        } catch {}
+        lastGameInfo.result = result;
+        lastGameInfo.endTs = Date.now();
+        const histKey = lastGameInfo.matchId.replace(/[.#$\[\]\/]/g, '-');
+        await putFB(`live/history/${histKey}`, lastGameInfo);
+        console.log(`[${ts()}] 📜 Game enregistrée — ${lastGameInfo.map} (${result})`);
+        lastGameInfo = null;
+        lastScore = '';
+      }
     }
     return;
   }
@@ -788,6 +812,20 @@ let persistentMatchId = '';
     players,
     activePlayer,
   });
+
+  // Snapshot for history (pushed at game end)
+  if (players.length > 0) {
+    const selfP = players.find(p => p.puuid === (authTokens?.puuid || stableSessionKey));
+    lastGameInfo = {
+      ts: Date.now(),
+      map: mapDisplay,
+      mode: queueId,
+      matchId: persistentMatchId || realMatchId || '',
+      player: playerName,
+      selfTeam: selfP?.team || null, // ORDER=Blue, CHAOS=Red
+      players: players.map(p => ({ name: p.name, agent: p.agent, team: p.team, incognito: !!p.incognito })),
+    };
+  }
 
   if (!inGame || players.length !== lastPlayerCount) {
     lastPlayerCount = players.length;

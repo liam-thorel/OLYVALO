@@ -154,6 +154,9 @@
           <span class="page-nav-icon">🔴</span> Live
           <span id="live-dot" style="display:none;position:absolute;top:4px;right:4px;width:7px;height:7px;border-radius:50%;background:#ff4656;box-shadow:0 0 6px #ff4656"></span>
         </button>
+        <button class="page-nav-btn" data-page="history" onclick="window.OLYCITY?.nav('history')">
+          📜 Historique
+        </button>
         <button class="page-nav-btn" data-page="builder" onclick="window.OLYCITY?.nav('builder')">
           <span class="page-nav-icon">⊕</span> Builder
         </button>
@@ -313,6 +316,13 @@
   </div>
 
   <!-- ═══════════ PAGE LIVE ═══════════ -->
+  <div id="page-history" class="spa-page">
+    <div class="container" style="padding-top:24px">
+      <h2 style="font-family:Tomorrow,sans-serif;font-size:16px;letter-spacing:4px;text-transform:uppercase;color:var(--text);margin-bottom:20px">📜 Historique des games</h2>
+      <div id="history-content"></div>
+    </div>
+  </div>
+
   <div id="page-live" class="spa-page">
     <div class="live-page" id="live-page">
       <div class="live-waiting" id="live-waiting">
