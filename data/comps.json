@@ -271,20 +271,20 @@
         "key": "Sova"
       },
       {
-        "label": "Mid vers A/C Split",
+        "label": "Contrôle utilitaire",
         "tier": "B",
         "tierLabel": "B-TIER",
         "winrate": 51.5,
         "updatedAt": "Mai 2026",
         "agents": [
-          "Neon",
-          "Phoenix",
-          "Sova",
-          "Omen",
-          "Killjoy"
+          "Jett",
+          "Fade",
+          "Breach",
+          "Astra",
+          "Cypher"
         ],
         "source": "Esports Insider · S26 Act 1 Meta",
-        "tip": "<strong>Neon rush A</strong> pendant que Phoenix prend C avec Sova recon. Omen flexible mid pour couper les rotations entre les 3 sites. Killjoy anchor B seule — Haven se gagne en créant deux menaces simultanées. <em style=\"color:#f5c842;font-size:11px\">⚠ Neon nerfée 12.09 — mobilité réduite, moins agressive</em>",
+        "tip": "Fade récon les 3 sites en alternance, Breach ouvre les executes avec stun + flash. Astra peut smoke 2 sites à la fois pour les fakes — idéal pour le mid vers A/C split. Jett entry sur l'info de Fade, Cypher anchor B et flank watch. Comp plus lente mais très solide en défense.",
         "agility": {
           "antiRush": 3,
           "postPlant": 2,
@@ -293,7 +293,7 @@
         },
         "vods": [],
         "patch": "12.11",
-        "key": "Sova"
+        "key": "Fade"
       },
       {
         "label": "Fun — Triple Site Rush",
