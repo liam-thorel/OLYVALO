@@ -424,10 +424,10 @@ export function initLivePage() {
       const active = Object.entries(sessions).filter(([,s]) => s?.active && (s?.mapClean || s?.map) && (now - (s._rxAt || now)) < 30000);
       if (active.length === 1) selectedSession = active[0][0];
       
-      // Pick session: use selected, but borrow players from grouped sibling if empty
-      let liveData = selectedSession && sessions[selectedSession]?.active
-        ? sessions[selectedSession]
-        : active.length > 0 ? active[0][1] : null;
+      // Pick session — ONLY from the staleness-filtered active list
+      const activeMap = Object.fromEntries(active);
+      if (selectedSession && !activeMap[selectedSession]) selectedSession = active[0]?.[0] || null;
+      let liveData = selectedSession ? activeMap[selectedSession] : (active[0]?.[1] || null);
 
 
       // Key tracks ALL active sessions so any update triggers re-render
