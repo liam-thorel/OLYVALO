@@ -385,9 +385,19 @@ export function initLivePage() {
       const path = msg.path || '/';
       const data = msg.data;
 
+      const isTick = e.type === 'tick';
       if (path === '/') {
-        // Full replace
-        lastSessions = (data && typeof data === 'object') ? data : {};
+        // Full replace — keep client receive timestamps
+        const incoming = (data && typeof data === 'object') ? data : {};
+        if (!isTick) {
+          const rx = Date.now();
+          Object.keys(incoming).forEach(k => {
+            // Preserve old _rxAt only if session content unchanged on tick; real events refresh it
+            incoming[k] = {...incoming[k], _rxAt: rx};
+          });
+          lastSessions = incoming;
+        }
+        // On tick: keep lastSessions as-is (just re-evaluate filters below)
       } else {
         // Partial update — path is like '/d70bdb3f-...'
         const puuid = path.replace(/^\//, '').split('/')[0];
@@ -395,21 +405,20 @@ export function initLivePage() {
         if (puuid) {
           if (!lastSessions[puuid]) lastSessions[puuid] = {};
           if (subPath) {
-            // Deep field update like /d70bdb3f/ts
             const field = subPath.replace(/^\//, '');
             lastSessions[puuid][field] = data;
           } else {
-            // Full session update
             if (data && typeof data === 'object') Object.assign(lastSessions[puuid], data);
             else lastSessions[puuid] = data;
           }
+          if (lastSessions[puuid] && typeof lastSessions[puuid] === 'object') lastSessions[puuid]._rxAt = Date.now();
         }
       }
       const sessions = lastSessions;
       updateSessionPicker(sessions);
 
       const now = Date.now();
-      const active = Object.entries(sessions).filter(([,s]) => s?.active && (s?.mapClean || s?.map) && (now - (s.ts||0)) < 30000);
+      const active = Object.entries(sessions).filter(([,s]) => s?.active && (s?.mapClean || s?.map) && (now - (s._rxAt || now)) < 30000);
       if (active.length === 1) selectedSession = active[0][0];
       
       // Pick session: use selected, but borrow players from grouped sibling if empty
@@ -458,7 +467,7 @@ export function initLivePage() {
     if (!page) return;
 
     const _now = Date.now();
-    const active = Object.entries(sessions).filter(([,s]) => s?.active && (s?.mapClean || s?.map) && (_now - (s.ts||0)) < 30000);
+    const active = Object.entries(sessions).filter(([,s]) => s?.active && (s?.mapClean || s?.map) && (_now - (s._rxAt || _now)) < 30000);
     
     // Remove picker if 0 or 1 session
     if (active.length <= 1) {
