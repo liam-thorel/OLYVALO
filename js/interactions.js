@@ -906,29 +906,20 @@ export function initLivePage() {
   // Agent UUID → icon URL cache
   const agentIconCache = {};
   let agentUuidMap = {}; // name → uuid
+  const uuidToName = {}; // uuid → name (source de vérité API)
   fetch('https://valorant-api.com/v1/agents?isPlayableCharacter=true')
     .then(r=>r.json()).then(d=>{
-      d.data?.forEach(a => { agentUuidMap[a.displayName] = a.uuid; });
+      d.data?.forEach(a => { agentUuidMap[a.displayName] = a.uuid; uuidToName[a.uuid.toLowerCase()] = a.displayName; });
+      if (currentLiveData) { lastDataKey = ''; updateUI(currentLiveData); } // re-render avec les bons noms
     }).catch(()=>{});
 
-  // Correction des agents mal détectés par les vieux scripts
-  // Mapping prefix UUID → vrai nom (source: valorant-api.com + rapports utilisateur)
-  const AGENT_ID_FIXES = {
-    'b444168c': 'Tejo',
-    '92eeef5d': 'Veto',
-    'a3bfb853': 'Clove',
-    '1dbf2edd': 'Breach',
-    'f94c3b30': 'Reyna',
-    'efba5359': 'Vyse',
-    'cc8b64c8': 'Deadlock',
-    '0e38b510': 'Iso',
-  };
+  // Résolution agent — l'UUID (agentId) est la source de vérité, résolu via l'API
   function fixAgentName(p) {
     if (p.agentId) {
-      const prefix = p.agentId.slice(0, 8).toLowerCase();
-      if (AGENT_ID_FIXES[prefix]) return AGENT_ID_FIXES[prefix];
+      const full = uuidToName[p.agentId.toLowerCase()];
+      if (full) return full;
     }
-    return p.agent;
+    return (p.agent && p.agent !== '?') ? p.agent : (p.agentId ? '' : p.agent);
   }
 
   function agentIconUrl(agentName, agentId) {
