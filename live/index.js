@@ -131,7 +131,17 @@ function putFB(path, data) {
       hostname:'realtime-database-5bb9f-default-rtdb.europe-west1.firebasedatabase.app',
       path:`/${path}.json`, method:'PUT',
       headers:{'Content-Type':'application/json','Content-Length':Buffer.byteLength(body)}
-    }, res => { res.on('data',()=>{}); res.on('end',resolve); });
+    }, res => {
+      let d=''; res.on('data',c=>d+=c);
+      res.on('end',()=>{
+        if (res.statusCode !== 200 && !putFB._warned) {
+          putFB._warned = true;
+          console.log(`[FB] ⛔ Écriture refusée (${res.statusCode}) — vérifier les règles Firebase ! ${d.slice(0,80)}`);
+        }
+        if (res.statusCode === 200) putFB._warned = false;
+        resolve();
+      });
+    });
     r.on('error', ()=>resolve());
     r.write(body); r.end();
   });
