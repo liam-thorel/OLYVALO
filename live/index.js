@@ -462,6 +462,7 @@ async function poll() {
   let matchData = null;
   let realMatchId = '';
 let lastPregameMap = '';
+let pregameState = null;
 let persistentMatchId = '';
 
   // Also scan all presences for OLYCITY roster games
@@ -603,26 +604,22 @@ let persistentMatchId = '';
         matchData = await pvpGet(authTokens, `/pregame/v1/players/${authTokens.puuid}`);
 
       }
-      // Pregame detection (agent select phase)
-      if (!matchData?.MatchID) {
+      // Pregame detection (agent select) — feeds the main push, no separate write
+      if (!matchData?.MatchID && !queueId.toLowerCase().includes('deathmatch') && !queueId.toLowerCase().includes('hurm')) {
         const pregame = await pvpGet(authTokens, `/pregame/v1/players/${authTokens.puuid}`);
         if (pregame?.MatchID) {
           const pregameMatch = await pvpGet(authTokens, `/pregame/v1/matches/${pregame.MatchID}`);
-          if (pregameMatch) {
-            const pgMap = pregameMatch.MapID?.split('/')?.pop() || '';
-            const pgMapDisplay = MAP_NAMES[pgMap] || pgMap;
-            if (pgMapDisplay !== lastPregameMap) {
-              lastPregameMap = pgMapDisplay;
-              console.log(`[${ts()}] 🗺  Agent Select — ${pgMapDisplay}`);
+          if (pregameMatch?.MapID) {
+            const pgMap = pregameMatch.MapID.split('/').pop() || '';
+            pregameState = { map: pgMap, mapClean: MAP_NAMES[pgMap] || pgMap, matchId: pregame.MatchID };
+            if (pregameState.mapClean !== lastPregameMap) {
+              lastPregameMap = pregameState.mapClean;
+              console.log(`[${ts()}] 🗺  Agent Select — ${pregameState.mapClean}`);
             }
-            await putFB(`live/sessions/${stableSessionKey}`, {
-              active: true, ts: Date.now(),
-              map: pgMap, mapClean: pgMapDisplay, mapInternal: pgMap,
-              mode: 'agent-select', matchId: pregame.MatchID,
-              playerName, phase: 'pregame', players: [], activePlayer: {},
-            });
           }
         }
+      } else if (matchData?.MatchID) {
+        pregameState = null; // game started
       }
 
       if (matchData?.MatchID) {
@@ -819,10 +816,12 @@ let persistentMatchId = '';
     mapInternal: mapRaw,
     mapClean:    mapDisplay,
     mode:        queueId,
-    matchId:     persistentMatchId || realMatchId || '',
+    matchId:     pregameState?.matchId || persistentMatchId || realMatchId || '',
     playerName:  playerName,
     players,
     activePlayer,
+    phase:       pregameState ? 'pregame' : '',
+    ...(pregameState ? { map: pregameState.map, mapClean: pregameState.mapClean, mapInternal: pregameState.map, mode: 'agent-select' } : {}),
   });
 
   // Snapshot for history (pushed at game end)
