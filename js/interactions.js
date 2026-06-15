@@ -622,13 +622,21 @@ export function initLivePage() {
     if (dot?.style.display     !== 'block') dot.style.display      = 'block';
 
     // Map — guard + internal name conversion
-    const _MAP_DISPLAY = {'Ascent':'Ascent','Bonsai':'Split','Duality':'Bind','Triad':'Haven','Port':'Icebox','Foxtrot':'Breeze','Canyon':'Fracture','Pitt':'Pearl','Jam':'Lotus','Juliett':'Sunset','Infinity':'Abyss','Rook':'Corrode','HURM_Alley':'District','HURM_Yard':'Piazza','HURM_Bowl':'Kasbah','HURM_Helix':'Drift','HURM_HighTide':'Glitch'};
-    const _rawMap = data.mapClean || data.mapDisplay || data.map?.split('/')?.pop() || '';
-    const mapName = _MAP_DISPLAY[_rawMap] || _rawMap || '—';
+    // Internal codename → display. Includes wrong legacy values from old scripts.
+    const _MAP_DISPLAY = {
+      'Ascent':'Ascent','Bonsai':'Split','Duality':'Bind','Triad':'Haven','Port':'Icebox',
+      'Foxtrot':'Breeze','Canyon':'Fracture','Pitt':'Pearl','Jam':'Lotus','Juliett':'Sunset',
+      'Infinity':'Abyss','Rook':'Corrode','Poveglia':'Range','Range':'Range',
+      'HURM_Alley':'District','HURM_Yard':'Piazza','HURM_Bowl':'Kasbah','HURM_Helix':'Drift','HURM_HighTide':'Glitch',
+    };
+    // Prefer the raw internal map code (most reliable), fall back to mapClean
+    const _internal = (data.mapInternal || data.map?.split('/')?.pop() || '').trim();
+    const _fromInternal = _MAP_DISPLAY[_internal];
+    const mapName = _fromInternal || _MAP_DISPLAY[data.mapClean] || data.mapClean || data.mapDisplay || '—';
     const mapEl = document.getElementById('live-map-name');
     if (mapEl && mapEl.textContent !== mapName) {
       mapEl.textContent = mapName;
-      loadMapImg(data.mapInternal || mapName);
+      loadMapImg(mapName);
     }
     const mapLabel = document.getElementById('live-map-label');
     const modeLabel = document.getElementById('live-mode-label');
