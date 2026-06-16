@@ -529,7 +529,11 @@ export function initLivePage() {
     if (!_rosterFetched) {
       _rosterFetched = true;
       fetch('./data/roster.json').then(r=>r.json()).then(roster => {
-        roster.forEach(p => { _rosterCache[`${p.riot?.name}#${p.riot?.tag}`.toLowerCase()] = p.avatar; });
+        roster.forEach(p => {
+          const entry = { avatar: p.avatar, member: p.name };
+          if (p.riot?.name) _rosterCache[`${p.riot.name}#${p.riot.tag}`.toLowerCase()] = entry;
+          (p.smurfs||[]).forEach(s => { _rosterCache[`${s.name}#${s.tag}`.toLowerCase()] = entry; });
+        });
         updateSessionPicker(lastSessions); // re-render with avatars
       }).catch(()=>{});
     }
@@ -549,7 +553,8 @@ export function initLivePage() {
           const name = s.playerName || '';
           const key = name.toLowerCase();
           // Try exact match or partial
-          const avatar = rosterMap[key] || Object.entries(rosterMap).find(([k]) => k.split('#')[0] === name.toLowerCase().split('#')[0])?.[1];
+          const hit = rosterMap[key] || Object.values(rosterMap).find((v,i)=>Object.keys(rosterMap)[i].split('#')[0] === name.toLowerCase().split('#')[0]);
+          const avatar = hit?.avatar;
           return avatar || null;
         }).filter(Boolean);
 
@@ -946,6 +951,12 @@ export function initLivePage() {
     return '';
   }
 
+  function olycityMember(name) {
+    if (!name || !name.includes('#')) return null;
+    const hit = _rosterCache[name.toLowerCase()];
+    return hit?.member || null;
+  }
+
   function playerRow(p, myName) {
     const hpPct = (p.maxHp && p.hp !== undefined) ? Math.round((p.hp/p.maxHp)*100) : 100;
     const hpColor = hpPct > 60 ? '#3fcf6b' : hpPct > 30 ? '#f9c74f' : '#ff4656';
@@ -959,7 +970,7 @@ export function initLivePage() {
         <div class="live-player-name" style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">
           ${p.incognito
             ? `<span style="opacity:.5;font-style:italic">${fixedAgent||'?'}</span> <span style="font-size:8px;letter-spacing:1px;color:#888;border:1px solid #333;padding:1px 4px">ANONYME</span>`
-            : `${p.name || '—'} <span style="opacity:.4;font-size:9px;font-weight:400">${fixedAgent||''}</span>`
+            : `${p.name || '—'} <span style="opacity:.4;font-size:9px;font-weight:400">${fixedAgent||''}</span>${olycityMember(p.name) ? ` <span style="font-size:8px;letter-spacing:1px;color:#ff4656;border:1px solid rgba(255,70,86,.5);padding:1px 5px;font-weight:700;vertical-align:middle">OLY · ${olycityMember(p.name)}</span>` : ''}`
           }
         </div>
         <div style="margin-top:3px;display:flex;align-items:center;gap:6px">
