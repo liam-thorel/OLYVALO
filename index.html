@@ -151,11 +151,11 @@
           <span class="page-nav-icon">◈</span> Agents
         </button>
         <button class="page-nav-btn" data-page="live" onclick="window.OLYCITY?.nav('live')" style="position:relative">
-          <span class="page-nav-icon">🔴</span> Live
+          <span class="page-nav-icon" style="color:#ff4656">●</span> Live
           <span id="live-dot" style="display:none;position:absolute;top:4px;right:4px;width:7px;height:7px;border-radius:50%;background:#ff4656;box-shadow:0 0 6px #ff4656"></span>
         </button>
         <button class="page-nav-btn" data-page="history" onclick="window.OLYCITY?.nav('history')">
-          📜 Historique
+          <span class="page-nav-icon">◇</span> Historique
         </button>
         <button class="page-nav-btn" data-page="builder" onclick="window.OLYCITY?.nav('builder')">
           <span class="page-nav-icon">⊕</span> Builder
@@ -318,7 +318,8 @@
   <!-- ═══════════ PAGE LIVE ═══════════ -->
   <div id="page-history" class="spa-page">
     <div class="container" style="padding-top:24px">
-      <h2 style="font-family:Tomorrow,sans-serif;font-size:16px;letter-spacing:4px;text-transform:uppercase;color:var(--text);margin-bottom:20px">📜 Historique des games</h2>
+      <h2 style="font-family:Tomorrow,sans-serif;font-size:15px;letter-spacing:5px;text-transform:uppercase;color:var(--text);margin-bottom:4px">Historique</h2>
+      <div style="font-family:Tomorrow,sans-serif;font-size:9px;letter-spacing:3px;text-transform:uppercase;color:var(--dim);margin-bottom:24px">Games du five stack</div>
       <div id="history-content"></div>
     </div>
   </div>
