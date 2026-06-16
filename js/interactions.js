@@ -337,6 +337,7 @@ export function initWheelLogos() {
 
 // ─── LIVE PAGE ────────────────────────────────────────
 export function initLivePage() {
+  if (!window._agentNameToUuid) { fetch('https://valorant-api.com/v1/agents?isPlayableCharacter=true').then(r=>r.json()).then(d=>{ window._agentNameToUuid={}; d.data?.forEach(a=>window._agentNameToUuid[a.displayName]=a.uuid); }).catch(()=>{}); }
   const FIREBASE_URL = 'https://realtime-database-5bb9f-default-rtdb.europe-west1.firebasedatabase.app';
   const AGENT_COLORS = {
     'Jett':'#88c8ff','Raze':'#ff9a3c','Neon':'#5ae6ff','Phoenix':'#ff6b35',
@@ -717,32 +718,36 @@ export function initLivePage() {
     // Pregame — show map comps during agent select
     const isPregame = liveData?.phase === 'pregame' || liveData?.mode === 'agent-select';
     let compsEl = document.getElementById('live-comps-panel');
-    if (isPregame && liveData?.mapClean) {
+    if (isPregame && (liveData?.mapClean || liveData?.map)) {
+      const pgMapName = liveData.mapClean || liveData.map;
       if (!compsEl) {
         compsEl = document.createElement('div');
         compsEl.id = 'live-comps-panel';
-        compsEl.style.cssText = 'margin:16px 0;display:flex;flex-direction:column;gap:8px';
-        const livePage = document.getElementById('live-content');
-        if (livePage) livePage.prepend(compsEl);
+        compsEl.style.cssText = 'margin:0 0 18px;display:flex;flex-direction:column;gap:10px';
+        const content = document.getElementById('live-content');
+        const body = content?.querySelector('.live-body');
+        if (body) content.insertBefore(compsEl, body);
+        else if (content) content.prepend(compsEl);
       }
-      if (compsEl.dataset.map !== liveData.mapClean) {
-        compsEl.dataset.map = liveData.mapClean;
+      if (compsEl.dataset.map !== pgMapName) {
+        compsEl.dataset.map = pgMapName;
         fetch('./data/comps.json').then(r=>r.json()).then(comps => {
-          const mapData = comps.find(m => m.map === liveData.mapClean);
-          if (!mapData) return;
-          const show = ['S','PRO','FUN','F'].map(tier => mapData.comps.find(c => c.tier === tier || c.tierLabel === 'FUN')).filter(Boolean).slice(0,3);
+          const mapData = comps.find(m => m.map === pgMapName);
+          if (!mapData) { compsEl.innerHTML = ''; return; }
+          const pick = t => mapData.comps.find(c => c.tier === t);
+          const show = [pick('S'), pick('PRO'), pick('F')].filter(Boolean);
           compsEl.innerHTML = `
-            <div style="font-family:Tomorrow,sans-serif;font-size:9px;letter-spacing:3px;color:var(--dim);text-transform:uppercase;padding:4px 0">
-              Agent Select — ${liveData.mapClean} — Comps recommandées
+            <div style="font-family:Tomorrow,sans-serif;font-size:10px;letter-spacing:4px;color:#ff4656;text-transform:uppercase;padding:2px 0;font-weight:700">
+              Agent Select · ${pgMapName} · Comps conseillées
             </div>
-            <div style="display:flex;gap:8px;flex-wrap:wrap">
+            <div style="display:flex;gap:10px;flex-wrap:wrap">
             ${show.map(c => `
-              <div style="flex:1;min-width:200px;background:var(--surf);border:1px solid var(--border);padding:10px 12px">
-                <div style="font-family:Tomorrow,sans-serif;font-size:8px;letter-spacing:2px;color:var(--muted);text-transform:uppercase;margin-bottom:6px">${c.tierLabel}</div>
-                <div style="display:flex;gap:6px;align-items:center">
-                  ${c.agents.map(a => `<img src="https://media.valorant-api.com/agents/${encodeURIComponent(a.toLowerCase())}/displayicon.png" style="width:28px;height:28px;object-fit:cover" title="${a}" onerror="this.style.display='none'">`).join('')}
+              <div style="flex:1;min-width:210px;background:var(--surf);border:1px solid var(--border);padding:12px 14px">
+                <div style="font-family:Tomorrow,sans-serif;font-size:8px;letter-spacing:2px;color:var(--muted);text-transform:uppercase;margin-bottom:8px">${c.label || c.tier}</div>
+                <div style="display:flex;gap:6px;align-items:center;margin-bottom:8px">
+                  ${c.agents.map(a => { const u = (window._agentNameToUuid||{})[a]; return u ? `<img src="https://media.valorant-api.com/agents/${u}/displayicon.png" style="width:30px;height:30px;object-fit:cover" title="${a}">` : `<span style="font-size:9px;color:var(--dim)">${a}</span>`; }).join('')}
                 </div>
-                <div style="font-family:Tomorrow,sans-serif;font-size:9px;color:var(--dim);margin-top:6px;letter-spacing:1px">${c.agents.join(' · ')}</div>
+                <div style="font-family:Tomorrow,sans-serif;font-size:9px;color:var(--dim);letter-spacing:1px">${c.agents.join(' · ')}</div>
               </div>
             `).join('')}
             </div>`;
