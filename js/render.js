@@ -488,9 +488,13 @@ export function rosterHTML() {
       </div>
       ${syncTime}` : '';
 
+    const _colors = {Nico:'#ff4656',Liam:'#3fcfcf',Rayhan:'#f5c842',Mathis:'#a87fff','Noé':'#ff8200'};
+    const _col = _colors[p.name] || '#888';
+    const _initial = (p.name||'?')[0].toUpperCase();
+    const _fallback = `<div class="player-banner-avatar" style="display:flex;align-items:center;justify-content:center;background:${_col}22;color:${_col};font-family:Tomorrow,sans-serif;font-size:42px;font-weight:700">${_initial}</div>`;
     return `<div class="player-card" data-player-name="${p.name}">
       <div class="player-banner" ${p.avatar ? `style="--player-avatar:url(${p.avatar})"` : ''}>
-        ${p.avatar ? `<div class="player-banner-avatar" style="background-image:url(${p.avatar})"></div>` : ''}
+        ${p.avatar ? `<img class="player-banner-avatar" src="${p.avatar}" style="object-fit:cover" onerror="this.outerHTML='${_fallback.replace(/'/g, "&#39;")}'">` : _fallback}
         <div class="player-banner-deco"></div>
         <div class="player-banner-glow"></div>
         ${rankDisplay}
