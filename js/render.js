@@ -491,10 +491,11 @@ export function rosterHTML() {
     const _colors = {Nico:'#ff4656',Liam:'#3fcfcf',Rayhan:'#f5c842',Mathis:'#a87fff','Noé':'#ff8200'};
     const _col = _colors[p.name] || '#888';
     const _initial = (p.name||'?')[0].toUpperCase();
-    const _fallback = `<div class="player-banner-avatar" style="display:flex;align-items:center;justify-content:center;background:${_col}22;color:${_col};font-family:Tomorrow,sans-serif;font-size:42px;font-weight:700">${_initial}</div>`;
+    // Probe: hidden img tests the URL; on error, swaps the bg div for a colored initial
+    const _probe = p.avatar ? `<img src="${p.avatar}" style="display:none" onerror="var b=this.parentNode.querySelector('.player-banner-avatar'); if(b){b.style.backgroundImage='none';b.style.display='flex';b.style.alignItems='center';b.style.justifyContent='center';b.style.background='${_col}22';b.style.color='${_col}';b.style.fontFamily='Tomorrow,sans-serif';b.style.fontSize='42px';b.style.fontWeight='700';b.textContent='${_initial}';}">` : '';
     return `<div class="player-card" data-player-name="${p.name}">
       <div class="player-banner" ${p.avatar ? `style="--player-avatar:url(${p.avatar})"` : ''}>
-        ${p.avatar ? `<img class="player-banner-avatar" src="${p.avatar}" style="width:100%;height:100%;object-fit:contain;background:none" onerror="this.outerHTML='${_fallback.replace(/'/g, "&#39;")}'">` : _fallback}
+        ${p.avatar ? `<div class="player-banner-avatar" style="background-image:url(${p.avatar})"></div>${_probe}` : `<div class="player-banner-avatar" style="display:flex;align-items:center;justify-content:center;background:${_col}22;color:${_col};font-family:Tomorrow,sans-serif;font-size:42px;font-weight:700">${_initial}</div>`}
         <div class="player-banner-deco"></div>
         <div class="player-banner-glow"></div>
         ${rankDisplay}
