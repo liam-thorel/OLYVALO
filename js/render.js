@@ -494,7 +494,7 @@ export function rosterHTML() {
     const _fallback = `<div class="player-banner-avatar" style="display:flex;align-items:center;justify-content:center;background:${_col}22;color:${_col};font-family:Tomorrow,sans-serif;font-size:42px;font-weight:700">${_initial}</div>`;
     return `<div class="player-card" data-player-name="${p.name}">
       <div class="player-banner" ${p.avatar ? `style="--player-avatar:url(${p.avatar})"` : ''}>
-        ${p.avatar ? `<img class="player-banner-avatar" src="${p.avatar}" style="object-fit:cover" onerror="this.outerHTML='${_fallback.replace(/'/g, "&#39;")}'">` : _fallback}
+        ${p.avatar ? `<img class="player-banner-avatar" src="${p.avatar}" style="width:100%;height:100%;object-fit:contain;background:none" onerror="this.outerHTML='${_fallback.replace(/'/g, "&#39;")}'">` : _fallback}
         <div class="player-banner-deco"></div>
         <div class="player-banner-glow"></div>
         ${rankDisplay}
