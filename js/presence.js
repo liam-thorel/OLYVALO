@@ -30,10 +30,20 @@ async function initPresence() {
   await loadScript(`${FIREBASE_CDN_BASE}/firebase-app-compat.js`);
   await loadScript(`${FIREBASE_CDN_BASE}/firebase-database-compat.js`);
 
+  // Attendre que firebase + database soient réellement prêts (les scripts compat s'exécutent async)
+  for (let i = 0; i < 50; i++) {
+    if (window.firebase && typeof window.firebase.database === 'function') break;
+    await new Promise(r => setTimeout(r, 100));
+  }
+  if (!window.firebase || typeof window.firebase.database !== 'function') {
+    console.warn('[Présence] Firebase Database indisponible — présence désactivée');
+    return;
+  }
+
   if (!window.firebase.apps.length) {
     window.firebase.initializeApp(FIREBASE_CONFIG);
   }
-  db = window.firebase.app().database();
+  db = window.firebase.database();
 
   // Register session
   const sessionId = Math.random().toString(36).slice(2, 9);
