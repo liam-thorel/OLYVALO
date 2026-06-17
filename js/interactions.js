@@ -437,7 +437,7 @@ export function initLivePage() {
         phase: liveData?.roundPhase, matchId: liveData?.matchId,
         activeCount: active.length,
         allPlayers: active.map(([,s]) => (s.players||[]).length).join(','),
-        players: (liveData?.players||[]).map(p=>`${p.name}|${p.agent}|${p.team}|${p.rank?.tier||0}`)
+        players: (liveData?.players||[]).map(p=>`${p.name}|${p.agentId||p.agent}|${p.team}|${p.rank?.tier??''}|${p.rank?.peakTier??''}|${p.rank?.level??''}|${(p.rank?.rrHistory||[]).join('.')}|${p.rank?.rrEarned??''}`)
       });
       if (key !== lastDataKey) {
         lastDataKey = key;
