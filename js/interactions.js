@@ -737,8 +737,11 @@ export function initLivePage() {
           const pick = t => mapData.comps.find(c => c.tier === t);
           const show = [pick('S'), pick('PRO'), pick('F')].filter(Boolean);
           compsEl.innerHTML = `
-            <div style="font-family:Tomorrow,sans-serif;font-size:10px;letter-spacing:4px;color:#ff4656;text-transform:uppercase;padding:2px 0;font-weight:700">
-              Agent Select · ${pgMapName} · Comps conseillées
+            <div style="display:flex;align-items:center;gap:10px;padding:2px 0">
+              <div style="font-family:Tomorrow,sans-serif;font-size:10px;letter-spacing:4px;color:#ff4656;text-transform:uppercase;font-weight:700">
+                Agent Select · ${pgMapName}
+              </div>
+              ${liveData.side ? `<span style="font-family:Tomorrow,sans-serif;font-size:9px;letter-spacing:2px;font-weight:700;text-transform:uppercase;padding:2px 8px;border:1px solid ${liveData.side==='ATTAQUE'?'rgba(255,70,86,.5)':'rgba(63,207,207,.5)'};color:${liveData.side==='ATTAQUE'?'#ff4656':'#3fcfcf'}">${liveData.side}</span>` : ''}
             </div>
             <div style="display:flex;gap:10px;flex-wrap:wrap">
             ${show.map(c => `

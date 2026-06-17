@@ -611,10 +611,17 @@ let persistentMatchId = '';
           const pregameMatch = await pvpGet(authTokens, `/pregame/v1/matches/${pregame.MatchID}`);
           if (pregameMatch?.MapID) {
             const pgMap = pregameMatch.MapID.split('/').pop() || '';
-            pregameState = { map: pgMap, mapClean: MAP_NAMES[pgMap] || pgMap, matchId: pregame.MatchID };
+            // Détecter le côté : Blue = Défense, Red = Attaque (au début de game)
+            let side = null;
+            const myTeam = (pregameMatch.Teams || []).find(t =>
+              (t.Players || []).some(pl => pl.Subject === authTokens.puuid));
+            const teamId = myTeam?.TeamID || pregameMatch.Teams?.[0]?.TeamID;
+            if (teamId === 'Blue') side = 'DEFENSE';
+            else if (teamId === 'Red') side = 'ATTAQUE';
+            pregameState = { map: pgMap, mapClean: MAP_NAMES[pgMap] || pgMap, matchId: pregame.MatchID, side };
             if (pregameState.mapClean !== lastPregameMap) {
               lastPregameMap = pregameState.mapClean;
-              console.log(`[${ts()}] 🗺  Agent Select — ${pregameState.mapClean}`);
+              console.log(`[${ts()}] 🗺  Agent Select — ${pregameState.mapClean}${pregameState.side ? " · " + pregameState.side : ""}`);
             }
           }
         }
@@ -821,7 +828,7 @@ let persistentMatchId = '';
     players,
     activePlayer,
     phase:       pregameState ? 'pregame' : '',
-    ...(pregameState ? { map: pregameState.map, mapClean: pregameState.mapClean, mapInternal: pregameState.map, mode: 'agent-select' } : {}),
+    ...(pregameState ? { map: pregameState.map, mapClean: pregameState.mapClean, mapInternal: pregameState.map, mode: 'agent-select', side: pregameState.side } : {}),
   });
 
   // Snapshot for history (pushed at game end)
