@@ -305,6 +305,9 @@ function tryDecodeBase64(str) {
 
 let inGame = false;
 let selfPuuid = null;
+let lastPregameMap = '';
+let pregameState = null;
+let persistentMatchId = '';
 let authTokens = null;
 let wsConnected = false;
 let lastPlayerCount = -1;
@@ -419,6 +422,25 @@ let lastMap = '';
 let lockPort = null;
 let tries = 0;
 
+async function ensureAuth(lock) {
+  if (authTokens) return authTokens;
+  const entRes    = await req(lock.port, lock.password, '/entitlements/v1/token');
+  const regionRes = await req(lock.port, lock.password, '/riotclient/region-locale');
+  if (entRes.ok && entRes.data?.accessToken) {
+    const rawRegion = (regionRes.data?.region || regionRes.data?.webRegion || 'EUW').toUpperCase();
+    const region = rawRegion.startsWith('EU') ? 'eu' : rawRegion === 'NA' ? 'na' :
+                   rawRegion === 'LATAM' ? 'latam' : rawRegion === 'BR' ? 'br' :
+                   rawRegion === 'AP' ? 'ap' : rawRegion === 'KR' ? 'kr' : 'eu';
+    authTokens = {
+      accessToken:       entRes.data.accessToken,
+      entitlementsToken: entRes.data.token || '',
+      puuid:             entRes.data.subject || selfPuuid || '',
+      region,
+    };
+  }
+  return authTokens;
+}
+
 async function poll() {
   if (!agentsReady) return;
   const lock = readLockfile();
@@ -461,9 +483,45 @@ async function poll() {
   let playerName = '';
   let matchData = null;
   let realMatchId = '';
-let lastPregameMap = '';
-let pregameState = null;
-let persistentMatchId = '';
+
+  // ===== Détection AGENT SELECT (indépendante de la présence/isInGame) =====
+  // Pendant le pick, la présence n'a pas de map — on interroge l'endpoint pregame directement.
+  try {
+    await ensureAuth(lock);
+    if (authTokens?.puuid && stableSessionKey) {
+      const pg = await pvpGet(authTokens, `/pregame/v1/players/${authTokens.puuid}`);
+      if (pg?.MatchID) {
+        const pgMatch = await pvpGet(authTokens, `/pregame/v1/matches/${pg.MatchID}`);
+        if (pgMatch?.MapID) {
+          const pgMap = pgMatch.MapID.split('/').pop() || '';
+          const pgMode = (pgMatch.QueueID || pgMatch.Mode || '').replace('/Game/GameModes/','');
+          let side = null;
+          const myTeam = (pgMatch.Teams || []).find(t => (t.Players||[]).some(pl => pl.Subject === authTokens.puuid));
+          const teamId = myTeam?.TeamID || pgMatch.Teams?.[0]?.TeamID;
+          if (teamId === 'Blue') side = 'DEFENSE';
+          else if (teamId === 'Red') side = 'ATTAQUE';
+
+          pregameState = { map: pgMap, mapClean: MAP_NAMES[pgMap] || pgMap, matchId: pg.MatchID, side, mode: pgMatch.QueueID || 'competitive' };
+          if (pregameState.mapClean !== lastPregameMap) {
+            lastPregameMap = pregameState.mapClean;
+            console.log(`[${ts()}] 🗺  Agent Select — ${pregameState.mapClean}${side ? ' · ' + side : ''}`);
+          }
+          // Push pregame session immediately (no players yet)
+          await putFB(`live/sessions/${stableSessionKey}`, {
+            active: true, ts: Date.now(),
+            map: pgMap, mapClean: pregameState.mapClean, mapInternal: pgMap,
+            mode: 'agent-select', phase: 'pregame', side,
+            matchId: pg.MatchID, playerName, players: [], activePlayer: {},
+          });
+          missedPolls = 0;
+          return; // agent select handled — skip in-game logic this poll
+        }
+      } else {
+        pregameState = null; // not in pregame anymore
+      }
+    }
+  } catch {}
+
 
   // Also scan all presences for OLYCITY roster games
   const OLYCITY_ROSTER = ['Drew A Picasso', 'Wong Chi Ming', 'RayBaz', 'MrScooby', 'baby hayabusa', 'VENOM X RAMEEZ'];
@@ -520,6 +578,55 @@ let persistentMatchId = '';
   const queueId    = matchData?.queueId || mode || '';
   const isInGame   = !!(mapRaw && mapRaw !== 'Range' && mapRaw !== '');
 
+  // ===== Détection AGENT SELECT (indépendante de la présence) =====
+  // Pendant l'agent select, la présence n'indique pas de game → on check le pregame directement.
+  if (!isInGame && stableSessionKey) {
+    // Auth si nécessaire (réutilise les tokens existants)
+    if (!preAuth) {
+      const entRes = await req(lock.port, lock.password, '/entitlements/v1/token');
+      const regionRes = await req(lock.port, lock.password, '/riotclient/region-locale');
+      if (entRes.ok && entRes.data?.accessToken) {
+        const rawRegion = (regionRes.data?.region || regionRes.data?.webRegion || 'EUW').toUpperCase();
+        const region = rawRegion.startsWith('EU') ? 'eu' : rawRegion === 'NA' ? 'na' :
+                       rawRegion === 'LATAM' ? 'latam' : rawRegion === 'BR' ? 'br' :
+                       rawRegion === 'AP' ? 'ap' : rawRegion === 'KR' ? 'kr' : 'eu';
+        preAuth = { accessToken: entRes.data.accessToken, entitlementsToken: entRes.data.token || '', puuid: entRes.data.subject || selfPuuid || '', region };
+      }
+    }
+    if (preAuth) {
+      const pg = await pvpGet(preAuth, `/pregame/v1/players/${preAuth.puuid}`);
+      if (pg?.MatchID) {
+        const pgMatch = await pvpGet(preAuth, `/pregame/v1/matches/${pg.MatchID}`);
+        if (pgMatch?.MapID) {
+          const pgMap = pgMatch.MapID.split('/').pop() || '';
+          const pgMapClean = MAP_NAMES[pgMap] || pgMap;
+          const pgQueue = pgMatch.QueueID || pg.QueueID || '';
+          // Exclure deathmatch / TDM
+          if (!pgQueue.toLowerCase().includes('deathmatch') && !pgQueue.toLowerCase().includes('hurm')) {
+            let side = null;
+            const myTeam = (pgMatch.Teams || []).find(t => (t.Players||[]).some(pl => pl.Subject === preAuth.puuid));
+            const teamId = myTeam?.TeamID || pgMatch.Teams?.[0]?.TeamID;
+            if (teamId === 'Blue') side = 'DEFENSE';
+            else if (teamId === 'Red') side = 'ATTAQUE';
+            if (pgMapClean !== lastPregameMap) {
+              lastPregameMap = pgMapClean;
+              console.log(`[${ts()}] 🗺  Agent Select — ${pgMapClean}${side ? ' · ' + side : ''}`);
+            }
+            missedPolls = 0; // on est bien "actif"
+            await putFB(`live/sessions/${stableSessionKey}`, {
+              active: true, ts: Date.now(),
+              map: pgMap, mapClean: pgMapClean, mapInternal: pgMap,
+              mode: 'agent-select', matchId: pg.MatchID,
+              playerName, phase: 'pregame', side,
+              players: [], activePlayer: {},
+            });
+            return; // pregame poussé, on attend le prochain poll
+          }
+        }
+      }
+    }
+  }
+
   if (!isInGame) {
     missedPolls = (missedPolls || 0) + 1;
     if (inGame && missedPolls >= 3) { // 3 missed polls = ~6s grace period
@@ -527,6 +634,7 @@ let persistentMatchId = '';
       lastMap = '';
       missedPolls = 0;
       console.log(`[${ts()}] 🏠 Fin de game`);
+      lastPregameMap = ''; persistentMatchId = ''; pregameState = null; authTokens = null;
       const sKey = stableSessionKey || 'unknown';
       if (sKey !== 'unknown') await putFB(`live/sessions/${sKey}`, { active:false, ts:Date.now(), playerName });
 
@@ -569,30 +677,9 @@ let persistentMatchId = '';
     console.log(`[${ts()}] 🎮 EN GAME — ${mapDisplay} (${mapRaw}) | ${queueId} | ${playerName}`);
   }
 
-  // Get auth tokens from Riot Client for PVP.net API
+  // Get auth tokens (réutilise ensureAuth)
   let players = [];
-  if (!authTokens) {
-    // /entitlements/v1/token has everything: accessToken, token (entitlements), subject (PUUID)
-    const entRes   = await req(lock.port, lock.password, '/entitlements/v1/token');
-    const regionRes = await req(lock.port, lock.password, '/riotclient/region-locale');
-
-    if (entRes.ok && entRes.data?.accessToken) {
-      // EUW/EUNE → eu, NA/LATAM/BR → na, AP → ap
-      const rawRegion = (regionRes.data?.region || regionRes.data?.webRegion || 'EUW').toUpperCase();
-      const region = rawRegion.startsWith('EU') ? 'eu' : rawRegion === 'NA' ? 'na' :
-                     rawRegion === 'LATAM' ? 'latam' : rawRegion === 'BR' ? 'br' :
-                     rawRegion === 'AP' ? 'ap' : rawRegion === 'KR' ? 'kr' : 'eu';
-      authTokens = {
-        accessToken:       entRes.data.accessToken,
-        entitlementsToken: entRes.data.token || '',
-        puuid:             entRes.data.subject || selfPuuid || '',
-        region,
-      };
-      console.log(`[${ts()}] ✅ Auth OK — région: ${region} (${rawRegion}) | PUUID: ${authTokens.puuid.slice(0,8)}`);
-    } else {
-      console.log(`[${ts()}] ❌ Entitlements échoué: ${JSON.stringify(entRes.data||'').slice(0,80)}`);
-    }
-  }
+  await ensureAuth(lock);
 
   // Fetch current match from PVP.net
   if (authTokens && isInGame) {
@@ -604,30 +691,7 @@ let persistentMatchId = '';
         matchData = await pvpGet(authTokens, `/pregame/v1/players/${authTokens.puuid}`);
 
       }
-      // Pregame detection (agent select) — feeds the main push, no separate write
-      if (!matchData?.MatchID && !queueId.toLowerCase().includes('deathmatch') && !queueId.toLowerCase().includes('hurm')) {
-        const pregame = await pvpGet(authTokens, `/pregame/v1/players/${authTokens.puuid}`);
-        if (pregame?.MatchID) {
-          const pregameMatch = await pvpGet(authTokens, `/pregame/v1/matches/${pregame.MatchID}`);
-          if (pregameMatch?.MapID) {
-            const pgMap = pregameMatch.MapID.split('/').pop() || '';
-            // Détecter le côté : Blue = Défense, Red = Attaque (au début de game)
-            let side = null;
-            const myTeam = (pregameMatch.Teams || []).find(t =>
-              (t.Players || []).some(pl => pl.Subject === authTokens.puuid));
-            const teamId = myTeam?.TeamID || pregameMatch.Teams?.[0]?.TeamID;
-            if (teamId === 'Blue') side = 'DEFENSE';
-            else if (teamId === 'Red') side = 'ATTAQUE';
-            pregameState = { map: pgMap, mapClean: MAP_NAMES[pgMap] || pgMap, matchId: pregame.MatchID, side };
-            if (pregameState.mapClean !== lastPregameMap) {
-              lastPregameMap = pregameState.mapClean;
-              console.log(`[${ts()}] 🗺  Agent Select — ${pregameState.mapClean}${pregameState.side ? " · " + pregameState.side : ""}`);
-            }
-          }
-        }
-      } else if (matchData?.MatchID) {
-        pregameState = null; // game started
-      }
+      if (matchData?.MatchID) pregameState = null; // game started
 
       if (matchData?.MatchID) {
         realMatchId = matchData.MatchID;
