@@ -84,6 +84,7 @@ const MAP_NAMES = {
   'Ascent':'Ascent','Bonsai':'Split','Duality':'Bind','Triad':'Haven',
   'Port':'Icebox','Foxtrot':'Breeze','Canyon':'Fracture','Pitt':'Pearl',
   'Jam':'Lotus','Juliett':'Sunset','Infinity':'Abyss','Rook':'Corrode',
+  'Plummet':'Summit',
   'Range':'Range','Poveglia':'Range',
   'HURM_Alley':'District','HURM_Yard':'Piazza','HURM_Bowl':'Kasbah',
   'HURM_Helix':'Drift','HURM_HighTide':'Glitch',

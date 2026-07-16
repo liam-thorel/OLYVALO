@@ -1,16 +1,16 @@
 {
-  "currentPatch": "12.11",
-  "patchDate": "2026-05-27",
-  "patchNotes": "https://playvalorant.com/en-us/news/game-updates/",
+  "currentPatch": "13.00",
+  "patchDate": "2026-06-24",
+  "patchNotes": "https://playvalorant.com/en-us/news/game-updates/valorant-patch-notes-13-00/",
   "lastUpdated": "Juin 2026",
-  "season": "Episode 12 Act 3",
+  "season": "Season 2026 Act 4",
   "mapsInRotation": [
-    "Fracture",
     "Haven",
     "Breeze",
     "Lotus",
     "Split",
-    "Pearl",
-    "Ascent"
+    "Ascent",
+    "Sunset",
+    "Summit"
   ]
 }

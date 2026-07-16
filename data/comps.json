@@ -1,179 +1,5 @@
 [
   {
-    "map": "Fracture",
-    "region": "Two-site · Double spawn défenseur",
-    "tags": [
-      "Breach obligatoire",
-      "Raze domine",
-      "Exécutes coordonnés"
-    ],
-    "stats": {
-      "difficulty": "4.2/5",
-      "sides": "Attaquants favorisés",
-      "bestSite": "A Arcade"
-    },
-    "comps": [
-      {
-        "label": "Meta principale",
-        "tier": "S",
-        "tierLabel": "S-TIER",
-        "winrate": 54.8,
-        "updatedAt": "Mai 2026",
-        "agents": [
-          "Raze",
-          "Breach",
-          "Fade",
-          "Miks",
-          "Cypher"
-        ],
-        "source": "VLR.gg · High Elo",
-        "tip": "Coordonnez les <strong>Fault Line de Breach</strong> avec les Satchels de Raze pour rentrer simultanément des deux côtés. Miks smoke le spawn défenseur central pour couper les rotations.",
-        "agility": {
-          "antiRush": 3,
-          "postPlant": 4,
-          "retake": 3,
-          "split": 5
-        },
-        "vods": [
-          {
-            "label": "Pick rates · Fracture",
-            "url": "https://dak.gg/valorant/agents?map=Fracture"
-          }
-        ],
-        "key": "Breach"
-      },
-      {
-        "label": "Joue comme un pro",
-        "tier": "PRO",
-        "tierLabel": "PRO",
-        "winrate": 0,
-        "updatedAt": "Mai 2026",
-        "patch": "12.11",
-        "agents": [
-          "Neon",
-          "Fade",
-          "Breach",
-          "Omen",
-          "Cypher"
-        ],
-        "source": "VLR.gg · EWC 2026 Amer Qualifier + VCT Stage 1 (post-nerf 12.09)",
-        "tip": "Pick rates EWC Americas Qualifier 2026 (post-nerf 12.09) · Neon : 100% · Cypher : 75% · Fade : 50% · Omen : présent · Source : vlr.gg/event/agents/2953",
-        "agility": {
-          "antiRush": 4,
-          "postPlant": 4,
-          "retake": 3,
-          "split": 5
-        },
-        "vods": [
-          {
-            "label": "EWC Amer Qualifier · Agents",
-            "url": "https://www.vlr.gg/event/agents/2953/esports-world-cup-2026-americas-qualifier"
-          }
-        ]
-      },
-      {
-        "label": "Double initiateur",
-        "tier": "A",
-        "tierLabel": "A-TIER",
-        "winrate": 52.1,
-        "updatedAt": "Avril 2026",
-        "agents": [
-          "Raze",
-          "Breach",
-          "Skye",
-          "Viper",
-          "Killjoy"
-        ],
-        "source": "Reddit r/ValorantCompetitive",
-        "tip": "<strong>Skye + Breach</strong> = inarrêtable sur Fracture. Skye flash-clear, Breach stun le site, Raze entre. Killjoy anchor seul pendant que les 4 autres exécutent.",
-        "agility": {
-          "antiRush": 2,
-          "postPlant": 3,
-          "retake": 4,
-          "split": 4
-        },
-        "vods": [],
-        "key": "Breach"
-      },
-      {
-        "label": "Double Duelist",
-        "tier": "B",
-        "tierLabel": "B-TIER",
-        "winrate": 52.1,
-        "updatedAt": "Mai 2026",
-        "agents": [
-          "Jett",
-          "Raze",
-          "Fade",
-          "Omen",
-          "Chamber"
-        ],
-        "source": "ValoHub · Plat+ competitive data 2026",
-        "tip": "<strong>Jett + Raze</strong> exploitent à fond les ziplines et les angles serrés de Fracture. Chamber anchor B pendant que Fade donne l'info sur les deux spawns. Omen smoke le CT central.",
-        "agility": {
-          "antiRush": 2,
-          "postPlant": 3,
-          "retake": 3,
-          "split": 5
-        },
-        "vods": [],
-        "key": "Fade"
-      },
-      {
-        "label": "Fun — Full Chaos",
-        "tier": "F",
-        "tierLabel": "FUN",
-        "winrate": 48.0,
-        "updatedAt": "Mai 2026",
-        "agents": [
-          "Raze",
-          "Neon",
-          "Jett",
-          "Yoru",
-          "Iso"
-        ],
-        "source": "OLYCITY Creativity Lab · Ranked pour rire",
-        "tip": "5 Duelists. Pas de smokes. Pas de recon. Juste du skill pur et de la vitesse. Chacun prend un côté différent dès le début du round — bonne chance à la défense. <em style=\"color:#f5c842;font-size:11px\">⚠ Neon nerfée 12.09 — mobilité réduite, moins agressive</em>",
-        "agility": {
-          "antiRush": 1,
-          "postPlant": 1,
-          "retake": 2,
-          "split": 5
-        },
-        "vods": [],
-        "patch": "12.11",
-        "key": "Raze"
-      }
-    ],
-    "notes": [
-      "Breach quasi-obligatoire — ses stuns traversent tous les murs de Fracture",
-      "Raze satchels permettent d'abuser les angles fermés et les ziplines",
-      "Fade Haunt pour surveiller les deux spawns simultanément",
-      "Miks coupe les rotations du spawn défenseur central",
-      "Map qui favorise fortement les attaquants — profitez des exécutes rapides"
-    ],
-    "lineups": [
-      {
-        "agent": "Sova",
-        "ability": "Flèche Reconnaissance",
-        "tip": "Lineups post-plant depuis spawn ATK couvrant A et B",
-        "count": 8
-      },
-      {
-        "agent": "Fade",
-        "ability": "Hantise",
-        "tip": "Haunts depuis mid zipline pour surveiller les deux spawns DEF",
-        "count": 6
-      },
-      {
-        "agent": "Breach",
-        "ability": "Réplique",
-        "tip": "Aftershock à travers les murs pour clear corners A Drop",
-        "count": 5
-      }
-    ]
-  },
-  {
     "map": "Haven",
     "region": "Three-site · Rotation intensive",
     "tags": [
@@ -870,180 +696,6 @@
     ]
   },
   {
-    "map": "Pearl",
-    "region": "Ouverte · Couloirs longs",
-    "tags": [
-      "Double recon",
-      "Astra globes",
-      "Long range"
-    ],
-    "stats": {
-      "difficulty": "4.3/5",
-      "sides": "Équilibré",
-      "bestSite": "A Art"
-    },
-    "comps": [
-      {
-        "label": "Meta principale",
-        "tier": "S",
-        "tierLabel": "S-TIER",
-        "winrate": 54.1,
-        "updatedAt": "Mai 2026",
-        "agents": [
-          "Neon",
-          "Fade",
-          "Sova",
-          "Astra",
-          "Cypher"
-        ],
-        "source": "VLR.gg · High Elo",
-        "tip": "<strong>Astra globes sur mid Street</strong> = contrôle permanent de la zone centrale. Fade + Sova = double recon qui nettoie tous les angles. Neon rush dans les smokes. <em style=\"color:#f5c842;font-size:11px\">⚠ Neon nerfée 12.09 — mobilité réduite, moins agressive</em>",
-        "agility": {
-          "antiRush": 4,
-          "postPlant": 4,
-          "retake": 3,
-          "split": 4
-        },
-        "vods": [
-          {
-            "label": "Pick rates · Pearl",
-            "url": "https://dak.gg/valorant/agents?map=Pearl"
-          }
-        ],
-        "patch": "12.11",
-        "key": "Fade"
-      },
-      {
-        "label": "Joue comme un pro",
-        "tier": "PRO",
-        "tierLabel": "PRO",
-        "winrate": 0,
-        "updatedAt": "Mai 2026",
-        "patch": "12.11",
-        "agents": [
-          "Neon",
-          "Astra",
-          "Vyse",
-          "Fade",
-          "Phoenix"
-        ],
-        "source": "VLR.gg · EWC 2026 Amer Qualifier + VCT Stage 1 (post-nerf 12.09)",
-        "tip": "Pick rates EWC Americas Qualifier 2026 (post-nerf 12.09) · Neon : 100% · Astra : 100% · Vyse : 83% · Fade : 83% · Phoenix : 67% · Source : vlr.gg/event/agents/2953",
-        "agility": {
-          "antiRush": 4,
-          "postPlant": 4,
-          "retake": 4,
-          "split": 3
-        },
-        "vods": [
-          {
-            "label": "EWC Amer Qualifier · Agents",
-            "url": "https://www.vlr.gg/event/agents/2953/esports-world-cup-2026-americas-qualifier"
-          }
-        ]
-      },
-      {
-        "label": "Longue portée",
-        "tier": "A",
-        "tierLabel": "A-TIER",
-        "winrate": 52.5,
-        "updatedAt": "Mars 2026",
-        "agents": [
-          "Jett",
-          "Chamber",
-          "Sova",
-          "Astra",
-          "Killjoy"
-        ],
-        "source": "dak.gg · High Elo",
-        "tip": "<strong>Jett + Chamber double Operator</strong> sur les longs couloirs. Killjoy turret sur B Site donne l'info sur les pushs. Astra retire des globes pour bloquer les flancs.",
-        "agility": {
-          "antiRush": 3,
-          "postPlant": 5,
-          "retake": 2,
-          "split": 2
-        },
-        "vods": [],
-        "key": "Sova"
-      },
-      {
-        "label": "Double Duelist Mid Control",
-        "tier": "B",
-        "tierLabel": "B-TIER",
-        "winrate": 53.6,
-        "updatedAt": "Mai 2026",
-        "agents": [
-          "Jett",
-          "Waylay",
-          "Sova",
-          "Astra",
-          "Cypher"
-        ],
-        "source": "ValoHub · Plat+ data 2026 + VLR meta",
-        "tip": "<strong>Jett + Waylay</strong> — le nouveau duo duelist qui domine Pearl en 2026. Waylay dash refract pour prendre mid, Jett op sur A Long. Astra globes mid, Cypher anchor B.",
-        "agility": {
-          "antiRush": 3,
-          "postPlant": 4,
-          "retake": 3,
-          "split": 4
-        },
-        "vods": [],
-        "key": "Sova"
-      },
-      {
-        "label": "Fun — 5 Controllers",
-        "tier": "F",
-        "tierLabel": "FUN",
-        "winrate": 40.0,
-        "updatedAt": "Mai 2026",
-        "agents": [
-          "Omen",
-          "Viper",
-          "Astra",
-          "Miks",
-          "Clove"
-        ],
-        "source": "OLYCITY Creativity Lab · Smoke meta extrême",
-        "tip": "Pearl entier est fumé en permanence. Chaque entrée, chaque angle, chaque respiration de la défense est couverte. En théorie inarrêtable. En pratique personne ne peut voir où planter.",
-        "agility": {
-          "antiRush": 5,
-          "postPlant": 5,
-          "retake": 5,
-          "split": 1
-        },
-        "vods": [],
-        "key": "Omen"
-      }
-    ],
-    "notes": [
-      "Astra est la meilleure controller sur Pearl — ses globes couvrent Mid Street parfaitement",
-      "Double recon (Fade + Sova) permet de nettoyer tous les angles",
-      "Les longs couloirs favorisent l'Operator",
-      "Cypher cam sur Mid offre les informations les plus précieuses",
-      "Neon Fast Lane dans les smokes d'Astra est quasi-inarrêtable"
-    ],
-    "lineups": [
-      {
-        "agent": "Sova",
-        "ability": "Flèche Reconnaissance",
-        "tip": "Recon darts sur Mid Street et B Hall depuis spawn ATK",
-        "count": 13
-      },
-      {
-        "agent": "Fade",
-        "ability": "Hantise",
-        "tip": "Haunts pour detect les positions A Art et B Link",
-        "count": 7
-      },
-      {
-        "agent": "Astra",
-        "ability": "Impulsion Nova",
-        "tip": "Nova pulse Mid Street pour ouvrir l'accès central",
-        "count": 5
-      }
-    ]
-  },
-  {
     "map": "Ascent",
     "region": "Two-site · Map ouverte avec mid central",
     "tags": [
@@ -1201,6 +853,156 @@
         },
         "vods": [],
         "key": "Neon"
+      }
+    ]
+  },
+  {
+    "map": "Sunset",
+    "comps": [
+      {
+        "tier": "S",
+        "label": "Meta principale",
+        "agents": [
+          "Jett",
+          "Sova",
+          "Breach",
+          "Omen",
+          "Killjoy"
+        ],
+        "key": "Sova",
+        "tip": "<strong>Sova récon Mid Market et Marché</strong> avant chaque exécute — c'est le carrefour de la map. Breach ouvre Mid ou un site avec stun/flash. Killjoy anchor B avec turret + lockdown post-plant. Omen smoke les angles de Market pour traverser sans risque. Jett entry sur l'info donnée.",
+        "patch": "13.00"
+      },
+      {
+        "tier": "PRO",
+        "label": "Joue comme un pro",
+        "agents": [
+          "Neon",
+          "Fade",
+          "Breach",
+          "Omen",
+          "Cypher"
+        ],
+        "key": "Fade",
+        "tip": "Comp orientée contrôle d'info totale : Fade + Sova-like récon avant chaque exécute B ou A. Cypher trip Market et anchor A. Neon speed rush après les flashs de Breach.",
+        "patch": "13.00"
+      },
+      {
+        "tier": "A",
+        "label": "Double initiateur",
+        "agents": [
+          "Raze",
+          "Breach",
+          "Skye",
+          "Omen",
+          "Killjoy"
+        ],
+        "key": "Skye",
+        "tip": "Skye + Breach saturent les entrées en flash/stun. Raze clear les corners de Market au nade. Killjoy zone B, Omen smoke les lignes longues de A Link.",
+        "patch": "13.00"
+      },
+      {
+        "tier": "B",
+        "label": "Contrôle Market",
+        "agents": [
+          "Viper",
+          "Sova",
+          "Cypher",
+          "KAY/O",
+          "Reyna"
+        ],
+        "key": "Viper",
+        "tip": "Viper wall coupe Market en deux pour sécuriser un site sans le voir entièrement. Sova récon les flancs. Cypher watch B Link, KAY/O suppress avant entry.",
+        "patch": "13.00"
+      },
+      {
+        "tier": "F",
+        "label": "Fun — Chaos Market",
+        "agents": [
+          "Jett",
+          "Raze",
+          "Yoru",
+          "Neon",
+          "Gekko"
+        ],
+        "key": "Neon",
+        "tip": "Cinq duelists/flanqueurs, zéro info, tout le monde rush Market en même temps. Marche une fois sur cinq mais c'est drôle.",
+        "patch": "13.00"
+      }
+    ]
+  },
+  {
+    "map": "Summit",
+    "comps": [
+      {
+        "tier": "S",
+        "label": "Meta principale",
+        "agents": [
+          "Sova",
+          "Sage",
+          "Cypher",
+          "Breach",
+          "Jett"
+        ],
+        "key": "Sova",
+        "tip": "<strong>Contrôle du Mid Fountain est la clé</strong> — trois lanes, deux sites, et trois murs activables (A, B, Mid) qui bloquent définitivement une rotation une fois déclenchés. Sova récon avant de toucher un mur pour éviter d'ouvrir la mauvaise ligne. Sage joue autour des murs pour bloquer les contre-rotations après activation. Cypher watch les caméras ne meurent pas quand un mur tombe — position idéale pour tracker en toute sécurité après avoir déclenché un mur.",
+        "patch": "13.00"
+      },
+      {
+        "tier": "PRO",
+        "label": "Joue comme un pro",
+        "agents": [
+          "Jett",
+          "Skye",
+          "Sova",
+          "Omen",
+          "Killjoy"
+        ],
+        "key": "Sova",
+        "tip": "Killjoy fraîchement buffée (tourelle +50% cadence, Nanoswarm 5s, Alarmbot plus rapide) tient B seule. Sova + Skye saturent l'info sur Mid avant de décider quel mur activer. Le mur B est plus gros — Killjoy anchor derrière une fois activé.",
+        "patch": "13.00"
+      },
+      {
+        "tier": "A",
+        "label": "Double initiateur — walls",
+        "agents": [
+          "Raze",
+          "Breach",
+          "Sova",
+          "Cypher",
+          "Omen"
+        ],
+        "key": "Breach",
+        "tip": "A Site est plus petit et compact — Breach stun + Raze grenade nettoient les angles serrés d'A Garden avant d'entrer. Ne pas activer le mur A trop tôt : ça enferme l'équipe si le push échoue. Cypher watch le flanc mid après activation.",
+        "patch": "13.00"
+      },
+      {
+        "tier": "B",
+        "label": "Post-plant B",
+        "agents": [
+          "Viper",
+          "Sage",
+          "Cypher",
+          "KAY/O",
+          "Deadlock"
+        ],
+        "key": "Viper",
+        "tip": "B Site est plus grand, laisse de la place pour un post-plant profond. Viper wall + Sage slow ralentissent la retake. Deadlock (GravNet buffé, cooldown 50s) et Cypher piègent les axes de rotation depuis Mid.",
+        "patch": "13.00"
+      },
+      {
+        "tier": "F",
+        "label": "Fun — Wall Abuse",
+        "agents": [
+          "Jett",
+          "Raze",
+          "Neon",
+          "Yoru",
+          "Gekko"
+        ],
+        "key": "Raze",
+        "tip": "Déclenche tous les murs le plus vite possible pour un chaos total, personne ne sait où sont les lignes de vue. Attention : rester sous un mur qui tombe tue instantanément.",
+        "patch": "13.00"
       }
     ]
   }

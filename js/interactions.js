@@ -632,7 +632,7 @@ export function initLivePage() {
     const _MAP_DISPLAY = {
       'Ascent':'Ascent','Bonsai':'Split','Duality':'Bind','Triad':'Haven','Port':'Icebox',
       'Foxtrot':'Breeze','Canyon':'Fracture','Pitt':'Pearl','Jam':'Lotus','Juliett':'Sunset',
-      'Infinity':'Abyss','Rook':'Corrode','Poveglia':'Range','Range':'Range',
+      'Infinity':'Abyss','Rook':'Corrode','Plummet':'Summit','Poveglia':'Range','Range':'Range',
       'HURM_Alley':'District','HURM_Yard':'Piazza','HURM_Bowl':'Kasbah','HURM_Helix':'Drift','HURM_HighTide':'Glitch',
     };
     // Prefer the raw internal map code (most reliable), fall back to mapClean
