@@ -929,7 +929,25 @@
         "tip": "Cinq duelists/flanqueurs, zéro info, tout le monde rush Market en même temps. Marche une fois sur cinq mais c'est drôle.",
         "patch": "13.00"
       }
-    ]
+    ],
+    "region": "Location · Marché central",
+    "tags": [
+      "Market indispensable",
+      "Info-heavy",
+      "Combats courte distance"
+    ],
+    "stats": {
+      "difficulty": "3.2/5",
+      "sides": "Léger avantage attaque",
+      "bestSite": "B"
+    },
+    "notes": [
+      "Market est le carrefour de la map — le contrôler ouvre les deux sites",
+      "Beaucoup de duels à courte/moyenne distance, les duelists agressifs excellent",
+      "Peu d'angles longs, Operator moins dominant qu'ailleurs",
+      "Le site B est plus rapide à exécuter depuis Market"
+    ],
+    "lineups": []
   },
   {
     "map": "Summit",
@@ -1004,6 +1022,26 @@
         "tip": "Déclenche tous les murs le plus vite possible pour un chaos total, personne ne sait où sont les lignes de vue. Attention : rester sous un mur qui tombe tue instantanément.",
         "patch": "13.00"
       }
-    ]
+    ],
+    "region": "Three-lane · Murs destructibles",
+    "tags": [
+      "Murs activables",
+      "Mid Fountain clé",
+      "Nouvelle map 13.00"
+    ],
+    "stats": {
+      "difficulty": "4.2/5",
+      "sides": "À déterminer",
+      "bestSite": "B (plus grand)"
+    },
+    "notes": [
+      "Trois murs activables (A, B, Mid) se ferment définitivement pour le reste du round",
+      "Rester sous un mur qui tombe élimine instantanément le joueur",
+      "Le contrôle du Mid Fountain conditionne quel site attaquer",
+      "A Site est petit et compact — évitez le rush sans info",
+      "B Site est plus grand, permet un post-plant profond",
+      "Meta encore jeune — RR de compét réduit de 50% sur les défaites les 2 premières semaines"
+    ],
+    "lineups": []
   }
 ]
