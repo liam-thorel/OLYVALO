@@ -30,3 +30,27 @@ export function historyPlayerName(game, player, index = 0) {
   return raw.split('#')[0];
 }
 
+export function historyOwnerKey(game) {
+  return String(game?.player || 'Inconnu').split('#')[0].trim().toLowerCase();
+}
+
+export function historyOwnerLabel(game, roster = []) {
+  const account = historyOwnerKey(game);
+  const member = roster.find(player => [player.riot, ...(player.smurfs || [])]
+    .some(riot => String(riot?.name || '').trim().toLowerCase() === account));
+  return member?.name || String(game?.player || 'Inconnu').split('#')[0];
+}
+
+export function filterHistoryGames(games, filters, now = Date.now()) {
+  const dayKey = timestamp => {
+    const date = new Date(timestamp || 0);
+    return `${date.getFullYear()}-${date.getMonth()}-${date.getDate()}`;
+  };
+  return games.filter(game => {
+    if (filters.owner !== 'all' && historyOwnerKey(game) !== filters.owner) return false;
+    if (filters.period === 'today' && dayKey(game.ts) !== dayKey(now)) return false;
+    if (filters.period === '7d' && (game.ts || 0) < now - 7 * 86400000) return false;
+    if (filters.view === 'matches' && filters.mode !== 'all' && historyMode(game) !== filters.mode) return false;
+    return true;
+  });
+}

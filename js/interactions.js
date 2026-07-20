@@ -8,7 +8,7 @@ import { valorantApi } from './api.js';
 import { state } from './main.js';
 import { groupLiveSessions, mergeSelectedSessionData } from './live-sessions.mjs';
 import { avatarLayersHTML } from './avatars.mjs?v=20260720-avatars';
-import { historyMode, historyPlayerName, isHistorySelf } from './history-utils.mjs';
+import { filterHistoryGames, historyMode, historyOwnerKey, historyOwnerLabel, historyPlayerName, isHistorySelf } from './history-utils.mjs?v=20260720-history-nav';
 
 // ─── THEME TOGGLE ─────────────────────────────────
 export function initTheme() {
@@ -1134,6 +1134,16 @@ export async function initHistoryPage() {
 
   games.sort((a,b) => (b.ts||0) - (a.ts||0));
 
+  const allGames = games;
+  const ownerOptions = [...new Map(allGames.map(game => {
+    const key = historyOwnerKey(game);
+    return [key, { key, label: historyOwnerLabel(game, state.ROSTER) }];
+  })).values()].sort((a,b) => a.label.localeCompare(b.label, 'fr'));
+  const historyUI = { view:'summary', owner:'all', period:'all', mode:'all' };
+  const visibleGames = () => filterHistoryGames(allGames, historyUI);
+  const refreshHistory = () => renderHistory(visibleGames());
+  const renderHistory = games => {
+
   const comp = games.filter(g => historyMode(g) === 'competitive');
   const deathmatches = games.filter(g => historyMode(g) === 'deathmatch');
   const otherGames = games.filter(g => historyMode(g) === 'other');
@@ -1286,8 +1296,42 @@ export async function initHistoryPage() {
       ${sectionTitle(`${title} · ${sectionGames.length}`)}
       <div class="history-game-list">${sectionGames.slice(0,40).map(gameCard).join('')}</div>
     </section>` : '';
+  const filterButton = (group, value, label, active) => `
+    <button type="button" class="history-filter-button ${active ? 'active' : ''}" data-history-${group}="${value}">${label}</button>`;
 
   el.innerHTML = `
+    <div class="history-view-tabs" role="tablist" aria-label="Vue de l'historique">
+      ${filterButton('view', 'summary', 'Résumé', historyUI.view === 'summary')}
+      ${filterButton('view', 'matches', 'Parties', historyUI.view === 'matches')}
+    </div>
+
+    <div class="history-filters">
+      <div class="history-filter-group">
+        <span>Joueur</span>
+        <div>
+          ${filterButton('owner', 'all', 'Tout le groupe', historyUI.owner === 'all')}
+          ${ownerOptions.map(owner => filterButton('owner', owner.key, owner.label, historyUI.owner === owner.key)).join('')}
+        </div>
+      </div>
+      <div class="history-filter-group">
+        <span>Période</span>
+        <div>
+          ${filterButton('period', 'today', "Aujourd'hui", historyUI.period === 'today')}
+          ${filterButton('period', '7d', '7 jours', historyUI.period === '7d')}
+          ${filterButton('period', 'all', 'Tout', historyUI.period === 'all')}
+        </div>
+      </div>
+      ${historyUI.view === 'matches' ? `<div class="history-filter-group">
+        <span>Mode</span>
+        <div>
+          ${filterButton('mode', 'all', 'Tous', historyUI.mode === 'all')}
+          ${filterButton('mode', 'competitive', 'Compétitif', historyUI.mode === 'competitive')}
+          ${filterButton('mode', 'deathmatch', 'Deathmatch', historyUI.mode === 'deathmatch')}
+        </div>
+      </div>` : ''}
+    </div>
+
+    <section class="history-view-panel summary ${historyUI.view === 'summary' ? 'active' : ''}">
     <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:32px">
       ${statCard('Games totales', games.length)}
       ${statCard('Compétitif', comp.length)}
@@ -1332,6 +1376,15 @@ export async function initHistoryPage() {
       </div>
     </div>` : ''}
 
+    ${topAgents.length || mapStats.length ? `
+    <details class="history-analysis">
+      <summary>
+        <span>Analyses détaillées</span>
+        <small>Agents et performances par map</small>
+        <i aria-hidden="true">⌄</i>
+      </summary>
+      <div class="history-analysis-content">` : ''}
+
     ${topAgents.length ? `
     <div class="history-agents-section">
       ${sectionTitle('Agents les plus joués')}
@@ -1363,11 +1416,38 @@ export async function initHistoryPage() {
       </div>
     </div>` : ''}
 
+    ${topAgents.length || mapStats.length ? `</div></details>` : ''}
+
+    </section>
+
+    <section class="history-view-panel matches ${historyUI.view === 'matches' ? 'active' : ''}">
     <div class="history-latest-sections">
       ${gameSection('Compétitif', comp, 'competitive')}
       ${gameSection('Deathmatch', deathmatches, 'deathmatch')}
       ${gameSection('Autres modes', otherGames, 'other')}
-    </div>`;
+      ${games.length ? '' : '<div class="history-empty-filter">Aucune partie ne correspond à ces filtres.</div>'}
+    </div>
+    </section>`;
+
+    el.querySelectorAll('[data-history-view]').forEach(button => button.addEventListener('click', () => {
+      historyUI.view = button.dataset.historyView;
+      refreshHistory();
+    }));
+    el.querySelectorAll('[data-history-owner]').forEach(button => button.addEventListener('click', () => {
+      historyUI.owner = button.dataset.historyOwner;
+      refreshHistory();
+    }));
+    el.querySelectorAll('[data-history-period]').forEach(button => button.addEventListener('click', () => {
+      historyUI.period = button.dataset.historyPeriod;
+      refreshHistory();
+    }));
+    el.querySelectorAll('[data-history-mode]').forEach(button => button.addEventListener('click', () => {
+      historyUI.mode = button.dataset.historyMode;
+      refreshHistory();
+    }));
+  };
+
+  refreshHistory();
 }
 
 async function ensureAgentMap() {

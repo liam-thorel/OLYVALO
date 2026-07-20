@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { historyMode, historyPlayerName, isOpaquePlayerName } from '../js/history-utils.mjs';
+import { filterHistoryGames, historyMode, historyOwnerKey, historyOwnerLabel, historyPlayerName, isOpaquePlayerName } from '../js/history-utils.mjs';
 
 assert.equal(historyMode({ mode: 'competitive' }), 'competitive');
 assert.equal(historyMode({ mode: 'deathmatch' }), 'deathmatch');
@@ -14,4 +14,17 @@ assert.equal(historyPlayerName(
   { name: 'b2f303f9', puuid: 'self-id' },
 ), 'Vous');
 
-console.log('history-utils: modes and player labels validated');
+const now = new Date('2026-07-20T12:00:00').getTime();
+const history = [
+  { player:'Drew A Picasso#XOOO', mode:'deathmatch', ts:now - 3600000 },
+  { player:'Wong Chi Ming#2046', mode:'competitive', ts:now - 2 * 86400000 },
+  { player:'Wong Chi Ming#2046', mode:'competitive', ts:now - 10 * 86400000 },
+];
+const roster = [{ name:'Nico', riot:{name:'Drew A Picasso'} }, { name:'Liam', riot:{name:'Wong Chi Ming'} }];
+assert.equal(historyOwnerKey(history[0]), 'drew a picasso');
+assert.equal(historyOwnerLabel(history[0], roster), 'Nico');
+assert.equal(filterHistoryGames(history, {owner:'all',period:'7d',view:'summary',mode:'all'}, now).length, 2);
+assert.equal(filterHistoryGames(history, {owner:'wong chi ming',period:'all',view:'matches',mode:'competitive'}, now).length, 2);
+assert.equal(filterHistoryGames(history, {owner:'all',period:'all',view:'matches',mode:'deathmatch'}, now).length, 1);
+
+console.log('history-utils: modes, owners, filters and player labels validated');

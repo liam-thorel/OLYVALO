@@ -69,6 +69,12 @@
   .history-map-visual { min-height: 130px; }
   .history-deathmatch-list { grid-template-columns: 1fr; }
   .history-day-modes { grid-template-columns: 1fr; }
+  .history-view-tabs .history-filter-button { flex: 1; min-width: 0; }
+  .history-filters { align-items: stretch; flex-direction: column; gap: 14px; padding: 12px; }
+  .history-filter-group > div { width: 100%; }
+  .history-filter-button { flex: 1; min-width: max-content; }
+  .history-analysis > summary { grid-template-columns: 1fr auto; }
+  .history-analysis > summary small { display: none; }
   .history-duration { display: none; }
   .history-game-summary { gap: 8px; padding: 9px; }
   .history-self-agent { width: 32px; height: 32px; }
