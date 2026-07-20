@@ -925,8 +925,12 @@ export function initLivePage() {
     const enemies = all.filter(p => p.team === 'CHAOS');
     const isDM = /deathmatch/i.test(data.mode || '') || all.some(p => p.team === 'NEUTRAL') || allies.length === all.length || enemies.length === 0;
 
-    // Stable key: only rebuild if player list (names+agents) actually changed
-    const stableKey = all.map(p => `${p.name}|${p.agent}|${p.team}`).join(',');
+    // Ranks arrive asynchronously after the roster. Include every displayed rank
+    // field so the player rows refresh immediately without requiring an F5.
+    const stableKey = all.map(p => {
+      const rank = p.rank || {};
+      return `${p.name}|${p.agent}|${p.team}|${rank.tier ?? ''}|${rank.rr ?? ''}|${rank.peakTier ?? ''}|${rank.level ?? ''}|${(rank.rrHistory || []).join('.')}|${rank.rrEarned ?? ''}`;
+    }).join(',');
     if (playersEl && playersEl.dataset.key !== stableKey) {
       playersEl.dataset.key = stableKey;
       playersEl.innerHTML = isDM
