@@ -1,12 +1,12 @@
-Dim WshShell, strPath, fso
+Dim WshShell, strPath, fso, nodePath, command
 Set WshShell = CreateObject("WScript.Shell")
 Set fso = CreateObject("Scripting.FileSystemObject")
 strPath = fso.GetParentFolderName(WScript.ScriptFullName)
+nodePath = strPath & "\runtime\node.exe"
 
-' Install modules if needed
-If Not fso.FolderExists(strPath & "\node_modules\ws") Then
-    WshShell.Run "cmd /c cd /d """ & strPath & """ && npm install", 0, True
+If Not fso.FileExists(nodePath) Then
+    WScript.Quit 2
 End If
 
-' Launch node silently
-WshShell.Run "cmd /c cd /d """ & strPath & """ && node index.js >> """ & strPath & "\olycity.log"" 2>&1", 0, False
+command = "cmd /c cd /d """ & strPath & """ && """ & nodePath & """ """ & strPath & "\index.js"" >> """ & strPath & "\olycity.log"" 2>&1"
+WshShell.Run command, 0, False

@@ -1,40 +1,51 @@
 @echo off
+setlocal
 title OLYCITY LIVE - Installation
+set "SCRIPT_DIR=%~dp0"
+set "NODE_EXE=%SCRIPT_DIR%runtime\node.exe"
 
 echo.
-echo   OLYCITY LIVE - Setup
+echo   OLYCITY LIVE - Installation autonome
 echo   ========================
 echo.
 
-where node >nul 2>&1
-if %errorlevel% neq 0 (
-    echo   Node.js n'est pas installe.
-    echo   Le navigateur va s'ouvrir pour le telecharger.
-    echo   Installe-le puis relance ce fichier en administrateur.
+if not exist "%NODE_EXE%" (
+    echo   [ERREUR] Runtime portable manquant.
+    echo   Retelcharge et decompresse completement le ZIP officiel.
     echo.
-    start https://nodejs.org/dist/v20.19.0/node-v20.19.0-x64.msi
     pause
     exit /b
 )
-echo   Node.js OK
-
-echo   Installation des modules...
-cd /d "%~dp0"
-call npm install --silent 2>nul
-echo   Modules OK
+if not exist "%SCRIPT_DIR%node_modules\ws\index.js" (
+    echo   [ERREUR] Dependances embarquees manquantes.
+    echo   Retelcharge et decompresse completement le ZIP officiel.
+    echo.
+    pause
+    exit /b
+)
+"%NODE_EXE%" --version >nul 2>&1
+if %errorlevel% neq 0 (
+    echo   [ERREUR] Le runtime portable ne peut pas demarrer sur ce PC.
+    pause
+    exit /b
+)
+echo   Runtime portable OK
+echo   Dependances embarquees OK
 echo.
 
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File "%SCRIPT_DIR%manage.ps1" stop >nul 2>&1
 schtasks /delete /tn "OlycityLive" /f >nul 2>&1
-schtasks /create /tn "OlycityLive" /tr "wscript.exe \"%~dp0silent.vbs\"" /sc ONLOGON /rl HIGHEST /f >nul 2>&1
+schtasks /create /tn "OlycityLive" /tr "wscript.exe \"%SCRIPT_DIR%silent.vbs\"" /sc ONLOGON /rl LIMITED /f >nul 2>&1
 
 if %errorlevel% neq 0 (
-    echo   Erreur - Relance en tant qu'administrateur.
+    echo   [ERREUR] Impossible de creer le demarrage automatique.
+    echo   Essaie une fois avec clic droit puis Executer en administrateur.
     pause
     exit /b
 )
 
 echo   Tache planifiee creee.
-start "" wscript.exe "%~dp0silent.vbs"
+start "" wscript.exe "%SCRIPT_DIR%silent.vbs"
 timeout /t 2 /nobreak >nul
 echo   OLYCITY LIVE tourne en arriere-plan.
 echo.

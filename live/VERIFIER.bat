@@ -1,35 +1,36 @@
 @echo off
+setlocal
 title OLYCITY LIVE - Statut
+set "SCRIPT_DIR=%~dp0"
+set "NODE_EXE=%SCRIPT_DIR%runtime\node.exe"
 
 echo.
 echo   === OLYCITY LIVE - VERIFIER ===
 echo.
 
-where node >nul 2>&1
-if %errorlevel% neq 0 (
-    echo   [ERREUR] Node.js introuvable.
-    echo   Lance INSTALLER.bat en administrateur.
+if not exist "%NODE_EXE%" (
+    echo   [ERREUR] Runtime portable introuvable.
+    echo   Retelcharge le ZIP officiel.
     echo.
     pause
     exit /b
 )
-echo   Node.js OK
-
-cd /d "%~dp0"
-if not exist node_modules\ws (
-    echo   Installation des modules...
-    call npm install --silent 2>nul
-    echo   Modules OK
+echo   Runtime portable OK
+if not exist "%SCRIPT_DIR%node_modules\ws\index.js" (
+    echo   [ERREUR] Dependances embarquees introuvables.
+    echo   Retelcharge le ZIP officiel.
+    pause
+    exit /b
 )
-echo   Modules OK
+echo   Dependances embarquees OK
 echo.
 
-tasklist /fi "IMAGENAME eq node.exe" 2>nul | find /i "node.exe" >nul
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File "%SCRIPT_DIR%manage.ps1" status >nul 2>&1
 if %errorlevel% equ 0 (
     echo   Script : EN COURS
 ) else (
     echo   Script : ARRETE - Relancement...
-    start "" wscript.exe "%~dp0silent.vbs"
+    start "" wscript.exe "%SCRIPT_DIR%silent.vbs"
     timeout /t 3 /nobreak >nul
     echo   Script : LANCE
 )
