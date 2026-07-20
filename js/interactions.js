@@ -677,7 +677,9 @@ export function initLivePage() {
     if (dot?.style.display     !== 'block') dot.style.display      = 'block';
 
     const isPregame = data?.phase === 'pregame' || data?.mode === 'agent-select';
+    const liveHeader = content?.querySelector('.live-header');
     const liveBody = content?.querySelector('.live-body');
+    if (liveHeader) liveHeader.style.display = isPregame ? 'none' : '';
     if (liveBody) liveBody.style.display = isPregame ? 'none' : '';
 
     // Map — guard + internal name conversion
@@ -796,9 +798,9 @@ export function initLivePage() {
           compsEl.innerHTML = `
             <div class="live-pregame-header ${sideClass}">
               <div class="live-pregame-heading">
-                <span class="live-pregame-kicker">Agent Select</span>
-                <strong>${pgMapName}</strong>
-                <span>Compositions recommandées</span>
+                <span class="live-pregame-kicker">${pgMapName} <i aria-hidden="true">·</i> Agent Select</span>
+                <strong>Compositions recommandées</strong>
+                <span>Choisissez une stratégie adaptée au côté de départ</span>
               </div>
               <div class="live-side-card ${sideClass}" aria-label="${sideLabel}">
                 <span class="live-side-icon" aria-hidden="true"></span>

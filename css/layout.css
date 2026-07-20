@@ -498,7 +498,7 @@ body.agent-mode .footer{ display:none; }
   --side-rgb: 125, 135, 153;
   position: relative; overflow: hidden;
   display: flex; align-items: stretch; justify-content: space-between; gap: 18px;
-  min-height: 92px; padding: 18px 20px;
+  min-height: 82px; padding: 15px 20px;
   border: 1px solid rgba(var(--side-rgb), .32);
   background:
     linear-gradient(100deg, rgba(var(--side-rgb), .14), transparent 48%),
@@ -517,8 +517,11 @@ body.agent-mode .footer{ display:none; }
 .live-pregame-heading .live-pregame-kicker {
   color: var(--side-color); font-size: 9px; font-weight: 700; letter-spacing: 4px;
 }
+.live-pregame-heading .live-pregame-kicker i {
+  margin: 0 4px; color: var(--dim); font-style: normal;
+}
 .live-pregame-heading strong {
-  color: var(--text); font-size: clamp(19px, 2.2vw, 28px); line-height: 1.05; letter-spacing: 5px;
+  color: var(--text); font-size: clamp(16px, 1.8vw, 23px); line-height: 1.15; letter-spacing: 3px;
   overflow: hidden; text-overflow: ellipsis;
 }
 .live-pregame-heading > span:last-child {
