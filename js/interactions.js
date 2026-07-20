@@ -6,6 +6,7 @@
 import { storage } from './storage.js';
 import { valorantApi } from './api.js';
 import { state } from './main.js';
+import { groupLiveSessions, mergeSelectedSessionData } from './live-sessions.mjs';
 
 // ─── THEME TOGGLE ─────────────────────────────────
 export function initTheme() {
@@ -520,18 +521,8 @@ export function initLivePage() {
       });
       if (key !== lastDataKey) {
         lastDataKey = key;
-        // Re-resolve liveData with sibling players if needed
-        if (liveData && !liveData.players?.length) {
-          const sibling = active.find(([p,s]) => p !== selectedSession && s.players?.length > 0)?.[1];
-          if (sibling) liveData = {
-            ...liveData,
-            players: sibling.players,
-            score: sibling.score || liveData.score,
-            mapClean: sibling.mapClean || liveData.mapClean,
-            mapInternal: sibling.mapInternal || liveData.mapInternal,
-            mode: sibling.mode || liveData.mode,
-          };
-        }
+        // A roster can only be shared by clients observing the same match.
+        liveData = mergeSelectedSessionData(liveData, selectedSession, byMatchCache);
         currentLiveData = liveData;
         updateUI(currentLiveData);
       }
@@ -553,44 +544,16 @@ export function initLivePage() {
     const _now = Date.now();
     const active = Object.entries(sessions).filter(([,s]) => s?.active && (s?.mapClean || s?.map) && isFreshSession(s, _now));
     
-    // Remove picker if 0 or 1 session
-    if (active.length <= 1) {
+    byMatchCache = groupLiveSessions(active);
+
+    // Swapping is useful between matches, not between two clients in one match.
+    if (Object.keys(byMatchCache).length <= 1) {
       if (picker) picker.remove();
       return;
     }
 
     // Group by matchId first, then by player overlap as fallback
-    byMatchCache = {};
     const byMatch = byMatchCache;
-
-    active.forEach(([puuid, s]) => {
-      const mid = s.matchId || null;
-      // Try to merge into existing group with same matchId
-      if (mid) {
-        const existing = Object.entries(byMatch).find(([k, g]) => 
-          g[0].matchId === mid
-        );
-        if (existing) {
-          existing[1].push({ puuid, ...s });
-          return;
-        }
-      }
-      // Try player overlap
-      const playerPuuids = new Set((s.players||[]).map(p=>p.puuid).filter(Boolean));
-      if (playerPuuids.size > 0) {
-        const existing = Object.entries(byMatch).find(([k, g]) => {
-          const gPuuids = g.flatMap(gs => (gs.players||[]).map(p=>p.puuid));
-          return gPuuids.some(p => playerPuuids.has(p));
-        });
-        if (existing) {
-          existing[1].push({ puuid, ...s });
-          return;
-        }
-      }
-      // New group
-      const key = mid || puuid;
-      byMatch[key] = [{ puuid, ...s }];
-    });
 
     if (!picker) {
       picker = document.createElement('div');
@@ -664,8 +627,13 @@ export function initLivePage() {
     selectedSession = puuid;
     updateSessionPicker(lastSessions); // re-render picker immediately with new selection
     renderDiagnostic();
-    const data = lastSessions[puuid] || null;
-    if (data) updateUI(data);
+    const rawData = lastSessions[puuid] || null;
+    const data = mergeSelectedSessionData(rawData, selectedSession, byMatchCache);
+    if (data) {
+      lastDataKey = '';
+      currentLiveData = data;
+      updateUI(data);
+    }
   };
 
   async function loadMapImg(mapName) {
