@@ -5,7 +5,7 @@ const { execSync } = require('child_process');
 const WebSocket = require('ws');
 
 const FIREBASE_URL = 'https://realtime-database-5bb9f-default-rtdb.europe-west1.firebasedatabase.app';
-const SCRIPT_VERSION = '4.9.2';
+const SCRIPT_VERSION = '4.9.3';
 
 // Valorant ShooterGame.log paths — contains in-game server port
 const SHOOTER_LOG_PATHS = [
@@ -495,11 +495,35 @@ async function fetchPostMatchDetails(tokens, matchId) {
   return null;
 }
 
-function buildDetailedHistory(snapshot, details, tokens) {
+async function fetchPlayerNames(tokens, puuids) {
+  if (!tokens || !puuids?.length) return {};
+  try {
+    const response = await pdPost(tokens, '/name-service/v2/players', [...new Set(puuids)]);
+    const names = {};
+    if (Array.isArray(response)) {
+      response.forEach(player => {
+        if (player.Subject && player.GameName) {
+          names[player.Subject] = `${player.GameName}#${player.TagLine || ''}`.replace(/#$/, '');
+        }
+      });
+    }
+    return names;
+  } catch (error) {
+    console.log(`[${ts()}] ⚠️ Names post-game: ${error.message}`);
+    return {};
+  }
+}
+
+function buildDetailedHistory(snapshot, details, tokens, resolvedNames = {}) {
   if (!details) return snapshot;
 
   const rawPlayers = details.players || [];
   const rawTeams = details.teams || [];
+  const mode = details.matchInfo?.queueID || details.matchInfo?.queueId || snapshot.mode;
+  const isDeathmatch = String(mode || '').toLowerCase().includes('deathmatch');
+  const snapshotPlayers = new Map((snapshot.players || [])
+    .filter(player => player.puuid)
+    .map(player => [player.puuid, player]));
   const self = rawPlayers.find(player => player.subject === tokens?.puuid);
   const selfTeamId = self?.teamId || (snapshot.selfTeam === 'ORDER' ? 'Blue' : snapshot.selfTeam === 'CHAOS' ? 'Red' : null);
   const selfTeam = rawTeams.find(team => team.teamId === selfTeamId);
@@ -511,12 +535,14 @@ function buildDetailedHistory(snapshot, details, tokens) {
   const players = rawPlayers.map(player => {
     const stats = player.stats || {};
     const roundsPlayed = stats.roundsPlayed || 0;
+    const previousName = snapshotPlayers.get(player.subject)?.name;
+    const detailName = player.gameName ? `${player.gameName}#${player.tagLine || ''}`.replace(/#$/, '') : '';
     return {
-      name: player.gameName ? `${player.gameName}#${player.tagLine || ''}`.replace(/#$/, '') : player.subject?.slice(0, 8) || '?',
+      name: resolvedNames[player.subject] || detailName || previousName || player.subject?.slice(0, 8) || '?',
       puuid: player.subject || '',
       agent: AGENT_UUIDS[(player.characterId || '').toLowerCase()] || '?',
       agentId: (player.characterId || '').toLowerCase(),
-      team: player.teamId === 'Blue' ? 'ORDER' : 'CHAOS',
+      team: isDeathmatch ? 'NEUTRAL' : player.teamId === 'Blue' ? 'ORDER' : player.teamId === 'Red' ? 'CHAOS' : 'NEUTRAL',
       stats: {
         kills: stats.kills || 0,
         deaths: stats.deaths || 0,
@@ -532,18 +558,18 @@ function buildDetailedHistory(snapshot, details, tokens) {
     ...snapshot,
     schemaVersion: 2,
     map,
-    mode: details.matchInfo?.queueID || details.matchInfo?.queueId || snapshot.mode,
+    mode,
     ts: details.matchInfo?.gameStartMillis || snapshot.ts,
     endTs: details.matchInfo?.gameStartMillis && details.matchInfo?.gameLengthMillis
       ? details.matchInfo.gameStartMillis + details.matchInfo.gameLengthMillis
       : snapshot.endTs,
     durationMs: details.matchInfo?.gameLengthMillis || Math.max(0, (snapshot.endTs || 0) - (snapshot.ts || 0)),
-    result: selfTeam ? (selfTeam.won ? 'win' : 'loss') : snapshot.result,
+    result: isDeathmatch ? 'completed' : selfTeam ? (selfTeam.won ? 'win' : 'loss') : snapshot.result,
     score: blueTeam || redTeam ? {
       blue: blueTeam?.roundsWon || 0,
       red: redTeam?.roundsWon || 0,
     } : snapshot.score,
-    selfTeam: selfTeamId === 'Blue' ? 'ORDER' : selfTeamId === 'Red' ? 'CHAOS' : snapshot.selfTeam,
+    selfTeam: isDeathmatch ? 'NEUTRAL' : selfTeamId === 'Blue' ? 'ORDER' : selfTeamId === 'Red' ? 'CHAOS' : snapshot.selfTeam,
     players: players.length ? players : snapshot.players,
     rounds: details.roundResults?.length || 0,
   };
@@ -760,7 +786,8 @@ async function poll() {
         lastGameInfo.endTs = Date.now();
 
         const details = await fetchPostMatchDetails(postMatchTokens, lastGameInfo.matchId);
-        lastGameInfo = buildDetailedHistory(lastGameInfo, details, postMatchTokens);
+        const postMatchNames = await fetchPlayerNames(postMatchTokens, (details?.players || []).map(player => player.subject).filter(Boolean));
+        lastGameInfo = buildDetailedHistory(lastGameInfo, details, postMatchTokens, postMatchNames);
         const rr = await fetchPostMatchRR(postMatchTokens, lastGameInfo.matchId);
         if (rr) lastGameInfo.rr = rr;
 
