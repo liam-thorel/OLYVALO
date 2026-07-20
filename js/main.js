@@ -5,11 +5,12 @@
 
 import { valorantApi } from './api.js';
 
-const SITE_VERSION = '1780619461'; // Auto-updated on push
+const SITE_VERSION = '20260720-avatars';
 import { syncPlayer as henrikSyncPlayer, syncAllPlayers as henrikSyncAll, persistPlayerStats } from './henrik.js';
-import { rosterHTML, guestCardHTML, mapSectionHTML, stierHTML, agentPageHTML, miniRosterHTML, agentsFiltersHTML, agentsGridHTML, compCompareHTML, compBuilderHTML, savedCompsHTML } from './render.js';
-import { initTheme, initTilt, initParallax, initSearch, initKeyboard, updateFavCount, initHeroParticles, initWheelLogos, initLivePage, initHistoryPage } from './interactions.js';
+import { rosterHTML, guestCardHTML, mapSectionHTML, stierHTML, agentPageHTML, miniRosterHTML, agentsFiltersHTML, agentsGridHTML, compCompareHTML, compBuilderHTML, savedCompsHTML } from './render.js?v=20260720-avatars';
+import { initTheme, initTilt, initParallax, initSearch, initKeyboard, updateFavCount, initHeroParticles, initWheelLogos, initLivePage, initHistoryPage } from './interactions.js?v=20260720-avatars';
 import { storage } from './storage.js';
+import { avatarLayersHTML } from './avatars.mjs';
 
 // ─── STATE ─────────────────────────────────────────
 export const state = {
@@ -42,7 +43,7 @@ export const state = {
 async function loadData() {
   const [comps, roster, roles, agentsFr, lineups, callouts, meta] = await Promise.all([
     fetch('./data/comps.json').then(r => r.json()),
-    fetch('./data/roster.json').then(r => r.json()),
+    fetch(`./data/roster.json?v=${SITE_VERSION}`).then(r => r.json()),
     fetch('./data/roles.json').then(r => r.json()),
     fetch('./data/agents-fr.json').then(r => r.json()),
     fetch('./data/lineups.json').then(r => r.json()),
@@ -736,17 +737,13 @@ window.OLYCITY = {
       <h1 style="font-family:'Tomorrow',sans-serif;font-size:28px;font-weight:700;letter-spacing:6px;text-transform:uppercase;color:#fff">Qui joue ?</h1>
       <div style="display:flex;gap:20px;flex-wrap:wrap;justify-content:center;max-width:800px">
         ${profiles.map(p => {
-          const discordImg = p.avatar;
           const agentImg = valorantApi.agentImg(p.mains?.[0]);
-          const imgSrc = discordImg || agentImg;
-          const imgEl = imgSrc
-            ? `<img src="${imgSrc}" style="width:100%;height:100%;object-fit:cover;object-position:center top">`
-            : `<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-family:Tomorrow,sans-serif;font-size:28px;font-weight:700;color:rgba(255,255,255,.3)">${p.name[0]}</div>`;
+          const imgEl = avatarLayersHTML(p.name, p.avatar, agentImg);
           const savedCount = JSON.parse(localStorage.getItem(`olycity-saved-comps-${p.name}`) || '[]').length;
-          const badge = savedCount > 0 ? `<span style="position:absolute;bottom:4px;right:4px;background:#ff4656;color:#fff;font-family:Tomorrow,sans-serif;font-size:8px;font-weight:700;letter-spacing:1px;padding:2px 5px">${savedCount}</span>` : '';
+          const badge = savedCount > 0 ? `<span style="position:absolute;z-index:4;bottom:4px;right:4px;background:#ff4656;color:#fff;font-family:Tomorrow,sans-serif;font-size:8px;font-weight:700;letter-spacing:1px;padding:2px 5px">${savedCount}</span>` : '';
           const currentProfile = localStorage.getItem('olycity-profile');
           const isActive = window._activeProfiles?.has(p.name) && p.name !== currentProfile;
-          const activeLabel = isActive ? `<div style="position:absolute;top:6px;right:6px;width:10px;height:10px;border-radius:50%;background:#3fcf6b;border:2px solid #0a0c10;box-shadow:0 0 6px rgba(63,207,107,.7)"></div>` : '';
+          const activeLabel = isActive ? `<div style="position:absolute;z-index:4;top:6px;right:6px;width:10px;height:10px;border-radius:50%;background:#3fcf6b;border:2px solid #0a0c10;box-shadow:0 0 6px rgba(63,207,107,.7)"></div>` : '';
           return `<div class="profile-card" onclick="${isActive ? '' : `window.OLYCITY._selectProfile('${p.name}')`}" style="${isActive ? 'opacity:0.5;cursor:not-allowed;filter:grayscale(.3)' : ''}">
             <div class="profile-avatar" style="position:relative">${imgEl}${badge}</div>
             <div class="profile-name">${p.name}</div>
@@ -780,9 +777,8 @@ window.OLYCITY = {
     const el = document.getElementById('profile-indicator');
     if (!el) return;
     const player = state.ROSTER.find(p => p.name === name);
-    const img = player?.avatar
-      ? `<img src="${player.avatar}" style="width:22px;height:22px;object-fit:cover;object-position:center top;border-radius:1px">`
-      : '';
+    const agentFallback = valorantApi.agentImg(player?.mains?.[0]);
+    const img = `<span class="profile-indicator-avatar">${avatarLayersHTML(name, player?.avatar, agentFallback)}</span>`;
     el.innerHTML = `${img}<span class="profile-indicator-name">${name}</span>`;
   },
 

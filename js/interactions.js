@@ -7,6 +7,7 @@ import { storage } from './storage.js';
 import { valorantApi } from './api.js';
 import { state } from './main.js';
 import { groupLiveSessions, mergeSelectedSessionData } from './live-sessions.mjs';
+import { avatarLayersHTML } from './avatars.mjs?v=20260720-avatars';
 
 // ─── THEME TOGGLE ─────────────────────────────────
 export function initTheme() {
@@ -572,7 +573,7 @@ export function initLivePage() {
     const rosterMap = _rosterCache;
     if (!_rosterFetched) {
       _rosterFetched = true;
-      fetch('./data/roster.json').then(r=>r.json()).then(roster => {
+      fetch('./data/roster.json?v=20260720-avatars').then(r=>r.json()).then(roster => {
         roster.forEach(p => {
           const entry = { avatar: p.avatar, member: p.name };
           if (p.riot?.name) _rosterCache[`${p.riot.name}#${p.riot.tag}`.toLowerCase()] = entry;
@@ -598,13 +599,12 @@ export function initLivePage() {
           const key = name.toLowerCase();
           // Try exact match or partial
           const hit = rosterMap[key] || Object.values(rosterMap).find((v,i)=>Object.keys(rosterMap)[i].split('#')[0] === name.toLowerCase().split('#')[0]);
-          const avatar = hit?.avatar;
-          return avatar || null;
+          return hit ? { avatar: hit.avatar, member: hit.member } : null;
         }).filter(Boolean);
 
         const avatarsHtml = rosterAvatars.length
           ? `<div style="display:flex;margin-bottom:8px">
-              ${rosterAvatars.map((url, i) => `<img src="${url}" style="width:28px;height:28px;border-radius:50%;border:2px solid ${isSelected ? 'var(--red)' : 'var(--border)'};margin-left:${i>0?'-8px':'0'};object-fit:cover;background:var(--surf3)" onerror="this.style.display='none'">`).join('')}
+              ${rosterAvatars.map((profile, i) => `<span class="live-session-avatar" style="border-color:${isSelected ? 'var(--red)' : 'var(--border)'};margin-left:${i>0?'-8px':'0'}">${avatarLayersHTML(profile.member, profile.avatar)}</span>`).join('')}
             </div>`
           : '';
 

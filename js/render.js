@@ -6,6 +6,7 @@
 import { valorantApi } from './api.js';
 import { state } from './main.js';
 import { formatRelTime } from './storage.js';
+import { avatarLayersHTML } from './avatars.mjs?v=20260720-avatars';
 
 // ─── Agent YouTube trailers (IDs officiels Riot) ──
 // Fallback sur background art si YouTube bloque l'embed
@@ -488,14 +489,9 @@ export function rosterHTML() {
       </div>
       ${syncTime}` : '';
 
-    const _colors = {Nico:'#ff4656',Liam:'#3fcfcf',Rayhan:'#f5c842',Mathis:'#a87fff','Noé':'#ff8200'};
-    const _col = _colors[p.name] || '#888';
-    const _initial = (p.name||'?')[0].toUpperCase();
-    // Probe: hidden img tests the URL; on error, swaps the bg div for a colored initial
-    const _probe = p.avatar ? `<img src="${p.avatar}" style="display:none" onerror="var b=this.parentNode.querySelector('.player-banner-avatar'); if(b){b.style.backgroundImage='none';b.style.display='flex';b.style.alignItems='center';b.style.justifyContent='center';b.style.background='${_col}22';b.style.color='${_col}';b.style.fontFamily='Tomorrow,sans-serif';b.style.fontSize='42px';b.style.fontWeight='700';b.textContent='${_initial}';}">` : '';
     return `<div class="player-card" data-player-name="${p.name}">
-      <div class="player-banner" ${p.avatar ? `style="--player-avatar:url(${p.avatar})"` : ''}>
-        ${p.avatar ? `<div class="player-banner-avatar" style="background-image:url(${p.avatar})"></div>${_probe}` : `<div class="player-banner-avatar" style="display:flex;align-items:center;justify-content:center;background:${_col}22;color:${_col};font-family:Tomorrow,sans-serif;font-size:42px;font-weight:700">${_initial}</div>`}
+      <div class="player-banner">
+        <div class="player-banner-avatar">${avatarLayersHTML(p.name, p.avatar, valorantApi.agentImg(p.mains?.[0]))}</div>
         <div class="player-banner-deco"></div>
         <div class="player-banner-glow"></div>
         ${rankDisplay}
@@ -800,10 +796,8 @@ export function guestCardHTML() {
 // ─── MINI ROSTER (home page) ─────────────────────
 export function miniRosterHTML() {
   return state.ROSTER.map(p => {
-    const img = valorantApi.agentImg(p.mains?.[0]);
-    const imgEl = img
-      ? `<img src="${img}" alt="${p.mains?.[0] || ''}">`
-      : `<div style="width:100%;height:100%;background:var(--surf3);display:flex;align-items:center;justify-content:center;font-size:16px;color:var(--dim)">${p.name[0]}</div>`;
+    const agentFallback = valorantApi.agentImg(p.mains?.[0]);
+    const imgEl = avatarLayersHTML(p.name, p.avatar, agentFallback);
     const stats = state.PLAYER_STATS[p.name] || {};
     const rankEl = stats.rank
       ? `<span class="mini-player-rank">${stats.rank.split(' ').slice(0,1)[0]}</span>`
