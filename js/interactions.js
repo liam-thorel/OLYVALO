@@ -482,8 +482,16 @@ export function initLivePage() {
             const field = subPath.replace(/^\//, '');
             lastSessions[puuid][field] = data;
           } else {
-            if (data && typeof data === 'object') Object.assign(lastSessions[puuid], data);
-            else lastSessions[puuid] = data;
+            // A Firebase `put` replaces the whole session. Merging it would keep
+            // fields removed by Firebase (notably an empty `players` array).
+            if (e.type === 'put') {
+              if (data === null) delete lastSessions[puuid];
+              else lastSessions[puuid] = data && typeof data === 'object' ? { ...data } : data;
+            } else if (data && typeof data === 'object') {
+              Object.assign(lastSessions[puuid], data);
+            } else {
+              lastSessions[puuid] = data;
+            }
           }
           if (lastSessions[puuid] && typeof lastSessions[puuid] === 'object') lastSessions[puuid]._rxAt = Date.now();
         }
@@ -700,6 +708,10 @@ export function initLivePage() {
     if (content?.style.display !== 'block') content.style.display  = 'block';
     if (dot?.style.display     !== 'block') dot.style.display      = 'block';
 
+    const isPregame = data?.phase === 'pregame' || data?.mode === 'agent-select';
+    const liveBody = content?.querySelector('.live-body');
+    if (liveBody) liveBody.style.display = isPregame ? 'none' : '';
+
     // Map — guard + internal name conversion
     // Internal codename → display. Includes wrong legacy values from old scripts.
     const _MAP_DISPLAY = {
@@ -789,7 +801,6 @@ export function initLivePage() {
     }
 
     // Pregame — show map comps during agent select
-    const isPregame = data?.phase === 'pregame' || data?.mode === 'agent-select';
     let compsEl = document.getElementById('live-comps-panel');
     if (isPregame && (data?.mapClean || data?.map)) {
       const pgMapName = data.mapClean || data.map;
