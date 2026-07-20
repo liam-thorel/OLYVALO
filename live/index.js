@@ -325,12 +325,14 @@ let roundPhase = '';
 let roundStartTime = null;
 let lastDiagnosticPush = 0;
 let lastDiagnosticSignature = '';
+let diagnosticPlayerName = '';
 
 async function publishDiagnostic(state, details = {}, force = false) {
   const sessionKey = stableSessionKey || authTokens?.puuid || selfPuuid;
   if (!sessionKey) return;
 
-  const signature = JSON.stringify({ state, ...details });
+  const playerName = details.playerName || diagnosticPlayerName || '';
+  const signature = JSON.stringify({ state, playerName, ...details });
   const now = Date.now();
   if (!force && signature === lastDiagnosticSignature && now - lastDiagnosticPush < 10000) return;
 
@@ -340,6 +342,7 @@ async function publishDiagnostic(state, details = {}, force = false) {
     online: true,
     ts: now,
     version: SCRIPT_VERSION,
+    playerName,
     state,
     riotClient: !!lockPort,
     ...details,
@@ -631,6 +634,11 @@ async function poll() {
   const myPresences = selfPuuid
     ? presences.filter(p => p.puuid === selfPuuid)
     : presences.slice(0, 1);
+
+  const ownIdentity = myPresences.find(p => p.game_name);
+  if (ownIdentity) {
+    diagnosticPlayerName = `${ownIdentity.game_name}#${ownIdentity.game_tag || ''}`.replace(/#$/, '');
+  }
 
   let found = null;
   let playerName = '';

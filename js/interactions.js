@@ -7,6 +7,7 @@ import { storage } from './storage.js';
 import { valorantApi } from './api.js';
 import { state } from './main.js';
 import { groupLiveSessions, mergeSelectedSessionData } from './live-sessions.mjs';
+import { freshLiveClients, liveClientSummary } from './live-clients.mjs?v=20260720-live-clients';
 import { avatarLayersHTML } from './avatars.mjs?v=20260720-avatars';
 import { filterHistoryGames, historyDailyPerformances, historyMode, historyOwnerKey, historyOwnerLabel, historyPlayerName, historyPlayerPerformance, historyRankedPlayers, isHistorySelf } from './history-utils.mjs?v=20260720-history-daily';
 
@@ -371,6 +372,30 @@ export function initLivePage() {
   const _rosterCache = {};
   let _rosterFetched = false;
   let _mapsCache = null;
+
+  function rosterProfileForName(name = '') {
+    const key = name.toLowerCase();
+    if (_rosterCache[key]) return _rosterCache[key];
+    const account = key.split('#')[0];
+    const matchingKey = Object.keys(_rosterCache).find(riotId => riotId.split('#')[0] === account);
+    return matchingKey ? _rosterCache[matchingKey] : null;
+  }
+
+  function ensureRosterCache() {
+    if (_rosterFetched) return;
+    _rosterFetched = true;
+    fetch('./data/roster.json?v=20260720-live-clients').then(response => response.json()).then(roster => {
+      roster.forEach(player => {
+        const entry = { avatar: player.avatar, member: player.name };
+        if (player.riot?.name) _rosterCache[`${player.riot.name}#${player.riot.tag}`.toLowerCase()] = entry;
+        (player.smurfs || []).forEach(account => {
+          _rosterCache[`${account.name}#${account.tag}`.toLowerCase()] = entry;
+        });
+      });
+      renderDiagnostic();
+      updateSessionPicker(lastSessions);
+    }).catch(() => {});
+  }
   // Round timer using roundStartTime from Firebase
   let timerInterval = null;
   let lastRoundStart = null;
@@ -397,35 +422,63 @@ export function initLivePage() {
     'error': 'Erreur de synchronisation',
     'stopped': 'Script arrêté',
   };
+  const escapeDiagnosticText = value => String(value || '').replace(/[&<>"']/g, character => ({
+    '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;',
+  })[character]);
 
   function renderDiagnostic() {
     const panel = document.getElementById('live-diagnostic');
     const label = document.getElementById('live-diagnostic-label');
     const detail = document.getElementById('live-diagnostic-detail');
     const version = document.getElementById('live-diagnostic-version');
-    if (!panel || !label || !detail || !version) return;
+    const list = document.getElementById('live-client-list');
+    if (!panel || !label || !detail || !version || !list) return;
 
-    const entries = Object.entries(lastClients).filter(([, client]) => client && typeof client === 'object');
-    const selected = selectedSession ? lastClients[selectedSession] : null;
-    const client = selected || entries.sort((a, b) => (b[1].ts || 0) - (a[1].ts || 0))[0]?.[1] || null;
-    const age = client?.ts ? Date.now() - Number(client.ts) : Infinity;
-    const fresh = client?.online && age < 30000;
+    ensureRosterCache();
+    const clients = freshLiveClients(lastClients, lastSessions);
+    const summary = liveClientSummary(clients);
 
-    if (!fresh) {
+    if (!summary.total) {
       panel.dataset.state = 'offline';
-      label.textContent = 'Script hors ligne';
-      detail.textContent = client?.ts
-        ? `Dernier signal il y a ${Math.max(1, Math.round(age / 1000))} s`
-        : 'En attente du premier signal';
-      version.textContent = client?.version ? `v${client.version}` : '—';
+      label.textContent = 'Aucun script connecté';
+      detail.textContent = 'Les membres actifs apparaîtront ici';
+      version.textContent = '—';
+      list.innerHTML = '';
       return;
     }
 
-    panel.dataset.state = client.state || 'online';
-    label.textContent = DIAGNOSTIC_LABELS[client.state] || 'Script connecté';
-    const context = [client.map, client.side, client.error].filter(Boolean).join(' · ');
-    detail.textContent = context || (client.riotClient ? 'Client Riot connecté' : 'Client Riot indisponible');
-    version.textContent = client.version ? `v${client.version}` : '—';
+    panel.dataset.state = summary.inGame ? 'in-game'
+      : summary.agentSelect ? 'agent-select'
+        : summary.issues ? 'error' : 'idle';
+    label.textContent = `${summary.total} script${summary.total > 1 ? 's' : ''} connecté${summary.total > 1 ? 's' : ''}`;
+    detail.textContent = [
+      summary.inGame && `${summary.inGame} en partie`,
+      summary.agentSelect && `${summary.agentSelect} en Agent Select`,
+      summary.ready && `${summary.ready} prêt${summary.ready > 1 ? 's' : ''}`,
+      summary.issues && `${summary.issues} en erreur`,
+    ].filter(Boolean).join(' · ');
+    const versions = [...new Set(clients.map(client => client.version).filter(Boolean))];
+    version.textContent = versions.length === 1 ? `v${versions[0]}` : `${versions.length} versions`;
+
+    list.innerHTML = clients.map(client => {
+      const profile = rosterProfileForName(client.playerName);
+      const displayName = profile?.member || client.playerName?.split('#')[0] || 'Joueur inconnu';
+      const safeName = escapeDiagnosticText(displayName);
+      const avatar = profile
+        ? avatarLayersHTML(profile.member, profile.avatar)
+        : `<span class="live-client-initial">${safeName.slice(0, 1).toUpperCase()}</span>`;
+      const stateLabel = DIAGNOSTIC_LABELS[client.state] || 'Script connecté';
+      const safeState = DIAGNOSTIC_LABELS[client.state] ? client.state : 'online';
+      const context = [client.map, client.side, client.error].filter(Boolean).join(' · ');
+      return `<div class="live-client-chip${client.puuid === selectedSession ? ' selected' : ''}" data-state="${safeState}">
+        <span class="live-client-avatar">${avatar}</span>
+        <span class="live-client-info">
+          <strong>${safeName}</strong>
+          <small>${stateLabel}${context ? ` · ${escapeDiagnosticText(context)}` : ''}</small>
+        </span>
+        <span class="live-client-chip-version">${client.version ? `v${escapeDiagnosticText(client.version)}` : '—'}</span>
+      </div>`;
+    }).join('');
   }
 
   function handleClientsSSE(event) {
@@ -571,18 +624,7 @@ export function initLivePage() {
     const renderSelected = selectedSession;
 
     // Roster lookup — fetched once per page load (module cache)
-    const rosterMap = _rosterCache;
-    if (!_rosterFetched) {
-      _rosterFetched = true;
-      fetch('./data/roster.json?v=20260720-avatars').then(r=>r.json()).then(roster => {
-        roster.forEach(p => {
-          const entry = { avatar: p.avatar, member: p.name };
-          if (p.riot?.name) _rosterCache[`${p.riot.name}#${p.riot.tag}`.toLowerCase()] = entry;
-          (p.smurfs||[]).forEach(s => { _rosterCache[`${s.name}#${s.tag}`.toLowerCase()] = entry; });
-        });
-        updateSessionPicker(lastSessions); // re-render with avatars
-      }).catch(()=>{});
-    }
+    ensureRosterCache();
 
     picker.innerHTML = `
       <div style="font-family:Tomorrow,sans-serif;font-size:9px;letter-spacing:2px;color:var(--dim);text-transform:uppercase;margin-bottom:8px">Games en cours</div>
@@ -594,12 +636,9 @@ export function initLivePage() {
         const mode = first.mode || '';
 
         // Find roster avatars for players in this game
-        const allPlayers = sessions.flatMap(s => s.players || []);
         const rosterAvatars = sessions.map(s => {
           const name = s.playerName || '';
-          const key = name.toLowerCase();
-          // Try exact match or partial
-          const hit = rosterMap[key] || Object.values(rosterMap).find((v,i)=>Object.keys(rosterMap)[i].split('#')[0] === name.toLowerCase().split('#')[0]);
+          const hit = rosterProfileForName(name);
           return hit ? { avatar: hit.avatar, member: hit.member } : null;
         }).filter(Boolean);
 

@@ -60,6 +60,7 @@
 @media (max-width: 768px) {
   .live-diagnostic { flex-wrap: wrap; }
   .live-diagnostic-version { margin-left: auto; }
+  .live-client-chip { max-width: none; flex-basis: 100%; }
   .live-download-link { width: 100%; text-align: center; }
   .live-pregame-header { flex-direction: column; min-height: 0; padding: 16px; }
   .live-side-card { min-width: 0; width: 100%; box-sizing: border-box; }
