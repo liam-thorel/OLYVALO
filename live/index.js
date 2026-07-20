@@ -5,7 +5,7 @@ const { execSync } = require('child_process');
 const WebSocket = require('ws');
 
 const FIREBASE_URL = 'https://realtime-database-5bb9f-default-rtdb.europe-west1.firebasedatabase.app';
-const SCRIPT_VERSION = '4.9.1';
+const SCRIPT_VERSION = '4.9.2';
 
 // Valorant ShooterGame.log paths — contains in-game server port
 const SHOOTER_LOG_PATHS = [
