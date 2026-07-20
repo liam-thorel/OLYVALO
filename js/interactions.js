@@ -8,6 +8,7 @@ import { valorantApi } from './api.js';
 import { state } from './main.js';
 import { groupLiveSessions, mergeSelectedSessionData } from './live-sessions.mjs';
 import { avatarLayersHTML } from './avatars.mjs?v=20260720-avatars';
+import { historyMode, historyPlayerName, isHistorySelf } from './history-utils.mjs';
 
 // ─── THEME TOGGLE ─────────────────────────────────
 export function initTheme() {
@@ -1133,8 +1134,10 @@ export async function initHistoryPage() {
 
   games.sort((a,b) => (b.ts||0) - (a.ts||0));
 
-  const comp = games.filter(g => (g.mode||'').toLowerCase().includes('comp'));
-  const withResult = games.filter(g => g.result === 'win' || g.result === 'loss');
+  const comp = games.filter(g => historyMode(g) === 'competitive');
+  const deathmatches = games.filter(g => historyMode(g) === 'deathmatch');
+  const otherGames = games.filter(g => historyMode(g) === 'other');
+  const withResult = comp.filter(g => g.result === 'win' || g.result === 'loss');
   const wins = withResult.filter(g => g.result === 'win').length;
   const wr = withResult.length ? Math.round(wins / withResult.length * 100) : null;
 
@@ -1148,8 +1151,8 @@ export async function initHistoryPage() {
     .sort((a,b) => b.n - a.n);
 
   const agentCount = {};
-  games.forEach(g => {
-    const self = (g.players||[]).find(p => p.name === g.player);
+  comp.forEach(g => {
+    const self = (g.players||[]).find(p => isHistorySelf(g, p));
     if (self?.agent && self.agent !== '?') agentCount[self.agent] = (agentCount[self.agent]||0)+1;
   });
   const topAgents = Object.entries(agentCount).sort((a,b)=>b[1]-a[1]).slice(0,6);
@@ -1182,19 +1185,21 @@ export async function initHistoryPage() {
   }, {})).sort((a,b) => b[0].localeCompare(a[0]));
 
   const dailySummary = ([key, dayGames]) => {
-    const decided = dayGames.filter(game => game.result === 'win' || game.result === 'loss');
+    const compGames = dayGames.filter(game => historyMode(game) === 'competitive');
+    const dmGames = dayGames.filter(game => historyMode(game) === 'deathmatch');
+    const decided = compGames.filter(game => game.result === 'win' || game.result === 'loss');
     const dayWins = decided.filter(game => game.result === 'win').length;
-    const rrValues = dayGames.map(game => game.rr?.delta).filter(value => Number.isFinite(value));
+    const rrValues = compGames.map(game => game.rr?.delta).filter(value => Number.isFinite(value));
     const rrTotal = rrValues.reduce((sum, value) => sum + value, 0);
     const duration = dayGames.reduce((sum, game) => sum + (game.durationMs || Math.max(0, (game.endTs||0) - (game.ts||0))), 0);
     const maps = [...new Set(dayGames.map(game => game.map).filter(Boolean))];
     const agents = [...new Set(dayGames.map(game =>
-      (game.players||[]).find(player => player.name === game.player || player.puuid === game.playerPuuid)?.agent
+      (game.players||[]).find(player => isHistorySelf(game, player))?.agent
     ).filter(agent => agent && agent !== '?'))];
     const label = key === todayKey ? "Aujourd'hui" : new Date(`${key}T12:00:00`).toLocaleDateString('fr-FR', {
       weekday:'long', day:'2-digit', month:'long'
     });
-    return { key, label, games:dayGames, decided, wins:dayWins, rrValues, rrTotal, duration, maps, agents };
+    return { key, label, games:dayGames, compGames, dmGames, decided, wins:dayWins, rrValues, rrTotal, duration, maps, agents };
   };
   const daily = dailyGroups.map(dailySummary);
   const sectionTitle = t => `<div style="font-family:Tomorrow,sans-serif;font-size:9px;letter-spacing:4px;color:var(--dim);text-transform:uppercase;margin:0 0 12px;padding-bottom:8px;border-bottom:1px solid var(--border)">${t}</div>`;
@@ -1205,10 +1210,88 @@ export async function initHistoryPage() {
       <div style="font-family:Tomorrow,sans-serif;font-size:26px;font-weight:700;line-height:1;color:${color||'var(--text)'}">${value}</div>
     </div>`;
 
+  const modeLabel = game => historyMode(game) === 'deathmatch' ? 'Deathmatch'
+    : historyMode(game) === 'competitive' ? 'Compétitif'
+    : game.mode || 'Autre mode';
+  const playerRow = (game, player, index, rank = '') => `
+    <div class="history-player ${isHistorySelf(game, player) ? 'self' : ''}">
+      ${rank ? `<span class="history-player-rank">${rank}</span>` : `<img src="${agentIconFromName(player.agent)}" alt="${player.agent||''}" onerror="this.style.visibility='hidden'">`}
+      <span class="history-player-name">${historyPlayerName(game, player, index)}<small>${player.agent||'?'}</small></span>
+      <strong>${player.stats?.kills||0}/${player.stats?.deaths||0}/${player.stats?.assists||0}</strong>
+      <span>${player.stats?.acs||0} ACS</span>
+    </div>`;
+  const gameDetail = game => {
+    const kind = historyMode(game);
+    const detailedPlayers = (game.players||[]).filter(player => player.stats);
+    const splash = valorantApi.mapSplash(game.map);
+    const heroStyle = splash ? ` style="--history-map-image:url('${splash}')"` : '';
+    let playersHTML = '<div class="history-legacy-note">Cette ancienne game ne contient pas encore les statistiques détaillées.</div>';
+
+    if (detailedPlayers.length && kind === 'deathmatch') {
+      const leaderboard = [...detailedPlayers].sort((a,b)=>(b.stats?.score||0)-(a.stats?.score||0));
+      playersHTML = `<div class="history-deathmatch-list">
+        <div class="history-team-title">Classement individuel</div>
+        ${leaderboard.map((player, index) => playerRow(game, player, index, index + 1)).join('')}
+      </div>`;
+    } else if (detailedPlayers.length) {
+      playersHTML = `<div class="history-teams">
+        ${['ORDER','CHAOS'].map(team => `
+          <div class="history-team">
+            <div class="history-team-title">${team === game.selfTeam ? 'Votre équipe' : 'Adversaires'}</div>
+            ${detailedPlayers.filter(player => player.team === team)
+              .sort((a,b)=>(b.stats?.score||0)-(a.stats?.score||0))
+              .map((player, index) => playerRow(game, player, index)).join('')}
+          </div>`).join('')}
+      </div>`;
+    }
+
+    return `<div class="history-detail-layout">
+      <aside class="history-map-visual"${heroStyle}>
+        <span>${modeLabel(game)}</span>
+        <strong>${(game.map||'?').toUpperCase()}</strong>
+        <small>${dateLabel(game.ts)} · ${durationLabel(game.durationMs || ((game.endTs||0)-(game.ts||0)))}</small>
+      </aside>
+      <div class="history-detail-players">${playersHTML}</div>
+    </div>`;
+  };
+  const gameCard = game => {
+    const kind = historyMode(game);
+    const result = game.result;
+    const resultColor = kind === 'deathmatch' ? '#e0b341'
+      : result === 'win' ? '#3fcf6b' : result === 'loss' ? '#ff4656' : 'var(--dim)';
+    const resultLabel = kind === 'deathmatch' ? 'DM' : result === 'win' ? 'V' : result === 'loss' ? 'D' : '·';
+    const self = (game.players||[]).find(player => isHistorySelf(game, player));
+    const score = kind === 'deathmatch'
+      ? self?.stats ? `${self.stats.kills||0}/${self.stats.deaths||0}` : ''
+      : game.score ? `${game.score.blue}–${game.score.red}` : '';
+    const rrDelta = kind === 'competitive' ? game.rr?.delta : null;
+    return `<details class="history-game ${kind}" style="--result-color:${resultColor}">
+      <summary class="history-game-summary">
+        <span class="history-result">${resultLabel}</span>
+        ${self?.agent ? `<img class="history-self-agent" src="${agentIconFromName(self.agent)}" alt="${self.agent}" onerror="this.style.display='none'">` : ''}
+        <span class="history-game-main">
+          <strong>${(game.map||'?').toUpperCase()}</strong>
+          <small>${modeLabel(game)} · ${dateLabel(game.ts)}</small>
+        </span>
+        ${score ? `<strong class="history-score">${score}</strong>` : '<span class="history-score muted">—</span>'}
+        ${rrDelta !== undefined && rrDelta !== null ? `<span class="history-rr ${rrDelta >= 0 ? 'positive' : 'negative'}">${rrDelta >= 0 ? '+' : ''}${rrDelta} RR</span>` : ''}
+        <span class="history-duration">${durationLabel(game.durationMs || ((game.endTs||0)-(game.ts||0)))}</span>
+        <span class="history-expand">⌄</span>
+      </summary>
+      <div class="history-game-detail">${gameDetail(game)}</div>
+    </details>`;
+  };
+  const gameSection = (title, sectionGames, className) => sectionGames.length ? `
+    <section class="history-mode-section ${className}">
+      ${sectionTitle(`${title} · ${sectionGames.length}`)}
+      <div class="history-game-list">${sectionGames.slice(0,40).map(gameCard).join('')}</div>
+    </section>` : '';
+
   el.innerHTML = `
     <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:32px">
       ${statCard('Games totales', games.length)}
       ${statCard('Compétitif', comp.length)}
+      ${statCard('Deathmatch', deathmatches.length, '#e0b341')}
       ${wr !== null ? statCard('Winrate', wr+'%', wrColor(wr)) : ''}
       ${withResult.length ? statCard('Bilan', wins+'V '+(withResult.length-wins)+'D') : ''}
     </div>
@@ -1225,11 +1308,20 @@ export async function initHistoryPage() {
               <span>${day.label}</span>
               <strong>${day.games.length} game${day.games.length > 1 ? 's' : ''}</strong>
             </header>
+            <div class="history-day-modes">
+              <div class="competitive">
+                <small>Compétitif</small>
+                <strong>${day.compGames.length} · ${day.decided.length ? `${day.wins}V ${day.decided.length-day.wins}D` : 'aucun résultat'}</strong>
+              </div>
+              <div class="deathmatch">
+                <small>Deathmatch</small>
+                <strong>${day.dmGames.length} · ${durationLabel(day.dmGames.reduce((sum, game) => sum + (game.durationMs || Math.max(0, (game.endTs||0) - (game.ts||0))), 0))}</strong>
+              </div>
+            </div>
             <div class="history-day-metrics">
-              <div><small>Bilan</small><strong>${day.decided.length ? `${day.wins}V ${day.decided.length-day.wins}D` : '—'}</strong></div>
-              <div><small>Winrate</small><strong style="color:${winrate === null ? 'var(--dim)' : wrColor(winrate)}">${winrate === null ? '—' : winrate+'%'}</strong></div>
-              <div><small>Durée</small><strong>${durationLabel(day.duration)}</strong></div>
-              <div><small>RR</small><strong class="${day.rrTotal >= 0 ? 'positive' : 'negative'}">${day.rrValues.length ? `${day.rrTotal >= 0 ? '+' : ''}${day.rrTotal}` : '—'}</strong></div>
+              <div><small>WR compétitif</small><strong style="color:${winrate === null ? 'var(--dim)' : wrColor(winrate)}">${winrate === null ? '—' : winrate+'%'}</strong></div>
+              <div><small>Durée totale</small><strong>${durationLabel(day.duration)}</strong></div>
+              <div><small>RR compétitif</small><strong class="${day.rrTotal >= 0 ? 'positive' : 'negative'}">${day.rrValues.length ? `${day.rrTotal >= 0 ? '+' : ''}${day.rrTotal}` : '—'}</strong></div>
             </div>
             <div class="history-day-tags">
               ${day.maps.map(map => `<span>${map}</span>`).join('')}
@@ -1271,50 +1363,10 @@ export async function initHistoryPage() {
       </div>
     </div>` : ''}
 
-    <div>
-      ${sectionTitle('Dernières games')}
-      <div style="display:flex;flex-direction:column;gap:5px">
-        ${games.slice(0,40).map(g => {
-          const r = g.result;
-          const rColor = r==='win' ? '#3fcf6b' : r==='loss' ? '#ff4656' : 'var(--dim)';
-          const rLabel = r==='win' ? 'V' : r==='loss' ? 'D' : '·';
-          const score = g.score ? `${g.score.blue}–${g.score.red}` : '';
-          const self = (g.players||[]).find(p => p.name === g.player || p.puuid === g.playerPuuid);
-          const rrDelta = g.rr?.delta;
-          const detailedPlayers = (g.players||[]).filter(p => p.stats);
-          return `
-          <details class="history-game" style="--result-color:${rColor}">
-            <summary class="history-game-summary">
-              <span class="history-result">${rLabel}</span>
-              ${self?.agent ? `<img class="history-self-agent" src="${agentIconFromName(self.agent)}" alt="${self.agent}" onerror="this.style.display='none'">` : ''}
-              <span class="history-game-main">
-                <strong>${(g.map||'?').toUpperCase()}</strong>
-                <small>${g.mode||''} · ${dateLabel(g.ts)}</small>
-              </span>
-              ${score ? `<strong class="history-score">${score}</strong>` : '<span class="history-score muted">—</span>'}
-              ${rrDelta !== undefined && rrDelta !== null ? `<span class="history-rr ${rrDelta >= 0 ? 'positive' : 'negative'}">${rrDelta >= 0 ? '+' : ''}${rrDelta} RR</span>` : ''}
-              <span class="history-duration">${durationLabel(g.durationMs || ((g.endTs||0)-(g.ts||0)))}</span>
-              <span class="history-expand">⌄</span>
-            </summary>
-            <div class="history-game-detail">
-              ${detailedPlayers.length ? `
-                <div class="history-teams">
-                  ${['ORDER','CHAOS'].map(team => `
-                    <div class="history-team">
-                      <div class="history-team-title">${team === g.selfTeam ? 'Votre équipe' : 'Adversaires'}</div>
-                      ${detailedPlayers.filter(p => p.team === team).sort((a,b)=>(b.stats?.score||0)-(a.stats?.score||0)).map(p => `
-                        <div class="history-player ${p.name === g.player || p.puuid === g.playerPuuid ? 'self' : ''}">
-                          <img src="${agentIconFromName(p.agent)}" alt="${p.agent||''}" onerror="this.style.visibility='hidden'">
-                          <span class="history-player-name">${(p.name||'?').split('#')[0]}<small>${p.agent||'?'}</small></span>
-                          <strong>${p.stats?.kills||0}/${p.stats?.deaths||0}/${p.stats?.assists||0}</strong>
-                          <span>${p.stats?.acs||0} ACS</span>
-                        </div>`).join('')}
-                    </div>`).join('')}
-                </div>` : `<div class="history-legacy-note">Cette ancienne game ne contient pas encore les statistiques détaillées.</div>`}
-            </div>
-          </details>`;
-        }).join('')}
-      </div>
+    <div class="history-latest-sections">
+      ${gameSection('Compétitif', comp, 'competitive')}
+      ${gameSection('Deathmatch', deathmatches, 'deathmatch')}
+      ${gameSection('Autres modes', otherGames, 'other')}
     </div>`;
 }
 

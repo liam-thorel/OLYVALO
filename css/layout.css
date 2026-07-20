@@ -598,7 +598,16 @@ body.agent-mode .footer{ display:none; }
 .history-day-card > header strong {
   color: var(--dim); font-family: 'Tomorrow', sans-serif; font-size: 8px; letter-spacing: 1px; text-transform: uppercase;
 }
-.history-day-metrics { display: grid; grid-template-columns: repeat(4,1fr); gap: 6px; }
+.history-day-modes { display: grid; grid-template-columns: 1fr 1fr; gap: 7px; margin-bottom: 12px; }
+.history-day-modes > div {
+  display: grid; gap: 4px; padding: 9px 10px; border: 1px solid var(--border); background: var(--bg);
+  font-family: 'Tomorrow', sans-serif;
+}
+.history-day-modes > div.competitive { border-left: 2px solid var(--red); }
+.history-day-modes > div.deathmatch { border-left: 2px solid #e0b341; }
+.history-day-modes small { color: var(--dim); font-size: 7px; letter-spacing: 2px; text-transform: uppercase; }
+.history-day-modes strong { color: var(--text); font-size: 9px; letter-spacing: 1px; }
+.history-day-metrics { display: grid; grid-template-columns: repeat(3,1fr); gap: 6px; }
 .history-day-metrics > div { display: grid; gap: 4px; min-width: 0; }
 .history-day-metrics small {
   color: var(--dim); font-family: 'Tomorrow', sans-serif; font-size: 7px; letter-spacing: 1px; text-transform: uppercase;
@@ -612,6 +621,9 @@ body.agent-mode .footer{ display:none; }
   font-family: 'Tomorrow', sans-serif; font-size: 7px; letter-spacing: 1px; text-transform: uppercase;
 }
 .history-day-tags span.agent { color: var(--red); border-color: var(--red-mid); background: var(--red-low); }
+.history-latest-sections { display: grid; gap: 30px; }
+.history-mode-section { min-width: 0; }
+.history-game-list { display: flex; flex-direction: column; gap: 5px; }
 .history-game { border: 1px solid var(--border); border-left: 4px solid var(--result-color); background: var(--surf); }
 .history-game summary { list-style: none; }
 .history-game summary::-webkit-details-marker { display: none; }
@@ -633,9 +645,25 @@ body.agent-mode .footer{ display:none; }
 .history-duration { width: 52px; color: var(--dim); font-size: 8px; text-align: right; }
 .history-expand { color: var(--dim); font-size: 16px; transition: transform .2s; }
 .history-game[open] .history-expand { transform: rotate(180deg); }
-.history-game-detail { padding: 0 14px 14px; border-top: 1px solid var(--border); }
-.history-teams { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; padding-top: 14px; }
+.history-game-detail { padding: 14px; border-top: 1px solid var(--border); }
+.history-detail-layout { display: grid; grid-template-columns: minmax(180px, .38fr) 1fr; gap: 14px; align-items: stretch; }
+.history-map-visual {
+  position: relative; overflow: hidden; display: flex; flex-direction: column; justify-content: flex-end;
+  min-height: 190px; padding: 16px; border: 1px solid var(--border);
+  background:
+    linear-gradient(0deg, rgba(7,9,14,.96) 0%, rgba(7,9,14,.3) 70%),
+    var(--history-map-image), var(--surf2);
+  background-position: center; background-size: cover;
+}
+.history-map-visual::after { content: ''; position: absolute; inset: 0; border-left: 2px solid var(--result-color); pointer-events: none; }
+.history-map-visual span,
+.history-map-visual small { position: relative; z-index: 1; color: rgba(255,255,255,.7); font-family: 'Tomorrow', sans-serif; font-size: 8px; letter-spacing: 2px; text-transform: uppercase; }
+.history-map-visual strong { position: relative; z-index: 1; margin: 4px 0; color: #fff; font-family: 'Tomorrow', sans-serif; font-size: 22px; letter-spacing: 4px; }
+.history-detail-players { min-width: 0; }
+.history-teams { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
 .history-team { display: grid; gap: 5px; }
+.history-deathmatch-list { display: grid; grid-template-columns: 1fr 1fr; gap: 5px 8px; }
+.history-deathmatch-list .history-team-title { grid-column: 1 / -1; }
 .history-team-title {
   margin-bottom: 3px; color: var(--dim); font-family: 'Tomorrow', sans-serif;
   font-size: 8px; letter-spacing: 3px; text-transform: uppercase;
@@ -647,8 +675,12 @@ body.agent-mode .footer{ display:none; }
 }
 .history-player.self { border-color: var(--red-mid); background: var(--red-low); }
 .history-player > img { width: 32px; height: 32px; object-fit: cover; }
+.history-player-rank {
+  display: grid; place-items: center; width: 32px; height: 32px; color: #e0b341; border: 1px solid rgba(224,179,65,.3);
+  background: rgba(224,179,65,.08); font-size: 10px; font-weight: 700;
+}
 .history-player-name { display: grid; min-width: 0; color: var(--text); font-size: 9px; overflow: hidden; text-overflow: ellipsis; }
 .history-player-name small { color: var(--dim); font-size: 7px; letter-spacing: 1px; }
 .history-player > strong { color: var(--muted); font-size: 9px; white-space: nowrap; }
 .history-player > span:last-child { color: var(--dim); font-size: 8px; text-align: right; white-space: nowrap; }
-.history-legacy-note { padding: 18px 0 4px; color: var(--dim); font-size: 10px; letter-spacing: 1px; }
+.history-legacy-note { padding: 18px; color: var(--muted); border: 1px solid var(--border); background: var(--bg); font-size: 10px; letter-spacing: 1px; }

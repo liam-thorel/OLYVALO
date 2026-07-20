@@ -65,6 +65,10 @@
   .live-side-card { min-width: 0; width: 100%; box-sizing: border-box; }
   .live-pregame-heading strong { letter-spacing: 3px; }
   .history-teams { grid-template-columns: 1fr; }
+  .history-detail-layout { grid-template-columns: 1fr; }
+  .history-map-visual { min-height: 130px; }
+  .history-deathmatch-list { grid-template-columns: 1fr; }
+  .history-day-modes { grid-template-columns: 1fr; }
   .history-duration { display: none; }
   .history-game-summary { gap: 8px; padding: 9px; }
   .history-self-agent { width: 32px; height: 32px; }
