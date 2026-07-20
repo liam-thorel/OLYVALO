@@ -353,7 +353,7 @@ export function initLivePage() {
   let mapImg = null;
   let lastMapName = null;
   let raf = null;
-  let liveData = null;
+  let currentLiveData = null;
 
   const canvas = document.getElementById('live-map-canvas');
   const ctx = canvas?.getContext('2d');
@@ -383,6 +383,11 @@ export function initLivePage() {
   }
 
   let lastDataKey = '';
+  const isFreshSession = (session, now = Date.now()) => {
+    const updatedAt = Number(session?.ts);
+    return Number.isFinite(updatedAt) && updatedAt > 0 && now - updatedAt < 30000;
+  };
+
   function handleSSE(e) {
     try {
       const msg = JSON.parse(e.data);
@@ -422,7 +427,7 @@ export function initLivePage() {
       updateSessionPicker(sessions);
 
       const now = Date.now();
-      const active = Object.entries(sessions).filter(([,s]) => s?.active && (s?.mapClean || s?.map) && (now - (s._rxAt || now)) < 30000);
+      const active = Object.entries(sessions).filter(([,s]) => s?.active && (s?.mapClean || s?.map) && isFreshSession(s, now));
       if (active.length === 1) selectedSession = active[0][0];
       
       // Pick session — ONLY from the staleness-filtered active list
@@ -434,7 +439,8 @@ export function initLivePage() {
       // Key tracks ALL active sessions so any update triggers re-render
       const key = JSON.stringify({
         active: liveData?.active, map: liveData?.mapClean, mode: liveData?.mode,
-        phase: liveData?.roundPhase, matchId: liveData?.matchId,
+        phase: liveData?.phase, roundPhase: liveData?.roundPhase,
+        matchId: liveData?.matchId, side: liveData?.side,
         activeCount: active.length,
         allPlayers: active.map(([,s]) => (s.players||[]).length).join(','),
         players: (liveData?.players||[]).map(p=>`${p.name}|${p.agentId||p.agent}|${p.team}|${p.rank?.tier??''}|${p.rank?.peakTier??''}|${p.rank?.level??''}|${(p.rank?.rrHistory||[]).join('.')}|${p.rank?.rrEarned??''}`)
@@ -453,7 +459,8 @@ export function initLivePage() {
             mode: sibling.mode || liveData.mode,
           };
         }
-        updateUI(liveData);
+        currentLiveData = liveData;
+        updateUI(currentLiveData);
       }
     } catch(err) { console.error(err); }
   }
@@ -471,7 +478,7 @@ export function initLivePage() {
     if (!page) return;
 
     const _now = Date.now();
-    const active = Object.entries(sessions).filter(([,s]) => s?.active && (s?.mapClean || s?.map) && (_now - (s._rxAt || _now)) < 30000);
+    const active = Object.entries(sessions).filter(([,s]) => s?.active && (s?.mapClean || s?.map) && isFreshSession(s, _now));
     
     // Remove picker if 0 or 1 session
     if (active.length <= 1) {
@@ -716,32 +723,45 @@ export function initLivePage() {
     }
 
     // Pregame — show map comps during agent select
-    const isPregame = liveData?.phase === 'pregame' || liveData?.mode === 'agent-select';
+    const isPregame = data?.phase === 'pregame' || data?.mode === 'agent-select';
     let compsEl = document.getElementById('live-comps-panel');
-    if (isPregame && (liveData?.mapClean || liveData?.map)) {
-      const pgMapName = liveData.mapClean || liveData.map;
+    if (isPregame && (data?.mapClean || data?.map)) {
+      const pgMapName = data.mapClean || data.map;
+      const pregameRenderKey = `${pgMapName}|${data.side || ''}`;
+      const sideClass = data.side === 'ATTAQUE' ? 'attack' : data.side === 'DEFENSE' ? 'defense' : 'pending';
+      const sideLabel = data.side === 'ATTAQUE' ? 'Départ en attaque' : data.side === 'DEFENSE' ? 'Départ en défense' : 'Côté en attente';
+      const sideHint = data.side ? 'Côté de départ' : 'Synchronisation avec Riot';
       if (!compsEl) {
         compsEl = document.createElement('div');
         compsEl.id = 'live-comps-panel';
-        compsEl.style.cssText = 'margin:0 0 18px;display:flex;flex-direction:column;gap:10px';
+        compsEl.className = 'live-pregame-panel';
         const content = document.getElementById('live-content');
         const body = content?.querySelector('.live-body');
         if (body) content.insertBefore(compsEl, body);
         else if (content) content.prepend(compsEl);
       }
-      if (compsEl.dataset.map !== pgMapName) {
+      if (compsEl.dataset.key !== pregameRenderKey) {
         compsEl.dataset.map = pgMapName;
+        compsEl.dataset.key = pregameRenderKey;
         fetch('./data/comps.json').then(r=>r.json()).then(comps => {
           const mapData = comps.find(m => m.map === pgMapName);
           if (!mapData) { compsEl.innerHTML = ''; return; }
           const pick = t => mapData.comps.find(c => c.tier === t);
           const show = [pick('S'), pick('PRO'), pick('F')].filter(Boolean);
           compsEl.innerHTML = `
-            <div style="display:flex;align-items:center;gap:10px;padding:2px 0">
-              <div style="font-family:Tomorrow,sans-serif;font-size:10px;letter-spacing:4px;color:#ff4656;text-transform:uppercase;font-weight:700">
-                Agent Select · ${pgMapName}
+            <div class="live-pregame-header ${sideClass}">
+              <div class="live-pregame-heading">
+                <span class="live-pregame-kicker">Agent Select</span>
+                <strong>${pgMapName}</strong>
+                <span>Compositions recommandées</span>
               </div>
-              ${liveData.side ? `<span style="font-family:Tomorrow,sans-serif;font-size:9px;letter-spacing:2px;font-weight:700;text-transform:uppercase;padding:2px 8px;border:1px solid ${liveData.side==='ATTAQUE'?'rgba(255,70,86,.5)':'rgba(63,207,207,.5)'};color:${liveData.side==='ATTAQUE'?'#ff4656':'#3fcfcf'}">${liveData.side}</span>` : ''}
+              <div class="live-side-card ${sideClass}" aria-label="${sideLabel}">
+                <span class="live-side-icon" aria-hidden="true"></span>
+                <span class="live-side-copy">
+                  <small>${sideHint}</small>
+                  <strong>${sideLabel}</strong>
+                </span>
+              </div>
             </div>
             <div style="display:flex;gap:10px;flex-wrap:wrap">
             ${show.map(c => `

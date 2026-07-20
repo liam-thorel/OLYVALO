@@ -58,6 +58,9 @@
 
 /* ── MOBILE (768px) ──────────────── */
 @media (max-width: 768px) {
+  .live-pregame-header { flex-direction: column; min-height: 0; padding: 16px; }
+  .live-side-card { min-width: 0; width: 100%; box-sizing: border-box; }
+  .live-pregame-heading strong { letter-spacing: 3px; }
   .topbar-row { padding: 8px 12px; gap: 6px; }
   .brand-sub { display: none; }
   .page-nav { gap: 2px; }

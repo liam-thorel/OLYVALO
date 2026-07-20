@@ -321,6 +321,21 @@ let missedPolls = 0;
 let roundPhase = '';
 let roundStartTime = null;
 
+function getPregameSide(match, puuid) {
+  const allyTeam = match?.AllyTeam;
+  let teamId = allyTeam?.TeamID || null;
+
+  if (!teamId && Array.isArray(match?.Teams)) {
+    teamId = match.Teams.find(team =>
+      (team?.Players || []).some(player => player.Subject === puuid)
+    )?.TeamID || null;
+  }
+
+  if (teamId === 'Blue') return 'DEFENSE';
+  if (teamId === 'Red') return 'ATTAQUE';
+  return null;
+}
+
 function connectWebSocket(port, password) {
   if (wsConnected) return;
   const ws = new WebSocket(`wss://riot:${password}@127.0.0.1:${port}`, {
@@ -496,11 +511,7 @@ async function poll() {
         if (pgMatch?.MapID) {
           const pgMap = pgMatch.MapID.split('/').pop() || '';
           const pgMode = (pgMatch.QueueID || pgMatch.Mode || '').replace('/Game/GameModes/','');
-          let side = null;
-          const myTeam = (pgMatch.Teams || []).find(t => (t.Players||[]).some(pl => pl.Subject === authTokens.puuid));
-          const teamId = myTeam?.TeamID || pgMatch.Teams?.[0]?.TeamID;
-          if (teamId === 'Blue') side = 'DEFENSE';
-          else if (teamId === 'Red') side = 'ATTAQUE';
+          const side = getPregameSide(pgMatch, authTokens.puuid);
 
           pregameState = { map: pgMap, mapClean: MAP_NAMES[pgMap] || pgMap, matchId: pg.MatchID, side, mode: pgMatch.QueueID || 'competitive' };
           if (pregameState.mapClean !== lastPregameMap) {
@@ -578,55 +589,6 @@ async function poll() {
   const mapDisplay = MAP_NAMES[mapRaw] || mapRaw || '';
   const queueId    = matchData?.queueId || mode || '';
   const isInGame   = !!(mapRaw && mapRaw !== 'Range' && mapRaw !== '');
-
-  // ===== Détection AGENT SELECT (indépendante de la présence) =====
-  // Pendant l'agent select, la présence n'indique pas de game → on check le pregame directement.
-  if (!isInGame && stableSessionKey) {
-    // Auth si nécessaire (réutilise les tokens existants)
-    if (!preAuth) {
-      const entRes = await req(lock.port, lock.password, '/entitlements/v1/token');
-      const regionRes = await req(lock.port, lock.password, '/riotclient/region-locale');
-      if (entRes.ok && entRes.data?.accessToken) {
-        const rawRegion = (regionRes.data?.region || regionRes.data?.webRegion || 'EUW').toUpperCase();
-        const region = rawRegion.startsWith('EU') ? 'eu' : rawRegion === 'NA' ? 'na' :
-                       rawRegion === 'LATAM' ? 'latam' : rawRegion === 'BR' ? 'br' :
-                       rawRegion === 'AP' ? 'ap' : rawRegion === 'KR' ? 'kr' : 'eu';
-        preAuth = { accessToken: entRes.data.accessToken, entitlementsToken: entRes.data.token || '', puuid: entRes.data.subject || selfPuuid || '', region };
-      }
-    }
-    if (preAuth) {
-      const pg = await pvpGet(preAuth, `/pregame/v1/players/${preAuth.puuid}`);
-      if (pg?.MatchID) {
-        const pgMatch = await pvpGet(preAuth, `/pregame/v1/matches/${pg.MatchID}`);
-        if (pgMatch?.MapID) {
-          const pgMap = pgMatch.MapID.split('/').pop() || '';
-          const pgMapClean = MAP_NAMES[pgMap] || pgMap;
-          const pgQueue = pgMatch.QueueID || pg.QueueID || '';
-          // Exclure deathmatch / TDM
-          if (!pgQueue.toLowerCase().includes('deathmatch') && !pgQueue.toLowerCase().includes('hurm')) {
-            let side = null;
-            const myTeam = (pgMatch.Teams || []).find(t => (t.Players||[]).some(pl => pl.Subject === preAuth.puuid));
-            const teamId = myTeam?.TeamID || pgMatch.Teams?.[0]?.TeamID;
-            if (teamId === 'Blue') side = 'DEFENSE';
-            else if (teamId === 'Red') side = 'ATTAQUE';
-            if (pgMapClean !== lastPregameMap) {
-              lastPregameMap = pgMapClean;
-              console.log(`[${ts()}] 🗺  Agent Select — ${pgMapClean}${side ? ' · ' + side : ''}`);
-            }
-            missedPolls = 0; // on est bien "actif"
-            await putFB(`live/sessions/${stableSessionKey}`, {
-              active: true, ts: Date.now(),
-              map: pgMap, mapClean: pgMapClean, mapInternal: pgMap,
-              mode: 'agent-select', matchId: pg.MatchID,
-              playerName, phase: 'pregame', side,
-              players: [], activePlayer: {},
-            });
-            return; // pregame poussé, on attend le prochain poll
-          }
-        }
-      }
-    }
-  }
 
   if (!isInGame) {
     missedPolls = (missedPolls || 0) + 1;
@@ -922,3 +884,21 @@ console.log('  ╚════════════════════�
 
 setInterval(poll, 2000);
 poll();
+
+let shuttingDown = false;
+async function markSessionInactiveAndExit(signal) {
+  if (shuttingDown) return;
+  shuttingDown = true;
+  const sessionKey = stableSessionKey || authTokens?.puuid || selfPuuid;
+  if (sessionKey) {
+    await putFB(`live/sessions/${sessionKey}`, {
+      active: false,
+      ts: Date.now(),
+      stoppedBy: signal,
+    });
+  }
+  process.exit(0);
+}
+
+process.on('SIGINT', () => markSessionInactiveAndExit('SIGINT'));
+process.on('SIGTERM', () => markSessionInactiveAndExit('SIGTERM'));
