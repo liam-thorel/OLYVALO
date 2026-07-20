@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { filterHistoryGames, historyDailyPerformances, historyMode, historyOwnerKey, historyOwnerLabel, historyPlayerName, historyPlayerPerformance, historyRankedPlayers, isOpaquePlayerName } from '../js/history-utils.mjs';
+import { filterHistoryGames, historyDailyPerformances, historyGameForOwner, historyMode, historyOwnerKey, historyOwnerKeys, historyOwnerLabel, historyPlayerName, historyPlayerPerformance, historyPlayerPerformances, historyRankedPlayers, isHistorySelf, isOpaquePlayerName, normalizeHistoryEntries } from '../js/history-utils.mjs';
 
 assert.equal(historyMode({ mode: 'competitive' }), 'competitive');
 assert.equal(historyMode({ mode: 'deathmatch' }), 'deathmatch');
@@ -59,4 +59,36 @@ assert.deepEqual([daily[0].games,daily[0].kills,daily[0].deaths,daily[0].assists
 assert.equal(daily[0].kd.toFixed(2), '1.11');
 assert.equal(daily[0].best.agent, 'Clove');
 
-console.log('history-utils: modes, owners, filters, labels and performance validated');
+const nicoReport = {
+  matchId:'same-match', player:'Drew A Picasso#XOOO', playerPuuid:'nico-id', map:'Split', mode:'competitive', ts:now,
+  players:[
+    {puuid:'nico-id',name:'Drew A Picasso#XOOO',agent:'Clove',stats:{kills:18,deaths:14,assists:7,score:4100}},
+    {puuid:'liam-id',name:'Wong Chi Ming#2046',agent:'Jett',stats:{kills:22,deaths:16,assists:3,score:4900}},
+  ],
+};
+const liamReport = {
+  ...nicoReport, player:'Wong Chi Ming#2046', playerPuuid:'liam-id',
+};
+const normalized = normalizeHistoryEntries({
+  'same-match': {reports:{'nico-id':nicoReport,'liam-id':liamReport}},
+  legacy: {...nicoReport, matchId:'legacy-match', map:'Sunset'},
+  hybrid: {...nicoReport, reports:{'nico-id':nicoReport,'liam-id':liamReport}},
+});
+const shared = normalized.find(game => game.historyId === 'same-match');
+assert.equal(normalized.length, 3);
+assert.equal(shared.reports.length, 2);
+assert.equal(normalized.find(game => game.historyId === 'hybrid').reports.length, 2);
+assert.deepEqual(historyOwnerKeys(shared), ['drew a picasso','wong chi ming']);
+assert.equal(historyOwnerLabel(shared, roster), 'Nico & Liam');
+assert.equal(filterHistoryGames(normalized, {owner:'wong chi ming',period:'all',view:'matches',mode:'all'}, now).length, 2);
+assert.equal(historyGameForOwner(shared, 'wong chi ming').playerPuuid, 'liam-id');
+assert.equal(historyPlayerPerformances(shared).length, 2);
+assert.equal(historyPlayerPerformances(shared)[0].self.puuid, 'nico-id');
+assert.equal(historyPlayerPerformances(shared)[1].self.puuid, 'liam-id');
+assert.equal(isHistorySelf(shared, shared.players[1]), true);
+
+const sharedDaily = historyDailyPerformances([shared], roster);
+assert.deepEqual(sharedDaily.map(player => player.name).sort(), ['Liam','Nico']);
+assert.deepEqual(sharedDaily.map(player => player.games), [1,1]);
+
+console.log('history-utils: modes, multi-player reports, filters, labels and performance validated');

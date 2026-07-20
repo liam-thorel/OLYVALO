@@ -800,7 +800,8 @@ async function poll() {
         if (rr) lastGameInfo.rr = rr;
 
         const histKey = lastGameInfo.matchId.replace(/[.#$\[\]\/]/g, '-');
-        await putFB(`live/history/${histKey}`, lastGameInfo);
+        const reporterKey = String(lastGameInfo.playerPuuid || stableSessionKey || 'unknown').replace(/[.#$\[\]\/]/g, '-');
+        await putFB(`live/history/${histKey}/reports/${reporterKey}`, lastGameInfo);
         console.log(`[${ts()}] 📜 Game enregistrée — ${lastGameInfo.map} (${lastGameInfo.result})${details ? ' · détails OK' : ' · résumé local'}`);
         lastGameInfo = null;
         gameStartedAt = null;

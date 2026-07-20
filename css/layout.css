@@ -802,7 +802,7 @@ body.agent-mode .footer{ display:none; }
 .history-match-facts > span > strong.positive { color: #3fcf6b; }
 .history-match-facts > span > strong.negative { color: #ff4656; }
 .history-detail-content { display: grid; align-content: start; gap: 12px; min-width: 0; }
-.history-match-overview { display: grid; grid-template-columns: minmax(0,1fr) minmax(150px,.28fr); gap: 8px; }
+.history-match-overview { display: grid; grid-template-columns: minmax(0,1fr); gap: 8px; }
 .history-performance-card { min-width: 0; border: 1px solid var(--border); background: var(--bg); }
 .history-performance-card.self { display: grid; grid-template-columns: minmax(150px,.42fr) 1fr; align-items: center; gap: 12px; padding: 10px; border-color: var(--red-mid); background: var(--red-low); }
 .history-performance-player { display: flex; align-items: center; gap: 10px; min-width: 0; }
