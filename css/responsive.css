@@ -61,6 +61,11 @@
   .live-pregame-header { flex-direction: column; min-height: 0; padding: 16px; }
   .live-side-card { min-width: 0; width: 100%; box-sizing: border-box; }
   .live-pregame-heading strong { letter-spacing: 3px; }
+  .history-teams { grid-template-columns: 1fr; }
+  .history-duration { display: none; }
+  .history-game-summary { gap: 8px; padding: 9px; }
+  .history-self-agent { width: 32px; height: 32px; }
+  .history-player { grid-template-columns: 30px minmax(70px,1fr) auto 48px; gap: 6px; }
   .topbar-row { padding: 8px 12px; gap: 6px; }
   .brand-sub { display: none; }
   .page-nav { gap: 2px; }

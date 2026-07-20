@@ -315,6 +315,7 @@ let wsConnected = false;
 let lastPlayerCount = -1;
 let lastScore = '';
 let lastGameInfo = null; // snapshot for history push
+let gameStartedAt = null;
 let ranksLoaded = false;
 let rankMap = {};
 let stableSessionKey = null;
@@ -475,9 +476,92 @@ async function ensureAuth(lock) {
       entitlementsToken: entRes.data.token || '',
       puuid:             entRes.data.subject || selfPuuid || '',
       region,
+      clientVersion:     RIOT_CLIENT_VERSION,
     };
   }
   return authTokens;
+}
+
+const wait = ms => new Promise(resolve => setTimeout(resolve, ms));
+
+async function fetchPostMatchDetails(tokens, matchId) {
+  if (!tokens || !matchId) return null;
+  for (const delay of [0, 2000, 3000, 5000]) {
+    if (delay) await wait(delay);
+    const details = await pdGet(tokens, `/match-details/v1/matches/${matchId}`);
+    if (details?.matchInfo || details?.players?.length) return details;
+  }
+  return null;
+}
+
+function buildDetailedHistory(snapshot, details, tokens) {
+  if (!details) return snapshot;
+
+  const rawPlayers = details.players || [];
+  const rawTeams = details.teams || [];
+  const self = rawPlayers.find(player => player.subject === tokens?.puuid);
+  const selfTeamId = self?.teamId || (snapshot.selfTeam === 'ORDER' ? 'Blue' : snapshot.selfTeam === 'CHAOS' ? 'Red' : null);
+  const selfTeam = rawTeams.find(team => team.teamId === selfTeamId);
+  const blueTeam = rawTeams.find(team => team.teamId === 'Blue');
+  const redTeam = rawTeams.find(team => team.teamId === 'Red');
+  const mapId = details.matchInfo?.mapId?.split('/')?.pop() || snapshot.map;
+  const map = MAP_NAMES[mapId] || snapshot.map || mapId;
+
+  const players = rawPlayers.map(player => {
+    const stats = player.stats || {};
+    const roundsPlayed = stats.roundsPlayed || 0;
+    return {
+      name: player.gameName ? `${player.gameName}#${player.tagLine || ''}`.replace(/#$/, '') : player.subject?.slice(0, 8) || '?',
+      puuid: player.subject || '',
+      agent: AGENT_UUIDS[(player.characterId || '').toLowerCase()] || '?',
+      agentId: (player.characterId || '').toLowerCase(),
+      team: player.teamId === 'Blue' ? 'ORDER' : 'CHAOS',
+      stats: {
+        kills: stats.kills || 0,
+        deaths: stats.deaths || 0,
+        assists: stats.assists || 0,
+        score: stats.score || 0,
+        roundsPlayed,
+        acs: roundsPlayed ? Math.round((stats.score || 0) / roundsPlayed) : 0,
+      },
+    };
+  });
+
+  return {
+    ...snapshot,
+    schemaVersion: 2,
+    map,
+    mode: details.matchInfo?.queueID || details.matchInfo?.queueId || snapshot.mode,
+    ts: details.matchInfo?.gameStartMillis || snapshot.ts,
+    endTs: details.matchInfo?.gameStartMillis && details.matchInfo?.gameLengthMillis
+      ? details.matchInfo.gameStartMillis + details.matchInfo.gameLengthMillis
+      : snapshot.endTs,
+    durationMs: details.matchInfo?.gameLengthMillis || Math.max(0, (snapshot.endTs || 0) - (snapshot.ts || 0)),
+    result: selfTeam ? (selfTeam.won ? 'win' : 'loss') : snapshot.result,
+    score: blueTeam || redTeam ? {
+      blue: blueTeam?.roundsWon || 0,
+      red: redTeam?.roundsWon || 0,
+    } : snapshot.score,
+    selfTeam: selfTeamId === 'Blue' ? 'ORDER' : selfTeamId === 'Red' ? 'CHAOS' : snapshot.selfTeam,
+    players: players.length ? players : snapshot.players,
+    rounds: details.roundResults?.length || 0,
+  };
+}
+
+async function fetchPostMatchRR(tokens, matchId) {
+  if (!tokens?.puuid || !matchId) return null;
+  const updates = await pdGet(tokens, `/mmr/v1/players/${tokens.puuid}/competitiveupdates?startIndex=0&endIndex=5&queue=competitive`);
+  const match = updates?.Matches?.find(item => (item.MatchID || item.MatchId) === matchId);
+  if (!match) return null;
+  const earned = match.RankedRatingEarned;
+  const before = match.RankedRatingBeforeUpdate;
+  const after = match.RankedRatingAfterUpdate;
+  return {
+    before: before ?? null,
+    after: after ?? null,
+    delta: earned ?? (before !== undefined && after !== undefined ? after - before : null),
+    tier: match.TierAfterUpdate ?? null,
+  };
 }
 
 async function poll() {
@@ -626,7 +710,8 @@ async function poll() {
       lastMap = '';
       missedPolls = 0;
       console.log(`[${ts()}] 🏠 Fin de game`);
-      lastPregameMap = ''; persistentMatchId = ''; pregameState = null; authTokens = null;
+      const postMatchTokens = authTokens ? { ...authTokens } : null;
+      lastPregameMap = ''; pregameState = null;
       const sKey = stableSessionKey || 'unknown';
       if (sKey !== 'unknown') await putFB(`live/sessions/${sKey}`, { active:false, ts:Date.now(), playerName });
       await publishDiagnostic('game-ended', { error: '', map: lastGameInfo?.map || '' }, true);
@@ -647,12 +732,21 @@ async function poll() {
         } catch {}
         lastGameInfo.result = result;
         lastGameInfo.endTs = Date.now();
+
+        const details = await fetchPostMatchDetails(postMatchTokens, lastGameInfo.matchId);
+        lastGameInfo = buildDetailedHistory(lastGameInfo, details, postMatchTokens);
+        const rr = await fetchPostMatchRR(postMatchTokens, lastGameInfo.matchId);
+        if (rr) lastGameInfo.rr = rr;
+
         const histKey = lastGameInfo.matchId.replace(/[.#$\[\]\/]/g, '-');
         await putFB(`live/history/${histKey}`, lastGameInfo);
-        console.log(`[${ts()}] 📜 Game enregistrée — ${lastGameInfo.map} (${result})`);
+        console.log(`[${ts()}] 📜 Game enregistrée — ${lastGameInfo.map} (${lastGameInfo.result})${details ? ' · détails OK' : ' · résumé local'}`);
         lastGameInfo = null;
+        gameStartedAt = null;
         lastScore = '';
       }
+      persistentMatchId = '';
+      authTokens = null;
     }
     await publishDiagnostic('idle', { error: '', map: '' });
     return;
@@ -662,6 +756,7 @@ async function poll() {
   if (!inGame || mapRaw !== lastMap) {
     inGame   = true;
     lastMap  = mapRaw;
+    gameStartedAt = Date.now();
     matchDataLogged = false;
     gameDataLogged = false;
     authTokens = null;
@@ -785,7 +880,7 @@ async function poll() {
           const teams = match.Teams || [];
           const blueScore = teams.find(t => t.TeamID === 'Blue')?.Score || 0;
           const redScore  = teams.find(t => t.TeamID === 'Red')?.Score || 0;
-          await putFB('live/score', { blue: blueScore, red: redScore });
+          lastScore = JSON.stringify({ blue: blueScore, red: redScore });
 
           players = match.Players.map(p => {
             // Match agent UUID (first 8 chars)
@@ -885,6 +980,7 @@ async function poll() {
     playerName:  playerName,
     players,
     activePlayer,
+    score:        JSON.parse(lastScore || '{}'),
     phase:       pregameState ? 'pregame' : '',
     ...(pregameState ? { map: pregameState.map, mapClean: pregameState.mapClean, mapInternal: pregameState.map, mode: 'agent-select', side: pregameState.side } : {}),
   });
@@ -895,15 +991,25 @@ async function poll() {
   // Snapshot for history (pushed at game end)
   if (players.length > 0) {
     const selfP = players.find(p => p.puuid === (authTokens?.puuid || stableSessionKey));
-    lastGameInfo = {
-      ts: Date.now(),
+    const currentMatchId = persistentMatchId || realMatchId || '';
+    const snapshot = {
+      ts: gameStartedAt || Date.now(),
       map: mapDisplay,
       mode: queueId,
-      matchId: persistentMatchId || realMatchId || '',
+      matchId: currentMatchId,
       player: playerName,
+      playerPuuid: authTokens?.puuid || stableSessionKey || '',
       selfTeam: selfP?.team || null, // ORDER=Blue, CHAOS=Red
-      players: players.map(p => ({ name: p.name, agent: p.agent, team: p.team, incognito: !!p.incognito })),
+      players: players.map(p => ({
+        name: p.name, puuid: p.puuid || '', agent: p.agent, agentId: p.agentId || '',
+        team: p.team, incognito: !!p.incognito,
+      })),
     };
+    if (!lastGameInfo || (currentMatchId && lastGameInfo.matchId !== currentMatchId)) {
+      lastGameInfo = snapshot;
+    } else {
+      lastGameInfo = { ...lastGameInfo, ...snapshot, ts: lastGameInfo.ts || snapshot.ts };
+    }
   }
 
   if (!inGame || players.length !== lastPlayerCount) {

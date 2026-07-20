@@ -1176,6 +1176,14 @@ export async function initHistoryPage() {
     if (d < 86400000) return Math.round(d/3600000) + ' h';
     return Math.round(d/86400000) + ' j';
   };
+  const durationLabel = ms => {
+    if (!ms || ms < 0) return '—';
+    const totalMinutes = Math.round(ms / 60000);
+    return `${Math.floor(totalMinutes / 60) ? Math.floor(totalMinutes / 60) + ' h ' : ''}${totalMinutes % 60} min`;
+  };
+  const dateLabel = ts => ts ? new Date(ts).toLocaleString('fr-FR', {
+    day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit'
+  }) : '—';
   const sectionTitle = t => `<div style="font-family:Tomorrow,sans-serif;font-size:9px;letter-spacing:4px;color:var(--dim);text-transform:uppercase;margin:0 0 12px;padding-bottom:8px;border-bottom:1px solid var(--border)">${t}</div>`;
 
   const statCard = (label, value, color) => `
@@ -1231,20 +1239,40 @@ export async function initHistoryPage() {
           const rColor = r==='win' ? '#3fcf6b' : r==='loss' ? '#ff4656' : 'var(--dim)';
           const rLabel = r==='win' ? 'V' : r==='loss' ? 'D' : '·';
           const score = g.score ? `${g.score.blue}–${g.score.red}` : '';
+          const self = (g.players||[]).find(p => p.name === g.player || p.puuid === g.playerPuuid);
+          const rrDelta = g.rr?.delta;
+          const detailedPlayers = (g.players||[]).filter(p => p.stats);
           return `
-          <div style="display:flex;align-items:center;gap:0;border:1px solid var(--border);background:var(--surf);overflow:hidden">
-            <div style="width:4px;align-self:stretch;background:${rColor};flex-shrink:0"></div>
-            <div style="display:flex;align-items:center;gap:14px;padding:10px 14px;flex:1;min-width:0">
-              <div style="font-family:Tomorrow,sans-serif;font-size:13px;font-weight:700;color:${rColor};width:14px;text-align:center;flex-shrink:0">${rLabel}</div>
-              <div style="flex:1;min-width:0">
-                <span style="font-family:Tomorrow,sans-serif;font-size:11px;font-weight:700;letter-spacing:2px;color:var(--text)">${(g.map||'?').toUpperCase()}</span>
-                <span style="font-family:Tomorrow,sans-serif;font-size:8px;letter-spacing:1px;color:var(--dim);text-transform:uppercase;margin-left:8px">${g.mode||''}</span>
-              </div>
-              ${score ? `<div style="font-family:Tomorrow,sans-serif;font-size:12px;font-weight:700;color:var(--muted);flex-shrink:0">${score}</div>` : ''}
-              <div style="font-family:Tomorrow,sans-serif;font-size:9px;color:var(--muted);max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex-shrink:0">${(g.player||'').split('#')[0]}</div>
-              <div style="font-family:Tomorrow,sans-serif;font-size:8px;letter-spacing:1px;color:var(--dim);width:42px;text-align:right;flex-shrink:0">${g.ts ? relTime(g.ts) : ''}</div>
+          <details class="history-game" style="--result-color:${rColor}">
+            <summary class="history-game-summary">
+              <span class="history-result">${rLabel}</span>
+              ${self?.agent ? `<img class="history-self-agent" src="${agentIconFromName(self.agent)}" alt="${self.agent}" onerror="this.style.display='none'">` : ''}
+              <span class="history-game-main">
+                <strong>${(g.map||'?').toUpperCase()}</strong>
+                <small>${g.mode||''} · ${dateLabel(g.ts)}</small>
+              </span>
+              ${score ? `<strong class="history-score">${score}</strong>` : '<span class="history-score muted">—</span>'}
+              ${rrDelta !== undefined && rrDelta !== null ? `<span class="history-rr ${rrDelta >= 0 ? 'positive' : 'negative'}">${rrDelta >= 0 ? '+' : ''}${rrDelta} RR</span>` : ''}
+              <span class="history-duration">${durationLabel(g.durationMs || ((g.endTs||0)-(g.ts||0)))}</span>
+              <span class="history-expand">⌄</span>
+            </summary>
+            <div class="history-game-detail">
+              ${detailedPlayers.length ? `
+                <div class="history-teams">
+                  ${['ORDER','CHAOS'].map(team => `
+                    <div class="history-team">
+                      <div class="history-team-title">${team === g.selfTeam ? 'Votre équipe' : 'Adversaires'}</div>
+                      ${detailedPlayers.filter(p => p.team === team).sort((a,b)=>(b.stats?.score||0)-(a.stats?.score||0)).map(p => `
+                        <div class="history-player ${p.name === g.player || p.puuid === g.playerPuuid ? 'self' : ''}">
+                          <img src="${agentIconFromName(p.agent)}" alt="${p.agent||''}" onerror="this.style.visibility='hidden'">
+                          <span class="history-player-name">${(p.name||'?').split('#')[0]}<small>${p.agent||'?'}</small></span>
+                          <strong>${p.stats?.kills||0}/${p.stats?.deaths||0}/${p.stats?.assists||0}</strong>
+                          <span>${p.stats?.acs||0} ACS</span>
+                        </div>`).join('')}
+                    </div>`).join('')}
+                </div>` : `<div class="history-legacy-note">Cette ancienne game ne contient pas encore les statistiques détaillées.</div>`}
             </div>
-          </div>`;
+          </details>`;
         }).join('')}
       </div>
     </div>`;
