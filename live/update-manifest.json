@@ -1,0 +1,16 @@
+{
+  "version": "4.10.0",
+  "files": [
+    "index.js",
+    "package.json",
+    "updater.js",
+    "update-manifest.json",
+    "OLYCITY-LIVE.bat",
+    "silent.vbs",
+    "INSTALLER.bat",
+    "REINSTALLER.bat",
+    "VERIFIER.bat",
+    "DESINSTALLER.bat",
+    "README.md"
+  ]
+}

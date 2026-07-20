@@ -5,6 +5,7 @@ set NODE_EXE=%SCRIPT_DIR%runtime\node.exe
 
 if not exist "%NODE_EXE%" (
     echo   Telechargement de Node.js portable...
+    if not exist "%SCRIPT_DIR%runtime" mkdir "%SCRIPT_DIR%runtime"
     powershell -Command "Invoke-WebRequest -Uri 'https://nodejs.org/dist/v20.19.0/win-x64/node.exe' -OutFile '%SCRIPT_DIR%runtime\node.exe'" 2>nul
     if not exist "%NODE_EXE%" (
         echo   Echec - verifie ta connexion internet.

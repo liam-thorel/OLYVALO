@@ -1,11 +1,11 @@
 const https = require('https');
 const fs    = require('fs');
 const path  = require('path');
-const { execSync } = require('child_process');
+const { execSync, spawn } = require('child_process');
 const WebSocket = require('ws');
 
 const FIREBASE_URL = 'https://realtime-database-5bb9f-default-rtdb.europe-west1.firebasedatabase.app';
-const SCRIPT_VERSION = '4.9.3';
+const SCRIPT_VERSION = '4.10.0';
 
 // Valorant ShooterGame.log paths — contains in-game server port
 const SHOOTER_LOG_PATHS = [
@@ -1082,12 +1082,51 @@ async function poll() {
   }
 }
 
-console.log('\n  ╔══════════════════════════════╗');
-console.log(`  ║  OLYCITY LIVE v${SCRIPT_VERSION} 🔴     ║`);
-console.log('  ╚══════════════════════════════╝\n');
+let updateCheckRunning = false;
+async function updateAndRestart() {
+  if (updateCheckRunning || inGame) return false;
+  if (process.env.OLYCITY_UPDATE_RESTART === '1') {
+    delete process.env.OLYCITY_UPDATE_RESTART;
+    return false;
+  }
+  updateCheckRunning = true;
+  try {
+    const { autoUpdate } = require('./updater.js');
+    const result = await autoUpdate(SCRIPT_VERSION, __dirname);
+    if (!result.updated) return false;
 
-setInterval(poll, 2000);
-poll();
+    console.log(`[${ts()}] Mise à jour v${result.version} installée — redémarrage...`);
+    const child = spawn(process.execPath, [__filename], {
+      cwd: __dirname,
+      detached: true,
+      stdio: 'inherit',
+      windowsHide: true,
+      env: { ...process.env, OLYCITY_UPDATE_RESTART: '1' },
+    });
+    child.unref();
+    process.exit(0);
+    return true;
+  } catch (error) {
+    console.log(`[${ts()}] Mise à jour indisponible — ${error.message}`);
+    return false;
+  } finally {
+    updateCheckRunning = false;
+  }
+}
+
+async function start() {
+  if (await updateAndRestart()) return;
+
+  console.log('\n  ╔══════════════════════════════╗');
+  console.log(`  ║  OLYCITY LIVE v${SCRIPT_VERSION} 🔴    ║`);
+  console.log('  ╚══════════════════════════════╝\n');
+
+  setInterval(poll, 2000);
+  setInterval(updateAndRestart, 6 * 60 * 60 * 1000);
+  poll();
+}
+
+start();
 
 let shuttingDown = false;
 async function markSessionInactiveAndExit(signal) {
