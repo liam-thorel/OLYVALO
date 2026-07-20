@@ -1023,7 +1023,7 @@ async function boot() {
     } else {
       // No state = home or hash-based
       const hash = window.location.hash.replace('#', '');
-      if (hash && ['maps','roster','agents','builder'].includes(hash)) {
+      if (hash && ['maps','roster','agents','builder','live','history'].includes(hash)) {
         window.OLYCITY.nav(hash, false);
       } else if (!hash || hash === 'home') {
         window.OLYCITY.nav('home', false);
@@ -1047,7 +1047,7 @@ async function boot() {
       window.OLYCITY.nav(s.page, false);
     } else {
       const hash = window.location.hash.replace('#', '');
-      if (['maps','roster','agents','builder'].includes(hash)) {
+      if (['maps','roster','agents','builder','live','history'].includes(hash)) {
         window.OLYCITY.nav(hash, false);
       } else {
         window.OLYCITY.nav('home', false);
@@ -1059,7 +1059,8 @@ async function boot() {
   });
   // Push initial history state
   const initHash = window.location.hash.replace('#','');
-  const initPage = ['maps','roster','agents','builder'].includes(initHash) ? initHash : 'home';
+  const initPage = ['maps','roster','agents','builder','live','history'].includes(initHash) ? initHash : 'home';
+  if (initPage !== 'home') window.OLYCITY.nav(initPage, false);
   window.history.replaceState({ page: initPage }, '', window.location.href);
   // Hide loading screen
   const ls = document.getElementById('loading-screen');
