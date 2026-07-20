@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { filterHistoryGames, historyMode, historyOwnerKey, historyOwnerLabel, historyPlayerName, historyPlayerPerformance, historyRankedPlayers, isOpaquePlayerName } from '../js/history-utils.mjs';
+import { filterHistoryGames, historyDailyPerformances, historyMode, historyOwnerKey, historyOwnerLabel, historyPlayerName, historyPlayerPerformance, historyRankedPlayers, isOpaquePlayerName } from '../js/history-utils.mjs';
 
 assert.equal(historyMode({ mode: 'competitive' }), 'competitive');
 assert.equal(historyMode({ mode: 'deathmatch' }), 'deathmatch');
@@ -43,5 +43,20 @@ assert.deepEqual(historyRankedPlayers({
   mode:'competitive',
   players:[{puuid:'low',stats:{score:2500}},{puuid:'mvp',stats:{score:5100}}],
 }).map(player => player.puuid), ['mvp','low']);
+
+const daily = historyDailyPerformances([
+  {player:'Drew A Picasso#XOOO',playerPuuid:'self',map:'Sunset',mode:'deathmatch',players:[
+    {puuid:'mvp',stats:{kills:40,deaths:10,assists:1,score:12000}},
+    {puuid:'self',agent:'Clove',stats:{kills:15,deaths:11,assists:1,score:4539}},
+  ]},
+  {player:'Drew A Picasso#XOOO',playerPuuid:'self',map:'Breeze',mode:'deathmatch',players:[
+    {puuid:'self',agent:'Vyse',stats:{kills:25,deaths:25,assists:3,score:7600}},
+  ]},
+], roster);
+assert.equal(daily.length, 1);
+assert.equal(daily[0].name, 'Nico');
+assert.deepEqual([daily[0].games,daily[0].kills,daily[0].deaths,daily[0].assists,daily[0].mvps], [2,40,36,4,1]);
+assert.equal(daily[0].kd.toFixed(2), '1.11');
+assert.equal(daily[0].best.agent, 'Clove');
 
 console.log('history-utils: modes, owners, filters, labels and performance validated');

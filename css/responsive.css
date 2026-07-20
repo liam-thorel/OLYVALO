@@ -73,6 +73,11 @@
   .history-performance-card.mvp { min-height: 62px; }
   .history-deathmatch-list { grid-template-columns: 1fr; }
   .history-day-modes { grid-template-columns: 1fr; }
+  .history-day-performance > summary { grid-template-columns: 1fr auto; }
+  .history-day-performance > summary > strong { grid-column: 1; grid-row: 2; text-align: left; }
+  .history-day-performance > summary > i { grid-column: 2; grid-row: 1 / span 2; }
+  .history-day-player > header { align-items: flex-start; flex-direction: column; gap: 2px; }
+  .history-day-player-metrics { grid-template-columns: repeat(2,1fr); }
   .history-view-tabs .history-filter-button { flex: 1; min-width: 0; }
   .history-filters { align-items: stretch; flex-direction: column; gap: 14px; padding: 12px; }
   .history-filter-group > div { width: 100%; }

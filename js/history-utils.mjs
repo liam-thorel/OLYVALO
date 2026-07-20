@@ -79,3 +79,56 @@ export function historyPlayerPerformance(game) {
     kd: self ? (self.stats?.kills || 0) / Math.max(1, deaths) : null,
   };
 }
+
+export function historyDailyPerformances(games, roster = []) {
+  const byOwner = new Map();
+  games.forEach(game => {
+    const performance = historyPlayerPerformance(game);
+    const self = performance.self;
+    if (!self?.stats) return;
+
+    const key = historyOwnerKey(game);
+    if (!byOwner.has(key)) {
+      byOwner.set(key, {
+        key,
+        name: historyOwnerLabel(game, roster),
+        games: 0,
+        kills: 0,
+        deaths: 0,
+        assists: 0,
+        mvps: 0,
+        best: null,
+      });
+    }
+
+    const entry = byOwner.get(key);
+    const kills = self.stats.kills || 0;
+    const deaths = self.stats.deaths || 0;
+    const assists = self.stats.assists || 0;
+    const kd = kills / Math.max(1, deaths);
+    entry.games++;
+    entry.kills += kills;
+    entry.deaths += deaths;
+    entry.assists += assists;
+    if (performance.mvp === self) entry.mvps++;
+
+    if (!entry.best || kd > entry.best.kd || (kd === entry.best.kd && kills > entry.best.kills)) {
+      entry.best = {
+        map: game.map || '?',
+        mode: historyMode(game),
+        agent: self.agent || '?',
+        kills,
+        deaths,
+        assists,
+        kd,
+        placement: performance.placement,
+        playerCount: performance.playerCount,
+      };
+    }
+  });
+
+  return [...byOwner.values()].map(entry => ({
+    ...entry,
+    kd: entry.kills / Math.max(1, entry.deaths),
+  })).sort((a, b) => b.kd - a.kd || b.kills - a.kills || a.name.localeCompare(b.name, 'fr'));
+}

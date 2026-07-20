@@ -8,7 +8,7 @@ import { valorantApi } from './api.js';
 import { state } from './main.js';
 import { groupLiveSessions, mergeSelectedSessionData } from './live-sessions.mjs';
 import { avatarLayersHTML } from './avatars.mjs?v=20260720-avatars';
-import { filterHistoryGames, historyMode, historyOwnerKey, historyOwnerLabel, historyPlayerName, historyPlayerPerformance, historyRankedPlayers, isHistorySelf } from './history-utils.mjs?v=20260720-history-detail';
+import { filterHistoryGames, historyDailyPerformances, historyMode, historyOwnerKey, historyOwnerLabel, historyPlayerName, historyPlayerPerformance, historyRankedPlayers, isHistorySelf } from './history-utils.mjs?v=20260720-history-daily';
 
 // ─── THEME TOGGLE ─────────────────────────────────
 export function initTheme() {
@@ -1206,10 +1206,11 @@ export async function initHistoryPage() {
     const agents = [...new Set(dayGames.map(game =>
       (game.players||[]).find(player => isHistorySelf(game, player))?.agent
     ).filter(agent => agent && agent !== '?'))];
+    const performances = historyDailyPerformances(dayGames, state.ROSTER);
     const label = key === todayKey ? "Aujourd'hui" : new Date(`${key}T12:00:00`).toLocaleDateString('fr-FR', {
       weekday:'long', day:'2-digit', month:'long'
     });
-    return { key, label, games:dayGames, compGames, dmGames, decided, wins:dayWins, rrValues, rrTotal, duration, maps, agents };
+    return { key, label, games:dayGames, compGames, dmGames, decided, wins:dayWins, rrValues, rrTotal, duration, maps, agents, performances };
   };
   const daily = dailyGroups.map(dailySummary);
   const sectionTitle = t => `<div class="history-section-title">${t}</div>`;
@@ -1423,6 +1424,32 @@ export async function initHistoryPage() {
               ${day.maps.map(map => `<span>${map}</span>`).join('')}
               ${day.agents.map(agent => `<span class="agent">${agent}</span>`).join('')}
             </div>
+            ${day.performances.length ? (() => {
+              const leader = day.performances[0];
+              return `<details class="history-day-performance">
+                <summary>
+                  <span>Performances suivies</span>
+                  <strong>${leader.name} · ${leader.kills}/${leader.deaths}/${leader.assists} · ${leader.kd.toFixed(2)} K/D</strong>
+                  <i aria-hidden="true">⌄</i>
+                </summary>
+                <div class="history-day-performance-list">
+                  ${day.performances.map(player => {
+                    const best = player.best;
+                    const placement = best?.mode === 'deathmatch' && best.placement
+                      ? ` · #${best.placement}/${best.playerCount}` : '';
+                    return `<div class="history-day-player">
+                      <header><strong>${player.name}</strong><span>${player.games} game${player.games > 1 ? 's' : ''} détaillée${player.games > 1 ? 's' : ''} · ${player.mvps} MVP</span></header>
+                      <div class="history-day-player-metrics">
+                        <div><strong>${player.kills}/${player.deaths}/${player.assists}</strong><small>K/D/A cumulé</small></div>
+                        <div><strong>${player.kd.toFixed(2)}</strong><small>Ratio K/D</small></div>
+                        <div><strong>${best ? `${best.kills}/${best.deaths}/${best.assists}` : '—'}</strong><small>Meilleure partie</small></div>
+                      </div>
+                      ${best ? `<div class="history-day-best">${best.map} · ${best.agent}${placement}</div>` : ''}
+                    </div>`;
+                  }).join('')}
+                </div>
+              </details>`;
+            })() : ''}
           </article>`;
         }).join('')}
       </div>
