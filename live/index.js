@@ -5,6 +5,7 @@ const { execSync } = require('child_process');
 const WebSocket = require('ws');
 
 const FIREBASE_URL = 'https://realtime-database-5bb9f-default-rtdb.europe-west1.firebasedatabase.app';
+const SCRIPT_VERSION = '4.9.0';
 
 // Valorant ShooterGame.log paths — contains in-game server port
 const SHOOTER_LOG_PATHS = [
@@ -320,6 +321,28 @@ let stableSessionKey = null;
 let missedPolls = 0;
 let roundPhase = '';
 let roundStartTime = null;
+let lastDiagnosticPush = 0;
+let lastDiagnosticSignature = '';
+
+async function publishDiagnostic(state, details = {}, force = false) {
+  const sessionKey = stableSessionKey || authTokens?.puuid || selfPuuid;
+  if (!sessionKey) return;
+
+  const signature = JSON.stringify({ state, ...details });
+  const now = Date.now();
+  if (!force && signature === lastDiagnosticSignature && now - lastDiagnosticPush < 10000) return;
+
+  lastDiagnosticSignature = signature;
+  lastDiagnosticPush = now;
+  await putFB(`live/clients/${sessionKey}`, {
+    online: true,
+    ts: now,
+    version: SCRIPT_VERSION,
+    state,
+    riotClient: !!lockPort,
+    ...details,
+  });
+}
 
 function getPregameSide(match, puuid) {
   const allyTeam = match?.AllyTeam;
@@ -463,6 +486,7 @@ async function poll() {
   if (!lock) {
     tries++;
     if (tries % 10 === 1) console.log(`[${ts()}] ⏳ Riot Client non détecté`);
+    await publishDiagnostic('riot-offline', { riotClient: false, error: 'Client Riot non détecté' });
     return;
   }
   if (lock.port !== lockPort) {
@@ -474,6 +498,7 @@ async function poll() {
   if (!res.ok) {
     tries++;
     if (tries % 10 === 1) console.log(`[${ts()}] ⚠️  Presence: ${res.err}`);
+    await publishDiagnostic('error', { error: `Presence: ${res.err || 'indisponible'}` });
     return;
   }
   tries = 0;
@@ -485,6 +510,7 @@ async function poll() {
       selfPuuid = session.data.puuid;
       stableSessionKey = selfPuuid;
       console.log(`[${ts()}] 👤 PUUID détecté: ${selfPuuid.slice(0,8)}...`);
+      await publishDiagnostic('idle', { error: '' }, true);
     }
   }
 
@@ -524,6 +550,9 @@ async function poll() {
             map: pgMap, mapClean: pregameState.mapClean, mapInternal: pgMap,
             mode: 'agent-select', phase: 'pregame', side,
             matchId: pg.MatchID, playerName, players: [], activePlayer: {},
+          });
+          await publishDiagnostic('agent-select', {
+            error: '', map: pregameState.mapClean, matchId: pg.MatchID, side,
           });
           missedPolls = 0;
           return; // agent select handled — skip in-game logic this poll
@@ -600,6 +629,7 @@ async function poll() {
       lastPregameMap = ''; persistentMatchId = ''; pregameState = null; authTokens = null;
       const sKey = stableSessionKey || 'unknown';
       if (sKey !== 'unknown') await putFB(`live/sessions/${sKey}`, { active:false, ts:Date.now(), playerName });
+      await publishDiagnostic('game-ended', { error: '', map: lastGameInfo?.map || '' }, true);
 
       // Push game to history (deduped by matchId)
       if (lastGameInfo && lastGameInfo.matchId) {
@@ -624,6 +654,7 @@ async function poll() {
         lastScore = '';
       }
     }
+    await publishDiagnostic('idle', { error: '', map: '' });
     return;
   }
   missedPolls = 0;
@@ -857,6 +888,9 @@ async function poll() {
     phase:       pregameState ? 'pregame' : '',
     ...(pregameState ? { map: pregameState.map, mapClean: pregameState.mapClean, mapInternal: pregameState.map, mode: 'agent-select', side: pregameState.side } : {}),
   });
+  await publishDiagnostic('in-game', {
+    error: '', map: mapDisplay, matchId: persistentMatchId || realMatchId || '',
+  });
 
   // Snapshot for history (pushed at game end)
   if (players.length > 0) {
@@ -894,6 +928,14 @@ async function markSessionInactiveAndExit(signal) {
     await putFB(`live/sessions/${sessionKey}`, {
       active: false,
       ts: Date.now(),
+      stoppedBy: signal,
+    });
+    await putFB(`live/clients/${sessionKey}`, {
+      online: false,
+      ts: Date.now(),
+      version: SCRIPT_VERSION,
+      state: 'stopped',
+      riotClient: false,
       stoppedBy: signal,
     });
   }

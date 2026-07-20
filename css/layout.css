@@ -426,7 +426,41 @@ body.agent-mode .footer{ display:none; }
 .map-side-right { right: 0; border-right: none; border-radius: 3px 0 0 3px; }
 
 /* ═══════════════ LIVE PAGE ═══════════════ */
-.live-page { min-height: 60vh; display: flex; align-items: center; justify-content: center; }
+.live-page { min-height: 60vh; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+.live-diagnostic {
+  display: flex; align-items: center; gap: 11px; width: 100%; box-sizing: border-box;
+  margin: 0 0 14px; padding: 10px 14px; border: 1px solid var(--border);
+  background: var(--surf); font-family: 'Tomorrow', sans-serif;
+}
+.live-diagnostic-dot {
+  flex: 0 0 8px; width: 8px; height: 8px; border-radius: 50%;
+  background: #687181; box-shadow: 0 0 0 4px rgba(104,113,129,.1);
+}
+.live-diagnostic-copy { display: grid; gap: 2px; min-width: 0; }
+.live-diagnostic-copy strong {
+  color: var(--muted); font-size: 9px; letter-spacing: 2px; text-transform: uppercase;
+}
+.live-diagnostic-copy span {
+  color: var(--dim); font-size: 8px; letter-spacing: 1px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.live-diagnostic-version {
+  margin-left: auto; color: var(--dim); font-family: 'Tomorrow', sans-serif;
+  font-size: 8px; letter-spacing: 2px; text-transform: uppercase;
+}
+.live-diagnostic[data-state="online"] .live-diagnostic-dot,
+.live-diagnostic[data-state="idle"] .live-diagnostic-dot {
+  background: #3fcf6b; box-shadow: 0 0 0 4px rgba(63,207,107,.1), 0 0 14px rgba(63,207,107,.4);
+}
+.live-diagnostic[data-state="agent-select"] .live-diagnostic-dot {
+  background: #f5c842; box-shadow: 0 0 0 4px rgba(245,200,66,.1), 0 0 14px rgba(245,200,66,.4);
+}
+.live-diagnostic[data-state="in-game"] .live-diagnostic-dot {
+  background: var(--red); box-shadow: 0 0 0 4px rgba(255,70,86,.1), 0 0 14px rgba(255,70,86,.45);
+}
+.live-diagnostic[data-state="error"] .live-diagnostic-dot,
+.live-diagnostic[data-state="riot-offline"] .live-diagnostic-dot {
+  background: #ff9f43; box-shadow: 0 0 0 4px rgba(255,159,67,.1);
+}
 .live-waiting { text-align: center; padding: 60px 32px; }
 .live-content { width: 100%; }
 .live-header {

@@ -360,8 +360,10 @@ export function initLivePage() {
 
   // Firebase SSE listener
   const evtSource = new EventSource(`${FIREBASE_URL}/live/sessions.json`);
+  const clientsSource = new EventSource(`${FIREBASE_URL}/live/clients.json`);
   let selectedSession = null;
   let lastSessions = {};
+  let lastClients = {};
   let byMatchCache = {};
   const _rosterCache = {};
   let _rosterFetched = false;
@@ -383,6 +385,69 @@ export function initLivePage() {
   }
 
   let lastDataKey = '';
+  const DIAGNOSTIC_LABELS = {
+    'idle': 'Script prêt',
+    'agent-select': 'Agent Select détecté',
+    'in-game': 'Partie en cours',
+    'game-ended': 'Partie terminée',
+    'riot-offline': 'Client Riot introuvable',
+    'error': 'Erreur de synchronisation',
+    'stopped': 'Script arrêté',
+  };
+
+  function renderDiagnostic() {
+    const panel = document.getElementById('live-diagnostic');
+    const label = document.getElementById('live-diagnostic-label');
+    const detail = document.getElementById('live-diagnostic-detail');
+    const version = document.getElementById('live-diagnostic-version');
+    if (!panel || !label || !detail || !version) return;
+
+    const entries = Object.entries(lastClients).filter(([, client]) => client && typeof client === 'object');
+    const selected = selectedSession ? lastClients[selectedSession] : null;
+    const client = selected || entries.sort((a, b) => (b[1].ts || 0) - (a[1].ts || 0))[0]?.[1] || null;
+    const age = client?.ts ? Date.now() - Number(client.ts) : Infinity;
+    const fresh = client?.online && age < 30000;
+
+    if (!fresh) {
+      panel.dataset.state = 'offline';
+      label.textContent = 'Script hors ligne';
+      detail.textContent = client?.ts
+        ? `Dernier signal il y a ${Math.max(1, Math.round(age / 1000))} s`
+        : 'En attente du premier signal';
+      version.textContent = client?.version ? `v${client.version}` : '—';
+      return;
+    }
+
+    panel.dataset.state = client.state || 'online';
+    label.textContent = DIAGNOSTIC_LABELS[client.state] || 'Script connecté';
+    const context = [client.map, client.side, client.error].filter(Boolean).join(' · ');
+    detail.textContent = context || (client.riotClient ? 'Client Riot connecté' : 'Client Riot indisponible');
+    version.textContent = client.version ? `v${client.version}` : '—';
+  }
+
+  function handleClientsSSE(event) {
+    try {
+      const message = JSON.parse(event.data);
+      const path = message.path || '/';
+      const data = message.data;
+      if (path === '/') {
+        lastClients = data && typeof data === 'object' ? data : {};
+      } else {
+        const clientKey = path.replace(/^\//, '').split('/')[0];
+        const subPath = path.replace(/^\/[^/]+/, '').replace(/^\//, '');
+        if (!clientKey) return;
+        if (!lastClients[clientKey]) lastClients[clientKey] = {};
+        if (subPath) lastClients[clientKey][subPath] = data;
+        else if (data && typeof data === 'object') lastClients[clientKey] = data;
+      }
+      renderDiagnostic();
+    } catch {}
+  }
+
+  clientsSource.addEventListener('put', handleClientsSSE);
+  clientsSource.addEventListener('patch', handleClientsSSE);
+  const diagnosticTicker = setInterval(renderDiagnostic, 5000);
+
   const isFreshSession = (session, now = Date.now()) => {
     const updatedAt = Number(session?.ts);
     return Number.isFinite(updatedAt) && updatedAt > 0 && now - updatedAt < 30000;
@@ -590,6 +655,7 @@ export function initLivePage() {
   window._selectLiveSession = (puuid) => {
     selectedSession = puuid;
     updateSessionPicker(lastSessions); // re-render picker immediately with new selection
+    renderDiagnostic();
     const data = lastSessions[puuid] || null;
     if (data) updateUI(data);
   };
@@ -1049,7 +1115,13 @@ export function initLivePage() {
     });
   }
 
-  return () => evtSource.close();
+  return () => {
+    evtSource.close();
+    clientsSource.close();
+    clearInterval(staleChecker);
+    clearInterval(diagnosticTicker);
+    if (timerInterval) clearInterval(timerInterval);
+  };
 }
 
 export async function initHistoryPage() {
