@@ -1184,6 +1184,34 @@ export async function initHistoryPage() {
   const dateLabel = ts => ts ? new Date(ts).toLocaleString('fr-FR', {
     day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit'
   }) : '—';
+  const dayKey = ts => {
+    const date = new Date(ts || 0);
+    return `${date.getFullYear()}-${String(date.getMonth()+1).padStart(2,'0')}-${String(date.getDate()).padStart(2,'0')}`;
+  };
+  const todayKey = dayKey(Date.now());
+  const dailyGroups = Object.entries(games.reduce((groups, game) => {
+    const key = dayKey(game.ts);
+    if (!groups[key]) groups[key] = [];
+    groups[key].push(game);
+    return groups;
+  }, {})).sort((a,b) => b[0].localeCompare(a[0]));
+
+  const dailySummary = ([key, dayGames]) => {
+    const decided = dayGames.filter(game => game.result === 'win' || game.result === 'loss');
+    const dayWins = decided.filter(game => game.result === 'win').length;
+    const rrValues = dayGames.map(game => game.rr?.delta).filter(value => Number.isFinite(value));
+    const rrTotal = rrValues.reduce((sum, value) => sum + value, 0);
+    const duration = dayGames.reduce((sum, game) => sum + (game.durationMs || Math.max(0, (game.endTs||0) - (game.ts||0))), 0);
+    const maps = [...new Set(dayGames.map(game => game.map).filter(Boolean))];
+    const agents = [...new Set(dayGames.map(game =>
+      (game.players||[]).find(player => player.name === game.player || player.puuid === game.playerPuuid)?.agent
+    ).filter(agent => agent && agent !== '?'))];
+    const label = key === todayKey ? "Aujourd'hui" : new Date(`${key}T12:00:00`).toLocaleDateString('fr-FR', {
+      weekday:'long', day:'2-digit', month:'long'
+    });
+    return { key, label, games:dayGames, decided, wins:dayWins, rrValues, rrTotal, duration, maps, agents };
+  };
+  const daily = dailyGroups.map(dailySummary);
   const sectionTitle = t => `<div style="font-family:Tomorrow,sans-serif;font-size:9px;letter-spacing:4px;color:var(--dim);text-transform:uppercase;margin:0 0 12px;padding-bottom:8px;border-bottom:1px solid var(--border)">${t}</div>`;
 
   const statCard = (label, value, color) => `
@@ -1199,6 +1227,33 @@ export async function initHistoryPage() {
       ${wr !== null ? statCard('Winrate', wr+'%', wrColor(wr)) : ''}
       ${withResult.length ? statCard('Bilan', wins+'V '+(withResult.length-wins)+'D') : ''}
     </div>
+
+    ${daily.length ? `
+    <div class="history-daily-section">
+      ${sectionTitle('Récap par jour')}
+      <div class="history-daily-grid">
+        ${daily.slice(0,14).map(day => {
+          const winrate = day.decided.length ? Math.round(day.wins / day.decided.length * 100) : null;
+          return `
+          <article class="history-day-card">
+            <header>
+              <span>${day.label}</span>
+              <strong>${day.games.length} game${day.games.length > 1 ? 's' : ''}</strong>
+            </header>
+            <div class="history-day-metrics">
+              <div><small>Bilan</small><strong>${day.decided.length ? `${day.wins}V ${day.decided.length-day.wins}D` : '—'}</strong></div>
+              <div><small>Winrate</small><strong style="color:${winrate === null ? 'var(--dim)' : wrColor(winrate)}">${winrate === null ? '—' : winrate+'%'}</strong></div>
+              <div><small>Durée</small><strong>${durationLabel(day.duration)}</strong></div>
+              <div><small>RR</small><strong class="${day.rrTotal >= 0 ? 'positive' : 'negative'}">${day.rrValues.length ? `${day.rrTotal >= 0 ? '+' : ''}${day.rrTotal}` : '—'}</strong></div>
+            </div>
+            <div class="history-day-tags">
+              ${day.maps.map(map => `<span>${map}</span>`).join('')}
+              ${day.agents.map(agent => `<span class="agent">${agent}</span>`).join('')}
+            </div>
+          </article>`;
+        }).join('')}
+      </div>
+    </div>` : ''}
 
     ${topAgents.length ? `
     <div style="margin-bottom:32px">

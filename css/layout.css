@@ -561,6 +561,39 @@ body.agent-mode .footer{ display:none; }
 .live-minimap-wrap { background: var(--surf); border: 1px solid var(--border); }
 
 /* History v2 */
+.history-daily-section { margin-bottom: 32px; }
+.history-daily-grid {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 10px;
+}
+.history-day-card {
+  position: relative; overflow: hidden; padding: 15px; border: 1px solid var(--border); background: var(--surf);
+}
+.history-day-card::before {
+  content: ''; position: absolute; inset: 0 0 auto; height: 2px;
+  background: linear-gradient(90deg, var(--red), transparent 70%);
+}
+.history-day-card > header { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; margin-bottom: 14px; }
+.history-day-card > header span {
+  color: var(--text); font-family: 'Tomorrow', sans-serif; font-size: 10px; font-weight: 700;
+  letter-spacing: 2px; text-transform: capitalize;
+}
+.history-day-card > header strong {
+  color: var(--dim); font-family: 'Tomorrow', sans-serif; font-size: 8px; letter-spacing: 1px; text-transform: uppercase;
+}
+.history-day-metrics { display: grid; grid-template-columns: repeat(4,1fr); gap: 6px; }
+.history-day-metrics > div { display: grid; gap: 4px; min-width: 0; }
+.history-day-metrics small {
+  color: var(--dim); font-family: 'Tomorrow', sans-serif; font-size: 7px; letter-spacing: 1px; text-transform: uppercase;
+}
+.history-day-metrics strong { color: var(--muted); font-family: 'Tomorrow', sans-serif; font-size: 11px; white-space: nowrap; }
+.history-day-metrics strong.positive { color: #3fcf6b; }
+.history-day-metrics strong.negative { color: #ff4656; }
+.history-day-tags { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 13px; }
+.history-day-tags span {
+  padding: 3px 6px; border: 1px solid var(--border); color: var(--dim);
+  font-family: 'Tomorrow', sans-serif; font-size: 7px; letter-spacing: 1px; text-transform: uppercase;
+}
+.history-day-tags span.agent { color: var(--red); border-color: var(--red-mid); background: var(--red-low); }
 .history-game { border: 1px solid var(--border); border-left: 4px solid var(--result-color); background: var(--surf); }
 .history-game summary { list-style: none; }
 .history-game summary::-webkit-details-marker { display: none; }
