@@ -1202,12 +1202,12 @@ export async function initHistoryPage() {
     return { key, label, games:dayGames, compGames, dmGames, decided, wins:dayWins, rrValues, rrTotal, duration, maps, agents };
   };
   const daily = dailyGroups.map(dailySummary);
-  const sectionTitle = t => `<div style="font-family:Tomorrow,sans-serif;font-size:9px;letter-spacing:4px;color:var(--dim);text-transform:uppercase;margin:0 0 12px;padding-bottom:8px;border-bottom:1px solid var(--border)">${t}</div>`;
+  const sectionTitle = t => `<div class="history-section-title">${t}</div>`;
 
   const statCard = (label, value, color) => `
-    <div style="flex:1;min-width:130px;border:1px solid var(--border);background:var(--surf);padding:16px 18px">
-      <div style="font-family:Tomorrow,sans-serif;font-size:8px;letter-spacing:3px;color:var(--dim);text-transform:uppercase;margin-bottom:8px">${label}</div>
-      <div style="font-family:Tomorrow,sans-serif;font-size:26px;font-weight:700;line-height:1;color:${color||'var(--text)'}">${value}</div>
+    <div class="history-stat-card">
+      <div class="history-stat-label">${label}</div>
+      <div class="history-stat-value" style="color:${color||'var(--text)'}">${value}</div>
     </div>`;
 
   const modeLabel = game => historyMode(game) === 'deathmatch' ? 'Deathmatch'
@@ -1333,32 +1333,32 @@ export async function initHistoryPage() {
     </div>` : ''}
 
     ${topAgents.length ? `
-    <div style="margin-bottom:32px">
+    <div class="history-agents-section">
       ${sectionTitle('Agents les plus joués')}
-      <div style="display:flex;gap:8px;flex-wrap:wrap">
+      <div class="history-agent-list">
         ${topAgents.map(([a,n]) => `
-          <div style="display:flex;align-items:center;gap:8px;border:1px solid var(--border);background:var(--surf);padding:6px 12px 6px 6px">
-            <img src="${agentIconFromName(a)}" style="width:30px;height:30px;object-fit:cover" onerror="this.style.display='none'">
-            <div>
-              <div style="font-family:Tomorrow,sans-serif;font-size:10px;letter-spacing:1px;color:var(--text)">${a}</div>
-              <div style="font-family:Tomorrow,sans-serif;font-size:8px;letter-spacing:1px;color:var(--dim)">${n} game${n>1?'s':''}</div>
+          <div class="history-agent-chip">
+            <img src="${agentIconFromName(a)}" alt="${a}" onerror="this.style.display='none'">
+            <div class="history-agent-copy">
+              <strong>${a}</strong>
+              <small>${n} game${n>1?'s':''}</small>
             </div>
           </div>`).join('')}
       </div>
     </div>` : ''}
 
     ${mapStats.length ? `
-    <div style="margin-bottom:32px">
+    <div class="history-maps-section">
       ${sectionTitle('Winrate par map')}
-      <div style="display:flex;flex-direction:column;gap:6px">
+      <div class="history-map-stats">
         ${mapStats.map(s => `
-          <div style="display:flex;align-items:center;gap:14px;border:1px solid var(--border);background:var(--surf);padding:10px 14px">
-            <div style="font-family:Tomorrow,sans-serif;font-size:11px;font-weight:700;letter-spacing:2px;color:var(--text);width:90px;flex-shrink:0">${s.map.toUpperCase()}</div>
-            <div style="flex:1;height:4px;background:var(--bg);position:relative;overflow:hidden">
-              <div style="position:absolute;left:0;top:0;height:100%;width:${s.wr}%;background:${wrColor(s.wr)};transition:width .4s"></div>
+          <div class="history-map-stat">
+            <strong class="history-map-stat-name">${s.map}</strong>
+            <div class="history-map-stat-track">
+              <div style="width:${s.wr}%;background:${wrColor(s.wr)}"></div>
             </div>
-            <div style="font-family:Tomorrow,sans-serif;font-size:11px;font-weight:700;color:${wrColor(s.wr)};width:38px;text-align:right">${s.wr}%</div>
-            <div style="font-family:Tomorrow,sans-serif;font-size:8px;letter-spacing:1px;color:var(--dim);width:54px;text-align:right">${s.w}V ${s.n-s.w}D</div>
+            <strong class="history-map-stat-wr" style="color:${wrColor(s.wr)}">${s.wr}%</strong>
+            <span class="history-map-stat-record">${s.w}V ${s.n-s.w}D</span>
           </div>`).join('')}
       </div>
     </div>` : ''}
