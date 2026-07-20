@@ -923,7 +923,7 @@ export function initLivePage() {
     // In deathmatch everyone is on same "team" — just show all
     const allies = all.filter(p => p.team === 'ORDER');
     const enemies = all.filter(p => p.team === 'CHAOS');
-    const isDM = allies.length === all.length || enemies.length === 0;
+    const isDM = /deathmatch/i.test(data.mode || '') || all.some(p => p.team === 'NEUTRAL') || allies.length === all.length || enemies.length === 0;
 
     // Stable key: only rebuild if player list (names+agents) actually changed
     const stableKey = all.map(p => `${p.name}|${p.agent}|${p.team}`).join(',');

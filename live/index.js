@@ -5,7 +5,7 @@ const { execSync } = require('child_process');
 const WebSocket = require('ws');
 
 const FIREBASE_URL = 'https://realtime-database-5bb9f-default-rtdb.europe-west1.firebasedatabase.app';
-const SCRIPT_VERSION = '4.9.0';
+const SCRIPT_VERSION = '4.9.1';
 
 // Valorant ShooterGame.log paths — contains in-game server port
 const SHOOTER_LOG_PATHS = [
@@ -278,7 +278,8 @@ async function pvpGet(tokens, apiPath) {
       res.on('data', c => d += c);
       res.on('end', () => {
         if (res.statusCode !== 200) {
-          console.log(`[pvpGet] ${res.statusCode} ${url.hostname}${apiPath}: ${d.slice(0,80)}`);
+          // 404 is the normal response when the player is not in this phase.
+          if (res.statusCode !== 404) console.log(`[pvpGet] ${res.statusCode} ${url.hostname}${apiPath}: ${d.slice(0,80)}`);
           resolve(null); return;
         }
         try { resolve(JSON.parse(d)); }
@@ -609,6 +610,8 @@ async function poll() {
   let playerName = '';
   let matchData = null;
   let realMatchId = '';
+  let corePlayer = null;
+  let coreMatch = null;
 
   // ===== Détection AGENT SELECT (indépendante de la présence/isInGame) =====
   // Pendant le pick, la présence n'a pas de map — on interroge l'endpoint pregame directement.
@@ -695,13 +698,36 @@ async function poll() {
     }
   }
 
+  // Presence data is incomplete in some queues (notably Deathmatch). Always use
+  // core-game as a second source before deciding that no game is running.
+  try {
+    await ensureAuth(lock);
+    if (authTokens?.puuid) {
+      corePlayer = await pvpGet(authTokens, `/core-game/v1/players/${authTokens.puuid}`);
+      if (corePlayer?.MatchID) {
+        realMatchId = corePlayer.MatchID;
+        persistentMatchId = realMatchId;
+        coreMatch = await pvpGet(authTokens, `/core-game/v1/matches/${realMatchId}`);
+        pregameState = null;
+
+        if (!playerName) {
+          const ownPresence = myPresences.find(p => p.game_name);
+          if (ownPresence) playerName = `${ownPresence.game_name}#${ownPresence.game_tag || ''}`.replace(/#$/, '');
+        }
+      }
+    }
+  } catch {}
+
   // Determine if in game
   const location   = found?.location || '';
   const mode       = (found?.mode || '').replace('social_mode_','');
-  const mapRaw     = location.replace('social_location_','').split('/').pop() || matchData?.matchMap?.split('/')?.pop() || '';
+  const coreMapRaw = coreMatch?.MapID?.split('/')?.pop() || '';
+  const coreModeId = coreMatch?.ModeID?.split('/')?.pop()?.split('.')?.[0] || '';
+  const coreMode   = /deathmatch/i.test(coreModeId) ? 'deathmatch' : coreModeId;
+  const mapRaw     = coreMapRaw || location.replace('social_location_','').split('/').pop() || matchData?.matchMap?.split('/')?.pop() || '';
   const mapDisplay = MAP_NAMES[mapRaw] || mapRaw || '';
-  const queueId    = matchData?.queueId || mode || '';
-  const isInGame   = !!(mapRaw && mapRaw !== 'Range' && mapRaw !== '');
+  const queueId    = coreMatch?.MatchmakingData?.QueueID || coreMatch?.QueueID || matchData?.queueId || mode || coreMode || '';
+  const isInGame   = !!corePlayer?.MatchID || !!(mapRaw && mapRaw !== 'Range' && mapRaw !== '');
 
   if (!isInGame) {
     missedPolls = (missedPolls || 0) + 1;
@@ -774,7 +800,7 @@ async function poll() {
   if (authTokens && isInGame) {
     try {
       // Try core-game first, then pre-game
-      let matchData = await pvpGet(authTokens, `/core-game/v1/players/${authTokens.puuid}`);
+      let matchData = corePlayer || await pvpGet(authTokens, `/core-game/v1/players/${authTokens.puuid}`);
 
       if (!matchData?.MatchID) {
         matchData = await pvpGet(authTokens, `/pregame/v1/players/${authTokens.puuid}`);
@@ -785,7 +811,9 @@ async function poll() {
       if (matchData?.MatchID) {
         realMatchId = matchData.MatchID;
         persistentMatchId = realMatchId; // persist across polls
-        const match = await pvpGet(authTokens, `/core-game/v1/matches/${matchData.MatchID}`);
+        const match = coreMatch?.MatchID === matchData.MatchID
+          ? coreMatch
+          : await pvpGet(authTokens, `/core-game/v1/matches/${matchData.MatchID}`);
 
         if (match?.Players) {
           // Fetch player names from name service
@@ -892,7 +920,7 @@ async function poll() {
               puuid:   p.Subject || '',
               agent:   agentName,
               agentId: charId,
-              team:    p.TeamID === 'Blue' ? 'ORDER' : 'CHAOS',
+              team:    p.TeamID === 'Blue' ? 'ORDER' : p.TeamID === 'Red' ? 'CHAOS' : 'NEUTRAL',
               alive:   true, hp: 100, maxHp: 150,
               kills:   0, deaths: 0, assists: 0,
               ult: false, x: 0, y: 0,
