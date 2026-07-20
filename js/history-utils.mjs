@@ -54,3 +54,28 @@ export function filterHistoryGames(games, filters, now = Date.now()) {
     return true;
   });
 }
+
+export function historyRankedPlayers(game) {
+  const players = (game?.players || []).filter(player => player?.stats);
+  const deathmatch = historyMode(game) === 'deathmatch';
+  return [...players].sort((a, b) => {
+    if (deathmatch) {
+      const killDiff = (b.stats?.kills || 0) - (a.stats?.kills || 0);
+      if (killDiff) return killDiff;
+    }
+    return (b.stats?.score || 0) - (a.stats?.score || 0);
+  });
+}
+
+export function historyPlayerPerformance(game) {
+  const rankedPlayers = historyRankedPlayers(game);
+  const self = rankedPlayers.find(player => isHistorySelf(game, player)) || null;
+  const deaths = self?.stats?.deaths || 0;
+  return {
+    self,
+    mvp: rankedPlayers[0] || null,
+    placement: self ? rankedPlayers.indexOf(self) + 1 : null,
+    playerCount: rankedPlayers.length,
+    kd: self ? (self.stats?.kills || 0) / Math.max(1, deaths) : null,
+  };
+}

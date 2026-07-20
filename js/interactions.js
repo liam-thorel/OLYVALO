@@ -8,7 +8,7 @@ import { valorantApi } from './api.js';
 import { state } from './main.js';
 import { groupLiveSessions, mergeSelectedSessionData } from './live-sessions.mjs';
 import { avatarLayersHTML } from './avatars.mjs?v=20260720-avatars';
-import { filterHistoryGames, historyMode, historyOwnerKey, historyOwnerLabel, historyPlayerName, isHistorySelf } from './history-utils.mjs?v=20260720-history-nav';
+import { filterHistoryGames, historyMode, historyOwnerKey, historyOwnerLabel, historyPlayerName, historyPlayerPerformance, historyRankedPlayers, isHistorySelf } from './history-utils.mjs?v=20260720-history-detail';
 
 // ─── THEME TOGGLE ─────────────────────────────────
 export function initTheme() {
@@ -1223,45 +1223,97 @@ export async function initHistoryPage() {
   const modeLabel = game => historyMode(game) === 'deathmatch' ? 'Deathmatch'
     : historyMode(game) === 'competitive' ? 'Compétitif'
     : game.mode || 'Autre mode';
-  const playerRow = (game, player, index, rank = '') => `
+  const playerRow = (game, player, index, rank = '') => {
+    const deathmatch = historyMode(game) === 'deathmatch';
+    const lastMetric = deathmatch ? player.stats?.score : player.stats?.acs;
+    const playerName = isHistorySelf(game, player)
+      ? historyOwnerLabel(game, state.ROSTER)
+      : historyPlayerName(game, player, index);
+    return `
     <div class="history-player ${isHistorySelf(game, player) ? 'self' : ''}">
       ${rank ? `<span class="history-player-rank">${rank}</span>` : `<img src="${agentIconFromName(player.agent)}" alt="${player.agent||''}" onerror="this.style.visibility='hidden'">`}
-      <span class="history-player-name">${historyPlayerName(game, player, index)}<small>${player.agent||'?'}</small></span>
+      <span class="history-player-name">${playerName}<small>${player.agent||'?'}</small></span>
       <strong>${player.stats?.kills||0}/${player.stats?.deaths||0}/${player.stats?.assists||0}</strong>
-      <span>${player.stats?.acs||0} ACS</span>
+      <span>${Number.isFinite(lastMetric) ? lastMetric : '—'} ${deathmatch ? 'PTS' : 'ACS'}</span>
     </div>`;
+  };
   const gameDetail = game => {
     const kind = historyMode(game);
     const detailedPlayers = (game.players||[]).filter(player => player.stats);
+    const rankedPlayers = historyRankedPlayers(game);
+    const performance = historyPlayerPerformance(game);
+    const self = performance.self;
+    const mvp = performance.mvp;
     const splash = valorantApi.mapSplash(game.map);
     const heroStyle = splash ? ` style="--history-map-image:url('${splash}')"` : '';
     let playersHTML = '<div class="history-legacy-note">Cette ancienne game ne contient pas encore les statistiques détaillées.</div>';
 
+    const ownScore = game.score && game.selfTeam === 'CHAOS' ? game.score.red : game.score?.blue;
+    const enemyScore = game.score && game.selfTeam === 'CHAOS' ? game.score.blue : game.score?.red;
+    const scoreText = Number.isFinite(ownScore) && Number.isFinite(enemyScore) ? `${ownScore}–${enemyScore}` : '—';
+    const resultText = kind === 'deathmatch'
+      ? performance.placement ? `${performance.placement}${performance.placement === 1 ? 'er' : 'e'} sur ${performance.playerCount}` : 'Terminée'
+      : game.result === 'win' ? 'Victoire' : game.result === 'loss' ? 'Défaite' : 'Résultat indisponible';
+    const resultClass = kind === 'deathmatch' ? 'deathmatch' : game.result === 'win' ? 'win' : game.result === 'loss' ? 'loss' : 'unknown';
+    const rrDelta = kind === 'competitive' ? game.rr?.delta : null;
+    const selfScore = kind === 'deathmatch' ? self?.stats?.score : self?.stats?.acs;
+    const selfName = historyOwnerLabel(game, state.ROSTER);
+    const mvpIndex = mvp ? rankedPlayers.indexOf(mvp) : -1;
+
+    const overviewHTML = self ? `<div class="history-match-overview">
+      <section class="history-performance-card self">
+        <div class="history-performance-player">
+          <img src="${agentIconFromName(self.agent)}" alt="${self.agent||''}" onerror="this.style.display='none'">
+          <span><small>Votre performance</small><strong>${selfName}</strong><em>${self.agent||'Agent inconnu'}</em></span>
+        </div>
+        <div class="history-performance-metrics">
+          <div><strong>${self.stats?.kills||0}/${self.stats?.deaths||0}/${self.stats?.assists||0}</strong><span>K / D / A</span></div>
+          <div><strong>${performance.kd?.toFixed(2) || '—'}</strong><span>Ratio K/D</span></div>
+          <div><strong>${performance.placement ? `#${performance.placement}/${performance.playerCount}` : '—'}</strong><span>Classement</span></div>
+          <div><strong>${Number.isFinite(selfScore) ? selfScore : '—'}</strong><span>${kind === 'deathmatch' ? 'Score' : 'ACS'}</span></div>
+        </div>
+      </section>
+      ${mvp && mvp !== self ? `<section class="history-performance-card mvp">
+        <span class="history-mvp-label">MVP de la partie</span>
+        <strong>${historyPlayerName(game, mvp, mvpIndex >= 0 ? mvpIndex : 0)}</strong>
+        <small>${mvp.agent||'?'} · ${mvp.stats?.kills||0}/${mvp.stats?.deaths||0}/${mvp.stats?.assists||0}</small>
+      </section>` : `<section class="history-performance-card mvp self-mvp">
+        <span class="history-mvp-label">MVP de la partie</span>
+        <strong>Vous êtes premier</strong>
+        <small>${self.agent||'?'} · ${self.stats?.kills||0} éliminations</small>
+      </section>`}
+    </div>` : '';
+
     if (detailedPlayers.length && kind === 'deathmatch') {
-      const leaderboard = [...detailedPlayers].sort((a,b)=>(b.stats?.score||0)-(a.stats?.score||0));
       playersHTML = `<div class="history-deathmatch-list">
-        <div class="history-team-title">Classement individuel</div>
-        ${leaderboard.map((player, index) => playerRow(game, player, index, index + 1)).join('')}
+        <div class="history-team-heading"><strong>Classement individuel</strong><span>Joueur</span><span>K/D/A</span><span>Score</span></div>
+        ${rankedPlayers.map((player, index) => playerRow(game, player, index, index + 1)).join('')}
       </div>`;
     } else if (detailedPlayers.length) {
       playersHTML = `<div class="history-teams">
         ${['ORDER','CHAOS'].map(team => `
           <div class="history-team">
-            <div class="history-team-title">${team === game.selfTeam ? 'Votre équipe' : 'Adversaires'}</div>
+            <div class="history-team-heading"><strong>${team === game.selfTeam ? 'Votre équipe' : 'Adversaires'}</strong><span>Joueur</span><span>K/D/A</span><span>ACS</span></div>
             ${detailedPlayers.filter(player => player.team === team)
               .sort((a,b)=>(b.stats?.score||0)-(a.stats?.score||0))
-              .map((player, index) => playerRow(game, player, index)).join('')}
+              .map(player => playerRow(game, player, rankedPlayers.indexOf(player))).join('')}
           </div>`).join('')}
       </div>`;
     }
 
     return `<div class="history-detail-layout">
       <aside class="history-map-visual"${heroStyle}>
+        <div class="history-match-result ${resultClass}"><span>${resultText}</span><strong>${kind === 'competitive' ? scoreText : performance.placement ? `#${performance.placement}` : 'DM'}</strong></div>
         <span>${modeLabel(game)}</span>
         <strong>${(game.map||'?').toUpperCase()}</strong>
         <small>${dateLabel(game.ts)} · ${durationLabel(game.durationMs || ((game.endTs||0)-(game.ts||0)))}</small>
+        <div class="history-match-facts">
+          <span>Joueur <strong>${selfName}</strong></span>
+          ${Number.isFinite(game.rounds) && kind === 'competitive' ? `<span>Manches <strong>${game.rounds}</strong></span>` : ''}
+          ${Number.isFinite(rrDelta) ? `<span>RR <strong class="${rrDelta >= 0 ? 'positive' : 'negative'}">${rrDelta >= 0 ? '+' : ''}${rrDelta}</strong></span>` : ''}
+        </div>
       </aside>
-      <div class="history-detail-players">${playersHTML}</div>
+      <div class="history-detail-content">${overviewHTML}<div class="history-detail-players">${playersHTML}</div></div>
     </div>`;
   };
   const gameCard = game => {

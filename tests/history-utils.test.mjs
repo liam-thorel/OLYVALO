@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { filterHistoryGames, historyMode, historyOwnerKey, historyOwnerLabel, historyPlayerName, isOpaquePlayerName } from '../js/history-utils.mjs';
+import { filterHistoryGames, historyMode, historyOwnerKey, historyOwnerLabel, historyPlayerName, historyPlayerPerformance, historyRankedPlayers, isOpaquePlayerName } from '../js/history-utils.mjs';
 
 assert.equal(historyMode({ mode: 'competitive' }), 'competitive');
 assert.equal(historyMode({ mode: 'deathmatch' }), 'deathmatch');
@@ -27,4 +27,21 @@ assert.equal(filterHistoryGames(history, {owner:'all',period:'7d',view:'summary'
 assert.equal(filterHistoryGames(history, {owner:'wong chi ming',period:'all',view:'matches',mode:'competitive'}, now).length, 2);
 assert.equal(filterHistoryGames(history, {owner:'all',period:'all',view:'matches',mode:'deathmatch'}, now).length, 1);
 
-console.log('history-utils: modes, owners, filters and player labels validated');
+const detailedDeathmatch = {
+  mode:'deathmatch', playerPuuid:'self',
+  players:[
+    {puuid:'other', stats:{kills:40,deaths:10,score:12000}},
+    {puuid:'self', stats:{kills:25,deaths:20,score:8000}},
+    {puuid:'third', stats:{kills:25,deaths:22,score:7000}},
+  ],
+};
+assert.deepEqual(historyRankedPlayers(detailedDeathmatch).map(player => player.puuid), ['other','self','third']);
+assert.equal(historyPlayerPerformance(detailedDeathmatch).placement, 2);
+assert.equal(historyPlayerPerformance(detailedDeathmatch).playerCount, 3);
+assert.equal(historyPlayerPerformance(detailedDeathmatch).kd, 1.25);
+assert.deepEqual(historyRankedPlayers({
+  mode:'competitive',
+  players:[{puuid:'low',stats:{score:2500}},{puuid:'mvp',stats:{score:5100}}],
+}).map(player => player.puuid), ['mvp','low']);
+
+console.log('history-utils: modes, owners, filters, labels and performance validated');

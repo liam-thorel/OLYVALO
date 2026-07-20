@@ -66,7 +66,11 @@
   .live-pregame-heading strong { letter-spacing: 3px; }
   .history-teams { grid-template-columns: 1fr; }
   .history-detail-layout { grid-template-columns: 1fr; }
-  .history-map-visual { min-height: 130px; }
+  .history-map-visual { min-height: 220px; }
+  .history-match-overview { grid-template-columns: 1fr; }
+  .history-performance-card.self { grid-template-columns: 1fr; }
+  .history-performance-metrics { grid-template-columns: repeat(2,1fr); }
+  .history-performance-card.mvp { min-height: 62px; }
   .history-deathmatch-list { grid-template-columns: 1fr; }
   .history-day-modes { grid-template-columns: 1fr; }
   .history-view-tabs .history-filter-button { flex: 1; min-width: 0; }
@@ -79,6 +83,7 @@
   .history-game-summary { gap: 8px; padding: 9px; }
   .history-self-agent { width: 32px; height: 32px; }
   .history-player { grid-template-columns: 30px minmax(70px,1fr) auto 48px; gap: 6px; }
+  .history-team-heading { grid-template-columns: 30px minmax(70px,1fr) auto 48px; gap: 6px; }
   .topbar-row { padding: 8px 12px; gap: 6px; }
   .brand-sub { display: none; }
   .page-nav { gap: 2px; }
