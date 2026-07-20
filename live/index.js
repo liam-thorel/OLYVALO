@@ -1019,7 +1019,7 @@ async function poll() {
 }
 
 console.log('\n  ╔══════════════════════════════╗');
-console.log('  ║  OLYCITY LIVE v4  🔴         ║');
+console.log(`  ║  OLYCITY LIVE v${SCRIPT_VERSION} 🔴     ║`);
 console.log('  ╚══════════════════════════════╝\n');
 
 setInterval(poll, 2000);
