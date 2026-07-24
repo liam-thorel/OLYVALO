@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { freshLiveClients, liveClientSummary } from '../js/live-clients.mjs';
+import { freshLiveClients, isVersionAtLeast, liveClientSummary } from '../js/live-clients.mjs';
 
 const now = 100000;
 const clients = {
@@ -14,5 +14,9 @@ const fresh = freshLiveClients(clients, sessions, now);
 assert.deepEqual(fresh.map(client => client.puuid), ['nico','liam']);
 assert.equal(fresh[1].playerName, 'Wong Chi Ming#2046');
 assert.deepEqual(liveClientSummary(fresh), {total:2,inGame:1,agentSelect:0,ready:1,issues:0});
+assert.equal(isVersionAtLeast('4.13.0', '4.12.0'), true);
+assert.equal(isVersionAtLeast('v4.12.0', '4.12.0'), true);
+assert.equal(isVersionAtLeast('4.11.9', '4.12.0'), false);
+assert.equal(isVersionAtLeast('', '4.12.0'), false);
 
 console.log('live-clients: freshness, names and state summary validated');

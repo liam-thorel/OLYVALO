@@ -1,8 +1,9 @@
 {
-  "version": "4.12.0",
+  "version": "4.13.0",
   "files": [
     "index.js",
     "rank-utils.js",
+    "server-utils.js",
     "package.json",
     "updater.js",
     "update-manifest.json",

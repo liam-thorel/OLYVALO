@@ -1,5 +1,20 @@
 export const LIVE_CLIENT_STALE_MS = 30000;
 
+export function isVersionAtLeast(version, minimum) {
+  const parts = value => String(value || '')
+    .replace(/^v/i, '')
+    .split('.')
+    .map(part => Number.parseInt(part, 10) || 0);
+  const current = parts(version);
+  const required = parts(minimum);
+  const length = Math.max(current.length, required.length);
+  for (let index = 0; index < length; index += 1) {
+    if ((current[index] || 0) > (required[index] || 0)) return true;
+    if ((current[index] || 0) < (required[index] || 0)) return false;
+  }
+  return true;
+}
+
 export function freshLiveClients(clients = {}, sessions = {}, now = Date.now()) {
   return Object.entries(clients)
     .filter(([, client]) => client && typeof client === 'object')

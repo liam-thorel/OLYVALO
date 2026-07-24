@@ -4,9 +4,10 @@ const path  = require('path');
 const { execSync, spawn } = require('child_process');
 const WebSocket = require('ws');
 const { buildRankSnapshot } = require('./rank-utils.js');
+const { riotServer } = require('./server-utils.js');
 
 const FIREBASE_URL = 'https://realtime-database-5bb9f-default-rtdb.europe-west1.firebasedatabase.app';
-const SCRIPT_VERSION = '4.12.0';
+const SCRIPT_VERSION = '4.13.0';
 
 // Valorant ShooterGame.log paths — contains in-game server port
 const SHOOTER_LOG_PATHS = [
@@ -329,6 +330,16 @@ let roundStartTime = null;
 let lastDiagnosticPush = 0;
 let lastDiagnosticSignature = '';
 let diagnosticPlayerName = '';
+let currentServer = null;
+let postGameUpdateTimer = null;
+
+function schedulePostGameUpdate() {
+  if (postGameUpdateTimer) clearTimeout(postGameUpdateTimer);
+  postGameUpdateTimer = setTimeout(() => {
+    postGameUpdateTimer = null;
+    updateAndRestart().catch(() => {});
+  }, 5000);
+}
 
 async function publishDiagnostic(state, details = {}, force = false) {
   const sessionKey = stableSessionKey || authTokens?.puuid || selfPuuid;
@@ -662,6 +673,7 @@ async function poll() {
           const pgMap = pgMatch.MapID.split('/').pop() || '';
           const pgMode = (pgMatch.QueueID || pgMatch.Mode || '').replace('/Game/GameModes/','');
           const side = getPregameSide(pgMatch, authTokens.puuid);
+          currentServer = riotServer(pgMatch.GamePodID, authTokens.region);
 
           pregameState = { map: pgMap, mapClean: MAP_NAMES[pgMap] || pgMap, matchId: pg.MatchID, side, mode: pgMatch.QueueID || 'competitive' };
           if (pregameState.mapClean !== lastPregameMap) {
@@ -674,9 +686,13 @@ async function poll() {
             map: pgMap, mapClean: pregameState.mapClean, mapInternal: pgMap,
             mode: 'agent-select', phase: 'pregame', side,
             matchId: pg.MatchID, playerName, players: [], activePlayer: {},
+            scriptVersion: SCRIPT_VERSION,
+            server: currentServer?.name || '',
+            gamePodId: currentServer?.gamePodId || '',
           });
           await publishDiagnostic('agent-select', {
             error: '', map: pregameState.mapClean, matchId: pg.MatchID, side,
+            server: currentServer?.name || '',
           });
           missedPolls = 0;
           return; // agent select handled — skip in-game logic this poll
@@ -812,6 +828,8 @@ async function poll() {
       }
       persistentMatchId = '';
       authTokens = null;
+      currentServer = null;
+      schedulePostGameUpdate();
     }
     await publishDiagnostic('idle', { error: '', map: '' });
     return;
@@ -855,6 +873,7 @@ async function poll() {
           : await pvpGet(authTokens, `/core-game/v1/matches/${matchData.MatchID}`);
 
         if (match?.Players) {
+          currentServer = riotServer(match.GamePodID, authTokens.region);
           // Fetch player names from name service
           const puuids = match.Players.map(p => p.Subject).filter(Boolean);
           let nameMap = {};
@@ -881,6 +900,7 @@ async function poll() {
             const stableMode = queueId;
             const stableMatchId = realMatchId;
             const stablePlayerName = playerName;
+            const stableServer = currentServer ? { ...currentServer } : null;
             (async () => {
               await new Promise(r => setTimeout(r, 2000));
               let count = 0;
@@ -931,6 +951,9 @@ async function poll() {
                     playerName: stablePlayerName,
                     players: updatedPlayers,
                     activePlayer: { name: stablePlayerName },
+                    scriptVersion: SCRIPT_VERSION,
+                    server: stableServer?.name || '',
+                    gamePodId: stableServer?.gamePodId || '',
                   });
                 }
               } else {
@@ -1045,10 +1068,14 @@ async function poll() {
     activePlayer,
     score:        JSON.parse(lastScore || '{}'),
     phase:       pregameState ? 'pregame' : '',
+    scriptVersion: SCRIPT_VERSION,
+    server:       currentServer?.name || '',
+    gamePodId:    currentServer?.gamePodId || '',
     ...(pregameState ? { map: pregameState.map, mapClean: pregameState.mapClean, mapInternal: pregameState.map, mode: 'agent-select', side: pregameState.side } : {}),
   });
   await publishDiagnostic('in-game', {
     error: '', map: mapDisplay, matchId: persistentMatchId || realMatchId || '',
+    server: currentServer?.name || '',
   });
 
   // Snapshot for history (pushed at game end)
@@ -1121,7 +1148,7 @@ async function start() {
   console.log('  ╚══════════════════════════════╝\n');
 
   setInterval(poll, 2000);
-  setInterval(updateAndRestart, 6 * 60 * 60 * 1000);
+  setInterval(updateAndRestart, 30 * 60 * 1000);
   poll();
 }
 

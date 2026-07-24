@@ -517,6 +517,21 @@ body.agent-mode .footer{ display:none; }
   font-family: 'Tomorrow', sans-serif; font-size: 18px; font-weight: 700;
   letter-spacing: 4px; text-transform: uppercase; color: var(--text);
 }
+.live-server {
+  font-family: 'Tomorrow', sans-serif; font-size: 9px; font-weight: 600;
+  letter-spacing: 1.6px; text-transform: uppercase; padding: 4px 9px;
+  border: 1px solid rgba(76, 201, 240, .32); color: #65d9f5;
+  background: rgba(76, 201, 240, .07);
+}
+.live-data-notice {
+  margin: -6px 0 16px; padding: 10px 13px;
+  border: 1px solid rgba(245, 200, 66, .28);
+  background: rgba(245, 200, 66, .07); color: #d8c783;
+  font-size: 11px; line-height: 1.5;
+}
+.live-data-notice strong {
+  color: #f5c842; font-weight: 650;
+}
 .live-phase {
   font-family: 'Tomorrow', sans-serif; font-size: 10px; font-weight: 600;
   letter-spacing: 2px; text-transform: uppercase; padding: 3px 10px;

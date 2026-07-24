@@ -7,7 +7,7 @@ import { storage } from './storage.js';
 import { valorantApi } from './api.js';
 import { state } from './main.js';
 import { groupLiveSessions, mergeSelectedSessionData } from './live-sessions.mjs';
-import { freshLiveClients, liveClientSummary } from './live-clients.mjs?v=20260720-live-clients';
+import { freshLiveClients, isVersionAtLeast, liveClientSummary } from './live-clients.mjs?v=20260724-live-413';
 import { avatarLayersHTML } from './avatars.mjs?v=20260720-avatars';
 import { filterHistoryGames, historyDailyPerformances, historyGameForOwner, historyMode, historyOwnerKey, historyOwnerLabel, historyPlayerName, historyPlayerPerformance, historyPlayerPerformances, historyRankedPlayers, historyReports, isHistorySelf, normalizeHistoryEntries } from './history-utils.mjs?v=20260720-history-multi';
 
@@ -469,7 +469,7 @@ export function initLivePage() {
         : `<span class="live-client-initial">${safeName.slice(0, 1).toUpperCase()}</span>`;
       const stateLabel = DIAGNOSTIC_LABELS[client.state] || 'Script connecté';
       const safeState = DIAGNOSTIC_LABELS[client.state] ? client.state : 'online';
-      const context = [client.map, client.side, client.error].filter(Boolean).join(' · ');
+      const context = [client.map, client.server, client.side, client.error].filter(Boolean).join(' · ');
       return `<div class="live-client-chip${client.puuid === selectedSession ? ' selected' : ''}" data-state="${safeState}">
         <span class="live-client-avatar">${avatar}</span>
         <span class="live-client-info">
@@ -570,9 +570,10 @@ export function initLivePage() {
         active: liveData?.active, map: liveData?.mapClean, mode: liveData?.mode,
         phase: liveData?.phase, roundPhase: liveData?.roundPhase,
         matchId: liveData?.matchId, side: liveData?.side,
+        server: liveData?.server, scriptVersion: liveData?.scriptVersion,
         activeCount: active.length,
         allPlayers: active.map(([,s]) => (s.players||[]).length).join(','),
-        players: (liveData?.players||[]).map(p=>`${p.name}|${p.agentId||p.agent}|${p.team}|${p.rank?.tier??''}|${p.rank?.peakTier??''}|${p.rank?.level??''}|${(p.rank?.rrHistory||[]).join('.')}|${p.rank?.rrEarned??''}`)
+        players: (liveData?.players||[]).map(p=>`${p.name}|${p.agentId||p.agent}|${p.team}|${p.rank?.tier??''}|${p.rank?.peakTier??''}|${p.rank?.peakHistorical??''}|${p.rank?.level??''}|${(p.rank?.rrHistory||[]).join('.')}|${p.rank?.rrEarned??''}`)
       });
       if (key !== lastDataKey) {
         lastDataKey = key;
@@ -634,6 +635,7 @@ export function initLivePage() {
         const isSelected = sessions.some(p => p.puuid === renderSelected);
         const map = first.mapClean || first.map || '?';
         const mode = first.mode || '';
+        const server = first.server || '';
 
         // Find roster avatars for players in this game
         const rosterAvatars = sessions.map(s => {
@@ -657,7 +659,7 @@ export function initLivePage() {
           ${avatarsHtml}
           <div style="font-size:11px;font-weight:700;letter-spacing:3px;color:${isSelected ? 'var(--red)' : 'var(--text)'};margin-bottom:3px">${map.toUpperCase()}</div>
           <div style="font-size:9px;letter-spacing:1px;color:var(--muted)">${names}</div>
-          <div style="font-size:8px;letter-spacing:1px;color:var(--dim);margin-top:2px;text-transform:uppercase">${mode}</div>
+          <div style="font-size:8px;letter-spacing:1px;color:var(--dim);margin-top:2px;text-transform:uppercase">${[mode, server].filter(Boolean).join(' · ')}</div>
         </button>`;
       }).join('')}
       </div>`;
@@ -741,12 +743,40 @@ export function initLivePage() {
     }
     const mapLabel = document.getElementById('live-map-label');
     const modeLabel = document.getElementById('live-mode-label');
+    const serverEl = document.getElementById('live-server');
     if (mapLabel && mapLabel.textContent !== mapName) mapLabel.textContent = mapName;
     if (modeLabel && modeLabel.textContent !== (data.mode||'')) modeLabel.textContent = data.mode || '';
+    if (serverEl) {
+      const serverName = data.server || '';
+      serverEl.style.display = serverName ? '' : 'none';
+      serverEl.textContent = serverName ? `SERVEUR · ${serverName}` : '';
+    }
 
     // Average rank display under map image
     const players = data.players || [];
     const rankedPlayers = players.filter(p => p.rank?.tier > 2);
+    const historicalPeaks = rankedPlayers.filter(p => p.rank?.peakHistorical === true);
+    const missingHistoricalPeaks = rankedPlayers.length - historicalPeaks.length;
+    const notice = document.getElementById('live-data-notice');
+    if (notice) {
+      const client = lastClients[selectedSession] || {};
+      const scriptVersion = data.scriptVersion || client.version || '';
+      if (missingHistoricalPeaks > 0 && !isVersionAtLeast(scriptVersion, '4.12.0')) {
+        const observer = escapeDiagnosticText(
+          rosterProfileForName(data.playerName)?.member
+            || data.playerName?.split('#')[0]
+            || 'Le joueur',
+        );
+        notice.innerHTML = `<strong>Peaks historiques en attente.</strong> ${observer} utilise ${scriptVersion ? `la v${escapeDiagnosticText(scriptVersion)}` : 'une ancienne version'} : il faut redémarrer son script pour charger le vrai peak des ${missingHistoricalPeaks} joueur${missingHistoricalPeaks > 1 ? 's' : ''}.`;
+        notice.style.display = '';
+      } else if (missingHistoricalPeaks > 0) {
+        notice.innerHTML = `<strong>Historique Riot incomplet.</strong> Le rang actuel reste affiché pour ${missingHistoricalPeaks} joueur${missingHistoricalPeaks > 1 ? 's' : ''}, mais aucun faux peak n’est inventé.`;
+        notice.style.display = '';
+      } else {
+        notice.style.display = 'none';
+        notice.textContent = '';
+      }
+    }
     if (rankedPlayers.length > 0) {
       const avgTier = Math.round(rankedPlayers.reduce((s,p) => s + (p.rank?.tier||0), 0) / rankedPlayers.length);
       const avgName = RANK_NAMES[avgTier] || '';
@@ -1037,7 +1067,6 @@ export function initLivePage() {
 
   function peakDisplay(rank) {
     if (!rank?.peakTier) return '';
-    if (!rank.peakHistorical && rank.peakTier === rank.tier) return '';
     const name = RANK_NAMES[rank.peakTier] || 'Unranked';
     const base = name.split(' ')[0];
     const color = RANK_COLORS[base] || '#888';

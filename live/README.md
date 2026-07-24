@@ -17,7 +17,7 @@ Le package embarque le binaire Windows officiel Node.js 24.18.0 LTS et `ws` 8.21
 
 ## Mises à jour automatiques
 
-Le script vérifie les releases officielles au démarrage puis toutes les 6 heures quand aucune partie n'est en cours. Une nouvelle version est téléchargée, vérifiée puis relancée automatiquement. Le dossier `node_modules`, le runtime portable et les logs sont conservés.
+Le script vérifie les releases officielles au démarrage, toutes les 30 minutes quand aucune partie n'est en cours et juste après la fin d'une partie. Une nouvelle version est téléchargée, vérifiée puis relancée automatiquement. Le dossier `node_modules`, le runtime portable et les logs sont conservés.
 
 Pour désactiver temporairement la vérification pendant un dépannage, lance le script avec la variable `OLYCITY_SKIP_UPDATE=1`.
 
@@ -30,6 +30,12 @@ car la partie conserve le PUUID du joueur.
 
 Si Riot ne fournit pas l'historique d'un joueur, le site affiche explicitement
 **MAX RÉCENT** au lieu de présenter les cinq dernières parties comme un peak historique.
+
+## Serveur live
+
+Le serveur Riot de la partie est détecté depuis le `GamePodID` du match et envoyé
+au Live (Paris, Francfort, Londres, etc.). Il apparaît aussi dans le sélecteur
+lorsque plusieurs games sont suivies en même temps.
 
 ## Désinstaller
 
