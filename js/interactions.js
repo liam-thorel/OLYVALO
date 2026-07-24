@@ -1035,6 +1035,19 @@ export function initLivePage() {
     return `<span style="font-size:8px;font-family:Tomorrow,sans-serif;letter-spacing:1px;color:${color};opacity:.8">${name}</span>`;
   }
 
+  function peakDisplay(rank) {
+    if (!rank?.peakTier) return '';
+    if (!rank.peakHistorical && rank.peakTier === rank.tier) return '';
+    const name = RANK_NAMES[rank.peakTier] || 'Unranked';
+    const base = name.split(' ')[0];
+    const color = RANK_COLORS[base] || '#888';
+    const label = rank.peakHistorical ? 'PEAK' : 'MAX RÉCENT';
+    const title = rank.peakHistorical
+      ? 'Meilleur rang retrouvé dans l’historique des actes'
+      : 'Historique Riot indisponible — meilleur rang des parties récentes';
+    return `<span title="${title}" style="font-size:8px;font-family:Tomorrow,sans-serif;letter-spacing:1px;color:${color};border-left:1px solid #333;padding-left:6px"><span style="color:#777">${label}</span> ${name}</span>`;
+  }
+
   // Agent UUID → icon URL cache
   const agentIconCache = {};
   let agentUuidMap = {}; // name → uuid
@@ -1094,6 +1107,7 @@ export function initLivePage() {
         </div>
         <div style="margin-top:3px;display:flex;align-items:center;gap:6px">
           ${rankDisplay(p.rank)}
+          ${peakDisplay(p.rank)}
           ${rrDisplay(p.rank)}
           ${smurfBadge(p.rank)}
         </div>

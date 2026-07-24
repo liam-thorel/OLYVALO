@@ -21,6 +21,16 @@ Le script vérifie les releases officielles au démarrage puis toutes les 6 heur
 
 Pour désactiver temporairement la vérification pendant un dépannage, lance le script avec la variable `OLYCITY_SKIP_UPDATE=1`.
 
+## Rangs live
+
+Le rang actuel, le RR récent et le meilleur rang historique sont lus directement
+depuis les données MMR du client Valorant. Le peak utilise l'historique des actes
+et les victoires par tier. Cela fonctionne aussi lorsque le pseudo est masqué,
+car la partie conserve le PUUID du joueur.
+
+Si Riot ne fournit pas l'historique d'un joueur, le site affiche explicitement
+**MAX RÉCENT** au lieu de présenter les cinq dernières parties comme un peak historique.
+
 ## Désinstaller
 
 Double-clique sur **DESINSTALLER.bat** pour tout supprimer.

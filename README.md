@@ -16,7 +16,8 @@ Site privé pour le five stack OLYCITY. Comps meta, stats live, roster et outils
 - Lineups YouTube par agent et par map
 
 **Live 🔴**
-- Agents, noms réels et rangs des 12 joueurs en temps réel
+- Agents, noms et rangs des joueurs en temps réel
+- Peak historique par actes, y compris avec un pseudo masqué quand Riot fournit l'historique du PUUID
 - Score de la game · Image de la map
 - Mode streamer géré (affiche l'agent + ANONYME)
 - Bouton Tracker.gg par joueur
@@ -40,7 +41,9 @@ Script Node.js qui lit l'API locale Valorant et envoie les données en temps ré
 ```
 live/
 ├── index.js          Script principal
-├── INSTALLER.bat     Installation + tâche planifiée Windows (admin requis)
+├── rank-utils.js     Calcul du rang actuel et du peak historique
+├── runtime/node.exe  Runtime Node.js LTS autonome
+├── INSTALLER.bat     Installation + tâche planifiée Windows
 ├── VERIFIER.bat      Vérifier si le script tourne + voir les logs
 ├── REINSTALLER.bat   Clean reinstall
 ├── DESINSTALLER.bat  Tout supprimer
@@ -48,10 +51,11 @@ live/
 ```
 
 **Setup :**
-1. Clic droit → Exécuter en tant qu'administrateur sur `INSTALLER.bat`
-2. C'est tout — le script démarre automatiquement à chaque allumage Windows
+1. Décompresser complètement le ZIP de la dernière release.
+2. Double-cliquer sur `INSTALLER.bat`.
+3. C'est tout — le script démarre automatiquement à chaque allumage Windows.
 
-Requiert Node.js 18+ · Aucun risque Vanguard (API officielle Riot)
+Node.js et les dépendances sont inclus : aucune installation globale ni commande npm.
 
 ---
 

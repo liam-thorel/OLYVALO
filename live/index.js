@@ -3,9 +3,10 @@ const fs    = require('fs');
 const path  = require('path');
 const { execSync, spawn } = require('child_process');
 const WebSocket = require('ws');
+const { buildRankSnapshot } = require('./rank-utils.js');
 
 const FIREBASE_URL = 'https://realtime-database-5bb9f-default-rtdb.europe-west1.firebasedatabase.app';
-const SCRIPT_VERSION = '4.11.0';
+const SCRIPT_VERSION = '4.12.0';
 
 // Valorant ShooterGame.log paths — contains in-game server port
 const SHOOTER_LOG_PATHS = [
@@ -319,6 +320,8 @@ let lastGameInfo = null; // snapshot for history push
 let gameStartedAt = null;
 let ranksLoaded = false;
 let rankMap = {};
+const rankHistoryCache = new Map();
+const RANK_HISTORY_CACHE_MS = 6 * 60 * 60 * 1000;
 let stableSessionKey = null;
 let missedPolls = 0;
 let roundPhase = '';
@@ -883,36 +886,32 @@ async function poll() {
               let count = 0;
               for (const puuid of puuidsCopy) {
                 await new Promise(r => setTimeout(r, 500));
-                // Last 5 games — RR history + peak
-                const r = await pdGet(tokensCopy, `/mmr/v1/players/${puuid}/competitiveupdates?startIndex=0&endIndex=5&queue=competitive`);
-                if (r?.Matches?.length > 0) {
-                  const last = r.Matches[0];
-                  const peakTier = Math.max(...r.Matches.map(m => m.TierAfterUpdate || 0));
-                  // Calculate real RR delta (after - before)
-                  const rrDelta = (m) => {
-                    const earned = m.RankedRatingEarned;
-                    if (earned !== undefined && earned !== null) return earned;
-                    const after  = m.RankedRatingAfterUpdate;
-                    const before = m.RankedRatingBeforeUpdate;
-                    if (after !== undefined && before !== undefined) return after - before;
-                    return null;
-                  };
-                  const rrHistory = r.Matches.slice(0,5).map(rrDelta).filter(v => v !== null && v !== 0);
-                  const rrEarned  = rrDelta(last);
-                  rankMap[puuid] = {
-                    tier:     last.TierAfterUpdate,
-                    rr:       last.RankedRatingAfterUpdate || 0,
-                    rrEarned: rrEarned,
-                    rrHistory,
-                    peakTier,
-                  };
-                  count++;
+                const cachedHistory = rankHistoryCache.get(puuid);
+                const hasFreshHistory = cachedHistory?.expiresAt > Date.now();
+                let mmr = hasFreshHistory ? cachedHistory.data : null;
+                const historyRequest = mmr
+                  ? Promise.resolve(mmr)
+                  : pdGet(tokensCopy, `/mmr/v1/players/${puuid}`);
+                const [freshMmr, updates, xp] = await Promise.all([
+                  historyRequest,
+                  pdGet(tokensCopy, `/mmr/v1/players/${puuid}/competitiveupdates?startIndex=0&endIndex=5&queue=competitive`),
+                  pdGet(tokensCopy, `/account-xp/v1/players/${puuid}`),
+                ]);
+                mmr = freshMmr;
+                if (!hasFreshHistory && mmr?.QueueSkills?.competitive?.SeasonalInfoBySeasonID) {
+                  rankHistoryCache.set(puuid, {
+                    data: mmr,
+                    expiresAt: Date.now() + RANK_HISTORY_CACHE_MS,
+                  });
                 }
-                // Account level
-                const xp = await pdGet(tokensCopy, `/account-xp/v1/players/${puuid}`);
-                if (xp?.Progress) {
-                  if (!rankMap[puuid]) rankMap[puuid] = { tier: 0, rr: 0 };
-                  rankMap[puuid].level = xp.Progress.Level || 0;
+
+                // Recent matches remain useful for the current RR and its evolution.
+                // If Riot withholds season history (notably for some anonymous players),
+                // buildRankSnapshot transparently falls back to the best recent tier.
+                const rank = buildRankSnapshot(mmr, updates, xp?.Progress?.Level);
+                if (rank) {
+                  rankMap[puuid] = rank;
+                  count++;
                 }
               }
               if (count > 0) {
