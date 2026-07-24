@@ -7,7 +7,8 @@ import { storage } from './storage.js';
 import { valorantApi } from './api.js';
 import { state } from './main.js';
 import { groupLiveSessions, mergeSelectedSessionData } from './live-sessions.mjs';
-import { freshLiveClients, isVersionAtLeast, liveClientSummary } from './live-clients.mjs?v=20260724-live-413';
+import { freshLiveClients, isVersionAtLeast, liveClientSummary } from './live-clients.mjs?v=20260724-live-414';
+import { serverVisual } from './server-visuals.mjs?v=20260724-live-414';
 import { avatarLayersHTML } from './avatars.mjs?v=20260720-avatars';
 import { filterHistoryGames, historyDailyPerformances, historyGameForOwner, historyMode, historyOwnerKey, historyOwnerLabel, historyPlayerName, historyPlayerPerformance, historyPlayerPerformances, historyRankedPlayers, historyReports, isHistorySelf, normalizeHistoryEntries } from './history-utils.mjs?v=20260720-history-multi';
 
@@ -749,7 +750,23 @@ export function initLivePage() {
     if (serverEl) {
       const serverName = data.server || '';
       serverEl.style.display = serverName ? '' : 'none';
-      serverEl.textContent = serverName ? `SERVEUR · ${serverName}` : '';
+      const visual = serverVisual(serverName);
+      const serverKey = `${serverName}|${visual?.image || ''}`;
+      if (serverName && serverEl.dataset.key !== serverKey) {
+        serverEl.dataset.key = serverKey;
+        serverEl.classList.toggle('has-visual', !!visual);
+        serverEl.innerHTML = `
+          ${visual ? `<img class="live-server-image" src="${visual.image}" alt="" loading="lazy" onerror="this.remove()">` : ''}
+          <span class="live-server-copy">
+            <small>Serveur Riot</small>
+            <strong>${escapeDiagnosticText(serverName)}</strong>
+          </span>
+          ${visual ? `<a class="live-server-credit" href="${visual.source}" target="_blank" rel="noopener" title="Photo : ${escapeDiagnosticText(visual.credit)}">PHOTO ↗</a>` : ''}
+        `;
+      } else if (!serverName) {
+        serverEl.dataset.key = '';
+        serverEl.replaceChildren();
+      }
     }
 
     // Average rank display under map image

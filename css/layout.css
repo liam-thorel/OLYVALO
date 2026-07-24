@@ -518,11 +518,36 @@ body.agent-mode .footer{ display:none; }
   letter-spacing: 4px; text-transform: uppercase; color: var(--text);
 }
 .live-server {
-  font-family: 'Tomorrow', sans-serif; font-size: 9px; font-weight: 600;
-  letter-spacing: 1.6px; text-transform: uppercase; padding: 4px 9px;
-  border: 1px solid rgba(76, 201, 240, .32); color: #65d9f5;
-  background: rgba(76, 201, 240, .07);
+  position: relative; isolation: isolate; overflow: hidden;
+  display: flex; align-items: center; min-width: 180px; height: 44px;
+  box-sizing: border-box; padding: 7px 52px 7px 12px;
+  border: 1px solid rgba(76, 201, 240, .32);
+  background: linear-gradient(120deg, rgba(76, 201, 240, .12), rgba(8, 12, 18, .94));
+  color: #65d9f5;
 }
+.live-server.has-visual::after {
+  content: ''; position: absolute; z-index: -1; inset: 0;
+  background: linear-gradient(90deg, rgba(7, 11, 17, .94) 5%, rgba(7, 11, 17, .72) 58%, rgba(7, 11, 17, .3));
+}
+.live-server-image {
+  position: absolute; z-index: -2; inset: 0; width: 100%; height: 100%;
+  object-fit: cover; object-position: center; filter: saturate(.72) contrast(1.08);
+}
+.live-server-copy { display: grid; gap: 2px; position: relative; z-index: 1; }
+.live-server-copy small {
+  font-family: 'DM Sans', sans-serif; font-size: 8px; line-height: 1;
+  letter-spacing: 1.4px; text-transform: uppercase; color: rgba(255, 255, 255, .52);
+}
+.live-server-copy strong {
+  font-family: 'Tomorrow', sans-serif; font-size: 11px; line-height: 1.1;
+  letter-spacing: 1.8px; text-transform: uppercase; color: #fff;
+}
+.live-server-credit {
+  position: absolute; z-index: 2; right: 7px; bottom: 6px;
+  font-family: 'DM Sans', sans-serif; font-size: 7px; letter-spacing: .7px;
+  color: rgba(255, 255, 255, .48); text-decoration: none;
+}
+.live-server-credit:hover { color: #fff; }
 .live-data-notice {
   margin: -6px 0 16px; padding: 10px 13px;
   border: 1px solid rgba(245, 200, 66, .28);

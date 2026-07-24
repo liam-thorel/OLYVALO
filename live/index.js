@@ -5,9 +5,10 @@ const { execSync, spawn } = require('child_process');
 const WebSocket = require('ws');
 const { buildRankSnapshot } = require('./rank-utils.js');
 const { riotServer } = require('./server-utils.js');
+const { autoUpdate, restartDecision } = require('./updater.js');
 
 const FIREBASE_URL = 'https://realtime-database-5bb9f-default-rtdb.europe-west1.firebasedatabase.app';
-const SCRIPT_VERSION = '4.13.0';
+const SCRIPT_VERSION = '4.14.0';
 
 // Valorant ShooterGame.log paths — contains in-game server port
 const SHOOTER_LOG_PATHS = [
@@ -332,6 +333,7 @@ let lastDiagnosticSignature = '';
 let diagnosticPlayerName = '';
 let currentServer = null;
 let postGameUpdateTimer = null;
+let pendingUpdateVersion = '';
 
 function schedulePostGameUpdate() {
   if (postGameUpdateTimer) clearTimeout(postGameUpdateTimer);
@@ -1109,29 +1111,43 @@ async function poll() {
 }
 
 let updateCheckRunning = false;
+
+function restartWithInstalledUpdate(version) {
+  console.log(`[${ts()}] Mise à jour v${version} prête — redémarrage automatique en arrière-plan...`);
+  const child = spawn(process.execPath, [__filename], {
+    cwd: __dirname,
+    detached: true,
+    stdio: 'inherit',
+    windowsHide: true,
+    env: { ...process.env, OLYCITY_UPDATE_RESTART: '1' },
+  });
+  child.unref();
+  process.exit(0);
+  return true;
+}
+
 async function updateAndRestart() {
-  if (updateCheckRunning || inGame) return false;
+  if (updateCheckRunning) return false;
+  if (pendingUpdateVersion) {
+    if (restartDecision(inGame, pendingUpdateVersion) === 'defer') return false;
+    return restartWithInstalledUpdate(pendingUpdateVersion);
+  }
   if (process.env.OLYCITY_UPDATE_RESTART === '1') {
     delete process.env.OLYCITY_UPDATE_RESTART;
     return false;
   }
   updateCheckRunning = true;
   try {
-    const { autoUpdate } = require('./updater.js');
     const result = await autoUpdate(SCRIPT_VERSION, __dirname);
     if (!result.updated) return false;
 
-    console.log(`[${ts()}] Mise à jour v${result.version} installée — redémarrage...`);
-    const child = spawn(process.execPath, [__filename], {
-      cwd: __dirname,
-      detached: true,
-      stdio: 'inherit',
-      windowsHide: true,
-      env: { ...process.env, OLYCITY_UPDATE_RESTART: '1' },
-    });
-    child.unref();
-    process.exit(0);
-    return true;
+    if (restartDecision(inGame, result.version) === 'defer') {
+      pendingUpdateVersion = result.version;
+      console.log(`[${ts()}] Mise à jour v${result.version} téléchargée en arrière-plan — redémarrage automatique après la partie`);
+      return false;
+    }
+
+    return restartWithInstalledUpdate(result.version);
   } catch (error) {
     console.log(`[${ts()}] Mise à jour indisponible — ${error.message}`);
     return false;

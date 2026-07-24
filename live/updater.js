@@ -22,6 +22,11 @@ function compareVersions(left, right) {
   return 0;
 }
 
+function restartDecision(inGame, installedVersion) {
+  if (!installedVersion) return 'none';
+  return inGame ? 'defer' : 'restart';
+}
+
 function requestBuffer(url, redirects = 4) {
   return new Promise((resolve, reject) => {
     const request = https.get(url, {
@@ -129,4 +134,4 @@ async function autoUpdate(currentVersion, installDir = __dirname) {
   return installRelease(latest.tag, latest.version, installDir);
 }
 
-module.exports = { autoUpdate, compareVersions, validateManifest };
+module.exports = { autoUpdate, compareVersions, restartDecision, validateManifest };

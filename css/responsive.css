@@ -58,6 +58,11 @@
 
 /* ── MOBILE (768px) ──────────────── */
 @media (max-width: 768px) {
+  .live-header { flex-wrap: wrap; }
+  .live-server { order: 5; width: 100%; max-width: none; }
+  .live-body { grid-template-columns: minmax(0, 1fr); }
+  .live-minimap-wrap { width: 100%; max-width: 100%; }
+  .live-players { min-width: 0; }
   .live-diagnostic { flex-wrap: wrap; }
   .live-diagnostic-version { margin-left: auto; }
   .live-client-chip { max-width: none; flex-basis: 100%; }
