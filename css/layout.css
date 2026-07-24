@@ -438,10 +438,12 @@ body.agent-mode .footer{ display:none; }
 }
 .live-diagnostic-copy { display: grid; gap: 2px; min-width: 0; }
 .live-diagnostic-copy strong {
-  color: var(--muted); font-size: 9px; letter-spacing: 2px; text-transform: uppercase;
+  color: rgba(255,255,255,.76); font-size: 10px; font-weight: 650;
+  letter-spacing: 1.8px; text-transform: uppercase;
 }
 .live-diagnostic-copy span {
-  color: var(--dim); font-size: 8px; letter-spacing: 1px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  color: rgba(255,255,255,.58); font-size: 9px; font-weight: 500;
+  letter-spacing: .75px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
 }
 .live-diagnostic-version {
   margin-left: auto; color: var(--dim); font-family: 'Tomorrow', sans-serif;
@@ -486,9 +488,11 @@ body.agent-mode .footer{ display:none; }
   text-overflow: ellipsis; text-transform: uppercase; white-space: nowrap;
 }
 .live-client-info small {
-  overflow: hidden; color: var(--dim); font-size: 8px; letter-spacing: .4px;
-  text-overflow: ellipsis; white-space: nowrap;
+  overflow: hidden; color: rgba(255,255,255,.66); font-size: 9.5px;
+  font-weight: 500; line-height: 1.35; letter-spacing: .5px;
+  text-overflow: ellipsis; white-space: normal;
 }
+.live-client-chip[data-state="agent-select"] .live-client-info small { color: rgba(245,200,66,.82); }
 .live-client-chip-version {
   margin-left: auto; color: var(--dim); font-size: 7px; letter-spacing: 1px; white-space: nowrap;
 }
