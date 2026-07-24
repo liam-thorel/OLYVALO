@@ -1,14 +1,14 @@
 const https = require('https');
 const fs    = require('fs');
 const path  = require('path');
-const { execSync, spawn } = require('child_process');
+const { execFileSync, spawn } = require('child_process');
 const WebSocket = require('ws');
 const { buildRankSnapshot } = require('./rank-utils.js');
 const { riotServer } = require('./server-utils.js');
 const { autoUpdate, restartDecision } = require('./updater.js');
 
 const FIREBASE_URL = 'https://realtime-database-5bb9f-default-rtdb.europe-west1.firebasedatabase.app';
-const SCRIPT_VERSION = '4.14.0';
+const SCRIPT_VERSION = '4.14.1';
 
 // Valorant ShooterGame.log paths — contains in-game server port
 const SHOOTER_LOG_PATHS = [
@@ -51,13 +51,27 @@ function findGamePort() {
 
   // Method 2: netstat — find VALORANT-Win64-Shipping.exe listening ports
   try {
-    const netstat = execSync('netstat -ano -p TCP 2>nul', { timeout: 3000 }).toString();
+    const netstat = execFileSync('netstat.exe', ['-ano', '-p', 'TCP'], {
+      timeout: 3000,
+      windowsHide: true,
+      stdio: ['ignore', 'pipe', 'ignore'],
+      encoding: 'utf8',
+    });
     const lines = netstat.split('\n');
 
     // Get VALORANT PID
     let valorantPid = null;
     try {
-      const tasklist = execSync('tasklist /FI "IMAGENAME eq VALORANT-Win64-Shipping.exe" /FO CSV /NH 2>nul', { timeout: 2000 }).toString();
+      const tasklist = execFileSync('tasklist.exe', [
+        '/FI', 'IMAGENAME eq VALORANT-Win64-Shipping.exe',
+        '/FO', 'CSV',
+        '/NH',
+      ], {
+        timeout: 2000,
+        windowsHide: true,
+        stdio: ['ignore', 'pipe', 'ignore'],
+        encoding: 'utf8',
+      });
       const pidMatch = tasklist.match(/"VALORANT-Win64-Shipping.exe","(\d+)"/);
       if (pidMatch) valorantPid = pidMatch[1];
     } catch {}
