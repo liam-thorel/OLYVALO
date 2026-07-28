@@ -8,7 +8,7 @@ const { riotServer } = require('./server-utils.js');
 const { autoUpdate, restartDecision } = require('./updater.js');
 
 const FIREBASE_URL = 'https://realtime-database-5bb9f-default-rtdb.europe-west1.firebasedatabase.app';
-const SCRIPT_VERSION = '4.14.1';
+const SCRIPT_VERSION = '4.14.2';
 
 // Valorant ShooterGame.log paths — contains in-game server port
 const SHOOTER_LOG_PATHS = [
@@ -336,6 +336,8 @@ let lastGameInfo = null; // snapshot for history push
 let gameStartedAt = null;
 let ranksLoaded = false;
 let rankMap = {};
+let lastKnownRoster = [];
+let lastKnownRosterMatchId = '';
 const rankHistoryCache = new Map();
 const RANK_HISTORY_CACHE_MS = 6 * 60 * 60 * 1000;
 let stableSessionKey = null;
@@ -686,6 +688,8 @@ async function poll() {
       if (pg?.MatchID) {
         const pgMatch = await pvpGet(authTokens, `/pregame/v1/matches/${pg.MatchID}`);
         if (pgMatch?.MapID) {
+          lastKnownRoster = [];
+          lastKnownRosterMatchId = pg.MatchID;
           const pgMap = pgMatch.MapID.split('/').pop() || '';
           const pgMode = (pgMatch.QueueID || pgMatch.Mode || '').replace('/Game/GameModes/','');
           const side = getPregameSide(pgMatch, authTokens.puuid);
@@ -843,6 +847,8 @@ async function poll() {
         lastScore = '';
       }
       persistentMatchId = '';
+      lastKnownRoster = [];
+      lastKnownRosterMatchId = '';
       authTokens = null;
       currentServer = null;
       schedulePostGameUpdate();
@@ -1065,6 +1071,14 @@ async function poll() {
         console.log(`[${ts()}] 🎯 In-game data: ${players.length} joueurs | ${activePlayer.agent}`);
       }
     }
+  }
+
+  const currentMatchId = persistentMatchId || realMatchId || '';
+  if (players.length > 0 && currentMatchId) {
+    lastKnownRoster = players.map(player => ({ ...player }));
+    lastKnownRosterMatchId = currentMatchId;
+  } else if (currentMatchId && currentMatchId === lastKnownRosterMatchId && lastKnownRoster.length > 0) {
+    players = lastKnownRoster.map(player => ({ ...player }));
   }
 
   if (!stableSessionKey && (authTokens?.puuid || selfPuuid)) stableSessionKey = authTokens?.puuid || selfPuuid;

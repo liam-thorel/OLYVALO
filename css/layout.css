@@ -636,6 +636,25 @@ body.agent-mode .footer{ display:none; }
 .live-side-copy strong { color: var(--side-color); font-size: 11px; line-height: 1.3; letter-spacing: 2px; }
 @keyframes live-side-pulse { 50% { opacity: .4; } }
 .live-players { display: flex; flex-direction: column; gap: 6px; }
+.live-players.is-syncing {
+  min-height: 235px; display: grid; place-items: center;
+  border: 1px solid var(--border); background: rgba(18,23,33,.5);
+}
+.live-roster-sync {
+  display: grid; justify-items: center; gap: 7px; padding: 24px;
+  color: var(--muted); text-align: center;
+}
+.live-roster-sync-dot {
+  width: 8px; height: 8px; border-radius: 50%;
+  background: var(--gold); box-shadow: 0 0 0 5px rgba(245,200,66,.1), 0 0 18px rgba(245,200,66,.45);
+  animation: live-roster-sync-pulse 1.3s ease-in-out infinite;
+}
+.live-roster-sync strong {
+  color: var(--text); font-family: 'Tomorrow', sans-serif;
+  font-size: 11px; letter-spacing: 2px; text-transform: uppercase;
+}
+.live-roster-sync small { max-width: 360px; font-size: 11px; line-height: 1.45; }
+@keyframes live-roster-sync-pulse { 50% { opacity: .35; transform: scale(.75); } }
 .live-player-row {
   display: flex; align-items: center; gap: 12px; padding: 10px 14px;
   background: var(--surf); border: 1px solid var(--border);

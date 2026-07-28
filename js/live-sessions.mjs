@@ -50,3 +50,18 @@ export function mergeSelectedSessionData(liveData, selectedSession, groups) {
     mode: sibling.mode || liveData.mode,
   };
 }
+
+export function stablePlayersForSession(session, rosterCache) {
+  const players = Array.isArray(session?.players) ? session.players : [];
+  const matchId = String(session?.matchId || '');
+  const isPregame = session?.phase === 'pregame' || session?.mode === 'agent-select';
+
+  if (!session?.active || isPregame || !matchId) return players;
+
+  if (players.length > 0) {
+    rosterCache.set(matchId, players);
+    return players;
+  }
+
+  return rosterCache.get(matchId) || players;
+}

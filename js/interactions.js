@@ -6,7 +6,7 @@
 import { storage } from './storage.js';
 import { valorantApi } from './api.js';
 import { state } from './main.js';
-import { groupLiveSessions, mergeSelectedSessionData } from './live-sessions.mjs';
+import { groupLiveSessions, mergeSelectedSessionData, stablePlayersForSession } from './live-sessions.mjs?v=20260728-live-142';
 import { freshLiveClients, isVersionAtLeast, liveClientSummary } from './live-clients.mjs?v=20260724-live-414';
 import { serverVisual } from './server-visuals.mjs?v=20260724-live-414';
 import { avatarLayersHTML } from './avatars.mjs?v=20260720-avatars';
@@ -370,6 +370,7 @@ export function initLivePage() {
   let lastSessions = {};
   let lastClients = {};
   let byMatchCache = {};
+  const stableRosterCache = new Map();
   const _rosterCache = {};
   let _rosterFetched = false;
   let _mapsCache = null;
@@ -770,7 +771,7 @@ export function initLivePage() {
     }
 
     // Average rank display under map image
-    const players = data.players || [];
+    const players = stablePlayersForSession(data, stableRosterCache);
     const rankedPlayers = players.filter(p => p.rank?.tier > 2);
     const historicalPeaks = rankedPlayers.filter(p => p.rank?.peakHistorical === true);
     const missingHistoricalPeaks = rankedPlayers.length - historicalPeaks.length;
@@ -925,8 +926,8 @@ export function initLivePage() {
       // Default
     };
     const getScore = (p) => META_SCORES[p.agent] || 6;
-    const allyTeam = (data.players||[]).filter(p => p.team === 'ORDER');
-    const enemyTeam = (data.players||[]).filter(p => p.team === 'CHAOS');
+    const allyTeam = players.filter(p => p.team === 'ORDER');
+    const enemyTeam = players.filter(p => p.team === 'CHAOS');
     if (allyTeam.length >= 5 && enemyTeam.length >= 5) {
       const allyScore   = allyTeam.reduce((s,p)=>s+getScore(p),0) / allyTeam.length;
       const enemyScore  = enemyTeam.reduce((s,p)=>s+getScore(p),0) / enemyTeam.length;
@@ -987,7 +988,7 @@ export function initLivePage() {
     // Players — rebuild only if player list changed
     const playersEl = document.getElementById('live-players');
     const myName = localStorage.getItem('olycity-profile') || '';
-    const all = (data.players || []);
+    const all = players;
     // In deathmatch everyone is on same "team" — just show all
     const allies = all.filter(p => p.team === 'ORDER');
     const enemies = all.filter(p => p.team === 'CHAOS');
@@ -1001,7 +1002,14 @@ export function initLivePage() {
     }).join(',');
     if (playersEl && playersEl.dataset.key !== stableKey) {
       playersEl.dataset.key = stableKey;
-      playersEl.innerHTML = isDM
+      playersEl.classList.toggle('is-syncing', all.length === 0);
+      playersEl.innerHTML = all.length === 0
+        ? `<div class="live-roster-sync">
+             <span class="live-roster-sync-dot" aria-hidden="true"></span>
+             <strong>Roster en resynchronisation</strong>
+             <small>La partie reste suivie pendant que Riot renvoie les joueurs.</small>
+           </div>`
+        : isDM
         ? all.map(p => playerRow(p, myName)).join('')
         : `<div style="font-family:Tomorrow,sans-serif;font-size:9px;letter-spacing:2px;color:var(--dim);text-transform:uppercase;padding:4px 0 8px">Alliés</div>
            ${allies.map(p => playerRow(p, myName)).join('')}

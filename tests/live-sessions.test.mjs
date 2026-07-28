@@ -1,5 +1,9 @@
 import assert from 'node:assert/strict';
-import { groupLiveSessions, mergeSelectedSessionData } from '../js/live-sessions.mjs';
+import {
+  groupLiveSessions,
+  mergeSelectedSessionData,
+  stablePlayersForSession,
+} from '../js/live-sessions.mjs';
 
 const roster = Array.from({ length: 10 }, (_, index) => ({
   puuid: `player-${index}`,
@@ -38,5 +42,29 @@ const groupedObservers = groupLiveSessions([...active.slice(1), sameMatchObserve
 assert.equal(Object.keys(groupedObservers).length, 3, 'two clients in the same match create one choice');
 const mergedObserver = mergeSelectedSessionData(sameMatchEmpty[1], sameMatchEmpty[0], groupedObservers);
 assert.equal(mergedObserver.players.length, 10, 'roster sharing is allowed inside the same match');
+
+const rosterCache = new Map();
+const runningSession = { active: true, matchId: 'match-running', mode: 'competitive', players: roster };
+assert.equal(stablePlayersForSession(runningSession, rosterCache).length, 10, 'a valid roster is cached');
+assert.equal(
+  stablePlayersForSession({ ...runningSession, players: null }, rosterCache).length,
+  10,
+  'a transient null roster keeps the last valid roster for the same match',
+);
+assert.equal(
+  stablePlayersForSession({ ...runningSession, matchId: 'match-new', players: null }, rosterCache).length,
+  0,
+  'a new match must not reuse the previous match roster',
+);
+assert.equal(
+  stablePlayersForSession({
+    ...runningSession,
+    mode: 'agent-select',
+    phase: 'pregame',
+    players: null,
+  }, rosterCache).length,
+  0,
+  'Agent Select must never reuse the previous in-game roster',
+);
 
 console.log('live-sessions: 3 matches and all swaps validated');
