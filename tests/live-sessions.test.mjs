@@ -68,6 +68,44 @@ assert.equal(
   'Agent Select must never reuse the previous in-game roster',
 );
 
+const richRoster = roster.map((player, index) => ({
+  ...player,
+  team: index < 5 ? 'ORDER' : 'CHAOS',
+  rank: {
+    tier: 18,
+    peakTier: 21,
+    peakHistorical: true,
+    peakSource: 'season-history',
+  },
+}));
+const legacyRoster = richRoster.map(player => ({
+  ...player,
+  rank: { tier: 18, rr: 42 },
+}));
+const mixedWriterCache = new Map();
+stablePlayersForSession({
+  active: true,
+  playerName: 'RayBaz#OLY',
+  matchId: 'match-running',
+  mapClean: 'Breeze',
+  mode: 'competitive',
+  players: richRoster,
+}, mixedWriterCache);
+const stabilizedLegacyRoster = stablePlayersForSession({
+  active: true,
+  playerName: 'RayBaz#OLY',
+  matchId: '',
+  mapClean: 'Breeze',
+  mode: 'competitive',
+  players: legacyRoster,
+}, mixedWriterCache);
+assert.equal(
+  stabilizedLegacyRoster[0].rank.peakTier,
+  21,
+  'an obsolete writer must not erase a known historical peak',
+);
+assert.equal(stabilizedLegacyRoster[0].rank.peakHistorical, true);
+
 const pregameCache = new Map();
 const pregameSession = {
   active: true,

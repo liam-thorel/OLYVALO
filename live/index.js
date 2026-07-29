@@ -9,6 +9,7 @@ const { autoUpdate, restartDecision } = require('./updater.js');
 const { pregameTransition } = require('./pregame-utils.js');
 const { ensureStartupLauncher } = require('./startup.js');
 const { acquireInstanceLock, releaseInstanceLock } = require('./instance-lock.js');
+const { stopLegacyLiveProcesses } = require('./legacy-cleanup.js');
 
 const FIREBASE_URL = 'https://realtime-database-5bb9f-default-rtdb.europe-west1.firebasedatabase.app';
 const SCRIPT_VERSION = '4.14.3';
@@ -1232,6 +1233,16 @@ async function updateAndRestart() {
 }
 
 async function start() {
+  const stopLegacy = () => {
+    const stopped = stopLegacyLiveProcesses();
+    if (stopped > 0) console.log(`[${ts()}] Ancien script OLYCITY arrêté: ${stopped}`);
+  };
+  stopLegacy();
+  for (const delay of [5000, 15000]) {
+    const timer = setTimeout(stopLegacy, delay);
+    timer.unref();
+  }
+
   if (await updateAndRestart()) return;
 
   try {

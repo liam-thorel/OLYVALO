@@ -55,15 +55,50 @@ export function stablePlayersForSession(session, rosterCache) {
   const players = Array.isArray(session?.players) ? session.players : [];
   const matchId = String(session?.matchId || '');
   const isPregame = session?.phase === 'pregame' || session?.mode === 'agent-select';
+  const fallbackKey = [
+    session?.playerName || '',
+    session?.mapClean || session?.map || '',
+    session?.mode || '',
+  ].join('|');
+  const matchKey = matchId ? `match:${matchId}` : '';
+  const observerKey = fallbackKey !== '||' ? `observer:${fallbackKey}` : '';
 
-  if (!session?.active || isPregame || !matchId) return players;
+  if (!session?.active || isPregame || (!matchKey && !observerKey)) return players;
 
   if (players.length > 0) {
-    rosterCache.set(matchId, players);
-    return players;
+    const previous = rosterCache.get(matchKey) || rosterCache.get(observerKey) || [];
+    const previousByPuuid = new Map(
+      previous.filter(player => player?.puuid).map(player => [player.puuid, player]),
+    );
+    const previousByIdentity = new Map(
+      previous.map(player => [`${player?.name || ''}|${player?.team || ''}`, player]),
+    );
+    const stablePlayers = players.map(player => {
+      const cached = previousByPuuid.get(player?.puuid)
+        || previousByIdentity.get(`${player?.name || ''}|${player?.team || ''}`);
+      const cachedRank = cached?.rank;
+      const incomingRank = player?.rank;
+      if (!cachedRank) return player;
+      if (!incomingRank) return { ...player, rank: cachedRank };
+      if (cachedRank.peakHistorical === true && incomingRank.peakHistorical !== true) {
+        return {
+          ...player,
+          rank: {
+            ...incomingRank,
+            peakTier: cachedRank.peakTier,
+            peakHistorical: true,
+            peakSource: cachedRank.peakSource,
+          },
+        };
+      }
+      return player;
+    });
+    if (matchKey) rosterCache.set(matchKey, stablePlayers);
+    if (observerKey) rosterCache.set(observerKey, stablePlayers);
+    return stablePlayers;
   }
 
-  return rosterCache.get(matchId) || players;
+  return (matchKey ? rosterCache.get(matchKey) : rosterCache.get(observerKey)) || players;
 }
 
 export function stableSessionForRender(session, sessionKey, pregameCache, now = Date.now(), graceMs = 8000) {

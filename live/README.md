@@ -15,6 +15,10 @@ Deux méthodes complémentaires sont configurées : une tâche Windows et le dos
 **Démarrage** de la session. Le script répare automatiquement ce second lancement
 s'il manque et empêche plusieurs instances de tourner en même temps.
 
+Au lancement, la version autonome arrête aussi les anciennes versions Python
+`olycity-live.exe` / `olycity_live.py` encore actives. Leur ancien format pouvait
+faire clignoter le serveur, les ranks et le roster sur le site.
+
 Node.js LTS et la dépendance WebSocket sont inclus dans le dossier. Il n'y a rien à installer sur le PC et aucune commande npm à lancer.
 
 Le package embarque le binaire Windows officiel Node.js 24.18.0 LTS et `ws` 8.21.1. Leurs licences sont fournies dans `runtime/NODE-LICENSE.txt` et `node_modules/ws/LICENSE`.

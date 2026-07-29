@@ -13,8 +13,9 @@ const verifier = read('VERIFIER.bat');
 const liveIndex = read('index.js');
 const startup = read('startup.js');
 const instanceLock = read('instance-lock.js');
+const legacyCleanup = read('legacy-cleanup.js');
 
-for (const contents of [installer, launcher, silent, uninstaller, reinstaller, verifier, startup, instanceLock]) {
+for (const contents of [installer, launcher, silent, uninstaller, reinstaller, verifier, startup, instanceLock, legacyCleanup]) {
   assert.doesNotMatch(contents, /\bnpm(?:\.cmd)?\b/i);
   assert.doesNotMatch(contents, /taskkill\s+.*\/im\s+(?:node|wscript)/i);
 }
@@ -35,6 +36,7 @@ assert.match(liveIndex, /execFileSync\('tasklist\.exe'/, 'tasklist must be launc
 assert.match(liveIndex, /windowsHide:\s*true/, 'Windows helper processes must remain hidden');
 assert.match(liveIndex, /ensureStartupLauncher/, 'every successful start must repair Windows autostart');
 assert.match(liveIndex, /acquireInstanceLock/, 'duplicate startup triggers must keep one process only');
+assert.match(liveIndex, /stopLegacyLiveProcesses/, 'obsolete Python builds must be stopped at startup');
 assert.match(liveIndex, /lastKnownRoster/, 'the script must retain the last valid in-game roster');
 assert.match(
   liveIndex,

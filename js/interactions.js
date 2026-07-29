@@ -11,7 +11,7 @@ import {
   mergeSelectedSessionData,
   stablePlayersForSession,
   stableSessionForRender,
-} from './live-sessions.mjs?v=20260729-live-143';
+} from './live-sessions.mjs?v=20260729-live-143b';
 import { freshLiveClients, isVersionAtLeast, liveClientSummary } from './live-clients.mjs?v=20260724-live-414';
 import { serverVisual } from './server-visuals.mjs?v=20260724-live-414';
 import { avatarLayersHTML } from './avatars.mjs?v=20260720-avatars';
@@ -706,6 +706,7 @@ export function initLivePage() {
     const waiting = document.getElementById('live-waiting');
     const content = document.getElementById('live-content');
     const dot = document.getElementById('live-dot');
+    const selectedClient = lastClients[selectedSession] || {};
 
     if (!data?.active) {
       // Debounce — only hide after 3s to avoid Firebase reconnect flashes
@@ -755,7 +756,7 @@ export function initLivePage() {
     if (mapLabel && mapLabel.textContent !== mapName) mapLabel.textContent = mapName;
     if (modeLabel && modeLabel.textContent !== (data.mode||'')) modeLabel.textContent = data.mode || '';
     if (serverEl) {
-      const serverName = data.server || '';
+      const serverName = data.server || selectedClient.server || '';
       serverEl.style.display = serverName ? '' : 'none';
       const visual = serverVisual(serverName);
       const serverKey = `${serverName}|${visual?.image || ''}`;
@@ -783,8 +784,7 @@ export function initLivePage() {
     const missingHistoricalPeaks = rankedPlayers.length - historicalPeaks.length;
     const notice = document.getElementById('live-data-notice');
     if (notice) {
-      const client = lastClients[selectedSession] || {};
-      const scriptVersion = data.scriptVersion || client.version || '';
+      const scriptVersion = data.scriptVersion || selectedClient.version || '';
       if (missingHistoricalPeaks > 0 && !isVersionAtLeast(scriptVersion, '4.12.0')) {
         const observer = escapeDiagnosticText(
           rosterProfileForName(data.playerName)?.member
@@ -792,9 +792,6 @@ export function initLivePage() {
             || 'Le joueur',
         );
         notice.innerHTML = `<strong>Peaks historiques en attente.</strong> ${observer} utilise ${scriptVersion ? `la v${escapeDiagnosticText(scriptVersion)}` : 'une ancienne version'} : il faut redémarrer son script pour charger le vrai peak des ${missingHistoricalPeaks} joueur${missingHistoricalPeaks > 1 ? 's' : ''}.`;
-        notice.style.display = '';
-      } else if (missingHistoricalPeaks > 0) {
-        notice.innerHTML = `<strong>Historique Riot incomplet.</strong> Le rang actuel reste affiché pour ${missingHistoricalPeaks} joueur${missingHistoricalPeaks > 1 ? 's' : ''}, mais aucun faux peak n’est inventé.`;
         notice.style.display = '';
       } else {
         notice.style.display = 'none';
