@@ -11,6 +11,10 @@ Tourne automatiquement en arrière-plan — aucune manipulation avant chaque gam
 
 OLYCITY LIVE démarrera automatiquement à chaque démarrage Windows, en fond, sans fenêtre.
 
+Deux méthodes complémentaires sont configurées : une tâche Windows et le dossier
+**Démarrage** de la session. Le script répare automatiquement ce second lancement
+s'il manque et empêche plusieurs instances de tourner en même temps.
+
 Node.js LTS et la dépendance WebSocket sont inclus dans le dossier. Il n'y a rien à installer sur le PC et aucune commande npm à lancer.
 
 Le package embarque le binaire Windows officiel Node.js 24.18.0 LTS et `ws` 8.21.1. Leurs licences sont fournies dans `runtime/NODE-LICENSE.txt` et `node_modules/ws/LICENSE`.

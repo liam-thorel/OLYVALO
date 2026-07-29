@@ -35,16 +35,23 @@ echo.
 
 powershell.exe -NoProfile -ExecutionPolicy Bypass -File "%SCRIPT_DIR%manage.ps1" stop >nul 2>&1
 schtasks /delete /tn "OlycityLive" /f >nul 2>&1
+set "TASK_OK=0"
 schtasks /create /tn "OlycityLive" /tr "wscript.exe \"%SCRIPT_DIR%silent.vbs\"" /sc ONLOGON /rl LIMITED /f >nul 2>&1
+if not errorlevel 1 set "TASK_OK=1"
 
-if %errorlevel% neq 0 (
+set "STARTUP_OK=0"
+"%NODE_EXE%" "%SCRIPT_DIR%startup.js" install >nul 2>&1
+if not errorlevel 1 set "STARTUP_OK=1"
+
+if "%TASK_OK%%STARTUP_OK%"=="00" (
     echo   [ERREUR] Impossible de creer le demarrage automatique.
     echo   Essaie une fois avec clic droit puis Executer en administrateur.
     pause
     exit /b
 )
 
-echo   Tache planifiee creee.
+if "%TASK_OK%"=="1" echo   Tache planifiee creee.
+if "%STARTUP_OK%"=="1" echo   Dossier Demarrage configure.
 start "" wscript.exe "%SCRIPT_DIR%silent.vbs"
 timeout /t 2 /nobreak >nul
 echo   OLYCITY LIVE tourne en arriere-plan.

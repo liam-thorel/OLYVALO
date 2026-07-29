@@ -65,3 +65,35 @@ export function stablePlayersForSession(session, rosterCache) {
 
   return rosterCache.get(matchId) || players;
 }
+
+export function stableSessionForRender(session, sessionKey, pregameCache, now = Date.now(), graceMs = 8000) {
+  if (!session || !sessionKey) return session;
+
+  const isPregame = session.phase === 'pregame' || session.mode === 'agent-select';
+  if (isPregame) {
+    pregameCache.set(sessionKey, {
+      session: { ...session },
+      expiresAt: now + graceMs,
+    });
+    return session;
+  }
+
+  const cached = pregameCache.get(sessionKey);
+  const players = Array.isArray(session.players) ? session.players : [];
+  const currentMap = session.mapClean || session.map || '';
+  const cachedMap = cached?.session?.mapClean || cached?.session?.map || '';
+  const mayBeTransient = session.active && players.length === 0
+    && cached && cached.expiresAt >= now && currentMap === cachedMap;
+
+  if (mayBeTransient) {
+    return {
+      ...cached.session,
+      ts: session.ts || cached.session.ts,
+      scriptVersion: session.scriptVersion || cached.session.scriptVersion,
+      server: session.server || cached.session.server,
+    };
+  }
+
+  pregameCache.delete(sessionKey);
+  return session;
+}

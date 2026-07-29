@@ -6,7 +6,12 @@
 import { storage } from './storage.js';
 import { valorantApi } from './api.js';
 import { state } from './main.js';
-import { groupLiveSessions, mergeSelectedSessionData, stablePlayersForSession } from './live-sessions.mjs?v=20260728-live-142';
+import {
+  groupLiveSessions,
+  mergeSelectedSessionData,
+  stablePlayersForSession,
+  stableSessionForRender,
+} from './live-sessions.mjs?v=20260729-live-143';
 import { freshLiveClients, isVersionAtLeast, liveClientSummary } from './live-clients.mjs?v=20260724-live-414';
 import { serverVisual } from './server-visuals.mjs?v=20260724-live-414';
 import { avatarLayersHTML } from './avatars.mjs?v=20260720-avatars';
@@ -371,6 +376,7 @@ export function initLivePage() {
   let lastClients = {};
   let byMatchCache = {};
   const stableRosterCache = new Map();
+  const stablePregameCache = new Map();
   const _rosterCache = {};
   let _rosterFetched = false;
   let _mapsCache = null;
@@ -565,7 +571,8 @@ export function initLivePage() {
       const activeMap = Object.fromEntries(active);
       if (selectedSession && !activeMap[selectedSession]) selectedSession = active[0]?.[0] || null;
       let liveData = selectedSession ? activeMap[selectedSession] : (active[0]?.[1] || null);
-
+      liveData = mergeSelectedSessionData(liveData, selectedSession, byMatchCache);
+      liveData = stableSessionForRender(liveData, selectedSession, stablePregameCache);
 
       // Key tracks ALL active sessions so any update triggers re-render
       const key = JSON.stringify({
@@ -579,8 +586,6 @@ export function initLivePage() {
       });
       if (key !== lastDataKey) {
         lastDataKey = key;
-        // A roster can only be shared by clients observing the same match.
-        liveData = mergeSelectedSessionData(liveData, selectedSession, byMatchCache);
         currentLiveData = liveData;
         updateUI(currentLiveData);
       }
@@ -672,7 +677,8 @@ export function initLivePage() {
     updateSessionPicker(lastSessions); // re-render picker immediately with new selection
     renderDiagnostic();
     const rawData = lastSessions[puuid] || null;
-    const data = mergeSelectedSessionData(rawData, selectedSession, byMatchCache);
+    const mergedData = mergeSelectedSessionData(rawData, selectedSession, byMatchCache);
+    const data = stableSessionForRender(mergedData, selectedSession, stablePregameCache);
     if (data) {
       lastDataKey = '';
       currentLiveData = data;

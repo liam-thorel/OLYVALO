@@ -11,8 +11,10 @@ const uninstaller = read('DESINSTALLER.bat');
 const reinstaller = read('REINSTALLER.bat');
 const verifier = read('VERIFIER.bat');
 const liveIndex = read('index.js');
+const startup = read('startup.js');
+const instanceLock = read('instance-lock.js');
 
-for (const contents of [installer, launcher, silent, uninstaller, reinstaller, verifier]) {
+for (const contents of [installer, launcher, silent, uninstaller, reinstaller, verifier, startup, instanceLock]) {
   assert.doesNotMatch(contents, /\bnpm(?:\.cmd)?\b/i);
   assert.doesNotMatch(contents, /taskkill\s+.*\/im\s+(?:node|wscript)/i);
 }
@@ -20,15 +22,19 @@ for (const contents of [installer, launcher, silent, uninstaller, reinstaller, v
 assert.match(installer, /runtime\\node\.exe/i);
 assert.match(installer, /node_modules\\ws\\index\.js/i);
 assert.match(installer, /\/rl LIMITED/i);
+assert.match(installer, /startup\.js" install/i);
 assert.match(silent, /runtime\\node\.exe/i);
 assert.match(launcher, /runtime\\node\.exe/i);
 assert.match(verifier, /manage\.ps1" status/i);
 assert.match(uninstaller, /manage\.ps1" stop/i);
+assert.match(uninstaller, /startup\.js" remove/i);
 assert.match(reinstaller, /INSTALLER\.bat/i);
 assert.doesNotMatch(liveIndex, /\bexecSync\s*\(/, 'the live poll must not invoke commands through a visible cmd shell');
 assert.match(liveIndex, /execFileSync\('netstat\.exe'/, 'netstat must be launched directly');
 assert.match(liveIndex, /execFileSync\('tasklist\.exe'/, 'tasklist must be launched directly');
 assert.match(liveIndex, /windowsHide:\s*true/, 'Windows helper processes must remain hidden');
+assert.match(liveIndex, /ensureStartupLauncher/, 'every successful start must repair Windows autostart');
+assert.match(liveIndex, /acquireInstanceLock/, 'duplicate startup triggers must keep one process only');
 assert.match(liveIndex, /lastKnownRoster/, 'the script must retain the last valid in-game roster');
 assert.match(
   liveIndex,
@@ -37,7 +43,7 @@ assert.match(
 );
 
 const packageJson = JSON.parse(read('package.json'));
-assert.equal(packageJson.version, '4.14.2');
+assert.equal(packageJson.version, '4.14.3');
 assert.equal(packageJson.dependencies.ws, '8.21.1');
 
 console.log('autonomous-package: launchers use only embedded runtime and scoped process management');

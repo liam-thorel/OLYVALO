@@ -6,9 +6,24 @@ const WebSocket = require('ws');
 const { buildRankSnapshot } = require('./rank-utils.js');
 const { riotServer } = require('./server-utils.js');
 const { autoUpdate, restartDecision } = require('./updater.js');
+const { pregameTransition } = require('./pregame-utils.js');
+const { ensureStartupLauncher } = require('./startup.js');
+const { acquireInstanceLock, releaseInstanceLock } = require('./instance-lock.js');
 
 const FIREBASE_URL = 'https://realtime-database-5bb9f-default-rtdb.europe-west1.firebasedatabase.app';
-const SCRIPT_VERSION = '4.14.2';
+const SCRIPT_VERSION = '4.14.3';
+const INSTANCE_LOCK_PATH = path.join(__dirname, '.olycity-live.lock');
+let ownsInstanceLock = acquireInstanceLock(INSTANCE_LOCK_PATH);
+
+if (!ownsInstanceLock) process.exit(0);
+
+function releaseOwnedInstanceLock() {
+  if (!ownsInstanceLock) return;
+  releaseInstanceLock(INSTANCE_LOCK_PATH);
+  ownsInstanceLock = false;
+}
+
+process.on('exit', releaseOwnedInstanceLock);
 
 // Valorant ShooterGame.log paths — contains in-game server port
 const SHOOTER_LOG_PATHS = [
@@ -327,6 +342,7 @@ let inGame = false;
 let selfPuuid = null;
 let lastPregameMap = '';
 let pregameState = null;
+let pregameMissedPolls = 0;
 let persistentMatchId = '';
 let authTokens = null;
 let wsConnected = false;
@@ -684,6 +700,23 @@ async function poll() {
   try {
     await ensureAuth(lock);
     if (authTokens?.puuid && stableSessionKey) {
+      const publishPregame = async state => {
+        const observedPlayerName = playerName || diagnosticPlayerName || '';
+        await putFB(`live/sessions/${stableSessionKey}`, {
+          active: true, ts: Date.now(),
+          map: state.map, mapClean: state.mapClean, mapInternal: state.map,
+          mode: 'agent-select', phase: 'pregame', side: state.side,
+          matchId: state.matchId, playerName: observedPlayerName, players: [], activePlayer: {},
+          scriptVersion: SCRIPT_VERSION,
+          server: state.server || '',
+          gamePodId: state.gamePodId || '',
+        });
+        await publishDiagnostic('agent-select', {
+          error: '', map: state.mapClean, matchId: state.matchId, side: state.side,
+          server: state.server || '',
+        });
+      };
+
       const pg = await pvpGet(authTokens, `/pregame/v1/players/${authTokens.puuid}`);
       if (pg?.MatchID) {
         const pgMatch = await pvpGet(authTokens, `/pregame/v1/matches/${pg.MatchID}`);
@@ -695,30 +728,42 @@ async function poll() {
           const side = getPregameSide(pgMatch, authTokens.puuid);
           currentServer = riotServer(pgMatch.GamePodID, authTokens.region);
 
-          pregameState = { map: pgMap, mapClean: MAP_NAMES[pgMap] || pgMap, matchId: pg.MatchID, side, mode: pgMatch.QueueID || 'competitive' };
+          pregameState = {
+            map: pgMap,
+            mapClean: MAP_NAMES[pgMap] || pgMap,
+            matchId: pg.MatchID,
+            side,
+            mode: pgMatch.QueueID || 'competitive',
+            server: currentServer?.name || '',
+            gamePodId: currentServer?.gamePodId || '',
+          };
+          pregameMissedPolls = 0;
           if (pregameState.mapClean !== lastPregameMap) {
             lastPregameMap = pregameState.mapClean;
             console.log(`[${ts()}] 🗺  Agent Select — ${pregameState.mapClean}${side ? ' · ' + side : ''}`);
           }
-          // Push pregame session immediately (no players yet)
-          await putFB(`live/sessions/${stableSessionKey}`, {
-            active: true, ts: Date.now(),
-            map: pgMap, mapClean: pregameState.mapClean, mapInternal: pgMap,
-            mode: 'agent-select', phase: 'pregame', side,
-            matchId: pg.MatchID, playerName, players: [], activePlayer: {},
-            scriptVersion: SCRIPT_VERSION,
-            server: currentServer?.name || '',
-            gamePodId: currentServer?.gamePodId || '',
-          });
-          await publishDiagnostic('agent-select', {
-            error: '', map: pregameState.mapClean, matchId: pg.MatchID, side,
-            server: currentServer?.name || '',
-          });
+          await publishPregame(pregameState);
           missedPolls = 0;
           return; // agent select handled — skip in-game logic this poll
         }
+      }
+
+      if (pregameState) {
+        corePlayer = await pvpGet(authTokens, `/core-game/v1/players/${authTokens.puuid}`);
+        const transition = pregameTransition(
+          pregameState,
+          corePlayer?.MatchID || '',
+          pregameMissedPolls,
+        );
+        pregameMissedPolls = transition.missedPolls;
+        if (transition.action === 'keep-pregame') {
+          await publishPregame(pregameState);
+          missedPolls = 0;
+          return;
+        }
+        pregameState = null;
       } else {
-        pregameState = null; // not in pregame anymore
+        pregameMissedPolls = 0;
       }
     }
   } catch {}
@@ -776,12 +821,13 @@ async function poll() {
   try {
     await ensureAuth(lock);
     if (authTokens?.puuid) {
-      corePlayer = await pvpGet(authTokens, `/core-game/v1/players/${authTokens.puuid}`);
+      corePlayer = corePlayer || await pvpGet(authTokens, `/core-game/v1/players/${authTokens.puuid}`);
       if (corePlayer?.MatchID) {
         realMatchId = corePlayer.MatchID;
         persistentMatchId = realMatchId;
         coreMatch = await pvpGet(authTokens, `/core-game/v1/matches/${realMatchId}`);
         pregameState = null;
+        pregameMissedPolls = 0;
 
         if (!playerName) {
           const ownPresence = myPresences.find(p => p.game_name);
@@ -810,7 +856,7 @@ async function poll() {
       missedPolls = 0;
       console.log(`[${ts()}] 🏠 Fin de game`);
       const postMatchTokens = authTokens ? { ...authTokens } : null;
-      lastPregameMap = ''; pregameState = null;
+      lastPregameMap = ''; pregameState = null; pregameMissedPolls = 0;
       const sKey = stableSessionKey || 'unknown';
       if (sKey !== 'unknown') await putFB(`live/sessions/${sKey}`, { active:false, ts:Date.now(), playerName });
       await publishDiagnostic('game-ended', { error: '', map: lastGameInfo?.map || '' }, true);
@@ -1142,6 +1188,7 @@ let updateCheckRunning = false;
 
 function restartWithInstalledUpdate(version) {
   console.log(`[${ts()}] Mise à jour v${version} prête — redémarrage automatique en arrière-plan...`);
+  releaseOwnedInstanceLock();
   const child = spawn(process.execPath, [__filename], {
     cwd: __dirname,
     detached: true,
@@ -1187,6 +1234,13 @@ async function updateAndRestart() {
 async function start() {
   if (await updateAndRestart()) return;
 
+  try {
+    const startup = ensureStartupLauncher(__dirname);
+    if (startup.changed) console.log(`[${ts()}] Démarrage Windows auto-réparé`);
+  } catch (error) {
+    console.log(`[${ts()}] Démarrage Windows indisponible — ${error.message}`);
+  }
+
   console.log('\n  ╔══════════════════════════════╗');
   console.log(`  ║  OLYCITY LIVE v${SCRIPT_VERSION} 🔴    ║`);
   console.log('  ╚══════════════════════════════╝\n');
@@ -1218,6 +1272,7 @@ async function markSessionInactiveAndExit(signal) {
       stoppedBy: signal,
     });
   }
+  releaseOwnedInstanceLock();
   process.exit(0);
 }
 

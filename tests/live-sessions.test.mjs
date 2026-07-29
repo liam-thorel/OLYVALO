@@ -3,6 +3,7 @@ import {
   groupLiveSessions,
   mergeSelectedSessionData,
   stablePlayersForSession,
+  stableSessionForRender,
 } from '../js/live-sessions.mjs';
 
 const roster = Array.from({ length: 10 }, (_, index) => ({
@@ -65,6 +66,50 @@ assert.equal(
   }, rosterCache).length,
   0,
   'Agent Select must never reuse the previous in-game roster',
+);
+
+const pregameCache = new Map();
+const pregameSession = {
+  active: true,
+  matchId: 'pregame-flicker',
+  mapClean: 'Breeze',
+  mode: 'agent-select',
+  phase: 'pregame',
+  players: [],
+};
+assert.equal(
+  stableSessionForRender(pregameSession, 'rayhan', pregameCache, 1000).phase,
+  'pregame',
+);
+assert.equal(
+  stableSessionForRender({
+    ...pregameSession,
+    mode: 'competitive',
+    phase: '',
+    players: null,
+  }, 'rayhan', pregameCache, 4000).phase,
+  'pregame',
+  'a brief empty in-game frame must not make Agent Select flash',
+);
+assert.equal(
+  stableSessionForRender({
+    ...pregameSession,
+    mode: 'competitive',
+    phase: '',
+    players: roster,
+  }, 'rayhan', pregameCache, 4500).mode,
+  'competitive',
+  'a real roster must switch immediately to the launched game',
+);
+assert.equal(
+  stableSessionForRender({
+    ...pregameSession,
+    mode: 'competitive',
+    phase: '',
+    players: null,
+  }, 'rayhan', pregameCache, 10000).mode,
+  'competitive',
+  'the visual grace must expire',
 );
 
 console.log('live-sessions: 3 matches and all swaps validated');
