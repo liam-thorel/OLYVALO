@@ -12,7 +12,7 @@ const { acquireInstanceLock, releaseInstanceLock } = require('./instance-lock.js
 const { stopLegacyLiveProcesses } = require('./legacy-cleanup.js');
 
 const FIREBASE_URL = 'https://realtime-database-5bb9f-default-rtdb.europe-west1.firebasedatabase.app';
-const SCRIPT_VERSION = '4.14.3';
+const SCRIPT_VERSION = '4.14.4';
 const INSTANCE_LOCK_PATH = path.join(__dirname, '.olycity-live.lock');
 let ownsInstanceLock = acquireInstanceLock(INSTANCE_LOCK_PATH);
 
@@ -513,6 +513,67 @@ let gameDataLogged = false;
 let matchDataLogged = false;
 let lastMap = '';
 let lockPort = null;
+let lastIdentityCheck = 0;
+
+async function refreshSelfIdentity(lock, force = false) {
+  const now = Date.now();
+  if (!force && selfPuuid && now - lastIdentityCheck < 5000) return false;
+  lastIdentityCheck = now;
+
+  const session = await req(lock.port, lock.password, '/chat/v1/session');
+  const detectedPuuid = session.ok ? session.data?.puuid : '';
+  if (!detectedPuuid || detectedPuuid === selfPuuid) return false;
+
+  const previousKey = stableSessionKey || selfPuuid;
+  if (previousKey && previousKey !== detectedPuuid) {
+    await Promise.all([
+      putFB(`live/sessions/${previousKey}`, {
+        active: false,
+        ts: now,
+        playerName: diagnosticPlayerName || '',
+      }),
+      putFB(`live/clients/${previousKey}`, {
+        online: false,
+        state: 'stopped',
+        ts: now,
+        playerName: diagnosticPlayerName || '',
+        version: SCRIPT_VERSION,
+      }),
+    ]);
+    console.log(`[${ts()}] 🔄 Changement de compte Riot: ${previousKey.slice(0,8)}... → ${detectedPuuid.slice(0,8)}...`);
+  } else {
+    console.log(`[${ts()}] 👤 PUUID détecté: ${detectedPuuid.slice(0,8)}...`);
+  }
+
+  selfPuuid = detectedPuuid;
+  stableSessionKey = detectedPuuid;
+  authTokens = null;
+  inGame = false;
+  lastPregameMap = '';
+  pregameState = null;
+  pregameMissedPolls = 0;
+  persistentMatchId = '';
+  lastPlayerCount = -1;
+  lastScore = '';
+  lastGameInfo = null;
+  gameStartedAt = null;
+  ranksLoaded = false;
+  rankMap = {};
+  lastKnownRoster = [];
+  lastKnownRosterMatchId = '';
+  missedPolls = 0;
+  roundPhase = '';
+  roundStartTime = null;
+  diagnosticPlayerName = '';
+  currentServer = null;
+  matchDataLogged = false;
+  gameDataLogged = false;
+  lastMap = '';
+  lastDiagnosticPush = 0;
+  lastDiagnosticSignature = '';
+  await publishDiagnostic('idle', { error: '' }, true);
+  return true;
+}
 let tries = 0;
 
 async function ensureAuth(lock) {
@@ -666,16 +727,9 @@ async function poll() {
   }
   tries = 0;
 
-  // Get own PUUID to filter only self presence
-  if (!selfPuuid) {
-    const session = await req(lock.port, lock.password, '/chat/v1/session');
-    if (session.ok && session.data?.puuid) {
-      selfPuuid = session.data.puuid;
-      stableSessionKey = selfPuuid;
-      console.log(`[${ts()}] 👤 PUUID détecté: ${selfPuuid.slice(0,8)}...`);
-      await publishDiagnostic('idle', { error: '' }, true);
-    }
-  }
+  // Refresh the Riot identity regularly so account switches do not leave the
+  // script filtering presence with the previous account's PUUID.
+  await refreshSelfIdentity(lock, !selfPuuid);
 
   const presences = res.data?.presences || [];
 

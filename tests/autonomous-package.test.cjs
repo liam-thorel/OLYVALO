@@ -37,6 +37,12 @@ assert.match(liveIndex, /windowsHide:\s*true/, 'Windows helper processes must re
 assert.match(liveIndex, /ensureStartupLauncher/, 'every successful start must repair Windows autostart');
 assert.match(liveIndex, /acquireInstanceLock/, 'duplicate startup triggers must keep one process only');
 assert.match(liveIndex, /stopLegacyLiveProcesses/, 'obsolete Python builds must be stopped at startup');
+assert.match(liveIndex, /refreshSelfIdentity/, 'Riot account switches must refresh the observed PUUID');
+assert.match(
+  liveIndex,
+  /live\/clients\/\$\{previousKey\}/,
+  'an account switch must retire the previous client signal',
+);
 assert.match(liveIndex, /lastKnownRoster/, 'the script must retain the last valid in-game roster');
 assert.match(
   liveIndex,
@@ -45,7 +51,7 @@ assert.match(
 );
 
 const packageJson = JSON.parse(read('package.json'));
-assert.equal(packageJson.version, '4.14.3');
+assert.equal(packageJson.version, '4.14.4');
 assert.equal(packageJson.dependencies.ws, '8.21.1');
 
 console.log('autonomous-package: launchers use only embedded runtime and scoped process management');

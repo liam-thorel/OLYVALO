@@ -11,7 +11,7 @@ import {
   mergeSelectedSessionData,
   stablePlayersForSession,
   stableSessionForRender,
-} from './live-sessions.mjs?v=20260729-live-143b';
+} from './live-sessions.mjs?v=20260731-live-144';
 import { freshLiveClients, isVersionAtLeast, liveClientSummary } from './live-clients.mjs?v=20260724-live-414';
 import { serverVisual } from './server-visuals.mjs?v=20260724-live-414';
 import { avatarLayersHTML } from './avatars.mjs?v=20260720-avatars';
@@ -593,6 +593,22 @@ export function initLivePage() {
   }
   evtSource.addEventListener('put', handleSSE);
   evtSource.addEventListener('patch', handleSSE);
+
+  // EventSource can take a few seconds to deliver its first snapshot. Seed both
+  // stores through the REST endpoint so a game already in progress appears
+  // immediately instead of briefly showing the empty state.
+  Promise.all([
+    fetch(`${FIREBASE_URL}/live/sessions.json`).then(response => response.ok ? response.json() : {}),
+    fetch(`${FIREBASE_URL}/live/clients.json`).then(response => response.ok ? response.json() : {}),
+  ]).then(([sessions, clients]) => {
+    lastClients = { ...(clients || {}), ...lastClients };
+    const mergedSessions = { ...(sessions || {}), ...lastSessions };
+    renderDiagnostic();
+    handleSSE({
+      type: 'bootstrap',
+      data: JSON.stringify({ path: '/', data: mergedSessions }),
+    });
+  }).catch(() => {});
 
   // Periodic staleness check — re-evaluate even without new SSE events
   const staleChecker = setInterval(() => {

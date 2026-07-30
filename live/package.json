@@ -1,6 +1,6 @@
 {
   "name": "olycity-live",
-  "version": "4.14.3",
+  "version": "4.14.4",
   "description": "OLYCITY Live — Valorant → Firebase",
   "main": "index.js",
   "scripts": { "start": "node index.js" },
