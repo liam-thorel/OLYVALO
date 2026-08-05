@@ -726,49 +726,32 @@ body.agent-mode .footer{ display:none; }
   margin: 0 0 14px; padding-bottom: 9px; border-bottom: 1px solid var(--border);
   color: var(--muted); font-size: 14px; font-weight: 600; letter-spacing: .2px;
 }
-.history-stat-card { flex: 1; min-width: 140px; padding: 17px 19px; border: 1px solid var(--border); background: var(--surf); }
-.history-stat-label { margin-bottom: 7px; color: var(--muted); font-size: 12px; font-weight: 500; }
-.history-stat-value { font-size: 28px; font-weight: 700; line-height: 1; }
 .history-daily-section { margin-bottom: 32px; }
-.history-daily-grid {
-  display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 10px;
-}
+.history-daily-grid { display: grid; gap: 7px; }
 .history-day-card {
-  position: relative; overflow: hidden; padding: 15px; border: 1px solid var(--border); background: var(--surf);
+  position: relative; overflow: hidden; border: 1px solid var(--border); background: var(--surf);
 }
 .history-day-card::before {
-  content: ''; position: absolute; inset: 0 0 auto; height: 2px;
-  background: linear-gradient(90deg, var(--red), transparent 70%);
+  content: ''; position: absolute; inset: 0 auto 0 0; width: 3px;
+  background: var(--red);
 }
-.history-day-card > header { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; margin-bottom: 14px; }
-.history-day-card > header span {
-  color: var(--text); font-size: 15px; font-weight: 700; text-transform: capitalize;
+.history-day-summary {
+  display: flex; align-items: center; gap: 14px; min-height: 52px; padding: 10px 14px 10px 17px;
+  list-style: none; cursor: pointer;
 }
-.history-day-card > header strong {
-  color: var(--muted); font-size: 12px; font-weight: 500;
-}
-.history-day-modes { display: grid; grid-template-columns: 1fr 1fr; gap: 7px; margin-bottom: 12px; }
-.history-day-modes > div {
-  display: grid; gap: 4px; padding: 9px 10px; border: 1px solid var(--border); background: var(--bg);
-}
-.history-day-modes > div.competitive { border-left: 2px solid var(--red); }
-.history-day-modes > div.deathmatch { border-left: 2px solid #e0b341; }
-.history-day-modes small { color: var(--muted); font-size: 11px; font-weight: 500; }
-.history-day-modes strong { color: var(--text); font-size: 13px; font-weight: 600; }
-.history-day-metrics { display: grid; grid-template-columns: repeat(3,1fr); gap: 6px; }
-.history-day-metrics > div { display: grid; gap: 4px; min-width: 0; }
-.history-day-metrics small {
-  color: var(--muted); font-size: 10px; font-weight: 500;
-}
-.history-day-metrics strong { color: var(--text); font-size: 14px; font-weight: 600; white-space: nowrap; }
-.history-day-metrics strong.positive { color: #3fcf6b; }
-.history-day-metrics strong.negative { color: #ff4656; }
-.history-day-tags { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 13px; }
-.history-day-tags span {
-  padding: 4px 7px; border: 1px solid var(--border); color: var(--muted);
-  font-size: 10px; font-weight: 500;
-}
-.history-day-tags span.agent { color: var(--red); border-color: var(--red-mid); background: var(--red-low); }
+.history-day-summary::-webkit-details-marker { display: none; }
+.history-day-summary:hover { background: rgba(255,255,255,.02); }
+.history-day-summary > strong { min-width: 150px; color: var(--text); font-size: 15px; text-transform: capitalize; }
+.history-day-summary > span { color: var(--muted); font-size: 12px; }
+.history-day-summary > b { color: var(--text); font-size: 13px; font-weight: 650; white-space: nowrap; }
+.history-day-summary > b.positive { color: #3fcf6b; }
+.history-day-summary > b.negative { color: #ff4656; }
+.history-day-summary > b.muted { color: var(--dim); }
+.history-day-summary > .history-day-dm { color: #e0b341; }
+.history-day-summary > i { margin-left: auto; color: var(--dim); font-size: 16px; font-style: normal; transition: transform .2s; }
+.history-day-card[open] > .history-day-summary > i { transform: rotate(180deg); }
+.history-day-detail { padding: 0 14px 14px 17px; border-top: 1px solid var(--border); }
+.history-day-context { display: flex; flex-wrap: wrap; gap: 8px 18px; padding: 12px 0 0; color: var(--muted); font-size: 12px; }
 .history-day-performance { margin-top: 12px; border: 1px solid var(--border); background: var(--bg); }
 .history-day-performance > summary {
   display: grid; grid-template-columns: auto minmax(0,1fr) auto; align-items: center; gap: 10px;
