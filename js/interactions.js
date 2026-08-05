@@ -392,11 +392,22 @@ export function initLivePage() {
   function ensureRosterCache() {
     if (_rosterFetched) return;
     _rosterFetched = true;
-    fetch('./data/roster.json?v=20260720-live-clients').then(response => response.json()).then(roster => {
-      roster.forEach(player => {
-        const entry = { avatar: player.avatar, member: player.name };
-        if (player.riot?.name) _rosterCache[`${player.riot.name}#${player.riot.tag}`.toLowerCase()] = entry;
-        (player.smurfs || []).forEach(account => {
+    Promise.all([
+      fetch('./data/roster.json?v=20260720-live-clients').then(response => response.json()),
+      fetch(`${FIREBASE_URL}/rosterOverlay.json`).then(response => response.json()).catch(() => null),
+    ]).then(([roster, overlay]) => {
+      // Les comptes Riot (y compris ceux des 5 du roster) vivent tous dans
+      // rosterOverlay/accounts, assignables/supprimables depuis #admin — pas
+      // de distinction de jeu, un même compte peut jouer Valorant et LoL.
+      const slugify = name => String(name || '')
+        .normalize('NFD').replace(/[̀-ͯ]/g, '')
+        .toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-+|-+$)/g, '');
+      const overlayAccounts = overlay?.accounts || {};
+      Object.entries(overlayAccounts).forEach(([memberId, accounts]) => {
+        const member = roster.find(player => slugify(player.name) === memberId)
+          || Object.entries(overlay?.members || {}).find(([id]) => id === memberId)?.[1];
+        const entry = { avatar: member?.avatar || '', member: member?.name || memberId };
+        Object.values(accounts || {}).forEach(account => {
           _rosterCache[`${account.name}#${account.tag}`.toLowerCase()] = entry;
         });
       });

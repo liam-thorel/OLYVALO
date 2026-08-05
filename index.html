@@ -157,6 +157,9 @@
         <button class="page-nav-btn" data-page="history" onclick="window.OLYCITY?.nav('history')">
           <span class="page-nav-icon">◇</span> Historique
         </button>
+        <button class="page-nav-btn" data-page="betting" onclick="window.OLYCITY?.nav('betting')">
+          <span class="page-nav-icon">🎲</span> Paris
+        </button>
         <button class="page-nav-btn" data-page="builder" onclick="window.OLYCITY?.nav('builder')">
           <span class="page-nav-icon">⊕</span> Builder
         </button>
@@ -324,6 +327,15 @@
     </div>
   </div>
 
+  <!-- ═══════════ PAGE PARIS ═══════════ -->
+  <div id="page-betting" class="spa-page">
+    <div class="container" style="padding-top:24px">
+      <h2 class="history-page-title">Paris</h2>
+      <div class="history-page-subtitle">Classement des points du bot Discord</div>
+      <div id="betting-content"></div>
+    </div>
+  </div>
+
   <div id="page-live" class="spa-page">
     <div class="live-page" id="live-page">
       <div class="live-diagnostic" id="live-diagnostic" data-state="offline">
@@ -362,6 +374,11 @@
         </div>
       </div>
     </div>
+  </div>
+
+  <!-- ═══════════ PAGE ADMIN (pas de lien dans le nav — accès direct via #admin) ═══════════ -->
+  <div id="page-admin" class="spa-page">
+    <div id="admin-content"></div>
   </div>
 
   <!-- ═══════════ PAGE BUILDER ═══════════ -->

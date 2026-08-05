@@ -27,16 +27,23 @@ Site privé pour le five stack OLYCITY. Comps meta, stats live, roster et outils
 **Roster & Profils**
 - 5 profils joueurs avec présence Firebase (point vert en temps réel)
 - Dessin collaboratif par map (canvas Firebase, couleurs par profil)
+- Page **Admin** cachée (`#admin`) : comptes secondaires par membre, ajout de
+  joueurs, assignation des comptes Valorant/LoL détectés en live
 
 **Agents**
 - Fiche complète par agent · Filtres par rôle
 - Comparateur de comps · Builder de comp · Comps sauvegardées
 
+**Paris 🎲**
+- Page publique (`#betting`) affichant le classement des points du bot Discord
+  — voir `discord-bot/`
+
 ---
 
 ## OLYCITY Live
 
-Script Node.js qui lit l'API locale Valorant et envoie les données en temps réel sur le site via Firebase.
+Script Node.js qui lit l'API locale Valorant **et League of Legends** (LCU) et
+envoie les données en temps réel sur le site et sur Discord via Firebase.
 
 ```
 live/
@@ -59,11 +66,24 @@ Node.js et les dépendances sont inclus : aucune installation globale ni command
 
 ---
 
+## OLYCITY Discord Bot
+
+Bot Discord (`discord-bot/`) qui notifie le lancement et la fin des games
+Valorant/LoL suivies (résumé KDA, build, variation de rang), avec un système
+de paris entre membres du serveur sur l'issue de chaque game suivie (cotes
+basées sur le rang et l'historique perso, points quotidiens, classement
+hebdomadaire). Détails d'installation et de déploiement dans
+[`discord-bot/README.md`](discord-bot/README.md).
+
+---
+
 ## Stack
 
 - Vanilla JS (ES modules) · CSS custom properties
-- Firebase Realtime Database (présence + live data + dessin)
+- Firebase Realtime Database (présence + live data + dessin + paris)
 - Valorant API : Riot Client lockfile · PVP.net `glz-eu-1.eu.a.pvp.net` · `pd.eu.a.pvp.net`
+- League API : League Client (LCU) lockfile · Data Dragon (champions/items)
+- Discord.js (bot Node.js séparé, voir `discord-bot/`)
 - GitHub Pages
 
 ---

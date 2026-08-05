@@ -11,6 +11,8 @@ import { rosterHTML, guestCardHTML, mapSectionHTML, stierHTML, agentPageHTML, mi
 import { initTheme, initTilt, initParallax, initSearch, initKeyboard, updateFavCount, initHeroParticles, initWheelLogos, initLivePage, initHistoryPage } from './interactions.js?v=20260729-live-143b';
 import { storage } from './storage.js';
 import { avatarLayersHTML } from './avatars.mjs';
+import { initAdminPage } from './admin.mjs';
+import { initBettingPage } from './betting-page.mjs';
 
 // ─── STATE ─────────────────────────────────────────
 export const state = {
@@ -110,6 +112,8 @@ window.OLYCITY = {
       agents: 'OLYCITY — Agents',
       builder: 'OLYCITY — Comp Builder',
       history: 'OLYCITY — Historique',
+      admin: 'OLYCITY — Admin',
+      betting: 'OLYCITY — Paris',
     };
     document.title = titles[page] || 'OLYCITY — Valorant Meta Comps';
     // Close agent page if open
@@ -137,6 +141,12 @@ window.OLYCITY = {
     }
     if (page === 'history') {
       initHistoryPage();
+    }
+    if (page === 'admin') {
+      initAdminPage();
+    }
+    if (page === 'betting') {
+      initBettingPage();
     }
     const navBtn = document.querySelector(`.page-nav-btn[data-page="${page}"]`);
     if (navBtn) navBtn.classList.add('active');
@@ -1023,7 +1033,7 @@ async function boot() {
     } else {
       // No state = home or hash-based
       const hash = window.location.hash.replace('#', '');
-      if (hash && ['maps','roster','agents','builder','live','history'].includes(hash)) {
+      if (hash && ['maps','roster','agents','builder','live','history','admin','betting'].includes(hash)) {
         window.OLYCITY.nav(hash, false);
       } else if (!hash || hash === 'home') {
         window.OLYCITY.nav('home', false);
@@ -1047,7 +1057,7 @@ async function boot() {
       window.OLYCITY.nav(s.page, false);
     } else {
       const hash = window.location.hash.replace('#', '');
-      if (['maps','roster','agents','builder','live','history'].includes(hash)) {
+      if (['maps','roster','agents','builder','live','history','admin','betting'].includes(hash)) {
         window.OLYCITY.nav(hash, false);
       } else {
         window.OLYCITY.nav('home', false);
@@ -1059,7 +1069,7 @@ async function boot() {
   });
   // Push initial history state
   const initHash = window.location.hash.replace('#','');
-  const initPage = ['maps','roster','agents','builder','live','history'].includes(initHash) ? initHash : 'home';
+  const initPage = ['maps','roster','agents','builder','live','history','admin','betting'].includes(initHash) ? initHash : 'home';
   if (initPage !== 'home') window.OLYCITY.nav(initPage, false);
   window.history.replaceState({ page: initPage }, '', window.location.href);
   // Hide loading screen

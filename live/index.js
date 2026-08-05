@@ -10,9 +10,10 @@ const { pregameTransition } = require('./pregame-utils.js');
 const { ensureStartupLauncher } = require('./startup.js');
 const { acquireInstanceLock, releaseInstanceLock } = require('./instance-lock.js');
 const { stopLegacyLiveProcesses } = require('./legacy-cleanup.js');
+const { createLolWatcher } = require('./lol-watcher.js');
 
 const FIREBASE_URL = 'https://realtime-database-5bb9f-default-rtdb.europe-west1.firebasedatabase.app';
-const SCRIPT_VERSION = '4.14.3';
+const SCRIPT_VERSION = '4.15.0';
 const INSTANCE_LOCK_PATH = path.join(__dirname, '.olycity-live.lock');
 let ownsInstanceLock = acquireInstanceLock(INSTANCE_LOCK_PATH);
 
@@ -24,7 +25,37 @@ function releaseOwnedInstanceLock() {
   ownsInstanceLock = false;
 }
 
+const lolWatcher = createLolWatcher({ putFB, ts, scriptVersion: SCRIPT_VERSION });
+
 process.on('exit', releaseOwnedInstanceLock);
+
+// Filet de secours : le script tourne sans supervision (tâche planifiée
+// ONLOGON, pas de redémarrage auto par Windows en cas de crash) — donc en cas
+// d'erreur fatale on se relance nous-mêmes, avec un garde-fou anti-boucle si
+// deux crashs arrivent en moins de 30s (config cassée, ne pas boucler à l'infini).
+function crashRestart(reason, error) {
+  console.error(`[${ts()}] ⛔ Erreur fatale (${reason}): ${error?.stack || error}`);
+  const now = Date.now();
+  const lastCrash = Number(process.env.OLYCITY_LAST_CRASH_TS || 0);
+  if (now - lastCrash < 30000) {
+    console.error(`[${ts()}] Trop de redémarrages rapprochés — arrêt du script.`);
+    process.exit(1);
+    return;
+  }
+  releaseOwnedInstanceLock();
+  const child = spawn(process.execPath, [__filename], {
+    cwd: __dirname,
+    detached: true,
+    stdio: 'inherit',
+    windowsHide: true,
+    env: { ...process.env, OLYCITY_LAST_CRASH_TS: String(now) },
+  });
+  child.unref();
+  process.exit(1);
+}
+
+process.on('uncaughtException', error => crashRestart('uncaughtException', error));
+process.on('unhandledRejection', error => crashRestart('unhandledRejection', error));
 
 // Valorant ShooterGame.log paths — contains in-game server port
 const SHOOTER_LOG_PATHS = [
@@ -280,6 +311,10 @@ async function pdGet(tokens, apiPath) {
         if (res.statusCode === 429) { resolve(null); return; } // rate limit — silent
         if (res.statusCode !== 200) {
           if (res.statusCode !== 404) console.log(`[pdGet] ${res.statusCode} ${apiPath.split('?')[0]}: ${d.slice(0,60)}`);
+          // Tokens expirés/invalides — on les invalide pour forcer un re-fetch
+          // au prochain poll (sinon le script boucle indéfiniment sur les mêmes
+          // tokens périmés sans jamais se rétablir tout seul).
+          if (res.statusCode === 401 || res.statusCode === 403 || d.includes('BAD_CLAIMS')) authTokens = null;
           resolve(null); return;
         }
         try { resolve(JSON.parse(d)); } catch { resolve(null); }
@@ -313,6 +348,10 @@ async function pvpGet(tokens, apiPath) {
         if (res.statusCode !== 200) {
           // 404 is the normal response when the player is not in this phase.
           if (res.statusCode !== 404) console.log(`[pvpGet] ${res.statusCode} ${url.hostname}${apiPath}: ${d.slice(0,80)}`);
+          // Tokens expirés/invalides — on les invalide pour forcer un re-fetch
+          // au prochain poll (sinon le script boucle indéfiniment sur les mêmes
+          // tokens périmés sans jamais se rétablir tout seul).
+          if (res.statusCode === 401 || res.statusCode === 403 || d.includes('BAD_CLAIMS')) authTokens = null;
           resolve(null); return;
         }
         try { resolve(JSON.parse(d)); }
@@ -708,6 +747,7 @@ async function poll() {
           map: state.map, mapClean: state.mapClean, mapInternal: state.map,
           mode: 'agent-select', phase: 'pregame', side: state.side,
           matchId: state.matchId, playerName: observedPlayerName, players: [], activePlayer: {},
+          rank: rankMap[authTokens?.puuid] || null,
           scriptVersion: SCRIPT_VERSION,
           server: state.server || '',
           gamePodId: state.gamePodId || '',
@@ -859,7 +899,7 @@ async function poll() {
       const postMatchTokens = authTokens ? { ...authTokens } : null;
       lastPregameMap = ''; pregameState = null; pregameMissedPolls = 0;
       const sKey = stableSessionKey || 'unknown';
-      if (sKey !== 'unknown') await putFB(`live/sessions/${sKey}`, { active:false, ts:Date.now(), playerName });
+      if (sKey !== 'unknown') await putFB(`live/sessions/${sKey}`, { active:false, ts:Date.now(), playerName, matchId: lastGameInfo?.matchId || '' });
       await publishDiagnostic('game-ended', { error: '', map: lastGameInfo?.map || '' }, true);
 
       // Push game to history (deduped by matchId)
@@ -889,6 +929,27 @@ async function poll() {
         const reporterKey = String(lastGameInfo.playerPuuid || stableSessionKey || 'unknown').replace(/[.#$\[\]\/]/g, '-');
         await putFB(`live/history/${histKey}/reports/${reporterKey}`, lastGameInfo);
         console.log(`[${ts()}] 📜 Game enregistrée — ${lastGameInfo.map} (${lastGameInfo.result})${details ? ' · détails OK' : ' · résumé local'}`);
+
+        // Résumé de fin de game pour le bot Discord (paris + notif de résultat)
+        if (sKey !== 'unknown') {
+          const selfPuuid = lastGameInfo.playerPuuid || postMatchTokens?.puuid || stableSessionKey;
+          const self = (lastGameInfo.players || []).find(player => player.puuid === selfPuuid);
+          await putFB(`live/sessions/${sKey}/result`, {
+            result: lastGameInfo.result,
+            matchId: lastGameInfo.matchId,
+            kills: self?.stats.kills ?? null,
+            deaths: self?.stats.deaths ?? null,
+            assists: self?.stats.assists ?? null,
+            acs: self?.stats.acs ?? null,
+            agent: self?.agent || '',
+            rr: lastGameInfo.rr ?? null,
+            map: lastGameInfo.map,
+            mode: lastGameInfo.mode,
+            durationSeconds: Math.round((lastGameInfo.durationMs || 0) / 1000),
+            score: lastGameInfo.score || null,
+          });
+        }
+
         lastGameInfo = null;
         gameStartedAt = null;
         lastScore = '';
@@ -1143,6 +1204,7 @@ async function poll() {
     playerName:  playerName,
     players,
     activePlayer,
+    rank:         rankMap[authTokens?.puuid || selfPuuid] || null,
     score:        JSON.parse(lastScore || '{}'),
     phase:       pregameState ? 'pregame' : '',
     scriptVersion: SCRIPT_VERSION,
@@ -1257,8 +1319,10 @@ async function start() {
   console.log('  ╚══════════════════════════════╝\n');
 
   setInterval(poll, 2000);
+  setInterval(() => lolWatcher.poll().catch(() => {}), 3000);
   setInterval(updateAndRestart, 30 * 60 * 1000);
   poll();
+  lolWatcher.poll().catch(() => {});
 }
 
 start();
@@ -1283,6 +1347,7 @@ async function markSessionInactiveAndExit(signal) {
       stoppedBy: signal,
     });
   }
+  await lolWatcher.markInactive();
   releaseOwnedInstanceLock();
   process.exit(0);
 }
