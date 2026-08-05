@@ -422,17 +422,17 @@ const ADMIN_CSS = `
 .admin-btn-primary{background:rgba(63,207,207,.18);border-color:rgba(63,207,207,.4);color:#3fcfcf}
 .admin-btn-danger{background:rgba(255,95,109,.12);border-color:rgba(255,95,109,.35);color:#ff5f6d}
 .admin-btn-small{padding:4px 8px;font-size:11px}
-.admin-members-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:16px;margin-top:16px}
-.admin-member-card{background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.08);border-radius:8px;padding:16px}
+.admin-members-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(360px,100%),1fr));gap:16px;margin-top:16px}
+.admin-member-card{min-width:0;overflow:hidden;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.08);border-radius:8px;padding:16px}
 .admin-member-head{display:flex;align-items:center;gap:10px;margin-bottom:12px}
 .admin-delete-member{margin-left:auto}
 .admin-member-avatar{width:32px;height:32px;border-radius:50%;object-fit:cover}
 .admin-member-accounts{display:flex;flex-direction:column;gap:8px;margin-bottom:12px;font-size:13px}
-.admin-account-row{display:flex;align-items:center;gap:7px;padding:7px 0;border-bottom:1px solid var(--border,rgba(255,255,255,.06))}.admin-account-row:last-child{border-bottom:0}.admin-account-game{width:80px;background:var(--surf2,#161a22);color:inherit;border:1px solid var(--border2,rgba(255,255,255,.15));border-radius:4px;padding:5px}.admin-monitor-on{color:#59d986;border-color:rgba(68,209,122,.35);background:rgba(68,209,122,.1)}
-.admin-add-account-form,.admin-add-member-form{display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-top:8px}
-.admin-add-account-form input,.admin-add-member-form input,.admin-add-account-form select{background:#161a22;color:inherit;border:1px solid rgba(255,255,255,.15);border-radius:4px;padding:6px 8px;font-size:12px;min-width:0;flex:1}
+.admin-account-row{display:grid;grid-template-columns:minmax(0,1fr) auto;grid-template-areas:"details details" "game status" "monitor remove";align-items:center;gap:7px 10px;padding:10px 0;border-bottom:1px solid var(--border,rgba(255,255,255,.06))}.admin-account-row:last-child{border-bottom:0}.admin-account-details{grid-area:details;min-width:0}.admin-account-details strong{overflow-wrap:anywhere}.admin-account-game{grid-area:game;width:auto;min-width:82px;background:var(--surf2,#161a22);color:inherit;border:1px solid var(--border2,rgba(255,255,255,.15));border-radius:4px;padding:5px}.admin-account-row .admin-status{grid-area:status;justify-self:end;max-width:100%;overflow:hidden;text-overflow:ellipsis}.admin-account-row [data-action="toggle-monitoring"]{grid-area:monitor;justify-self:start;max-width:100%;white-space:normal;text-align:left}.admin-account-row [data-action="remove-account"]{grid-area:remove;justify-self:end}.admin-monitor-on{color:#59d986;border-color:rgba(68,209,122,.35);background:rgba(68,209,122,.1)}
+.admin-add-account-form{display:grid;grid-template-columns:minmax(0,1.35fr) auto minmax(0,.8fr);gap:6px;align-items:center;margin-top:12px;padding-top:12px;border-top:1px solid var(--border,rgba(255,255,255,.06))}.admin-add-account-form input[name="name"]{grid-column:1}.admin-add-account-form>span{grid-column:2;text-align:center}.admin-add-account-form input[name="tag"]{grid-column:3}.admin-add-account-form select{grid-column:1}.admin-add-account-form input[name="puuid"]{grid-column:2/4}.admin-add-account-form input[name="region"]{grid-column:1/3}.admin-add-account-form button{grid-column:3}.admin-add-member-form{display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-top:8px}
+.admin-add-account-form input,.admin-add-member-form input,.admin-add-account-form select{width:100%;box-sizing:border-box;background:#161a22;color:inherit;border:1px solid rgba(255,255,255,.15);border-radius:4px;padding:6px 8px;font-size:12px;min-width:0}.admin-add-member-form input{flex:1}
 .admin-gate{max-width:360px;text-align:center;padding-top:120px}
 .admin-gate input{width:100%;background:#161a22;color:inherit;border:1px solid rgba(255,255,255,.15);border-radius:4px;padding:10px 12px;margin-bottom:10px}
 .admin-gate form{display:flex;flex-direction:column;gap:10px}
-@media(max-width:700px){.admin-account-row{align-items:flex-start;flex-wrap:wrap}.admin-account-details{flex-basis:100%}.admin-row .admin-select-member{flex:1}.admin-section-head{align-items:flex-start;gap:10px}.admin-members-grid{grid-template-columns:1fr}}
+@media(max-width:700px){.admin-wrap{padding-inline:14px}.admin-row .admin-select-member{flex:1}.admin-section-head{align-items:flex-start;gap:10px}.admin-members-grid{grid-template-columns:1fr}}
 `;
