@@ -1,6 +1,4 @@
 require('dotenv').config();
-const fs = require('fs');
-const path = require('path');
 const {
   Client, GatewayIntentBits, Collection, EmbedBuilder, MessageFlags,
   ActionRowBuilder, ButtonBuilder, ButtonStyle, ModalBuilder, TextInputBuilder, TextInputStyle,
@@ -12,9 +10,10 @@ const { recordDiscovered } = require('./discovered.js');
 const { watchNode, fbGet } = require('./firebase.js');
 const { buildItemsImage } = require('./build-image.js');
 const {
-  openRound, closeRound, resolveRound, cancelRound, roundKey, placeBet, attachMessage, BETTING_WINDOW_MS,
+  openRound, closeRound, resolveRound, cancelRound, roundsForMatch, placeBet, attachMessage, BETTING_WINDOW_MS,
 } = require('./betting.js');
 const { startWeeklyScheduler } = require('./weekly.js');
+const { rewardForGamePlayed } = require('./wallet.js');
 
 const SITE_URL = 'https://liam-thorel.github.io/OLYVALO';
 
@@ -41,10 +40,26 @@ process.on('uncaughtException', error => {
   logFatal('uncaughtException', error).finally(() => process.exit(1));
 });
 
-for (const file of fs.readdirSync(path.join(__dirname, 'commands')).filter(f => f.endsWith('.js'))) {
-  const command = require(`./commands/${file}`);
+// Requires explicites plutôt qu'un scan de dossier au runtime (fs.readdirSync) :
+// certains hébergeurs perdent ou déplacent des sous-dossiers pendant
+// l'extraction d'un zip, ce qui casse un scan dynamique sans prévenir tant
+// qu'on ne redémarre pas — un require() manquant, lui, échoue tout de suite
+// et clairement au démarrage.
+[
+  './commands/balance.js',
+  './commands/bet.js',
+  './commands/leaderboard.js',
+  './commands/list.js',
+  './commands/mybets.js',
+  './commands/stats.js',
+  './commands/track-lol-all.js',
+  './commands/track-valo-all.js',
+  './commands/track.js',
+  './commands/untrack.js',
+].forEach(file => {
+  const command = require(file);
   client.commands.set(command.data.name, command);
-}
+});
 
 const BET_ERROR_MESSAGES = {
   closed: '❌ Les paris sont fermés pour cette game (fenêtre de 5 minutes dépassée).',
@@ -131,6 +146,22 @@ function buildValorantPlayerEmbed(member, session) {
 
 const notifiedValorantMatches = new Set();
 
+// Filet de sécurité en plus du matchId : pendant la sélection d'agents (LoL :
+// champ select), le matchId communiqué par le script local peut ne pas encore
+// être stable (absent, ou changé entre deux polls très rapprochés) — ce qui
+// contourne le dédoublonnage par matchId et fait partir la même notification
+// deux fois. On bloque donc aussi une notification de démarrage pour le même
+// groupe exact de joueurs OLYCITY si elle vient de partir il y a moins de 90s.
+const START_DEDUPE_WINDOW_MS = 90 * 1000;
+const recentValorantStarts = new Map(); // "noms triés" -> timestamp
+
+function alreadyNotifiedRecently(map, key) {
+  const last = map.get(key);
+  if (last && Date.now() - last < START_DEDUPE_WINDOW_MS) return true;
+  map.set(key, Date.now());
+  return false;
+}
+
 // Même logique que LoL : regroupe les sessions actives partageant le même
 // matchId pour détecter les stacks (2+ joueurs OLYCITY dans la même game).
 async function notifyValorantGameStart(session, snapshot) {
@@ -148,6 +179,9 @@ async function notifyValorantGameStart(session, snapshot) {
     await recordDiscovered(session.playerName).catch(error => console.error('[discovered]', error.message));
     return;
   }
+
+  const namesKey = rosterPlayers.map(({ member }) => member.name).sort().join(',');
+  if (alreadyNotifiedRecently(recentValorantStarts, namesKey)) return;
 
   if (matchId) notifiedValorantMatches.add(matchId);
 
@@ -173,7 +207,11 @@ async function notifyValorantGameStart(session, snapshot) {
   const bettingPlayers = rosterPlayers.map(({ session: s, member }) => ({
     member, rank: s.rank || null, championOrAgentName: null,
   }));
-  openBettingRound('valorant', matchId, [...channelIds][0], bettingPlayers, `${SITE_URL}/#live`).catch(error => console.error('[betting:open]', error.message));
+  // Un round de paris distinct par salon qui tracke la game (même game trackée
+  // dans plusieurs serveurs → chacun a son propre message + pool de mises).
+  [...channelIds].forEach(channelId => {
+    openBettingRound('valorant', matchId, channelId, bettingPlayers, `${SITE_URL}/#live`).catch(error => console.error('[betting:open]', error.message));
+  });
 }
 
 function formatDuration(totalSeconds) {
@@ -197,12 +235,19 @@ async function notifyValorantGameEnd(session) {
   const trackers = trackersForPlayerGame(member.name, 'valorant');
   if (trackers.length === 0) return;
 
+  const playReward = await creditPlayReward(member, outcome).catch(error => {
+    console.error('[play-reward]', error.message);
+    return null;
+  });
+
   // Pas de stats de fin de partie dispo (rare) — on annonce quand même le
   // remboursement des paris s'il y en avait, mais pas de résumé de game.
+  // La même game pouvant être trackée dans plusieurs salons, chacun n'affiche
+  // que son propre pool de paris (betting est indexé par channelId).
   if (!result) {
-    const bettingSection = formatBettingSection(betting);
-    if (!bettingSection) return;
     await Promise.all(trackers.map(async tracker => {
+      const bettingSection = formatBettingSection(betting?.[tracker.channelId]);
+      if (!bettingSection) return;
       try {
         const channel = await client.channels.fetch(tracker.channelId);
         await channel.send(bettingSection);
@@ -227,15 +272,17 @@ async function notifyValorantGameEnd(session) {
     resultLabel,
   ].filter(Boolean).join(' | ');
 
-  const bettingSection = formatBettingSection(betting);
-  const embed = new EmbedBuilder()
-    .setColor(RESULT_COLORS[result.result] || GAME_META.valorant.color)
-    .setAuthor({ name: `${member.name} — ${resultLabel} (${result.map || 'Valorant'})`, iconURL: member.avatar || undefined })
-    .setDescription([rrLine, '**Résumé de la partie**', summaryLine, bettingSection ? `\n${bettingSection}` : null].filter(Boolean).join('\n'))
-    .setTimestamp();
+  const rewardLine = formatPlayReward(playReward, outcome);
+  const baseDescriptionParts = [rrLine, '**Résumé de la partie**', summaryLine, rewardLine ? `\n${rewardLine}` : null];
 
   await Promise.all(trackers.map(async tracker => {
     try {
+      const bettingSection = formatBettingSection(betting?.[tracker.channelId]);
+      const embed = new EmbedBuilder()
+        .setColor(RESULT_COLORS[result.result] || GAME_META.valorant.color)
+        .setAuthor({ name: `${member.name} — ${resultLabel} (${result.map || 'Valorant'})`, iconURL: member.avatar || undefined })
+        .setDescription([...baseDescriptionParts, bettingSection ? `\n${bettingSection}` : null].filter(Boolean).join('\n'))
+        .setTimestamp();
       const channel = await client.channels.fetch(tracker.channelId);
       await channel.send({ embeds: [embed] });
     } catch (error) {
@@ -272,12 +319,19 @@ async function notifyLolGameEnd(session) {
   const trackers = trackersForPlayerGame(member.name, 'lol');
   if (trackers.length === 0) return;
 
+  const playReward = await creditPlayReward(member, outcome).catch(error => {
+    console.error('[play-reward]', error.message);
+    return null;
+  });
+
   // Pas de stats de fin de partie dispo (rare) — on annonce quand même le
   // remboursement des paris s'il y en avait, mais pas de résumé de game.
+  // La même game pouvant être trackée dans plusieurs salons, chacun n'affiche
+  // que son propre pool de paris (betting est indexé par channelId).
   if (!result) {
-    const bettingSection = formatBettingSection(betting);
-    if (!bettingSection) return;
     await Promise.all(trackers.map(async tracker => {
+      const bettingSection = formatBettingSection(betting?.[tracker.channelId]);
+      if (!bettingSection) return;
       try {
         const channel = await client.channels.fetch(tracker.channelId);
         await channel.send(bettingSection);
@@ -316,29 +370,33 @@ async function notifyLolGameEnd(session) {
     resultLabel,
   ].filter(Boolean).join(' | ');
 
-  const bettingSection = formatBettingSection(betting);
-  const embed = new EmbedBuilder()
-    .setColor(win === true ? RESULT_COLORS.win : win === false ? RESULT_COLORS.loss : GAME_META.lol.color)
-    .setAuthor({ name: title, iconURL: result.champion?.image || member.avatar || undefined })
-    .setDescription([
-      rankBeforeLabel && rankAfterLabel ? `${rankBeforeLabel} → ${rankAfterLabel}` : null,
-      '**Résumé de la partie**',
-      summaryLine,
-      bettingSection ? `\n${bettingSection}` : null,
-    ].filter(Boolean).join('\n'))
-    .setTimestamp();
+  const rewardLine = formatPlayReward(playReward, outcome);
+  const baseDescriptionParts = [
+    rankBeforeLabel && rankAfterLabel ? `${rankBeforeLabel} → ${rankAfterLabel}` : null,
+    '**Résumé de la partie**',
+    summaryLine,
+    rewardLine ? `\n${rewardLine}` : null,
+  ];
 
   const files = [];
+  let hasImage = false;
   if (result.items?.length) {
     const buffer = await buildItemsImage(result.items).catch(() => null);
     if (buffer) {
-      embed.setImage('attachment://build.png');
       files.push({ attachment: buffer, name: 'build.png' });
+      hasImage = true;
     }
   }
 
   await Promise.all(trackers.map(async tracker => {
     try {
+      const bettingSection = formatBettingSection(betting?.[tracker.channelId]);
+      const embed = new EmbedBuilder()
+        .setColor(win === true ? RESULT_COLORS.win : win === false ? RESULT_COLORS.loss : GAME_META.lol.color)
+        .setAuthor({ name: title, iconURL: result.champion?.image || member.avatar || undefined })
+        .setDescription([...baseDescriptionParts, bettingSection ? `\n${bettingSection}` : null].filter(Boolean).join('\n'))
+        .setTimestamp();
+      if (hasImage) embed.setImage('attachment://build.png');
       const channel = await client.channels.fetch(tracker.channelId);
       await channel.send({ embeds: [embed], files });
     } catch (error) {
@@ -374,6 +432,7 @@ function buildLolPlayerEmbed(member, session) {
 }
 
 const notifiedLolMatches = new Set();
+const recentLolStarts = new Map(); // "noms triés" -> timestamp (même filet de sécurité que Valorant)
 
 // Une game LoL peut réunir plusieurs joueurs du roster OLYCITY : on regroupe
 // toutes les sessions actives partageant le même matchId (gameId Riot) en un
@@ -391,6 +450,9 @@ async function notifyLolGameStart(session, snapshot) {
     await recordDiscovered(session.playerName).catch(error => console.error('[discovered]', error.message));
     return;
   }
+
+  const namesKey = rosterPlayers.map(({ member }) => member.name).sort().join(',');
+  if (alreadyNotifiedRecently(recentLolStarts, namesKey)) return;
 
   if (matchId) notifiedLolMatches.add(matchId);
 
@@ -417,7 +479,9 @@ async function notifyLolGameStart(session, snapshot) {
     member, rank: s.rank || null, championOrAgentName: s.champion?.name || null,
   }));
   const viewUrl = porofessorUrl(sameMatch[0]?.region, session.playerName);
-  openBettingRound('lol', matchId, [...channelIds][0], bettingPlayers, viewUrl).catch(error => console.error('[betting:open]', error.message));
+  [...channelIds].forEach(channelId => {
+    openBettingRound('lol', matchId, channelId, bettingPlayers, viewUrl).catch(error => console.error('[betting:open]', error.message));
+  });
 }
 
 function porofessorUrl(region, playerName) {
@@ -504,25 +568,46 @@ async function openBettingRound(game, matchId, channelId, rosterPlayers, viewUrl
 // outcome: 'win' | 'lose' | null (null = résultat indisponible, on rembourse).
 // Ne poste plus de message lui-même — retourne les données pour que l'appelant
 // les intègre au même message que le résumé de fin de game (K/D, résultat...).
-// Retourne null si aucun round n'existait pour ce match.
+// La même game pouvant être trackée dans plusieurs salons (donc plusieurs
+// rounds distincts, un par salon), on les résout tous et on retourne le
+// résultat de chacun indexé par channelId — chaque salon n'affichera que
+// son propre pool de paris. Retourne null si aucun round n'existait.
 async function resolveBetting(game, matchId, outcome) {
   if (!matchId) return null;
-  const key = roundKey(game, matchId);
-  const existing = await fbGet(`betting/rounds/${key}`).catch(() => null);
-  if (!existing) return null;
+  const entries = await roundsForMatch(game, matchId);
+  if (entries.length === 0) return null;
 
-  const timer = bettingCloseTimers.get(key);
-  if (timer) { clearTimeout(timer); bettingCloseTimers.delete(key); }
-  await disableBettingMessage(existing.channelId, existing.messageId);
+  const byChannel = {};
+  for (const [key, round] of entries) {
+    const timer = bettingCloseTimers.get(key);
+    if (timer) { clearTimeout(timer); bettingCloseTimers.delete(key); }
+    await disableBettingMessage(round.channelId, round.messageId);
 
-  if (!outcome) {
-    await cancelRound(key);
-    return { cancelled: true, results: [] };
+    if (!outcome) {
+      await cancelRound(key);
+      byChannel[round.channelId] = { cancelled: true, results: [] };
+      continue;
+    }
+
+    const resolved = await resolveRound(key, outcome);
+    if (resolved) byChannel[round.channelId] = { cancelled: false, results: resolved.results };
   }
+  return byChannel;
+}
 
-  const resolved = await resolveRound(key, outcome);
-  if (!resolved) return null;
-  return { cancelled: false, results: resolved.results };
+// Récompense de participation (indépendante des paris) : 150 pts en cas de
+// victoire, 50 en cas de défaite, créditée au joueur du roster qui a joué —
+// nécessite que son avatar de roster pointe vers son ID Discord (cf roster.js).
+async function creditPlayReward(member, outcome) {
+  if (!member.discordId || !outcome) return null;
+  let username = null;
+  try { username = (await client.users.fetch(member.discordId)).username; } catch { /* best effort */ }
+  return rewardForGamePlayed(member.discordId, outcome === 'win', username);
+}
+
+function formatPlayReward(amount, outcome) {
+  if (!amount) return null;
+  return `🎁 **+${amount} points** pour avoir ${outcome === 'win' ? 'gagné' : 'joué'} cette partie.`;
 }
 
 // Construit le bloc "💰 Paris" à intégrer dans le message de fin de game.
@@ -598,4 +683,7 @@ client.once('ready', async () => {
   console.log('👂 Écoute des sessions Valorant et LoL en cours...');
 });
 
-client.login(DISCORD_TOKEN);
+client.on('error', error => console.error('[client:error]', error));
+client.on('warn', message => console.warn('[client:warn]', message));
+
+client.login(DISCORD_TOKEN).catch(error => console.error('[startup] login() a échoué —', error));

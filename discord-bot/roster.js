@@ -7,6 +7,13 @@ let members = [];       // [{ id, name, avatar, riotIds: ['name#tag', ...] }]
 let riotIdIndex = {};   // 'name#tag' lowercase -> member
 let lastFetch = 0;
 
+// Les avatars du roster pointent vers le CDN Discord (cdn.discordapp.com/avatars/{id}/...) —
+// on récupère cet ID pour pouvoir créditer directement le joueur qui vient de jouer.
+function extractDiscordId(avatarUrl) {
+  const match = String(avatarUrl || '').match(/cdn\.discordapp\.com\/avatars\/(\d+)\//);
+  return match ? match[1] : null;
+}
+
 function slugify(name) {
   return String(name || '')
     .normalize('NFD').replace(/[̀-ͯ]/g, '')
@@ -23,13 +30,14 @@ function indexRoster(roster, overlay) {
   const overlayAccounts = overlay?.accounts || {};
 
   const staticMembers = roster.map(player => ({
-    id: slugify(player.name), name: player.name, avatar: player.avatar || null, riotIds: [],
+    id: slugify(player.name), name: player.name, avatar: player.avatar || null,
+    discordId: extractDiscordId(player.avatar), riotIds: [],
   }));
 
   const staticIds = new Set(staticMembers.map(m => m.id));
   const extraMembers = Object.entries(overlayMembers)
     .filter(([id]) => !staticIds.has(id))
-    .map(([id, m]) => ({ id, name: m.name, avatar: m.avatar || null, riotIds: [] }));
+    .map(([id, m]) => ({ id, name: m.name, avatar: m.avatar || null, discordId: extractDiscordId(m.avatar), riotIds: [] }));
 
   members = [...staticMembers, ...extraMembers];
 

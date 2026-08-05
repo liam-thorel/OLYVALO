@@ -4,8 +4,17 @@ const { debit, credit, recordBetOutcome } = require('./wallet.js');
 
 const BETTING_WINDOW_MS = 5 * 60 * 1000;
 
-function roundKey(game, matchId) {
-  return `${game}_${String(matchId).replace(/[.#$[\]/]/g, '_')}`;
+// Un round par salon qui suit la game (et non un seul round global) : la même
+// game peut être trackée dans plusieurs salons/serveurs à la fois, et chacun
+// doit avoir son propre message de paris + son propre pool de mises.
+function roundKey(game, matchId, channelId) {
+  return `${game}_${String(matchId).replace(/[.#$[\]/]/g, '_')}_${String(channelId).replace(/[.#$[\]/]/g, '_')}`;
+}
+
+// Tous les rounds (tous salons confondus) ouverts pour une game donnée.
+async function roundsForMatch(game, matchId) {
+  const rounds = await fbGet('betting/rounds').catch(() => null);
+  return Object.entries(rounds || {}).filter(([, round]) => round.game === game && round.matchId === matchId);
 }
 
 // Tous les paris d'un utilisateur, tous rounds confondus (pour /mybets).
@@ -21,7 +30,7 @@ async function betsForUser(userId) {
 // si un round existe déjà pour ce match (ex: un 2e joueur OLYCITY détecté dans
 // la même game), retourne le round existant sans le recréer.
 async function openRound({ game, matchId, channelId, rosterPlayers }) {
-  const key = roundKey(game, matchId);
+  const key = roundKey(game, matchId, channelId);
   const existing = await fbGet(`betting/rounds/${key}`).catch(() => null);
   if (existing) return { key, round: existing, isNew: false };
 
@@ -116,6 +125,6 @@ async function cancelRound(key) {
 }
 
 module.exports = {
-  roundKey, openRound, closeRound, placeBet, resolveRound, cancelRound,
+  roundKey, roundsForMatch, openRound, closeRound, placeBet, resolveRound, cancelRound,
   findOpenRoundForChannel, attachMessage, betsForUser, BETTING_WINDOW_MS,
 };

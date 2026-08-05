@@ -21,6 +21,7 @@ const AUTH_STORAGE_KEY = 'olycity-admin-auth';
 let staticRoster = [];
 let overlayMembers = {};
 let overlayAccounts = {};
+let overlayHiddenMembers = {};
 let discovered = {};
 
 function slugify(name) {
@@ -32,6 +33,16 @@ function slugify(name) {
 async function sha256Hex(text) {
   const buffer = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(text));
   return [...new Uint8Array(buffer)].map(b => b.toString(16).padStart(2, '0')).join('');
+}
+
+// Reconfirmation du mot de passe admin avant une action destructive (ex:
+// suppression d'un membre) — même mot de passe que celui qui déverrouille la
+// page, mais redemandé explicitement pour éviter un clic accidentel.
+async function confirmWithPassword(message) {
+  const value = window.prompt(message);
+  if (value === null) return false;
+  const hash = await sha256Hex(value);
+  return hash === ADMIN_PASSWORD_HASH;
 }
 
 async function fbGet(path) {
@@ -63,6 +74,11 @@ async function fbDelete(path) {
 // comptes, eux, sont TOUJOURS dans rosterOverlay/accounts — y compris pour les
 // 5 du roster (migrés une fois depuis riot/smurfs) — donc tous supprimables
 // de la même façon, sans compte "principal" protégé.
+//
+// roster.json est un fichier statique du site (pas dans Firebase) : on ne
+// peut pas en retirer une entrée directement. Un membre "supprimé" depuis
+// l'admin — y compris l'un des 5 du roster — est donc simplement masqué via
+// rosterOverlay/hiddenMembers, sans toucher au fichier source.
 function allMembers() {
   const staticList = staticRoster.map(player => ({
     id: slugify(player.name), name: player.name, role: player.role || '', avatar: player.avatar || '',
@@ -71,7 +87,7 @@ function allMembers() {
   const overlayList = Object.entries(overlayMembers)
     .filter(([id]) => !staticIds.has(id))
     .map(([id, member]) => ({ id, name: member.name, role: member.role || '', avatar: member.avatar || '' }));
-  return [...staticList, ...overlayList];
+  return [...staticList, ...overlayList].filter(member => !overlayHiddenMembers[member.id]);
 }
 
 function accountsForMember(memberId) {
@@ -88,6 +104,7 @@ async function loadAll() {
   staticRoster = roster || [];
   overlayMembers = overlay?.members || {};
   overlayAccounts = overlay?.accounts || {};
+  overlayHiddenMembers = overlay?.hiddenMembers || {};
   discovered = discoveredData || {};
 }
 
@@ -136,6 +153,7 @@ function renderMembersHTML() {
           ${member.avatar ? `<img class="admin-member-avatar" src="${escapeHTML(member.avatar)}" alt="">` : ''}
           <strong>${escapeHTML(member.name)}</strong>
           <span class="admin-dim">${escapeHTML(member.role)}</span>
+          <button class="admin-btn admin-btn-small admin-btn-danger admin-delete-member" data-action="delete-member" data-member="${member.id}" title="Supprimer ce membre">🗑</button>
         </div>
         <div class="admin-member-accounts">${accountRows}</div>
         <form class="admin-add-account-form" data-member="${member.id}">
@@ -208,11 +226,25 @@ function wireEvents(root) {
   });
 
   root.querySelector('#admin-members')?.addEventListener('click', async event => {
-    const button = event.target.closest('button[data-action="remove-account"]');
-    if (!button) return;
-    const { member, key } = button.dataset;
-    await fbDelete(`rosterOverlay/accounts/${member}/${key}`);
-    await reloadAndRender(root);
+    const removeAccountBtn = event.target.closest('button[data-action="remove-account"]');
+    if (removeAccountBtn) {
+      const { member, key } = removeAccountBtn.dataset;
+      await fbDelete(`rosterOverlay/accounts/${member}/${key}`);
+      await reloadAndRender(root);
+      return;
+    }
+
+    const deleteMemberBtn = event.target.closest('button[data-action="delete-member"]');
+    if (deleteMemberBtn) {
+      const { member: memberId } = deleteMemberBtn.dataset;
+      const member = allMembers().find(m => m.id === memberId);
+      const ok = await confirmWithPassword(`Tape le mot de passe admin pour confirmer la suppression de "${member?.name || memberId}" :`);
+      if (!ok) return;
+      await fbPut(`rosterOverlay/hiddenMembers/${memberId}`, true);
+      await fbDelete(`rosterOverlay/members/${memberId}`);
+      await fbDelete(`rosterOverlay/accounts/${memberId}`);
+      await reloadAndRender(root);
+    }
   });
 
   root.querySelector('#admin-members')?.addEventListener('submit', async event => {
@@ -326,6 +358,7 @@ const ADMIN_CSS = `
 .admin-members-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:16px;margin-top:16px}
 .admin-member-card{background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.08);border-radius:8px;padding:16px}
 .admin-member-head{display:flex;align-items:center;gap:10px;margin-bottom:12px}
+.admin-delete-member{margin-left:auto}
 .admin-member-avatar{width:32px;height:32px;border-radius:50%;object-fit:cover}
 .admin-member-accounts{display:flex;flex-direction:column;gap:8px;margin-bottom:12px;font-size:13px}
 .admin-account-row{display:flex;align-items:center;justify-content:space-between;padding:2px 0}

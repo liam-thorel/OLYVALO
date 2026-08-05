@@ -18,7 +18,9 @@
  */
 const { winrateFor } = require('./stats.js');
 
-const HOUSE_EDGE = 0.08;
+// Pas de marge de bookmaker : les cotes sont l'inverse exact de la probabilité
+// estimée, pour une espérance de gain nulle en moyenne (pari « juste », ni
+// favorable ni défavorable au parieur au-delà de la qualité de l'estimation).
 const MIN_PROBABILITY = 0.15;
 const MAX_PROBABILITY = 0.85;
 
@@ -82,10 +84,8 @@ async function estimateOdds(game, rosterPlayers) {
   const avgScore = signals.reduce((sum, s) => sum + s.score, 0) / signals.length;
   const probability = clamp(sigmoid(avgScore), MIN_PROBABILITY, MAX_PROBABILITY);
 
-  const fairWin = 1 / probability;
-  const fairLose = 1 / (1 - probability);
-  const oddsWin = Math.max(1.05, Number((fairWin * (1 - HOUSE_EDGE)).toFixed(2)));
-  const oddsLose = Math.max(1.05, Number((fairLose * (1 - HOUSE_EDGE)).toFixed(2)));
+  const oddsWin = Math.max(1.05, Number((1 / probability).toFixed(2)));
+  const oddsLose = Math.max(1.05, Number((1 / (1 - probability)).toFixed(2)));
 
   const totalSamples = signals.reduce((sum, s) => sum + s.winrates.sampleSize, 0);
   const explanation = totalSamples > 0
