@@ -5,43 +5,20 @@
 
 import { valorantApi } from './api.js';
 
-const SITE_VERSION = '20260806-lol-mode';
+const SITE_VERSION = '20260806-admin-accounts';
 import { syncPlayer as henrikSyncPlayer, syncAllPlayers as henrikSyncAll, persistPlayerStats } from './henrik.js';
-import { rosterHTML, guestCardHTML, mapSectionHTML, stierHTML, agentPageHTML, miniRosterHTML, agentsFiltersHTML, agentsGridHTML, compCompareHTML, compBuilderHTML, savedCompsHTML } from './render.js?v=20260720-avatars';
-import { initTheme, initTilt, initParallax, initSearch, initKeyboard, updateFavCount, initHeroParticles, initWheelLogos, initLivePage, initHistoryPage } from './interactions.js?v=20260806-lol-mode';
+import { rosterHTML, guestCardHTML, mapSectionHTML, stierHTML, agentPageHTML, miniRosterHTML, agentsFiltersHTML, agentsGridHTML, compCompareHTML, compBuilderHTML, savedCompsHTML } from './render.js?v=20260806-admin-accounts';
+import { initTheme, initTilt, initParallax, initSearch, initKeyboard, updateFavCount, initHeroParticles, initWheelLogos, initLivePage, initHistoryPage } from './interactions.js?v=20260806-admin-accounts';
 import { storage } from './storage.js';
 import { avatarLayersHTML } from './avatars.mjs';
-import { initAdminPage } from './admin.mjs';
+import { initAdminPage } from './admin.mjs?v=20260806-admin-accounts';
 import { initBettingPage } from './betting-page.mjs';
 import { getGameMode, initGameMode } from './game-mode.mjs?v=20260806-lol-mode';
 import { initLolHistoryPage, initLolLivePage } from './lol-pages.mjs?v=20260806-lol-mode';
+import { state } from './state.mjs?v=20260806-admin-accounts';
+export { state };
 
 // ─── STATE ─────────────────────────────────────────
-export const state = {
-  COMPS_DATA: [],
-  ROSTER: [],
-  ROLES: {},
-  ROLE_LABEL: {},
-  ROLE_FULL: {},
-  S_TIER: [],
-  GLOBAL_NOTES: [],
-  AGENT_FR: {},
-  FAVS: [],
-  PLAYER_STATS: {},
-  currentAgentFilter: 'all',
-  currentPage: 'home',
-  compareSelections: [],
-  builderSlots: [null,null,null,null,null],
-  builderFocusSlot: 0,
-  builderMapIdx: null,
-  currentProfile: null,
-  currentMapIdx: 0,
-  builderMapIdx: null,
-  LINEUPS: {},
-  CALLOUTS: {},
-  META: {},
-  currentCompIdx: {},
-};
 
 // ─── LOAD JSON DATA ───────────────────────────────
 async function loadData() {

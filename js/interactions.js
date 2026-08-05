@@ -5,7 +5,7 @@
 
 import { storage } from './storage.js';
 import { valorantApi } from './api.js';
-import { state } from './main.js';
+import { state } from './state.mjs?v=20260806-admin-accounts';
 import {
   groupLiveSessions,
   mergeSelectedSessionData,
