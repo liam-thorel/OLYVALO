@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="fr" data-theme="dark">
+<html lang="fr" data-theme="dark" data-game="valorant">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -16,6 +16,7 @@
   <link rel="stylesheet" href="./css/components.css?v=20260720-avatars">
   <link rel="stylesheet" href="./css/agent-page.css?v=20260720-avatars">
   <link rel="stylesheet" href="./css/responsive.css?v=20260724-live-414">
+  <link rel="stylesheet" href="./css/lol-mode.css?v=20260806-lol-mode">
 </head>
 <body>
 
@@ -129,7 +130,7 @@
         </div>
         <div class="brand-text">
           <span class="brand-title">OLYCITY</span>
-          <span class="brand-sub">Valorant Meta Comps</span>
+          <span class="brand-sub" id="brand-subtitle">Valorant Meta Comps</span>
         </div>
       </div>
 
@@ -138,7 +139,7 @@
         <button class="page-nav-btn active" data-page="home" onclick="window.OLYCITY?.nav('home')">
           <span class="page-nav-icon">⌂</span> Accueil
         </button>
-        <div class="nav-maps-dropdown" onmouseenter="this.classList.add('open')" onmouseleave="this.classList.remove('open')">
+        <div class="nav-maps-dropdown" data-valorant-only onmouseenter="this.classList.add('open')" onmouseleave="this.classList.remove('open')">
           <button class="page-nav-btn" data-page="maps" onclick="window.OLYCITY?.nav('maps')">
             <span class="page-nav-icon">◈</span> Maps
           </button>
@@ -147,7 +148,7 @@
         <button class="page-nav-btn" data-page="roster" onclick="window.OLYCITY?.nav('roster')">
           <span class="page-nav-icon">◉</span> Roster
         </button>
-        <button class="page-nav-btn" data-page="agents" onclick="window.OLYCITY?.nav('agents')">
+        <button class="page-nav-btn" data-page="agents" data-valorant-only onclick="window.OLYCITY?.nav('agents')">
           <span class="page-nav-icon">◈</span> Agents
         </button>
         <button class="page-nav-btn" data-page="live" onclick="window.OLYCITY?.nav('live')" style="position:relative">
@@ -160,7 +161,7 @@
         <button class="page-nav-btn" data-page="betting" onclick="window.OLYCITY?.nav('betting')">
           <span class="page-nav-icon">🎲</span> Paris
         </button>
-        <button class="page-nav-btn" data-page="builder" onclick="window.OLYCITY?.nav('builder')">
+        <button class="page-nav-btn" data-page="builder" data-valorant-only onclick="window.OLYCITY?.nav('builder')">
           <span class="page-nav-icon">⊕</span> Builder
         </button>
       </div>
@@ -168,12 +169,16 @@
       <!-- MAP SELECTOR (visible only on maps page) -->
 
       <div class="topbar-tools">
+        <div class="game-switch" role="group" aria-label="Choisir le jeu">
+          <button class="game-switch-btn active" type="button" data-game-choice="valorant" aria-pressed="true">VAL</button>
+          <button class="game-switch-btn" type="button" data-game-choice="lol" aria-pressed="false">LoL</button>
+        </div>
         <!-- Profile indicator -->
         <div class="profile-indicator" id="profile-indicator" onclick="window.OLYCITY._showProfilePicker()" title="Changer de profil">
           <span class="profile-indicator-name">—</span>
         </div>
 
-        <div class="search-wrap">
+        <div class="search-wrap" data-valorant-only>
           <span class="search-icon">⌕</span>
           <input type="text" id="search-input" class="search-input" placeholder="Agent…" autocomplete="off">
         </div>
@@ -194,27 +199,27 @@
       <div style="position:absolute;right:5%;top:50%;transform:translateY(-50%);z-index:0;pointer-events:none">
       </div>
       <canvas id="hero-canvas" style="position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:0"></canvas>
-      <div class="hero-eyebrow" style="position:relative;z-index:1">OLYCITY · Five Stack · EU</div>
+      <div class="hero-eyebrow" id="hero-eyebrow" style="position:relative;z-index:1">OLYCITY · Five Stack · EU</div>
       <h1 class="hero-title" style="position:relative;z-index:1">
         <div class="hero-title-frame">OLYCITY</div>
       </h1>
-      <div class="hero-sub">Valorant Meta Comps · Patch 13.00</div>
-      <div class="hero-meta">
+      <div class="hero-sub" id="hero-subtitle">Valorant Meta Comps · Patch 13.00</div>
+      <div class="hero-meta" id="hero-meta">
         <span><span class="dot"></span>7 maps · Patch 13.00</span>
         <span><span class="dot"></span>Données VLR.gg · EWC 2026</span>
       </div>
       <div class="hero-ctas">
-        <button class="hero-cta-primary" onclick="window.OLYCITY?.nav('maps')">
+        <button class="hero-cta-primary" id="hero-primary-cta" onclick="window.OLYCITY?.nav('maps')">
           ◈ Explorer les maps
         </button>
-        <button class="hero-cta-secondary" onclick="window.OLYCITY?.nav('roster')">
+        <button class="hero-cta-secondary" id="hero-secondary-cta" onclick="window.OLYCITY?.nav('roster')">
           ◉ Voir le roster
         </button>
       </div>
     </header>
 
     <!-- S-TIER -->
-    <section class="section">
+    <section class="section" data-valorant-only>
       <div class="section-inner">
         <div class="section-header">
           <span class="section-tag">S-Tier</span>
@@ -322,8 +327,9 @@
   <div id="page-history" class="spa-page">
     <div class="container" style="padding-top:24px">
       <h2 class="history-page-title">Historique</h2>
-      <div class="history-page-subtitle">Les parties du five stack</div>
-      <div id="history-content"></div>
+      <div class="history-page-subtitle" id="history-page-subtitle">Les parties du five stack</div>
+      <div id="history-content" data-game-panel="valorant"></div>
+      <div id="lol-history-content" data-game-panel="lol"></div>
     </div>
   </div>
 
@@ -338,6 +344,7 @@
 
   <div id="page-live" class="spa-page">
     <div class="live-page" id="live-page">
+      <div data-game-panel="valorant">
       <div class="live-diagnostic" id="live-diagnostic" data-state="offline">
         <span class="live-diagnostic-dot"></span>
         <div class="live-diagnostic-copy">
@@ -373,6 +380,16 @@
           </div>
         </div>
       </div>
+      </div>
+      <div id="lol-live-panel" data-game-panel="lol">
+        <div class="lol-live-heading">
+          <div><span>LEAGUE OF LEGENDS</span><strong>Parties en direct</strong></div>
+          <span class="lol-live-pulse">LIVE</span>
+        </div>
+        <div id="lol-live-content" class="lol-live-grid">
+          <div class="lol-empty-state"><span class="lol-empty-rune">L</span><strong>Connexion au live LoL…</strong><small>Synchronisation avec les scripts OLYCITY</small></div>
+        </div>
+      </div>
     </div>
   </div>
 
@@ -396,8 +413,8 @@
   <!-- FOOTER -->
   <footer class="footer">
     <div class="footer-inner">
-      <span>OLYCITY · Valorant Meta Comps · Patch 13.00 · 2026</span>
-      <span>Sources : <a href="https://vlr.gg" target="_blank">VLR.gg</a> · <a href="https://hotspawn.com" target="_blank">Hotspawn</a> · <a href="https://dak.gg" target="_blank">dak.gg</a></span>
+      <span id="footer-product">OLYCITY · Valorant Meta Comps · Patch 13.00 · 2026</span>
+      <span id="footer-sources">Sources : <a href="https://vlr.gg" target="_blank">VLR.gg</a> · <a href="https://hotspawn.com" target="_blank">Hotspawn</a> · <a href="https://dak.gg" target="_blank">dak.gg</a></span>
       <span>Non affilié à Riot Games</span>
     </div>
   </footer>
@@ -411,6 +428,6 @@
   <script type="module" src="./js/firebase-draw.js?v=20260720-avatars"></script>
   <!-- Présence Firebase -->
   <script src="./js/presence.js?v=20260720-avatars"></script>
-  <script type="module" src="./js/main.js?v=20260805-history-compact"></script>
+  <script type="module" src="./js/main.js?v=20260806-lol-mode"></script>
 </body>
 </html>
