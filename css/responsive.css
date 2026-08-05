@@ -78,7 +78,10 @@
   .history-performance-metrics { grid-template-columns: repeat(2,1fr); }
   .history-performance-card.mvp { min-height: 62px; }
   .history-deathmatch-list { grid-template-columns: 1fr; }
-  .history-day-modes { grid-template-columns: 1fr; }
+  .history-day-summary { align-items: flex-start; flex-wrap: wrap; gap: 5px 12px; padding: 11px 12px 11px 15px; }
+  .history-day-summary > strong { width: calc(100% - 30px); min-width: 0; }
+  .history-day-summary > i { position: absolute; top: 12px; right: 12px; }
+  .history-day-detail { padding: 0 12px 12px 15px; }
   .history-day-performance > summary { grid-template-columns: 1fr auto; }
   .history-day-performance > summary > strong { grid-column: 1; grid-row: 2; text-align: left; }
   .history-day-performance > summary > i { grid-column: 2; grid-row: 1 / span 2; }

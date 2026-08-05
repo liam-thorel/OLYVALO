@@ -1286,8 +1286,6 @@ export async function initHistoryPage() {
   const deathmatches = games.filter(g => historyMode(g) === 'deathmatch');
   const otherGames = games.filter(g => historyMode(g) === 'other');
   const withResult = comp.filter(g => g.result === 'win' || g.result === 'loss');
-  const wins = withResult.filter(g => g.result === 'win').length;
-  const wr = withResult.length ? Math.round(wins / withResult.length * 100) : null;
 
   const byMap = {};
   withResult.forEach(g => {
@@ -1308,12 +1306,6 @@ export async function initHistoryPage() {
   const topAgents = Object.entries(agentCount).sort((a,b)=>b[1]-a[1]).slice(0,6);
 
   const wrColor = v => v >= 55 ? '#3fcf6b' : v <= 45 ? '#ff4656' : '#e0b341';
-  const relTime = ts => {
-    const d = Date.now() - ts;
-    if (d < 3600000) return Math.round(d/60000) + ' min';
-    if (d < 86400000) return Math.round(d/3600000) + ' h';
-    return Math.round(d/86400000) + ' j';
-  };
   const durationLabel = ms => {
     if (!ms || ms < 0) return '—';
     const totalMinutes = Math.round(ms / 60000);
@@ -1343,23 +1335,14 @@ export async function initHistoryPage() {
     const rrTotal = rrValues.reduce((sum, value) => sum + value, 0);
     const duration = dayGames.reduce((sum, game) => sum + (game.durationMs || Math.max(0, (game.endTs||0) - (game.ts||0))), 0);
     const maps = [...new Set(dayGames.map(game => game.map).filter(Boolean))];
-    const agents = [...new Set(dayGames.flatMap(game =>
-      historyPlayerPerformances(game).map(performance => performance.self?.agent)
-    ).filter(agent => agent && agent !== '?'))];
     const performances = historyDailyPerformances(dayGames, state.ROSTER);
     const label = key === todayKey ? "Aujourd'hui" : new Date(`${key}T12:00:00`).toLocaleDateString('fr-FR', {
       weekday:'long', day:'2-digit', month:'long'
     });
-    return { key, label, games:dayGames, compGames, dmGames, decided, wins:dayWins, rrValues, rrTotal, duration, maps, agents, performances };
+    return { key, label, games:dayGames, compGames, dmGames, decided, wins:dayWins, rrValues, rrTotal, duration, maps, performances };
   };
   const daily = dailyGroups.map(dailySummary);
   const sectionTitle = t => `<div class="history-section-title">${t}</div>`;
-
-  const statCard = (label, value, color) => `
-    <div class="history-stat-card">
-      <div class="history-stat-label">${label}</div>
-      <div class="history-stat-value" style="color:${color||'var(--text)'}">${value}</div>
-    </div>`;
 
   const modeLabel = game => historyMode(game) === 'deathmatch' ? 'Deathmatch'
     : historyMode(game) === 'competitive' ? 'Compétitif'
@@ -1471,17 +1454,14 @@ export async function initHistoryPage() {
     const score = kind === 'deathmatch'
       ? self?.stats ? `${self.stats.kills||0}/${self.stats.deaths||0}` : ''
       : game.score ? `${game.score.blue}–${game.score.red}` : '';
-    const rrDelta = kind === 'competitive' ? game.rr?.delta : null;
     return `<details class="history-game ${kind}" style="--result-color:${resultColor}">
       <summary class="history-game-summary">
         <span class="history-result">${resultLabel}</span>
-        ${self?.agent ? `<img class="history-self-agent" src="${agentIconFromName(self.agent)}" alt="${self.agent}" onerror="this.style.display='none'">` : ''}
         <span class="history-game-main">
           <strong>${(game.map||'?').toUpperCase()}</strong>
           <small>${modeLabel(game)} · ${historyOwnerLabel(game, state.ROSTER)} · ${dateLabel(game.ts)}</small>
         </span>
         ${score ? `<strong class="history-score">${score}</strong>` : '<span class="history-score muted">—</span>'}
-        ${rrDelta !== undefined && rrDelta !== null ? `<span class="history-rr ${rrDelta >= 0 ? 'positive' : 'negative'}">${rrDelta >= 0 ? '+' : ''}${rrDelta} RR</span>` : ''}
         <span class="history-duration">${durationLabel(game.durationMs || ((game.endTs||0)-(game.ts||0)))}</span>
         <span class="history-expand">⌄</span>
       </summary>
@@ -1529,45 +1509,30 @@ export async function initHistoryPage() {
     </div>
 
     <section class="history-view-panel summary ${historyUI.view === 'summary' ? 'active' : ''}">
-    <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:32px">
-      ${statCard('Games totales', games.length)}
-      ${statCard('Compétitif', comp.length)}
-      ${statCard('Deathmatch', deathmatches.length, '#e0b341')}
-      ${wr !== null ? statCard('Winrate', wr+'%', wrColor(wr)) : ''}
-      ${withResult.length ? statCard('Bilan', wins+'V '+(withResult.length-wins)+'D') : ''}
-    </div>
-
     ${daily.length ? `
     <div class="history-daily-section">
-      ${sectionTitle('Récap par jour')}
+      ${sectionTitle('Récap quotidien')}
       <div class="history-daily-grid">
         ${daily.slice(0,14).map(day => {
           const winrate = day.decided.length ? Math.round(day.wins / day.decided.length * 100) : null;
+          const losses = day.decided.length - day.wins;
+          const rrLabel = day.rrValues.length ? `${day.rrTotal >= 0 ? '+' : ''}${day.rrTotal} RR` : '';
           return `
-          <article class="history-day-card">
-            <header>
-              <span>${day.label}</span>
-              <strong>${day.games.length} game${day.games.length > 1 ? 's' : ''}</strong>
-            </header>
-            <div class="history-day-modes">
-              <div class="competitive">
-                <small>Compétitif</small>
-                <strong>${day.compGames.length} · ${day.decided.length ? `${day.wins}V ${day.decided.length-day.wins}D` : 'aucun résultat'}</strong>
+          <details class="history-day-card">
+            <summary class="history-day-summary">
+              <strong>${day.label}</strong>
+              <span>${day.compGames.length} compétitive${day.compGames.length > 1 ? 's' : ''}</span>
+              ${day.decided.length ? `<b>${day.wins}V · ${losses}D</b><b style="color:${wrColor(winrate)}">${winrate}%</b>` : '<b class="muted">Aucun résultat</b>'}
+              ${rrLabel ? `<b class="${day.rrTotal >= 0 ? 'positive' : 'negative'}">${rrLabel}</b>` : ''}
+              ${day.dmGames.length ? `<span class="history-day-dm">+ ${day.dmGames.length} DM</span>` : ''}
+              <i aria-hidden="true">⌄</i>
+            </summary>
+            <div class="history-day-detail">
+              <div class="history-day-context">
+                <span>${day.games.length} partie${day.games.length > 1 ? 's' : ''}</span>
+                <span>${durationLabel(day.duration)}</span>
+                ${day.maps.length ? `<span>${day.maps.join(' · ')}</span>` : ''}
               </div>
-              <div class="deathmatch">
-                <small>Deathmatch</small>
-                <strong>${day.dmGames.length} · ${durationLabel(day.dmGames.reduce((sum, game) => sum + (game.durationMs || Math.max(0, (game.endTs||0) - (game.ts||0))), 0))}</strong>
-              </div>
-            </div>
-            <div class="history-day-metrics">
-              <div><small>WR compétitif</small><strong style="color:${winrate === null ? 'var(--dim)' : wrColor(winrate)}">${winrate === null ? '—' : winrate+'%'}</strong></div>
-              <div><small>Durée totale</small><strong>${durationLabel(day.duration)}</strong></div>
-              <div><small>RR compétitif</small><strong class="${day.rrTotal >= 0 ? 'positive' : 'negative'}">${day.rrValues.length ? `${day.rrTotal >= 0 ? '+' : ''}${day.rrTotal}` : '—'}</strong></div>
-            </div>
-            <div class="history-day-tags">
-              ${day.maps.map(map => `<span>${map}</span>`).join('')}
-              ${day.agents.map(agent => `<span class="agent">${agent}</span>`).join('')}
-            </div>
             ${day.performances.length ? (() => {
               const leader = day.performances[0];
               return `<details class="history-day-performance">
@@ -1594,7 +1559,8 @@ export async function initHistoryPage() {
                 </div>
               </details>`;
             })() : ''}
-          </article>`;
+            </div>
+          </details>`;
         }).join('')}
       </div>
     </div>` : ''}
