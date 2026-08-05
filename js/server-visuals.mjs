@@ -2,6 +2,7 @@ const COMMONS_FILE = 'https://commons.wikimedia.org/wiki/Special:Redirect/file/'
 
 const CITY_VISUALS = {
   Paris: {
+    image: './assets/servers/paris.jpg',
     file: 'Paris skyline view (Unsplash).jpg',
     source: 'https://commons.wikimedia.org/wiki/File:Paris_skyline_view_(Unsplash).jpg',
     credit: 'Anthony Delanoix · CC0',
@@ -47,7 +48,7 @@ export function serverVisual(serverName) {
   const visual = CITY_VISUALS[serverName];
   if (!visual) return null;
   return {
-    image: `${COMMONS_FILE}${encodeURIComponent(visual.file)}?width=640`,
+    image: visual.image || `${COMMONS_FILE}${encodeURIComponent(visual.file)}?width=640`,
     source: visual.source,
     credit: visual.credit,
   };

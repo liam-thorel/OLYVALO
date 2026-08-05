@@ -11,8 +11,18 @@ const clients = {
 const sessions = {liam:{playerName:'Wong Chi Ming#2046'}};
 const fresh = freshLiveClients(clients, sessions, now);
 
-assert.deepEqual(fresh.map(client => client.puuid), ['nico','liam']);
-assert.equal(fresh[1].playerName, 'Wong Chi Ming#2046');
+assert.deepEqual(fresh.map(client => client.puuid), ['liam','nico']);
+assert.equal(fresh[0].playerName, 'Wong Chi Ming#2046');
+const laterHeartbeat = freshLiveClients({
+  ...clients,
+  nico: {...clients.nico, ts: 98100},
+  liam: {...clients.liam, ts: 99900},
+}, sessions, now);
+assert.deepEqual(
+  laterHeartbeat.map(client => client.puuid),
+  ['liam','nico'],
+  'heartbeat timing must never reorder the script chips',
+);
 assert.deepEqual(liveClientSummary(fresh), {total:2,inGame:1,agentSelect:0,ready:1,issues:0});
 assert.equal(isVersionAtLeast('4.13.0', '4.12.0'), true);
 assert.equal(isVersionAtLeast('v4.12.0', '4.12.0'), true);
