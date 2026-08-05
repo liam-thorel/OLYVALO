@@ -29,7 +29,11 @@ export function freshLiveClients(clients = {}, sessions = {}, now = Date.now()) 
       };
     })
     .filter(client => client.online && client.age < LIVE_CLIENT_STALE_MS)
-    .sort((a, b) => (b.ts || 0) - (a.ts || 0));
+    // Heartbeats arrive at slightly different times every few seconds. Sorting
+    // by timestamp made every chip jump to the front after its own heartbeat.
+    // The PUUID is stable for the lifetime of an account, so the visual order
+    // now remains deterministic while status and details keep updating.
+    .sort((a, b) => a.puuid.localeCompare(b.puuid));
 }
 
 export function liveClientSummary(clients = []) {

@@ -5,10 +5,10 @@
 
 import { valorantApi } from './api.js';
 
-const SITE_VERSION = '20260731-live-144';
+const SITE_VERSION = '20260805-live-stable';
 import { syncPlayer as henrikSyncPlayer, syncAllPlayers as henrikSyncAll, persistPlayerStats } from './henrik.js';
 import { rosterHTML, guestCardHTML, mapSectionHTML, stierHTML, agentPageHTML, miniRosterHTML, agentsFiltersHTML, agentsGridHTML, compCompareHTML, compBuilderHTML, savedCompsHTML } from './render.js?v=20260720-avatars';
-import { initTheme, initTilt, initParallax, initSearch, initKeyboard, updateFavCount, initHeroParticles, initWheelLogos, initLivePage, initHistoryPage } from './interactions.js?v=20260731-live-144';
+import { initTheme, initTilt, initParallax, initSearch, initKeyboard, updateFavCount, initHeroParticles, initWheelLogos, initLivePage, initHistoryPage } from './interactions.js?v=20260805-live-stable';
 import { storage } from './storage.js';
 import { avatarLayersHTML } from './avatars.mjs';
 

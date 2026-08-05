@@ -12,8 +12,8 @@ import {
   stablePlayersForSession,
   stableSessionForRender,
 } from './live-sessions.mjs?v=20260731-live-144';
-import { freshLiveClients, isVersionAtLeast, liveClientSummary } from './live-clients.mjs?v=20260724-live-414';
-import { serverVisual } from './server-visuals.mjs?v=20260724-live-414';
+import { freshLiveClients, isVersionAtLeast, liveClientSummary } from './live-clients.mjs?v=20260805-live-stable';
+import { serverVisual } from './server-visuals.mjs?v=20260805-live-stable';
 import { avatarLayersHTML } from './avatars.mjs?v=20260720-avatars';
 import { filterHistoryGames, historyDailyPerformances, historyGameForOwner, historyMode, historyOwnerKey, historyOwnerLabel, historyPlayerName, historyPlayerPerformance, historyPlayerPerformances, historyRankedPlayers, historyReports, isHistorySelf, normalizeHistoryEntries } from './history-utils.mjs?v=20260720-history-multi';
 
