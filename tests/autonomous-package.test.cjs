@@ -51,7 +51,7 @@ assert.match(
 );
 
 const packageJson = JSON.parse(read('package.json'));
-assert.equal(packageJson.version, '4.15.10');
+assert.equal(packageJson.version, '4.15.11');
 assert.equal(packageJson.dependencies.ws, '8.21.1');
 assert.match(liveIndex, /timeout:\s*5000/, 'Firebase writes must have a bounded timeout');
 assert.match(liveIndex, /split\('\/'\)\.map\(encodeURIComponent\)/, 'Firebase path segments must support Riot IDs containing spaces');

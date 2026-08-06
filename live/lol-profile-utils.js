@@ -103,8 +103,10 @@ function summarizeSoloQueue(payload, identity = {}, championById = {}, seasonSta
     wins += won ? 1 : 0;
   });
 
+  const kdaOf = c => (c.kills + c.assists) / Math.max(1, c.deaths);
+  const winRateOf = c => (c.games ? c.wins / c.games : 0);
   const topChampions = [...champions.values()]
-    .sort((a, b) => b.games - a.games || b.wins - a.wins || a.name.localeCompare(b.name))
+    .sort((a, b) => b.games - a.games || winRateOf(b) - winRateOf(a) || kdaOf(b) - kdaOf(a))
     .slice(0, 3)
     .map(champion => ({
       ...champion,

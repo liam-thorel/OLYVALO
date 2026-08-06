@@ -34,6 +34,24 @@ test('main role and top champions come only from current-season SoloQ games', ()
   ]);
 });
 
+test('top champions break a games+winrate tie by average KDA, not name', () => {
+  const puuid = 'player-puuid';
+  const game = (championId, stats) => ({
+    queueId: 420, gameCreation: 2000,
+    participants: [{ puuid, championId, teamPosition: 'MIDDLE', stats: { win: true, ...stats } }],
+  });
+  // Jhin et Caitlyn : 1 game chacun, 100% WR chacun, mais Caitlyn a un bien
+  // meilleur KDA — elle doit passer devant malgré l'ordre alphabétique inverse.
+  const result = summarizeSoloQueue([
+    game(202, { kills: 2, deaths: 1, assists: 0 }), // Jhin — KDA 2.00
+    game(51, { kills: 20, deaths: 2, assists: 5 }), // Caitlyn — KDA 12.50
+  ], { puuid }, {
+    202: { name: 'Jhin', image: 'jhin.png' },
+    51: { name: 'Caitlyn', image: 'caitlyn.png' },
+  }, 1000);
+  assert.deepEqual(result.topChampions.map(champion => champion.name), ['Caitlyn', 'Jhin']);
+});
+
 test('support role is detected from bottom lane support metadata', () => {
   assert.equal(roleKey({ timeline: { lane: 'BOTTOM', role: 'DUO_SUPPORT' } }), 'support');
 });
