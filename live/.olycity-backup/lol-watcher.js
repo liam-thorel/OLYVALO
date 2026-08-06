@@ -242,10 +242,6 @@ function createLolWatcher({ putFB, ts, scriptVersion, log = console.log }) {
   let postGameSince = 0;
   let capturedResult = null;
   let missedPolls = 0;
-  let identityHeartbeat = 0;
-  let identityKey = '';
-  let identitySnapshot = null;
-  let identityPhase = '';
 
   function resetMatchState() {
     wasActive = false;
@@ -291,46 +287,6 @@ function createLolWatcher({ putFB, ts, scriptVersion, log = console.log }) {
     return cachedRegion;
   }
 
-  async function publishIdentity(summoner, phase) {
-    const gameName = summoner?.gameName;
-    const tagLine = summoner?.tagLine;
-    const puuid = summoner?.puuid || '';
-    if (!gameName || !tagLine) return;
-    const playerName = `${gameName}#${tagLine}`;
-    const key = safeFirebaseKey(playerName);
-    const now = Date.now();
-    if (key === identityKey && phase === identityPhase && now - identityHeartbeat < 60_000) return;
-    if (identityKey && key !== identityKey) await markIdentityOffline();
-    const region = await ensureRegion();
-    identityKey = key;
-    identityPhase = phase || '';
-    identityHeartbeat = now;
-    identitySnapshot = { playerName, puuid, region: region || '' };
-    await putFB(`live/lolClients/${key}`, {
-      ...identitySnapshot,
-      game: 'lol',
-      games: ['lol'],
-      connected: true,
-      phase: phase || 'Unknown',
-      lastSeen: now,
-      scriptVersion,
-    });
-  }
-
-  async function markIdentityOffline() {
-    if (!identityKey || !identitySnapshot || identityPhase === 'Offline') return;
-    await putFB(`live/lolClients/${identityKey}`, {
-      ...identitySnapshot,
-      game: 'lol',
-      games: ['lol'],
-      connected: false,
-      phase: 'Offline',
-      lastSeen: Date.now(),
-      scriptVersion,
-    });
-    identityPhase = 'Offline';
-  }
-
   // Pendant la sélection de champion : capture la lane (top/jungle/middle/bottom/utility,
   // valeurs telles que renvoyées par le LCU), le champion adverse au même poste
   // ("matchup") et le rang avant game. N'existe plus une fois en jeu, d'où le cache.
@@ -363,6 +319,7 @@ function createLolWatcher({ putFB, ts, scriptVersion, log = console.log }) {
         ...stats,
         durationLabel: formatDuration(stats?.gameLengthSeconds),
         champion: currentChampion,
+        queueId: currentQueueId,
         queueDescription: currentQueueDescription,
         items: (stats?.itemIds || []).map(id => items[id]).filter(Boolean),
         rankBefore,
@@ -381,7 +338,6 @@ function createLolWatcher({ putFB, ts, scriptVersion, log = console.log }) {
     if (!cachedLock) cachedLock = readLockfile();
     if (!cachedLock) {
       missedPolls++;
-      if (missedPolls >= MAX_MISSED_POLLS) await markIdentityOffline();
       if (wasActive && missedPolls >= MAX_MISSED_POLLS) { log(`[${ts()}] 🔵 LoL — client fermé, fin de session`); await markInactive(); }
       return;
     }
@@ -391,7 +347,6 @@ function createLolWatcher({ putFB, ts, scriptVersion, log = console.log }) {
       missedPolls++;
       if (missedPolls >= MAX_MISSED_POLLS) {
         cachedLock = null; // le client a peut-être redémarré (port/token changés)
-        await markIdentityOffline();
         if (wasActive) { log(`[${ts()}] 🔵 LoL — client injoignable, fin de session`); await markInactive(); }
       }
       return;
@@ -400,8 +355,6 @@ function createLolWatcher({ putFB, ts, scriptVersion, log = console.log }) {
 
     const phase = sessionRes.data?.phase;
     currentQueueId = sessionRes.data?.gameData?.queue?.id ?? currentQueueId;
-    const summonerRes = await lcuGet(cachedLock, '/lol-summoner/v1/current-summoner');
-    await publishIdentity(summonerRes.data, phase);
 
     if (phase === 'ChampSelect') {
       await updateChampSelectCache();
@@ -410,6 +363,7 @@ function createLolWatcher({ putFB, ts, scriptVersion, log = console.log }) {
 
     if (wasActive && POST_GAME_PHASES.has(phase)) {
       if (!postGameSince) postGameSince = Date.now();
+      const summonerRes = await lcuGet(cachedLock, '/lol-summoner/v1/current-summoner');
       const done = await tryCaptureEndOfGame(summonerRes.data?.puuid);
       if (done) await markInactive();
       return;
@@ -422,6 +376,7 @@ function createLolWatcher({ putFB, ts, scriptVersion, log = console.log }) {
       return;
     }
 
+    const summonerRes = await lcuGet(cachedLock, '/lol-summoner/v1/current-summoner');
     const gameName = summonerRes.data?.gameName;
     const tagLine = summonerRes.data?.tagLine;
     if (!gameName || !tagLine) return; // identité pas encore dispo, on retentera au prochain poll
@@ -460,7 +415,6 @@ function createLolWatcher({ putFB, ts, scriptVersion, log = console.log }) {
       ts: now,
       matchId: currentMatchId,
       playerName: sessionKey,
-      puuid: myPuuid || '',
       mode: queue.gameMode || '',
       queueDescription: queue.description || '',
       champion: currentChampion,
@@ -472,7 +426,7 @@ function createLolWatcher({ putFB, ts, scriptVersion, log = console.log }) {
     });
   }
 
-  return { poll, markInactive, markClientOffline: markIdentityOffline };
+  return { poll, markInactive };
 }
 
 module.exports = { createLolWatcher, readLockfile, lcuGet, safeFirebaseKey };

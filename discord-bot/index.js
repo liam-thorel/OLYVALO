@@ -13,7 +13,11 @@ const {
   openRound, closeRound, resolveRound, cancelRound, roundsForMatch, placeBet, attachMessage, BETTING_WINDOW_MS,
 } = require('./betting.js');
 const { startWeeklyScheduler } = require('./weekly.js');
+const { startDailyRecapScheduler } = require('./daily-recap.js');
+const { startLpRrRecapScheduler } = require('./lp-rr-recap.js');
 const { rewardForGamePlayed } = require('./wallet.js');
+const { recordRankGain, lolRankPoints } = require('./rank-tracking.js');
+const { recordAward } = require('./valorant-awards.js');
 
 const SITE_URL = 'https://liam-thorel.github.io/OLYVALO';
 
@@ -46,6 +50,7 @@ process.on('uncaughtException', error => {
 // qu'on ne redémarre pas — un require() manquant, lui, échoue tout de suite
 // et clairement au démarrage.
 [
+  './commands/awards.js',
   './commands/balance.js',
   './commands/bet.js',
   './commands/leaderboard.js',
@@ -148,11 +153,15 @@ const notifiedValorantMatches = new Set();
 
 // Filet de sécurité en plus du matchId : pendant la sélection d'agents (LoL :
 // champ select), le matchId communiqué par le script local peut ne pas encore
-// être stable (absent, ou changé entre deux polls très rapprochés) — ce qui
-// contourne le dédoublonnage par matchId et fait partir la même notification
-// deux fois. On bloque donc aussi une notification de démarrage pour le même
-// groupe exact de joueurs OLYCITY si elle vient de partir il y a moins de 90s.
-const START_DEDUPE_WINDOW_MS = 90 * 1000;
+// être stable, et une reconnexion du flux Firebase (perte réseau temporaire)
+// peut faire "oublier" une session déjà active puis la revoir active un peu
+// plus tard, ce qui contourne le dédoublonnage par matchId et fait partir la
+// même notification deux fois. On bloque donc aussi une notification de
+// démarrage pour le même groupe exact de joueurs OLYCITY si elle vient de
+// partir il y a moins de 20 minutes (largement plus long qu'une sélection
+// d'agents + un flottement réseau, mais bien plus court que le temps entre
+// deux games distinctes).
+const START_DEDUPE_WINDOW_MS = 20 * 60 * 1000;
 const recentValorantStarts = new Map(); // "noms triés" -> timestamp
 
 function alreadyNotifiedRecently(map, key) {
@@ -240,6 +249,11 @@ async function notifyValorantGameEnd(session) {
     return null;
   });
 
+  if (result?.rr?.delta) {
+    recordRankGain('valorant', session.playerName, member.name, result.rr.delta)
+      .catch(error => console.error('[rank-tracking]', error.message));
+  }
+
   // Pas de stats de fin de partie dispo (rare) — on annonce quand même le
   // remboursement des paris s'il y en avait, mais pas de résumé de game.
   // La même game pouvant être trackée dans plusieurs salons, chacun n'affiche
@@ -272,8 +286,29 @@ async function notifyValorantGameEnd(session) {
     resultLabel,
   ].filter(Boolean).join(' | ');
 
+  const kills = result.kills ?? 0;
+  const deaths = result.deaths ?? 0;
+  const isDeathmatch = /deathmatch/i.test(result.mode || '');
+  const awardLines = [];
+  if (isDeathmatch) {
+    // Le compte de kills/morts en deathmatch n'a rien à voir avec un 5v5
+    // classique (30 kills y est courant) — pas de masterchiasse/thirty bomb
+    // ici, juste un compteur de participation.
+    recordAward('deathmatch', member.id, member.name).catch(error => console.error('[valorant-awards]', error.message));
+  } else if (deaths > 0 && kills < deaths * 0.5) {
+    recordAward('masterchiasse', member.id, member.name).catch(error => console.error('[valorant-awards]', error.message));
+    awardLines.push(`😂 Superbe masterchiasse de **${member.name}**`);
+  } else if (kills > 30) {
+    recordAward('thirtyBomb', member.id, member.name).catch(error => console.error('[valorant-awards]', error.message));
+    awardLines.push(`💥 omg thirty bomb de **${member.name}** !!!`);
+  }
+
   const rewardLine = formatPlayReward(playReward, outcome);
-  const baseDescriptionParts = [rrLine, '**Résumé de la partie**', summaryLine, rewardLine ? `\n${rewardLine}` : null];
+  const baseDescriptionParts = [
+    rrLine, '**Résumé de la partie**', summaryLine,
+    awardLines.length ? `\n${awardLines.join('\n')}` : null,
+    rewardLine ? `\n${rewardLine}` : null,
+  ];
 
   await Promise.all(trackers.map(async tracker => {
     try {
@@ -323,6 +358,18 @@ async function notifyLolGameEnd(session) {
     console.error('[play-reward]', error.message);
     return null;
   });
+
+  if (result?.rankBefore?.tier && result?.rankAfter?.tier) {
+    const beforePts = lolRankPoints(result.rankBefore);
+    const afterPts = lolRankPoints(result.rankAfter);
+    if (beforePts != null && afterPts != null) {
+      // queueId 420 = Solo/Duo, 440 = Flex (seules queues classées suivies) —
+      // trackées séparément, la progression des deux n'ayant rien à voir.
+      const queueBucket = result.queueId === 440 ? 'lol-flex' : 'lol-solo';
+      recordRankGain(queueBucket, session.playerName, member.name, afterPts - beforePts)
+        .catch(error => console.error('[rank-tracking]', error.message));
+    }
+  }
 
   // Pas de stats de fin de partie dispo (rare) — on annonce quand même le
   // remboursement des paris s'il y en avait, mais pas de résumé de game.
@@ -629,9 +676,17 @@ function formatBettingSection(betting) {
 // récupérées — donc pas forcément dans le même événement Firebase).
 // Le premier snapshot reçu à la connexion sert uniquement de référence (pas de
 // spam pour des games déjà en cours au démarrage du bot).
+// Tolérance avant de considérer une clé de session comme réellement disparue :
+// un snapshot Firebase peut momentanément ne pas inclure une clé pourtant
+// toujours active côté DB (ex: reconnexion du flux SSE) — la purger tout de
+// suite fait perdre la mémoire "déjà notifiée", et sa réapparition juste après
+// est alors traitée comme une toute nouvelle game (double notification).
+const SESSION_MISSING_TOLERANCE = 2;
+
 function watchGameSessions(game, firebasePath) {
   const previousActive = new Map();
   const resultNotified = new Set();
+  const missingSince = new Map(); // clé -> nb de snapshots consécutifs sans cette clé
   let isFirstSnapshot = true;
 
   watchNode(firebasePath, snapshot => {
@@ -640,6 +695,7 @@ function watchGameSessions(game, firebasePath) {
 
     for (const [key, session] of entries) {
       seenKeys.add(key);
+      missingSince.delete(key);
       const active = Boolean(session?.active);
 
       if (!active) {
@@ -665,7 +721,14 @@ function watchGameSessions(game, firebasePath) {
     }
 
     for (const key of previousActive.keys()) {
-      if (!seenKeys.has(key)) { previousActive.delete(key); resultNotified.delete(key); }
+      if (seenKeys.has(key)) continue;
+      const misses = (missingSince.get(key) || 0) + 1;
+      if (misses < SESSION_MISSING_TOLERANCE) {
+        missingSince.set(key, misses);
+        continue; // absence isolée tolérée — on garde la clé en mémoire
+      }
+      missingSince.delete(key);
+      previousActive.delete(key); resultNotified.delete(key);
     }
 
     isFirstSnapshot = false;
@@ -673,13 +736,15 @@ function watchGameSessions(game, firebasePath) {
 }
 
 client.once('ready', async () => {
-  console.log(`✅ Connecté en tant que ${client.user.tag}`);
+  console.log(`✅ Connecté en tant que ${client.user.tag} — pid=${process.pid}`);
   await ensureRoster();
   await loadTrackersOnce();
   startTrackerSync();
   watchGameSessions('valorant', 'live/sessions');
   watchGameSessions('lol', 'live/lolSessions');
   startWeeklyScheduler(client);
+  startDailyRecapScheduler(client);
+  startLpRrRecapScheduler(client);
   console.log('👂 Écoute des sessions Valorant et LoL en cours...');
 });
 

@@ -29,6 +29,12 @@ function trackersForPlayerGame(player, game) {
     .map(([id, tracker]) => ({ id, ...tracker }));
 }
 
+// Tous les salons distincts qui trackent au moins un joueur, tous jeux et
+// serveurs confondus — utilisé pour des annonces globales (ex: récap quotidien).
+function allTrackedChannelIds() {
+  return [...new Set(Object.values(cache).map(tracker => tracker.channelId))];
+}
+
 async function addTracker({ guildId, channelId, player, game, addedBy }) {
   const existing = trackersFor(channelId).find(t => t.player === player && t.game === game);
   if (existing) return { created: false, tracker: existing };
@@ -57,5 +63,5 @@ async function addTrackerForAll({ guildId, channelId, game, addedBy }, allMember
 }
 
 module.exports = {
-  startTrackerSync, loadTrackersOnce, trackersFor, trackersForPlayerGame, addTracker, removeTracker, addTrackerForAll,
+  startTrackerSync, loadTrackersOnce, trackersFor, trackersForPlayerGame, allTrackedChannelIds, addTracker, removeTracker, addTrackerForAll,
 };

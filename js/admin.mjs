@@ -177,6 +177,16 @@ function render() {
       </div>
 
       <section class="admin-section">
+        <h3>Récap quotidien</h3>
+        <p class="admin-dim">Envoyé automatiquement tous les jours à 7h dans les salons trackés. Le bouton ci-dessous déclenche le même récap immédiatement, pour tester.</p>
+        <button class="admin-btn admin-btn-primary" id="admin-trigger-daily-recap-btn">☀️ Déclencher le récap des gains maintenant (test)</button>
+        <span class="admin-dim" id="admin-trigger-daily-recap-status"></span>
+        <p class="admin-dim" style="margin-top:14px">Récap des LP/RR gagnés ou perdus, par personne et par compte — envoyé à 7h15.</p>
+        <button class="admin-btn admin-btn-primary" id="admin-trigger-lp-rr-recap-btn">📈 Déclencher le récap LP/RR maintenant (test)</button>
+        <span class="admin-dim" id="admin-trigger-lp-rr-recap-status"></span>
+      </section>
+
+      <section class="admin-section">
         <h3>Comptes détectés non assignés</h3>
         <div id="admin-discovered">${renderDiscoveredHTML()}</div>
       </section>
@@ -201,6 +211,26 @@ async function reloadAndRender(root) {
 
 function wireEvents(root) {
   root.querySelector('#admin-refresh-btn')?.addEventListener('click', () => reloadAndRender(root));
+
+  root.querySelector('#admin-trigger-daily-recap-btn')?.addEventListener('click', async () => {
+    const status = root.querySelector('#admin-trigger-daily-recap-status');
+    try {
+      await fbPut('adminActions/dailyRecapTrigger', { ts: Date.now() });
+      if (status) status.textContent = '✅ Déclenché — vérifie les salons Discord trackés dans quelques secondes.';
+    } catch (error) {
+      if (status) status.textContent = `❌ Échec : ${error.message}`;
+    }
+  });
+
+  root.querySelector('#admin-trigger-lp-rr-recap-btn')?.addEventListener('click', async () => {
+    const status = root.querySelector('#admin-trigger-lp-rr-recap-status');
+    try {
+      await fbPut('adminActions/lpRrRecapTrigger', { ts: Date.now() });
+      if (status) status.textContent = '✅ Déclenché — vérifie les salons Discord trackés dans quelques secondes.';
+    } catch (error) {
+      if (status) status.textContent = `❌ Échec : ${error.message}`;
+    }
+  });
 
   root.querySelector('#admin-discovered')?.addEventListener('click', async event => {
     const button = event.target.closest('button[data-action]');

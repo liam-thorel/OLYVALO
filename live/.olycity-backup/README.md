@@ -23,11 +23,6 @@ Le compte Riot actif est revérifié pendant l'exécution. Si tu changes de comp
 sans redémarrer le PC, l'ancien signal est retiré et la nouvelle partie est
 détectée automatiquement en quelques secondes.
 
-Pour League of Legends, le compte connecté est également détecté dès que le
-client est ouvert, même hors partie. Son Riot ID, son PUUID, sa région et son
-état apparaissent alors dans le panel admin OLYCITY afin de pouvoir le rattacher
-à un membre et activer sa surveillance centrale.
-
 Node.js LTS et la dépendance WebSocket sont inclus dans le dossier. Il n'y a rien à installer sur le PC et aucune commande npm à lancer.
 
 Le package embarque le binaire Windows officiel Node.js 24.18.0 LTS et `ws` 8.21.1. Leurs licences sont fournies dans `runtime/NODE-LICENSE.txt` et `node_modules/ws/LICENSE`.

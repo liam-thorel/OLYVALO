@@ -71,4 +71,12 @@ function recentForm(entries, limit = 10) {
   return entries.filter(e => typeof e.win === 'boolean').slice(0, limit).map(e => e.win);
 }
 
-module.exports = { historyFor, winrateFor, mostPlayed, recentForm, HISTORY_SAMPLE_SIZE };
+// Ratio kills/morts agrégé sur l'historique connu (0 si aucune mort ni kill).
+function killDeathRatio(entries) {
+  const totalKills = entries.reduce((sum, e) => sum + (e.kills || 0), 0);
+  const totalDeaths = entries.reduce((sum, e) => sum + (e.deaths || 0), 0);
+  if (totalDeaths === 0) return totalKills > 0 ? totalKills : 0;
+  return totalKills / totalDeaths;
+}
+
+module.exports = { historyFor, winrateFor, mostPlayed, recentForm, killDeathRatio, HISTORY_SAMPLE_SIZE };

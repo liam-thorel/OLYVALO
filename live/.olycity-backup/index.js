@@ -13,7 +13,7 @@ const { stopLegacyLiveProcesses } = require('./legacy-cleanup.js');
 const { createLolWatcher } = require('./lol-watcher.js');
 
 const FIREBASE_URL = 'https://realtime-database-5bb9f-default-rtdb.europe-west1.firebasedatabase.app';
-const SCRIPT_VERSION = '4.15.1';
+const SCRIPT_VERSION = '4.15.2';
 const INSTANCE_LOCK_PATH = path.join(__dirname, '.olycity-live.lock');
 let ownsInstanceLock = acquireInstanceLock(INSTANCE_LOCK_PATH);
 
@@ -941,7 +941,8 @@ async function poll() {
   const mapRaw     = coreMapRaw || location.replace('social_location_','').split('/').pop() || matchData?.matchMap?.split('/')?.pop() || '';
   const mapDisplay = MAP_NAMES[mapRaw] || mapRaw || '';
   const queueId    = coreMatch?.MatchmakingData?.QueueID || coreMatch?.QueueID || matchData?.queueId || mode || coreMode || '';
-  const isInGame   = !!corePlayer?.MatchID || !!(mapRaw && mapRaw !== 'Range' && mapRaw !== '');
+  const isShootingRange = /shootingrange/i.test(coreModeId) || mapRaw === 'Range' || /range/i.test(location);
+  const isInGame   = !isShootingRange && (!!corePlayer?.MatchID || !!(mapRaw && mapRaw !== 'Range' && mapRaw !== ''));
 
   if (!isInGame) {
     missedPolls = (missedPolls || 0) + 1;
@@ -1402,7 +1403,6 @@ async function markSessionInactiveAndExit(signal) {
     });
   }
   await lolWatcher.markInactive();
-  await lolWatcher.markClientOffline();
   releaseOwnedInstanceLock();
   process.exit(0);
 }
