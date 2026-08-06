@@ -442,7 +442,7 @@ async function notifyLolGameEnd(session) {
     }
   }
 
-  const dpmUrl = dpmLolUrl(result.region, session.playerName, matchId);
+  const dpmUrl = dpmLolUrl(session.playerName, matchId);
   const linkRow = dpmUrl
     ? new ActionRowBuilder().addComponents(
       new ButtonBuilder().setLabel('🔎 Voir sur dpm.lol').setStyle(ButtonStyle.Link).setURL(dpmUrl),
@@ -552,21 +552,11 @@ function porofessorUrl(region, playerName) {
   return `https://porofessor.gg/live/${region}/${encodeURIComponent(gameName)}-${encodeURIComponent(tagLine)}`;
 }
 
-// Correspondance région courte (renvoyée par le client Riot) -> plateforme
-// Riot officielle, utilisée dans le préfixe des ID de partie LoL.
-const LOL_PLATFORM_IDS = {
-  euw: 'EUW1', na: 'NA1', eune: 'EUN1', kr: 'KR', jp: 'JP1', br: 'BR1',
-  lan: 'LA1', las: 'LA2', oce: 'OC1', tr: 'TR1', ru: 'RU',
-  ph: 'PH2', sg: 'SG2', th: 'TH2', tw: 'TW2', vn: 'VN2',
-};
-
-function dpmLolUrl(region, playerName, matchId) {
-  if (!region || !playerName || !matchId) return null;
+function dpmLolUrl(playerName, matchId) {
+  if (!playerName || !matchId) return null;
   const [gameName, tagLine] = playerName.split('#');
   if (!gameName || !tagLine) return null;
-  const platform = LOL_PLATFORM_IDS[String(region).toLowerCase()];
-  if (!platform) return null;
-  return `https://dpm.lol/${region}/${encodeURIComponent(gameName)}-${encodeURIComponent(tagLine)}/${platform}_${matchId}`;
+  return `https://dpm.lol/${encodeURIComponent(gameName)}-${encodeURIComponent(tagLine)}?match=${encodeURIComponent(matchId)}`;
 }
 
 function buildBettingComponents(key, round, viewUrl) {
