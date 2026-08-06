@@ -246,86 +246,113 @@ function formatDuration(totalSeconds) {
 
 const RESULT_COLORS = { win: 0x3fcf6f, loss: 0xff5f6d };
 
-async function notifyValorantGameEnd(session) {
-  const matchId = session.matchId || session.result?.matchId;
-  const outcome = session.result?.result === 'win' ? 'win' : session.result?.result === 'loss' ? 'lose' : null;
+// Index = tier numérique Riot (0-2 non classé, 3-26 Fer→Immortel par
+// divisions de 3, 27 Radiant) — même échelle que côté site (js/interactions.js).
+const VALORANT_TIER_NAMES = [
+  'Non classé', 'Non classé', 'Non classé',
+  'Fer 1', 'Fer 2', 'Fer 3',
+  'Bronze 1', 'Bronze 2', 'Bronze 3',
+  'Argent 1', 'Argent 2', 'Argent 3',
+  'Or 1', 'Or 2', 'Or 3',
+  'Platine 1', 'Platine 2', 'Platine 3',
+  'Diamant 1', 'Diamant 2', 'Diamant 3',
+  'Ascendant 1', 'Ascendant 2', 'Ascendant 3',
+  'Immortel 1', 'Immortel 2', 'Immortel 3',
+  'Radiant',
+];
+
+function formatValorantTier(tier) {
+  if (tier == null) return null;
+  return VALORANT_TIER_NAMES[tier] || null;
+}
+
+// Regroupe les boutons-liens en rangées de 5 (limite Discord par ActionRow).
+function chunkButtonRows(buttons, size = 5) {
+  const rows = [];
+  for (let i = 0; i < buttons.length; i += size) {
+    rows.push(new ActionRowBuilder().addComponents(buttons.slice(i, i + size)));
+  }
+  return rows;
+}
+
+// sessions : tableau de sessions terminées (1 par joueur OLYCITY). Quand
+// plusieurs joueurs terminent la même game (même matchId), scheduleGroupedEnd
+// les regroupe en amont pour qu'un seul message, avec un embed par joueur,
+// parte par salon au lieu d'un message séparé pour chacun.
+async function notifyValorantGameEnd(sessions) {
+  const withResult = sessions.filter(s => s.result);
+  const primary = withResult[0] || sessions[0];
+  const matchId = primary.matchId || primary.result?.matchId;
+  const outcome = primary.result?.result === 'win' ? 'win' : primary.result?.result === 'loss' ? 'lose' : null;
   const betting = await resolveBetting('valorant', matchId, outcome).catch(error => {
     console.error('[betting:resolve]', error.message);
     return null;
   });
 
-  const member = memberByRiotId(session.playerName);
-  if (!member) return;
-  const result = session.result;
-  const trackers = trackersForPlayerGame(member.name, 'valorant');
-  if (trackers.length === 0) return;
+  const players = sessions
+    .map(session => ({ session, member: memberByRiotId(session.playerName) }))
+    .filter(({ member }) => member && trackersForPlayerGame(member.name, 'valorant').length > 0);
+  if (players.length === 0) return;
 
-  const playReward = await creditPlayReward(member, outcome).catch(error => {
-    console.error('[play-reward]', error.message);
-    return null;
-  });
+  const channelIds = new Set();
+  players.forEach(({ member }) => trackersForPlayerGame(member.name, 'valorant').forEach(t => channelIds.add(t.channelId)));
 
-  if (result?.rr?.delta) {
-    recordRankGain('valorant', session.playerName, member.name, result.rr.delta)
-      .catch(error => console.error('[rank-tracking]', error.message));
-  }
+  const withResultPlayers = players.filter(p => p.session.result);
 
-  // Pas de stats de fin de partie dispo (rare) — on annonce quand même le
-  // remboursement des paris s'il y en avait, mais pas de résumé de game.
-  // La même game pouvant être trackée dans plusieurs salons, chacun n'affiche
-  // que son propre pool de paris (betting est indexé par channelId).
-  if (!result) {
-    await Promise.all(trackers.map(async tracker => {
-      const bettingSection = formatBettingSection(betting?.[tracker.channelId]);
+  // Pas de stats de fin de partie dispo pour personne (rare) — on annonce
+  // quand même le remboursement des paris s'il y en avait, mais pas de résumé
+  // de game. La même game pouvant être trackée dans plusieurs salons, chacun
+  // n'affiche que son propre pool de paris (betting est indexé par channelId).
+  if (withResultPlayers.length === 0) {
+    await Promise.all([...channelIds].map(async channelId => {
+      const bettingSection = formatBettingSection(betting?.[channelId]);
       if (!bettingSection) return;
       try {
-        const channel = await client.channels.fetch(tracker.channelId);
+        const channel = await client.channels.fetch(channelId);
         await channel.send(bettingSection);
       } catch (error) {
-        console.error(`[notify:valorant-end] échec envoi salon ${tracker.channelId} —`, error.message);
+        console.error(`[notify:valorant-end] échec envoi salon ${channelId} —`, error.message);
       }
     }));
     return;
   }
 
+  // Récompense/rang/awards calculés une seule fois par joueur (pas par salon),
+  // pour ne pas les créditer en double si un joueur est tracké dans 2 salons.
+  const playerData = await Promise.all(withResultPlayers.map(async ({ session, member }) => {
+    const result = session.result;
+    const localOutcome = result.result === 'win' ? 'win' : result.result === 'loss' ? 'lose' : null;
+    const playReward = await creditPlayReward(member, localOutcome).catch(error => {
+      console.error('[play-reward]', error.message);
+      return null;
+    });
+
+    if (result?.rr?.delta) {
+      recordRankGain('valorant', session.playerName, member.name, result.rr.delta)
+        .catch(error => console.error('[rank-tracking]', error.message));
+    }
+
+    const kills = result.kills ?? 0;
+    const deaths = result.deaths ?? 0;
+    const isDeathmatch = /deathmatch/i.test(result.mode || '');
+    const awardLines = [];
+    if (isDeathmatch) {
+      // Le compte de kills/morts en deathmatch n'a rien à voir avec un 5v5
+      // classique (30 kills y est courant) — pas de masterchiasse/thirty bomb
+      // ici, juste un compteur de participation.
+      recordAward('deathmatch', member.id, member.name).catch(error => console.error('[valorant-awards]', error.message));
+    } else if (deaths > 0 && kills < deaths * 0.5) {
+      recordAward('masterchiasse', member.id, member.name).catch(error => console.error('[valorant-awards]', error.message));
+      awardLines.push(`😂 Superbe masterchiasse de **${member.name}**`);
+    } else if (kills > 30) {
+      recordAward('thirtyBomb', member.id, member.name).catch(error => console.error('[valorant-awards]', error.message));
+      awardLines.push(`💥 omg thirty bomb de **${member.name}** !!!`);
+    }
+
+    return { session, member, result, playReward, outcome: localOutcome, awardLines };
+  }));
+
   const resultLabels = { win: 'Victoire', loss: 'Défaite', draw: 'Égalité', completed: 'Terminée' };
-  const resultLabel = resultLabels[result.result] || 'Terminée';
-  const resultIcon = result.result === 'win' ? '🏆' : result.result === 'loss' ? '💀' : '🎮';
-  const rrLine = result.rr?.delta != null ? `${result.rr.delta >= 0 ? '+' : ''}${result.rr.delta} RR` : null;
-
-  const summaryLine = [
-    resultIcon,
-    `${result.kills ?? 0}/${result.deaths ?? 0}/${result.assists ?? 0}`,
-    result.acs != null ? `${result.acs} ACS` : null,
-    result.score ? `${result.score.blue ?? 0}-${result.score.red ?? 0}` : null,
-    result.durationSeconds ? formatDuration(result.durationSeconds) : null,
-    resultLabel,
-  ].filter(Boolean).join(' | ');
-
-  const kills = result.kills ?? 0;
-  const deaths = result.deaths ?? 0;
-  const isDeathmatch = /deathmatch/i.test(result.mode || '');
-  const awardLines = [];
-  if (isDeathmatch) {
-    // Le compte de kills/morts en deathmatch n'a rien à voir avec un 5v5
-    // classique (30 kills y est courant) — pas de masterchiasse/thirty bomb
-    // ici, juste un compteur de participation.
-    recordAward('deathmatch', member.id, member.name).catch(error => console.error('[valorant-awards]', error.message));
-  } else if (deaths > 0 && kills < deaths * 0.5) {
-    recordAward('masterchiasse', member.id, member.name).catch(error => console.error('[valorant-awards]', error.message));
-    awardLines.push(`😂 Superbe masterchiasse de **${member.name}**`);
-  } else if (kills > 30) {
-    recordAward('thirtyBomb', member.id, member.name).catch(error => console.error('[valorant-awards]', error.message));
-    awardLines.push(`💥 omg thirty bomb de **${member.name}** !!!`);
-  }
-
-  const rewardLine = formatPlayReward(playReward, outcome);
-  const baseDescriptionParts = [
-    rrLine, '**Résumé de la partie**', summaryLine,
-    awardLines.length ? `\n${awardLines.join('\n')}` : null,
-    rewardLine ? `\n${rewardLine}` : null,
-  ];
-
   const trackerGgUrl = matchId ? `https://tracker.gg/valorant/match/${matchId}` : null;
   const linkRow = trackerGgUrl
     ? new ActionRowBuilder().addComponents(
@@ -333,18 +360,70 @@ async function notifyValorantGameEnd(session) {
     )
     : null;
 
-  await Promise.all(trackers.map(async tracker => {
-    try {
-      const bettingSection = formatBettingSection(betting?.[tracker.channelId]);
+  const stackBanner = playerData.length > 1
+    ? `🔥 **STACK OLYCITY** — ${playerData.length} joueurs dans la même game !\n`
+    : '';
+
+  await Promise.all([...channelIds].map(async channelId => {
+    const channelPlayers = playerData.filter(({ member }) =>
+      trackersForPlayerGame(member.name, 'valorant').some(t => t.channelId === channelId));
+    if (channelPlayers.length === 0) return;
+
+    const playerEmbeds = channelPlayers.map(({ member, result, playReward, outcome: localOutcome, awardLines }) => {
+      const resultLabel = resultLabels[result.result] || 'Terminée';
+      const resultIcon = result.result === 'win' ? '🏆' : result.result === 'loss' ? '💀' : '🎮';
+      const rrLine = result.rr?.delta != null ? `${result.rr.delta >= 0 ? '+' : ''}${result.rr.delta} RR` : null;
+
+      const tierBeforeNum = result.rr?.tierBefore;
+      const tierAfterNum = result.rr?.tier;
+      const tierBeforeLabel = formatValorantTier(tierBeforeNum);
+      const tierAfterLabel = formatValorantTier(tierAfterNum);
+      let rankLine = null;
+      if (tierBeforeLabel && tierAfterLabel) {
+        rankLine = tierBeforeNum === tierAfterNum
+          ? `📊 ${tierAfterLabel}`
+          : `📊 ${tierBeforeLabel} → **${tierAfterLabel}** — Rank ${tierAfterNum > tierBeforeNum ? 'up ⬆️' : 'down ⬇️'} !`;
+      } else if (tierAfterLabel) {
+        rankLine = `📊 ${tierAfterLabel}`;
+      }
+
+      const summaryLine = [
+        resultIcon,
+        `${result.kills ?? 0}/${result.deaths ?? 0}/${result.assists ?? 0}`,
+        result.acs != null ? `${result.acs} ACS` : null,
+        result.hsPercent != null ? `${result.hsPercent}% HS` : null,
+        result.score ? `${result.score.blue ?? 0}-${result.score.red ?? 0}` : null,
+        result.durationSeconds ? formatDuration(result.durationSeconds) : null,
+        resultLabel,
+      ].filter(Boolean).join(' | ');
+
+      const rewardLine = formatPlayReward(playReward, localOutcome);
+      const descriptionParts = [
+        rrLine, rankLine, '**Résumé de la partie**', summaryLine,
+        awardLines.length ? `\n${awardLines.join('\n')}` : null,
+        rewardLine ? `\n${rewardLine}` : null,
+      ];
+
       const embed = new EmbedBuilder()
         .setColor(RESULT_COLORS[result.result] || GAME_META.valorant.color)
         .setAuthor({ name: `${member.name} — ${resultLabel} (${result.map || 'Valorant'})`, iconURL: member.avatar || undefined })
-        .setDescription([...baseDescriptionParts, bettingSection ? `\n${bettingSection}` : null].filter(Boolean).join('\n'))
+        .setDescription(descriptionParts.filter(Boolean).join('\n'))
         .setTimestamp();
-      const channel = await client.channels.fetch(tracker.channelId);
-      await channel.send({ embeds: [embed], components: linkRow ? [linkRow] : [] });
+      if (result.agentIcon) embed.setThumbnail(result.agentIcon);
+      return embed;
+    });
+
+    const bettingSection = formatBettingSection(betting?.[channelId]);
+    const finalEmbeds = playerEmbeds.slice(0, 9);
+    if (bettingSection) {
+      finalEmbeds.push(new EmbedBuilder().setColor(GAME_META.valorant.color).setDescription(bettingSection));
+    }
+
+    try {
+      const channel = await client.channels.fetch(channelId);
+      await channel.send({ content: stackBanner || undefined, embeds: finalEmbeds, components: linkRow ? [linkRow] : [] });
     } catch (error) {
-      console.error(`[notify:valorant-end] échec envoi salon ${tracker.channelId} —`, error.message);
+      console.error(`[notify:valorant-end] échec envoi salon ${channelId} —`, error.message);
     }
   }));
 }
@@ -363,121 +442,169 @@ function formatLolRank(rank) {
   return [tier, division, lp].filter(Boolean).join(' ');
 }
 
-async function notifyLolGameEnd(session) {
-  const matchId = session.matchId || session.result?.matchId;
-  const outcome = session.result?.win === true ? 'win' : session.result?.win === false ? 'lose' : null;
+// sessions : tableau de sessions terminées (1 par joueur OLYCITY) — voir le
+// commentaire équivalent sur notifyValorantGameEnd pour le regroupement.
+async function notifyLolGameEnd(sessions) {
+  const withResult = sessions.filter(s => s.result);
+  const primary = withResult[0] || sessions[0];
+  const matchId = primary.matchId || primary.result?.matchId;
+  const outcome = primary.result?.win === true ? 'win' : primary.result?.win === false ? 'lose' : null;
   const betting = await resolveBetting('lol', matchId, outcome).catch(error => {
     console.error('[betting:resolve]', error.message);
     return null;
   });
 
-  const member = memberByRiotId(session.playerName);
-  if (!member) return;
-  const result = session.result;
-  const trackers = trackersForPlayerGame(member.name, 'lol');
-  if (trackers.length === 0) return;
+  const players = sessions
+    .map(session => ({ session, member: memberByRiotId(session.playerName) }))
+    .filter(({ member }) => member && trackersForPlayerGame(member.name, 'lol').length > 0);
+  if (players.length === 0) return;
 
-  const playReward = await creditPlayReward(member, outcome).catch(error => {
-    console.error('[play-reward]', error.message);
-    return null;
-  });
+  const channelIds = new Set();
+  players.forEach(({ member }) => trackersForPlayerGame(member.name, 'lol').forEach(t => channelIds.add(t.channelId)));
 
-  if (result?.rankBefore?.tier && result?.rankAfter?.tier) {
-    const beforePts = lolRankPoints(result.rankBefore);
-    const afterPts = lolRankPoints(result.rankAfter);
-    if (beforePts != null && afterPts != null) {
-      // queueId 420 = Solo/Duo, 440 = Flex (seules queues classées suivies) —
-      // trackées séparément, la progression des deux n'ayant rien à voir.
-      const queueBucket = result.queueId === 440 ? 'lol-flex' : 'lol-solo';
-      recordRankGain(queueBucket, session.playerName, member.name, afterPts - beforePts)
-        .catch(error => console.error('[rank-tracking]', error.message));
-    }
-  }
+  const withResultPlayers = players.filter(p => p.session.result);
 
-  // Pas de stats de fin de partie dispo (rare) — on annonce quand même le
-  // remboursement des paris s'il y en avait, mais pas de résumé de game.
-  // La même game pouvant être trackée dans plusieurs salons, chacun n'affiche
-  // que son propre pool de paris (betting est indexé par channelId).
-  if (!result) {
-    await Promise.all(trackers.map(async tracker => {
-      const bettingSection = formatBettingSection(betting?.[tracker.channelId]);
+  // Pas de stats de fin de partie dispo pour personne (rare) — on annonce
+  // quand même le remboursement des paris s'il y en avait, mais pas de résumé
+  // de game. La même game pouvant être trackée dans plusieurs salons, chacun
+  // n'affiche que son propre pool de paris (betting est indexé par channelId).
+  if (withResultPlayers.length === 0) {
+    await Promise.all([...channelIds].map(async channelId => {
+      const bettingSection = formatBettingSection(betting?.[channelId]);
       if (!bettingSection) return;
       try {
-        const channel = await client.channels.fetch(tracker.channelId);
+        const channel = await client.channels.fetch(channelId);
         await channel.send(bettingSection);
       } catch (error) {
-        console.error(`[notify:lol-end] échec envoi salon ${tracker.channelId} —`, error.message);
+        console.error(`[notify:lol-end] échec envoi salon ${channelId} —`, error.message);
       }
     }));
     return;
   }
 
-  const win = result.win;
-  const resultLabel = win === true ? 'Victoire' : win === false ? 'Défaite' : 'Terminée';
-  const resultIcon = win === true ? '🏆' : win === false ? '💀' : '🎮';
+  // Récompense/rang/build calculés une seule fois par joueur (pas par salon),
+  // pour ne pas les créditer en double si un joueur est tracké dans 2 salons.
+  const playerData = await Promise.all(withResultPlayers.map(async ({ session, member }) => {
+    const result = session.result;
+    const localOutcome = result.win === true ? 'win' : result.win === false ? 'lose' : null;
+    const playReward = await creditPlayReward(member, localOutcome).catch(error => {
+      console.error('[play-reward]', error.message);
+      return null;
+    });
 
-  const rankBefore = result.rankBefore;
-  const rankAfter = result.rankAfter;
-  let lpLine = null;
-  if (rankBefore?.lp != null && rankAfter?.lp != null && rankBefore.tier === rankAfter.tier && rankBefore.division === rankAfter.division) {
-    const delta = rankAfter.lp - rankBefore.lp;
-    lpLine = `${member.name} a ${delta >= 0 ? 'gagné' : 'perdu'} ${Math.abs(delta)} LP`;
-  }
-  const rankBeforeLabel = formatLolRank(rankBefore);
-  const rankAfterLabel = formatLolRank(rankAfter);
-
-  const title = lpLine
-    ? `${lpLine} (${result.queueDescription || 'LoL'})`
-    : `${member.name} — ${resultLabel} (${result.queueDescription || 'LoL'})`;
-
-  const summaryLine = [
-    resultIcon,
-    `${result.kills ?? 0}/${result.deaths ?? 0}/${result.assists ?? 0}`,
-    result.killParticipation != null ? `${result.killParticipation}% KP` : null,
-    `${result.cs ?? 0} cs`,
-    result.level ? `Niveau ${result.level}` : null,
-    result.durationLabel,
-    resultLabel,
-  ].filter(Boolean).join(' | ');
-
-  const rewardLine = formatPlayReward(playReward, outcome);
-  const baseDescriptionParts = [
-    rankBeforeLabel && rankAfterLabel ? `${rankBeforeLabel} → ${rankAfterLabel}` : null,
-    '**Résumé de la partie**',
-    summaryLine,
-    rewardLine ? `\n${rewardLine}` : null,
-  ];
-
-  const files = [];
-  let hasImage = false;
-  if (result.items?.length) {
-    const buffer = await buildItemsImage(result.items).catch(() => null);
-    if (buffer) {
-      files.push({ attachment: buffer, name: 'build.png' });
-      hasImage = true;
+    if (result?.rankBefore?.tier && result?.rankAfter?.tier) {
+      const beforePts = lolRankPoints(result.rankBefore);
+      const afterPts = lolRankPoints(result.rankAfter);
+      if (beforePts != null && afterPts != null) {
+        // queueId 420 = Solo/Duo, 440 = Flex (seules queues classées suivies) —
+        // trackées séparément, la progression des deux n'ayant rien à voir.
+        const queueBucket = result.queueId === 440 ? 'lol-flex' : 'lol-solo';
+        recordRankGain(queueBucket, session.playerName, member.name, afterPts - beforePts)
+          .catch(error => console.error('[rank-tracking]', error.message));
+      }
     }
-  }
 
-  const dpmUrl = dpmLolUrl(session.playerName, matchId);
-  const linkRow = dpmUrl
-    ? new ActionRowBuilder().addComponents(
-      new ButtonBuilder().setLabel('🔎 Voir sur dpm.lol').setStyle(ButtonStyle.Link).setURL(dpmUrl),
-    )
-    : null;
+    const files = [];
+    let imageName = null;
+    if (result.items?.length) {
+      const buffer = await buildItemsImage(result.items).catch(() => null);
+      if (buffer) {
+        imageName = `build-${member.id}.png`;
+        files.push({ attachment: buffer, name: imageName });
+      }
+    }
 
-  await Promise.all(trackers.map(async tracker => {
-    try {
-      const bettingSection = formatBettingSection(betting?.[tracker.channelId]);
+    return { session, member, result, playReward, outcome: localOutcome, files, imageName };
+  }));
+
+  const stackBanner = playerData.length > 1
+    ? `🔥 **STACK OLYCITY** — ${playerData.length} joueurs dans la même game !\n`
+    : '';
+
+  await Promise.all([...channelIds].map(async channelId => {
+    const channelPlayers = playerData.filter(({ member }) =>
+      trackersForPlayerGame(member.name, 'lol').some(t => t.channelId === channelId));
+    if (channelPlayers.length === 0) return;
+
+    const allFiles = [];
+    const playerEmbeds = channelPlayers.map(({ member, result, playReward, outcome: localOutcome, files, imageName }) => {
+      const win = result.win;
+      const resultLabel = win === true ? 'Victoire' : win === false ? 'Défaite' : 'Terminée';
+      const resultIcon = win === true ? '🏆' : win === false ? '💀' : '🎮';
+
+      const rankBefore = result.rankBefore;
+      const rankAfter = result.rankAfter;
+      const rankBeforeLabel = formatLolRank(rankBefore);
+      const rankAfterLabel = formatLolRank(rankAfter);
+      const rankChanged = rankBefore?.tier && rankAfter?.tier
+        && (rankBefore.tier !== rankAfter.tier || rankBefore.division !== rankAfter.division);
+      let rankLine = null;
+      if (rankBeforeLabel && rankAfterLabel) {
+        if (rankChanged) {
+          const beforePts = lolRankPoints(rankBefore);
+          const afterPts = lolRankPoints(rankAfter);
+          const arrow = afterPts != null && beforePts != null && afterPts > beforePts ? 'up ⬆️' : 'down ⬇️';
+          rankLine = `📊 ${rankBeforeLabel} → **${rankAfterLabel}** — Rank ${arrow} !`;
+        } else {
+          const delta = rankAfter.lp != null && rankBefore.lp != null ? rankAfter.lp - rankBefore.lp : null;
+          rankLine = delta != null ? `📊 ${rankAfterLabel} (${delta >= 0 ? '+' : ''}${delta} LP)` : `📊 ${rankAfterLabel}`;
+        }
+      } else if (rankAfterLabel) {
+        rankLine = `📊 ${rankAfterLabel}`;
+      }
+
+      const title = `${member.name} — ${resultLabel} (${result.queueDescription || 'LoL'})`;
+      const summaryLine = [
+        resultIcon,
+        `${result.kills ?? 0}/${result.deaths ?? 0}/${result.assists ?? 0}`,
+        result.killParticipation != null ? `${result.killParticipation}% KP` : null,
+        `${result.cs ?? 0} cs`,
+        result.level ? `Niveau ${result.level}` : null,
+        result.durationLabel,
+        resultLabel,
+      ].filter(Boolean).join(' | ');
+
+      const rewardLine = formatPlayReward(playReward, localOutcome);
+      const descriptionParts = [
+        rankLine, '**Résumé de la partie**', summaryLine,
+        rewardLine ? `\n${rewardLine}` : null,
+      ];
+
       const embed = new EmbedBuilder()
         .setColor(win === true ? RESULT_COLORS.win : win === false ? RESULT_COLORS.loss : GAME_META.lol.color)
         .setAuthor({ name: title, iconURL: result.champion?.image || member.avatar || undefined })
-        .setDescription([...baseDescriptionParts, bettingSection ? `\n${bettingSection}` : null].filter(Boolean).join('\n'))
+        .setDescription(descriptionParts.filter(Boolean).join('\n'))
         .setTimestamp();
-      if (hasImage) embed.setImage('attachment://build.png');
-      const channel = await client.channels.fetch(tracker.channelId);
-      await channel.send({ embeds: [embed], files, components: linkRow ? [linkRow] : [] });
+      if (imageName) {
+        embed.setImage(`attachment://${imageName}`);
+        allFiles.push(...files);
+      }
+      return embed;
+    });
+
+    const dpmButtons = channelPlayers
+      .map(({ session, member, result }) => {
+        const url = dpmLolUrl(session.playerName, session.matchId || result.matchId || matchId);
+        return url ? new ButtonBuilder().setLabel(`🔎 ${member.name} sur dpm.lol`).setStyle(ButtonStyle.Link).setURL(url) : null;
+      })
+      .filter(Boolean);
+
+    const bettingSection = formatBettingSection(betting?.[channelId]);
+    const finalEmbeds = playerEmbeds.slice(0, 9);
+    if (bettingSection) {
+      finalEmbeds.push(new EmbedBuilder().setColor(GAME_META.lol.color).setDescription(bettingSection));
+    }
+
+    try {
+      const channel = await client.channels.fetch(channelId);
+      await channel.send({
+        content: stackBanner || undefined,
+        embeds: finalEmbeds,
+        files: allFiles,
+        components: chunkButtonRows(dpmButtons),
+      });
     } catch (error) {
-      console.error(`[notify:lol-end] échec envoi salon ${tracker.channelId} —`, error.message);
+      console.error(`[notify:lol-end] échec envoi salon ${channelId} —`, error.message);
     }
   }));
 }
@@ -726,6 +853,40 @@ const SESSION_MISSING_TOLERANCE = 2;
 // temps, on notifie normalement à la place.
 const NO_RESULT_GRACE_MS = 25 * 1000;
 
+// Deux joueurs OLYCITY dans la même game terminent leur poll indépendamment
+// l'un de l'autre (cycles décalés de quelques secondes) — on attend une
+// courte fenêtre après la fin détectée d'un joueur pour laisser le temps aux
+// autres résultats de la même game d'arriver, puis on envoie un seul message
+// groupé (un embed par joueur) au lieu d'un message séparé pour chacun.
+const GROUPED_END_WINDOW_MS = 8 * 1000;
+const pendingGroupedEnds = new Map(); // "game:matchId" -> { sessions: Map(clé session -> session), timer }
+
+function scheduleGroupedEnd(game, sessionKey, session) {
+  const matchId = session?.matchId || session?.result?.matchId;
+  const notify = game === 'lol' ? notifyLolGameEnd : notifyValorantGameEnd;
+
+  // Pas de matchId exploitable (rare) : impossible de regrouper, on notifie ce
+  // joueur seul immédiatement.
+  if (!matchId) {
+    notify([session]).catch(error => console.error(`[notify:${game}-end]`, error.message));
+    return;
+  }
+
+  const groupKey = `${game}:${matchId}`;
+  let pending = pendingGroupedEnds.get(groupKey);
+  if (!pending) {
+    pending = { sessions: new Map(), timer: null };
+    pendingGroupedEnds.set(groupKey, pending);
+  }
+  pending.sessions.set(sessionKey, session);
+  if (pending.timer) clearTimeout(pending.timer);
+  pending.timer = setTimeout(() => {
+    pendingGroupedEnds.delete(groupKey);
+    notify([...pending.sessions.values()]).catch(error => console.error(`[notify:${game}-end]`, error.message));
+  }, GROUPED_END_WINDOW_MS);
+  pending.timer.unref?.();
+}
+
 function watchGameSessions(game, firebasePath) {
   const previousActive = new Map();
   const resultNotified = new Set();
@@ -760,8 +921,7 @@ function watchGameSessions(game, firebasePath) {
             // avec potentiellement plusieurs heures de retard et l'air d'une
             // "nouvelle" fin de partie.
             if (!isFirstSnapshot) {
-              const notifyEnd = game === 'lol' ? notifyLolGameEnd(session) : notifyValorantGameEnd(session);
-              notifyEnd.catch(error => console.error(`[notify:${game}-end]`, error.message));
+              scheduleGroupedEnd(game, key, session);
             }
           }
         } else if (!resultNotified.has(key) && !pendingNoResultTimers.has(key) && !isFirstSnapshot) {
@@ -769,8 +929,7 @@ function watchGameSessions(game, firebasePath) {
             pendingNoResultTimers.delete(key);
             if (resultNotified.has(key)) return; // un résultat est arrivé entre temps
             resultNotified.add(key);
-            const notifyEnd = game === 'lol' ? notifyLolGameEnd(session) : notifyValorantGameEnd(session);
-            notifyEnd.catch(error => console.error(`[notify:${game}-end]`, error.message));
+            scheduleGroupedEnd(game, key, session);
           }, NO_RESULT_GRACE_MS);
           timer.unref?.();
           pendingNoResultTimers.set(key, timer);

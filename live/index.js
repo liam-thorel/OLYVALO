@@ -13,7 +13,7 @@ const { stopLegacyLiveProcesses } = require('./legacy-cleanup.js');
 const { createLolWatcher } = require('./lol-watcher.js');
 
 const FIREBASE_URL = 'https://realtime-database-5bb9f-default-rtdb.europe-west1.firebasedatabase.app';
-const SCRIPT_VERSION = '4.15.14';
+const SCRIPT_VERSION = '4.15.15';
 const INSTANCE_LOCK_PATH = path.join(__dirname, '.olycity-live.lock');
 const LOG_PATH = path.join(__dirname, 'olycity.log');
 const MAX_LOG_BYTES = 5 * 1024 * 1024;
@@ -252,6 +252,7 @@ function reqNoAuth(port, endpoint) {
 
 // Load agent UUIDs + client version at startup
 let AGENT_UUIDS = {};
+let AGENT_ICONS = {};
 let RIOT_CLIENT_VERSION = 'unknown';
 
 https.get('https://valorant-api.com/v1/version', res => {
@@ -275,6 +276,7 @@ https.get('https://valorant-api.com/v1/agents?isPlayableCharacter=true', res => 
       const data = JSON.parse(d);
       data.data?.forEach(a => {
         AGENT_UUIDS[a.uuid.toLowerCase()] = a.displayName;
+        AGENT_ICONS[a.uuid.toLowerCase()] = a.displayIcon || '';
       });
       agentsReady = true;
       console.log(`[init] ✅ ${Object.keys(AGENT_UUIDS).length} agents chargés`);
@@ -785,6 +787,7 @@ async function fetchPostMatchRR(tokens, matchId) {
     after: after ?? null,
     delta: earned ?? (before !== undefined && after !== undefined ? after - before : null),
     tier: match.TierAfterUpdate ?? null,
+    tierBefore: match.TierBeforeUpdate ?? null,
   };
 }
 
@@ -1065,7 +1068,9 @@ async function poll() {
             deaths: self?.stats.deaths ?? null,
             assists: self?.stats.assists ?? null,
             acs: self?.stats.acs ?? null,
+            hsPercent: self?.stats.hsPercent ?? null,
             agent: self?.agent || '',
+            agentIcon: AGENT_ICONS[self?.agentId] || '',
             rr: lastGameInfo.rr ?? null,
             map: lastGameInfo.map,
             mode: lastGameInfo.mode,
