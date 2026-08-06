@@ -41,15 +41,10 @@ const PROFILE_HISTORY_LIMIT = 500;
 
 const RANKED_QUEUE_TYPES = { 420: 'RANKED_SOLO_5x5', 440: 'RANKED_FLEX_SR' };
 
-// Modes volontairement exclus du tracking (pas de notif, pas de pari, pas de
-// stats) : Practice Tool (gameMode dédié, queueId 0 comme les customs) et
-// Co-op vs IA (queueId stable côté Riot, toutes difficultés confondues —
-// 890 observé en jeu réel pour "Intermediate Bots", les autres sont les IDs
-// historiques documentés par Riot pour ce type de queue).
-const BOT_QUEUE_IDS = new Set([800, 810, 820, 830, 840, 850, 890]);
-function isExcludedLolQueue(queueId, gameMode) {
-  if (String(gameMode || '').toUpperCase() === 'PRACTICETOOL') return true;
-  return BOT_QUEUE_IDS.has(Number(queueId));
+// Seules les files classées (Solo/Duo, Flex) sont trackées : pas de notif, de
+// pari ni de stats pour les normales, ARAM, Practice Tool, Co-op vs IA, etc.
+function isRankedLolQueue(queueId) {
+  return Object.prototype.hasOwnProperty.call(RANKED_QUEUE_TYPES, Number(queueId));
 }
 
 const LOCKFILE_PATHS = [
@@ -510,11 +505,12 @@ function createLolWatcher({ putFB, ts, scriptVersion, log = console.log }) {
     const summonerRes = await lcuGet(cachedLock, '/lol-summoner/v1/current-summoner');
     await publishIdentity(summonerRes.data, phase);
 
-    // Practice Tool et Co-op vs IA : présence toujours remontée (publishIdentity
-    // ci-dessus, pour le statut "en ligne" du panel admin), mais aucune session
-    // trackée — pas de notif Discord, pas de pari, pas de stats pour ces modes.
-    if (isExcludedLolQueue(currentQueueId, queue.gameMode)) {
-      if (wasActive) { log(`[${ts()}] 🔵 LoL — passage en Practice Tool/Co-op vs IA, fin de session trackée`); await markInactive(); }
+    // Seules les games classées (Solo/Duo, Flex) sont trackées. La présence
+    // reste remontée normalement (publishIdentity ci-dessus, pour le statut
+    // "en ligne" du panel admin), mais aucune session/notif/pari/stat pour
+    // les normales, ARAM, Practice Tool, Co-op vs IA, etc.
+    if (!isRankedLolQueue(currentQueueId)) {
+      if (wasActive) { log(`[${ts()}] 🔵 LoL — passage en file non classée, fin de session trackée`); await markInactive(); }
       else resetMatchState();
       return;
     }
