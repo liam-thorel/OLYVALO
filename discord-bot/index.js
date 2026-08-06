@@ -61,6 +61,7 @@ process.on('uncaughtException', error => {
   './commands/track-valo-all.js',
   './commands/track.js',
   './commands/untrack.js',
+  './commands/valo-recap.js',
 ].forEach(file => {
   const command = require(file);
   client.commands.set(command.data.name, command);

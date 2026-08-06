@@ -32,6 +32,7 @@ async function valorantHistoryFor(riotIds) {
         kills: self.stats?.kills ?? null,
         deaths: self.stats?.deaths ?? null,
         assists: self.stats?.assists ?? null,
+        hsPercent: self.stats?.hsPercent ?? null,
         map: report.map || '',
         ts: report.ts || report.endTs || 0,
       };
@@ -79,4 +80,22 @@ function killDeathRatio(entries) {
   return totalKills / totalDeaths;
 }
 
-module.exports = { historyFor, winrateFor, mostPlayed, recentForm, killDeathRatio, HISTORY_SAMPLE_SIZE };
+// KDA moyen : moyenne du (kills+assists)/morts de chaque game individuelle
+// (différent du ratio K/D agrégé ci-dessus, qui ignore les assists).
+function averageKDA(entries) {
+  const withStats = entries.filter(e => e.kills != null && e.deaths != null);
+  if (!withStats.length) return null;
+  const total = withStats.reduce((sum, e) => sum + (e.kills + (e.assists || 0)) / Math.max(1, e.deaths), 0);
+  return total / withStats.length;
+}
+
+// % de headshots moyen sur les games où la donnée est disponible.
+function averageHsPercent(entries) {
+  const withHs = entries.filter(e => typeof e.hsPercent === 'number');
+  if (!withHs.length) return null;
+  return withHs.reduce((sum, e) => sum + e.hsPercent, 0) / withHs.length;
+}
+
+module.exports = {
+  historyFor, winrateFor, mostPlayed, recentForm, killDeathRatio, averageKDA, averageHsPercent, HISTORY_SAMPLE_SIZE,
+};

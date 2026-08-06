@@ -13,7 +13,7 @@ const { stopLegacyLiveProcesses } = require('./legacy-cleanup.js');
 const { createLolWatcher } = require('./lol-watcher.js');
 
 const FIREBASE_URL = 'https://realtime-database-5bb9f-default-rtdb.europe-west1.firebasedatabase.app';
-const SCRIPT_VERSION = '4.15.13';
+const SCRIPT_VERSION = '4.15.14';
 const INSTANCE_LOCK_PATH = path.join(__dirname, '.olycity-live.lock');
 const LOG_PATH = path.join(__dirname, 'olycity.log');
 const MAX_LOG_BYTES = 5 * 1024 * 1024;
@@ -684,11 +684,37 @@ async function fetchPlayerNames(tokens, puuids) {
   }
 }
 
+// Le % de headshots n'est pas dans player.stats — il faut le recalculer à
+// partir des dégâts round par round (roundResults[].playerStats[].damage[]).
+function headshotPercentByPuuid(details) {
+  const totals = new Map(); // puuid -> { head, body, leg }
+  (details?.roundResults || []).forEach(round => {
+    (round.playerStats || []).forEach(playerStat => {
+      const puuid = playerStat.subject;
+      if (!puuid) return;
+      const entry = totals.get(puuid) || { head: 0, body: 0, leg: 0 };
+      (playerStat.damage || []).forEach(dmg => {
+        entry.head += dmg.headshots || 0;
+        entry.body += dmg.bodyshots || 0;
+        entry.leg += dmg.legshots || 0;
+      });
+      totals.set(puuid, entry);
+    });
+  });
+  const percents = new Map();
+  totals.forEach((entry, puuid) => {
+    const shots = entry.head + entry.body + entry.leg;
+    percents.set(puuid, shots ? Math.round((entry.head / shots) * 100) : 0);
+  });
+  return percents;
+}
+
 function buildDetailedHistory(snapshot, details, tokens, resolvedNames = {}) {
   if (!details) return snapshot;
 
   const rawPlayers = details.players || [];
   const rawTeams = details.teams || [];
+  const hsPercentByPuuid = headshotPercentByPuuid(details);
   const mode = details.matchInfo?.queueID || details.matchInfo?.queueId || snapshot.mode;
   const isDeathmatch = String(mode || '').toLowerCase().includes('deathmatch');
   const snapshotPlayers = new Map((snapshot.players || [])
@@ -720,6 +746,7 @@ function buildDetailedHistory(snapshot, details, tokens, resolvedNames = {}) {
         score: stats.score || 0,
         roundsPlayed,
         acs: roundsPlayed ? Math.round((stats.score || 0) / roundsPlayed) : 0,
+        hsPercent: hsPercentByPuuid.get(player.subject) ?? null,
       },
     };
   });
