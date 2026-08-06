@@ -363,6 +363,7 @@ function createLolWatcher({ putFB, ts, scriptVersion, log = console.log }) {
         ...stats,
         durationLabel: formatDuration(stats?.gameLengthSeconds),
         champion: currentChampion,
+        queueId: currentQueueId,
         queueDescription: currentQueueDescription,
         items: (stats?.itemIds || []).map(id => items[id]).filter(Boolean),
         rankBefore,
