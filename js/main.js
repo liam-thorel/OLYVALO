@@ -5,17 +5,17 @@
 
 import { valorantApi } from './api.js';
 
-const SITE_VERSION = '20260806-admin-layout';
+const SITE_VERSION = '20260806-no-builder';
 import { syncPlayer as henrikSyncPlayer, syncAllPlayers as henrikSyncAll, persistPlayerStats } from './henrik.js';
-import { rosterHTML, guestCardHTML, mapSectionHTML, stierHTML, agentPageHTML, miniRosterHTML, agentsFiltersHTML, agentsGridHTML, compCompareHTML, compBuilderHTML, savedCompsHTML } from './render.js?v=20260806-admin-accounts';
-import { initTheme, initTilt, initParallax, initSearch, initKeyboard, updateFavCount, initHeroParticles, initWheelLogos, initLivePage, initHistoryPage } from './interactions.js?v=20260806-admin-accounts';
+import { rosterHTML, guestCardHTML, mapSectionHTML, stierHTML, agentPageHTML, miniRosterHTML, agentsFiltersHTML, agentsGridHTML, compCompareHTML } from './render.js?v=20260806-no-builder';
+import { initTheme, initTilt, initParallax, initSearch, initKeyboard, updateFavCount, initHeroParticles, initWheelLogos, initLivePage, initHistoryPage } from './interactions.js?v=20260806-no-builder';
 import { storage } from './storage.js';
 import { avatarLayersHTML } from './avatars.mjs';
 import { initAdminPage } from './admin.mjs?v=20260806-admin-layout';
 import { initBettingPage } from './betting-page.mjs';
 import { getGameMode, initGameMode } from './game-mode.mjs?v=20260806-lol-mode';
 import { initLolHistoryPage, initLolLivePage } from './lol-pages.mjs?v=20260806-lol-mode';
-import { state } from './state.mjs?v=20260806-admin-accounts';
+import { state } from './state.mjs?v=20260806-no-builder';
 export { state };
 
 // ─── STATE ─────────────────────────────────────────
@@ -82,7 +82,8 @@ function setSyncStatus(html, type = 'info') {
 window.OLYCITY = {
 
   nav(page, pushHistory = true) {
-    if (getGameMode() === 'lol' && ['maps', 'agents', 'builder'].includes(page)) page = 'home';
+    if (!['home', 'maps', 'roster', 'agents', 'live', 'history', 'admin', 'betting'].includes(page)) page = 'home';
+    if (getGameMode() === 'lol' && ['maps', 'agents'].includes(page)) page = 'home';
     sessionStorage.setItem('olycity-page', page);
     // Dynamic title
     const titles = {
@@ -90,7 +91,6 @@ window.OLYCITY = {
       maps: 'OLYCITY — Maps & Comps',
       roster: 'OLYCITY — Roster',
       agents: 'OLYCITY — Agents',
-      builder: 'OLYCITY — Comp Builder',
       history: 'OLYCITY — Historique',
       admin: 'OLYCITY — Admin',
       betting: 'OLYCITY — Paris',
@@ -110,10 +110,6 @@ window.OLYCITY = {
     // Show target page
     const pageEl = document.getElementById(`page-${page}`);
     if (pageEl) pageEl.classList.add('active');
-    // Lazy render builder
-    if (page === 'builder') {
-      window.OLYCITY._renderBuilder();
-    }
     if (page === 'live') {
       if (!window._liveCleanup) {
         window._liveCleanup = initLivePage();
@@ -731,19 +727,17 @@ window.OLYCITY = {
         ${profiles.map(p => {
           const agentImg = valorantApi.agentImg(p.mains?.[0]);
           const imgEl = avatarLayersHTML(p.name, p.avatar, agentImg);
-          const savedCount = JSON.parse(localStorage.getItem(`olycity-saved-comps-${p.name}`) || '[]').length;
-          const badge = savedCount > 0 ? `<span style="position:absolute;z-index:4;bottom:4px;right:4px;background:#ff4656;color:#fff;font-family:Tomorrow,sans-serif;font-size:8px;font-weight:700;letter-spacing:1px;padding:2px 5px">${savedCount}</span>` : '';
           const currentProfile = localStorage.getItem('olycity-profile');
           const isActive = window._activeProfiles?.has(p.name) && p.name !== currentProfile;
           const activeLabel = isActive ? `<div style="position:absolute;z-index:4;top:6px;right:6px;width:10px;height:10px;border-radius:50%;background:#3fcf6b;border:2px solid #0a0c10;box-shadow:0 0 6px rgba(63,207,107,.7)"></div>` : '';
           return `<div class="profile-card" onclick="${isActive ? '' : `window.OLYCITY._selectProfile('${p.name}')`}" style="${isActive ? 'opacity:0.5;cursor:not-allowed;filter:grayscale(.3)' : ''}">
-            <div class="profile-avatar" style="position:relative">${imgEl}${badge}</div>
+            <div class="profile-avatar" style="position:relative">${imgEl}</div>
             <div class="profile-name">${p.name}</div>
             <div class="profile-role">${p.tag || p.role || ''}</div>
           </div>`;
         }).join('')}
       </div>
-      <div style="font-family:'Tomorrow',sans-serif;font-size:10px;letter-spacing:2px;text-transform:uppercase;color:rgba(255,255,255,.25)">Ton profil sauvegarde tes comps custom</div>
+      <div style="font-family:'Tomorrow',sans-serif;font-size:10px;letter-spacing:2px;text-transform:uppercase;color:rgba(255,255,255,.25)">Choisis ton profil OLYCITY</div>
     `;
     // Always show (whether freshly created or existing)
     picker.style.display = 'flex';
@@ -886,11 +880,6 @@ function renderAll() {
   // Agents page
   document.getElementById('agents-filters').innerHTML = agentsFiltersHTML();
   document.getElementById('agents-full-grid').innerHTML = agentsGridHTML();
-  // Comp builder — lazy, loaded on first nav to builder page
-  try {
-    const savedBuilder = localStorage.getItem('olycity-builder');
-    if (savedBuilder) state.builderSlots = JSON.parse(savedBuilder);
-  } catch(e) {}
   // S-Tier
   document.getElementById('stier-row').innerHTML = stierHTML();
   // Global notes
@@ -1016,7 +1005,7 @@ async function boot() {
     } else {
       // No state = home or hash-based
       const hash = window.location.hash.replace('#', '');
-      if (hash && ['maps','roster','agents','builder','live','history','admin','betting'].includes(hash)) {
+      if (hash && ['maps','roster','agents','live','history','admin','betting'].includes(hash)) {
         window.OLYCITY.nav(hash, false);
       } else if (!hash || hash === 'home') {
         window.OLYCITY.nav('home', false);
@@ -1040,7 +1029,7 @@ async function boot() {
       window.OLYCITY.nav(s.page, false);
     } else {
       const hash = window.location.hash.replace('#', '');
-      if (['maps','roster','agents','builder','live','history','admin','betting'].includes(hash)) {
+      if (['maps','roster','agents','live','history','admin','betting'].includes(hash)) {
         window.OLYCITY.nav(hash, false);
       } else {
         window.OLYCITY.nav('home', false);
@@ -1052,7 +1041,7 @@ async function boot() {
   });
   // Push initial history state
   const initHash = window.location.hash.replace('#','');
-  const initPage = ['maps','roster','agents','builder','live','history','admin','betting'].includes(initHash) ? initHash : 'home';
+  const initPage = ['maps','roster','agents','live','history','admin','betting'].includes(initHash) ? initHash : 'home';
   if (initPage !== 'home') window.OLYCITY.nav(initPage, false);
   window.history.replaceState({ page: initPage }, '', window.location.href);
   // Hide loading screen

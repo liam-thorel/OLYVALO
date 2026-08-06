@@ -52,7 +52,7 @@ export function setGameMode(mode, { navigate = true } = {}) {
   });
   applyHomeCopy(next);
 
-  const blockedInLol = new Set(['page-maps', 'page-agents', 'page-builder']);
+  const blockedInLol = new Set(['page-maps', 'page-agents']);
   const activePageId = document.querySelector('.spa-page.active')?.id || '';
   if (navigate && next === 'lol' && blockedInLol.has(activePageId)) {
     window.OLYCITY.nav('home');

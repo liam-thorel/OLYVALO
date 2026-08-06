@@ -141,10 +141,6 @@
   .agents-search { margin-left: 0; }
   .agents-full-grid { grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); gap: 8px; }
 
-  /* Builder */
-  .comp-builder-slots { gap: 6px; }
-  .comp-builder-slot { min-width: 80px; }
-  .comp-builder-agents { grid-template-columns: repeat(auto-fill, minmax(60px, 1fr)); gap: 6px; }
 
   /* Lineups */
   .lineup-cards-grid { grid-template-columns: 1fr; }
@@ -173,7 +169,7 @@
   .topbar-tools .search-wrap { display: none; }
 
   .section-inner { padding: 32px 16px; }
-  .roster-page-inner, .agents-page-inner, .builder-page-inner { padding: 32px 16px; }
+  .roster-page-inner, .agents-page-inner { padding: 32px 16px; }
 
   .comp-compare-panel { margin: 8px; }
 
