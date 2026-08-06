@@ -137,16 +137,30 @@ const GAME_META = {
   lol: { label: 'League of Legends', color: 0x0ac8b9, emoji: '🔵' },
 };
 
+const VALORANT_MODE_LABELS_FR = {
+  competitive: 'Compétitif', unrated: 'Non classé', spikerush: 'Spike Rush',
+  deathmatch: 'Deathmatch', swiftplay: 'Swift Play', hurm: 'Team Deathmatch',
+  ggteam: 'Escalade', onefa: 'Réplication', newmap: 'Nouvelle carte',
+};
+
+function formatValorantMode(mode) {
+  return VALORANT_MODE_LABELS_FR[String(mode || '').toLowerCase()] || mode || '—';
+}
+
 function buildValorantPlayerEmbed(member, session) {
   const meta = GAME_META.valorant;
-  return new EmbedBuilder()
+  const embed = new EmbedBuilder()
     .setColor(meta.color)
     .setAuthor({ name: `${member.name} vient de lancer une game ${meta.label}`, iconURL: member.avatar || undefined })
     .setTimestamp(session.ts ? new Date(session.ts) : new Date())
     .addFields(
       { name: 'Map', value: session.mapClean || session.map || '—', inline: true },
-      { name: 'Mode', value: session.phase === 'pregame' ? "Sélection d'agents" : (session.mode || '—'), inline: true },
+      { name: 'Mode', value: formatValorantMode(session.mode), inline: true },
     );
+  if (session.side) {
+    embed.addFields({ name: 'Side', value: session.side === 'ATTAQUE' ? '⚔️ Attaque' : '🛡️ Défense', inline: true });
+  }
+  return embed;
 }
 
 const notifiedValorantMatches = new Set();

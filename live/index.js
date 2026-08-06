@@ -13,7 +13,7 @@ const { stopLegacyLiveProcesses } = require('./legacy-cleanup.js');
 const { createLolWatcher } = require('./lol-watcher.js');
 
 const FIREBASE_URL = 'https://realtime-database-5bb9f-default-rtdb.europe-west1.firebasedatabase.app';
-const SCRIPT_VERSION = '4.15.9';
+const SCRIPT_VERSION = '4.15.10';
 const INSTANCE_LOCK_PATH = path.join(__dirname, '.olycity-live.lock');
 const LOG_PATH = path.join(__dirname, 'olycity.log');
 const MAX_LOG_BYTES = 5 * 1024 * 1024;
@@ -817,7 +817,7 @@ async function poll() {
         await putFB(`live/sessions/${stableSessionKey}`, {
           active: true, ts: Date.now(),
           map: state.map, mapClean: state.mapClean, mapInternal: state.map,
-          mode: 'agent-select', phase: 'pregame', side: state.side,
+          mode: state.mode || 'competitive', phase: 'pregame', side: state.side,
           matchId: state.matchId, playerName: observedPlayerName, players: [], activePlayer: {},
           rank: rankMap[authTokens?.puuid] || null,
           scriptVersion: SCRIPT_VERSION,
