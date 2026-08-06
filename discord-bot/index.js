@@ -892,6 +892,16 @@ function watchGameSessions(game, firebasePath) {
   const resultNotified = new Set();
   const missingSince = new Map(); // clé -> nb de snapshots consécutifs sans cette clé
   const pendingNoResultTimers = new Map(); // clé -> timer d'attente du résultat
+  // Comme pour les fins de partie, deux joueurs OLYCITY dans la même game
+  // publient leur session Firebase à des cycles de poll indépendants (leurs
+  // scripts locaux respectifs) — au moment exact où le premier passe actif,
+  // le second peut ne pas encore être présent dans le snapshot. On attend
+  // une courte fenêtre avant d'envoyer la notif de départ, en relisant le
+  // DERNIER snapshot reçu (pas celui capturé au moment de la programmation)
+  // pour laisser une chance aux coéquipiers d'apparaître entre-temps.
+  const GROUPED_START_WINDOW_MS = 10 * 1000;
+  const pendingStartTimers = new Map(); // matchId -> timer
+  let latestSnapshot = null;
   let isFirstSnapshot = true;
 
   const clearPendingTimer = key => {
@@ -899,7 +909,27 @@ function watchGameSessions(game, firebasePath) {
     if (timer) { clearTimeout(timer); pendingNoResultTimers.delete(key); }
   };
 
+  const scheduleGroupedStart = session => {
+    const matchId = session.matchId;
+    // Pas de matchId exploitable (rare) : impossible de regrouper, on notifie
+    // tout de suite avec ce qu'on a.
+    if (!matchId) {
+      const notifyStart = game === 'lol' ? notifyLolGameStart(session, latestSnapshot) : notifyValorantGameStart(session, latestSnapshot);
+      notifyStart.catch(error => console.error(`[notify:${game}]`, error.message));
+      return;
+    }
+    if (pendingStartTimers.has(matchId)) return; // déjà programmé pour cette game
+    const timer = setTimeout(() => {
+      pendingStartTimers.delete(matchId);
+      const notifyStart = game === 'lol' ? notifyLolGameStart(session, latestSnapshot) : notifyValorantGameStart(session, latestSnapshot);
+      notifyStart.catch(error => console.error(`[notify:${game}]`, error.message));
+    }, GROUPED_START_WINDOW_MS);
+    timer.unref?.();
+    pendingStartTimers.set(matchId, timer);
+  };
+
   watchNode(firebasePath, snapshot => {
+    latestSnapshot = snapshot;
     const entries = Object.entries(snapshot || {});
     const seenKeys = new Set();
 
@@ -947,8 +977,7 @@ function watchGameSessions(game, firebasePath) {
       if (!playerName) continue; // identité pas encore connue, on retentera au prochain événement
 
       previousActive.set(key, true);
-      const notifyStart = game === 'lol' ? notifyLolGameStart(session, snapshot) : notifyValorantGameStart(session, snapshot);
-      notifyStart.catch(error => console.error(`[notify:${game}]`, error.message));
+      scheduleGroupedStart(session);
     }
 
     for (const key of previousActive.keys()) {
