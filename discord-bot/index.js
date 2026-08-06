@@ -15,6 +15,7 @@ const {
 const { startWeeklyScheduler } = require('./weekly.js');
 const { startDailyRecapScheduler } = require('./daily-recap.js');
 const { startLpRrRecapScheduler } = require('./lp-rr-recap.js');
+const { startValoDailyRecapScheduler } = require('./valo-daily-recap.js');
 const { rewardForGamePlayed } = require('./wallet.js');
 const { recordRankGain, lolRankPoints } = require('./rank-tracking.js');
 const { recordAward } = require('./valorant-awards.js');
@@ -817,6 +818,7 @@ client.once('ready', async () => {
   startWeeklyScheduler(client);
   startDailyRecapScheduler(client);
   startLpRrRecapScheduler(client);
+  startValoDailyRecapScheduler(client);
   console.log('👂 Écoute des sessions Valorant et LoL en cours...');
 });
 

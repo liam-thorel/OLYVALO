@@ -216,6 +216,9 @@ function render() {
         <p class="admin-dim" style="margin-top:14px">Récap des LP/RR gagnés ou perdus, par personne et par compte — envoyé à 7h15.</p>
         <button class="admin-btn admin-btn-primary" id="admin-trigger-lp-rr-recap-btn">📈 Déclencher le récap LP/RR maintenant (test)</button>
         <span class="admin-dim" id="admin-trigger-lp-rr-recap-status"></span>
+        <p class="admin-dim" style="margin-top:14px">Récap Valorant du roster (winrate, KDA moyen, % headshots) — envoyé à 7h30.</p>
+        <button class="admin-btn admin-btn-primary" id="admin-trigger-valo-recap-btn">🔴 Déclencher le récap Valorant maintenant (test)</button>
+        <span class="admin-dim" id="admin-trigger-valo-recap-status"></span>
       </section>
 
       <section class="admin-section">
@@ -258,6 +261,16 @@ function wireEvents(root) {
     const status = root.querySelector('#admin-trigger-lp-rr-recap-status');
     try {
       await fbPut('adminActions/lpRrRecapTrigger', { ts: Date.now() });
+      if (status) status.textContent = '✅ Déclenché — vérifie les salons Discord trackés dans quelques secondes.';
+    } catch (error) {
+      if (status) status.textContent = `❌ Échec : ${error.message}`;
+    }
+  });
+
+  root.querySelector('#admin-trigger-valo-recap-btn')?.addEventListener('click', async () => {
+    const status = root.querySelector('#admin-trigger-valo-recap-status');
+    try {
+      await fbPut('adminActions/valoRecapTrigger', { ts: Date.now() });
       if (status) status.textContent = '✅ Déclenché — vérifie les salons Discord trackés dans quelques secondes.';
     } catch (error) {
       if (status) status.textContent = `❌ Échec : ${error.message}`;
