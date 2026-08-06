@@ -134,11 +134,6 @@
   color:var(--red); letter-spacing:.5px; text-align:right;
 }
 
-/* BUILDER PAGE */
-.builder-page-inner{
-  max-width:1600px; margin:0 auto; padding:48px 32px;
-}
-
 /* MAP SECTION TABS (Comps / Strats & Éco / Lineups) */
 .map-section-tabs{
   display:flex; gap:0; margin-bottom:0;

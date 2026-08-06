@@ -24,6 +24,7 @@ const https = require('https');
 const fs = require('fs');
 const path = require('path');
 const { execFileSync } = require('child_process');
+const { historyGames, soloRankFromStats, summarizeSoloQueue } = require('./lol-profile-utils');
 
 const HEARTBEAT_MS = 20000;
 // Phases actives d'une game : GameStart = chargement, InProgress = en jeu, Reconnect = reco après un crash.
@@ -34,6 +35,9 @@ const POST_GAME_TIMEOUT_MS = 45000;
 // Tolérance avant de considérer le client/la game injoignable — un poll raté isolé
 // (timeout réseau, LCU momentanément occupé) ne doit pas déclencher une fausse fin de game.
 const MAX_MISSED_POLLS = 3;
+const PROFILE_REFRESH_MS = 15 * 60 * 1000;
+const PROFILE_HISTORY_PAGE_SIZE = 100;
+const PROFILE_HISTORY_LIMIT = 500;
 
 const RANKED_QUEUE_TYPES = { 420: 'RANKED_SOLO_5x5', 440: 'RANKED_FLEX_SR' };
 
@@ -208,7 +212,33 @@ async function fetchRank(lock, queueId) {
   if (!res.ok) return null;
   const entry = (res.data?.queues || []).find(q => q.queueType === queueType);
   if (!entry) return null;
-  return { tier: entry.tier || '', division: entry.division || '', lp: entry.leaguePoints ?? null };
+  const wins = Number(entry.wins ?? entry.winCount ?? 0);
+  const losses = Number(entry.losses ?? entry.lossCount ?? 0);
+  const games = wins + losses;
+  return {
+    tier: entry.tier || '', division: entry.division || '', lp: entry.leaguePoints ?? null,
+    wins, losses, games, winRate: games ? Math.round((wins / games) * 100) : 0,
+  };
+}
+
+async function fetchSoloQueueProfile(lock, summoner) {
+  const ranked = await lcuGet(lock, '/lol-ranked/v1/current-ranked-stats');
+  const rank = ranked.ok ? soloRankFromStats(ranked.data) : null;
+  const collected = [];
+  const seasonStart = new Date(new Date().getFullYear(), 0, 1).getTime();
+  for (let begin = 0; begin < PROFILE_HISTORY_LIMIT; begin += PROFILE_HISTORY_PAGE_SIZE) {
+    const end = begin + PROFILE_HISTORY_PAGE_SIZE - 1;
+    const response = await lcuGet(lock, `/lol-match-history/v1/products/lol/current-summoner/matches?begIndex=${begin}&endIndex=${end}`);
+    if (!response.ok) break;
+    const batch = historyGames(response.data);
+    if (!batch.length) break;
+    collected.push(...batch);
+    const oldest = Math.min(...batch.map(game => Number(game?.gameCreation ?? game?.gameCreationDate ?? game?.gameStartTimestamp ?? Date.now())));
+    if (batch.length < PROFILE_HISTORY_PAGE_SIZE || oldest < seasonStart) break;
+  }
+  const champions = await ensureChampionData();
+  const soloQueue = summarizeSoloQueue(collected, summoner, champions, seasonStart);
+  return { rank, soloQueue, topChampions: soloQueue.topChampions };
 }
 
 // Extraction défensive du résumé de fin de game — le format exact de
@@ -275,6 +305,8 @@ function createLolWatcher({ putFB, ts, scriptVersion, log = console.log }) {
   let identityKey = '';
   let identitySnapshot = null;
   let identityPhase = '';
+  let profileHeartbeat = 0;
+  let profileIdentityKey = '';
 
   function resetMatchState() {
     wasActive = false;
@@ -344,6 +376,19 @@ function createLolWatcher({ putFB, ts, scriptVersion, log = console.log }) {
       lastSeen: now,
       scriptVersion,
     });
+    if (profileIdentityKey !== key || now - profileHeartbeat >= PROFILE_REFRESH_MS) {
+      const profile = await fetchSoloQueueProfile(cachedLock, summoner);
+      profileIdentityKey = key;
+      profileHeartbeat = now;
+      await putFB(`live/lolProfiles/${key}`, {
+        ...identitySnapshot,
+        rank: profile.rank,
+        soloQueue: profile.soloQueue,
+        topChampions: profile.topChampions,
+        updatedAt: now,
+        scriptVersion,
+      });
+    }
   }
 
   async function markIdentityOffline() {
@@ -397,6 +442,7 @@ function createLolWatcher({ putFB, ts, scriptVersion, log = console.log }) {
         items: (stats?.itemIds || []).map(id => items[id]).filter(Boolean),
         rankBefore,
         rankAfter,
+        position: champSelectPosition || '',
       };
       return true;
     }

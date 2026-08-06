@@ -1,8 +1,9 @@
 {
-  "version": "4.15.3",
+  "version": "4.15.4",
   "files": [
     "index.js",
     "lol-watcher.js",
+    "lol-profile-utils.js",
     "rank-utils.js",
     "server-utils.js",
     "pregame-utils.js",

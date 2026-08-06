@@ -12,11 +12,11 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Tomorrow:wght@400;500;600;700&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="./css/tokens.css?v=20260720-avatars">
-  <link rel="stylesheet" href="./css/layout.css?v=20260728-roster-fallback">
-  <link rel="stylesheet" href="./css/components.css?v=20260720-avatars">
+  <link rel="stylesheet" href="./css/layout.css?v=20260806-no-builder">
+  <link rel="stylesheet" href="./css/components.css?v=20260806-no-builder">
   <link rel="stylesheet" href="./css/agent-page.css?v=20260720-avatars">
-  <link rel="stylesheet" href="./css/responsive.css?v=20260724-live-414">
-  <link rel="stylesheet" href="./css/lol-mode.css?v=20260806-lol-mode">
+  <link rel="stylesheet" href="./css/responsive.css?v=20260806-no-builder">
+  <link rel="stylesheet" href="./css/lol-mode.css?v=20260806-lol-roster-compact">
 </head>
 <body>
 
@@ -73,7 +73,7 @@
     <div id="profile-grid" style="display:flex;gap:20px;flex-wrap:wrap;justify-content:center;max-width:800px"></div>
     <div style="font-family:'Tomorrow',sans-serif;font-size:10px;letter-spacing:2px;
       text-transform:uppercase;color:rgba(255,255,255,.25)">
-      Ton profil sauvegarde tes comps custom
+      Choisis ton profil OLYCITY
     </div>
   </div>
 
@@ -148,7 +148,7 @@
         <button class="page-nav-btn" data-page="roster" onclick="window.OLYCITY?.nav('roster')">
           <span class="page-nav-icon">◉</span> Roster
         </button>
-        <button class="page-nav-btn" data-page="agents" data-valorant-only onclick="window.OLYCITY?.nav('agents')">
+        <button class="page-nav-btn" data-page="agents" data-valorant-only onclick="window.OLYCITY?.nav('agents')" hidden aria-hidden="true">
           <span class="page-nav-icon">◈</span> Agents
         </button>
         <button class="page-nav-btn" data-page="live" onclick="window.OLYCITY?.nav('live')" style="position:relative">
@@ -160,9 +160,6 @@
         </button>
         <button class="page-nav-btn" data-page="betting" onclick="window.OLYCITY?.nav('betting')">
           <span class="page-nav-icon">🎲</span> Paris
-        </button>
-        <button class="page-nav-btn" data-page="builder" data-valorant-only onclick="window.OLYCITY?.nav('builder')">
-          <span class="page-nav-icon">⊕</span> Builder
         </button>
       </div>
 
@@ -241,7 +238,8 @@
             Voir tout →
           </button>
         </div>
-        <div class="mini-roster" id="mini-roster"></div>
+        <div class="mini-roster" id="mini-roster" data-game-panel="valorant"></div>
+        <div class="lol-home-ranks" id="lol-home-ranks" data-game-panel="lol"></div>
       </div>
     </section>
 
@@ -258,7 +256,7 @@
   <!-- ═══════════ PAGE ROSTER ═══════════ -->
   <div id="page-roster" class="spa-page">
     <div class="roster-page-inner">
-      <div class="roster-header">
+      <div class="roster-header" data-game-panel="valorant">
         <span class="roster-eyebrow">Le Roster</span>
         <h2 class="roster-title">Les joueurs OLYCITY</h2>
         <span class="roster-sub">Stats live · HenrikDev API · Acte en cours</span>
@@ -266,19 +264,14 @@
           <span class="sync-spin">↻</span> Sync tout
         </button>
       </div>
-      <div id="sync-status"></div>
-      <div class="roster-grid" id="roster-grid"></div>
-    </div>
-  </div>
-
-  <!-- BUILDER COMPARE PICKER -->
-  <div id="builder-compare-modal" style="display:none;position:fixed;inset:0;z-index:400;background:rgba(6,8,12,.88);backdrop-filter:blur(10px)" onclick="if(event.target===this)this.style.display='none'">
-    <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:min(92vw,600px);background:var(--surf);border:1px solid var(--border2)">
-      <div style="display:flex;align-items:center;justify-content:space-between;padding:16px 24px;border-bottom:1px solid var(--border);background:var(--gold-low)">
-        <span style="font-family:Tomorrow,sans-serif;font-size:12px;font-weight:700;letter-spacing:3px;text-transform:uppercase;color:var(--gold)">⇄ Choisir une comp à comparer</span>
-        <button onclick="document.getElementById('builder-compare-modal').style.display='none'" style="background:transparent;border:1px solid var(--border2);color:var(--muted);cursor:pointer;padding:5px 12px;font-family:Tomorrow,sans-serif;font-size:10px;letter-spacing:1px">✕</button>
+      <div id="sync-status" data-game-panel="valorant"></div>
+      <div class="roster-grid" id="roster-grid" data-game-panel="valorant"></div>
+      <div class="roster-header lol-roster-header" data-game-panel="lol">
+        <span class="roster-eyebrow">Solo Queue · Saison 2026</span>
+        <h2 class="roster-title">Le roster League</h2>
+        <span class="roster-sub">Ranks · Rôle principal · Top 3 champions SoloQ</span>
       </div>
-      <div id="builder-compare-list" style="padding:20px;max-height:60vh;overflow-y:auto;display:flex;flex-direction:column;gap:8px"></div>
+      <div class="lol-roster-grid" id="lol-roster-grid" data-game-panel="lol"></div>
     </div>
   </div>
 
@@ -352,8 +345,8 @@
           <span id="live-diagnostic-detail">Synchronisation des scripts en cours</span>
         </div>
         <span class="live-diagnostic-version" id="live-diagnostic-version">—</span>
-        <a href="https://github.com/liam-thorel/OLYVALO/releases/download/v4.15.1/OLYCITY-Live-v4.15.1.zip" download class="live-download-link">
-          ↓ Télécharger v4.15.1 autonome
+        <a href="https://github.com/liam-thorel/OLYVALO/releases/download/v4.15.2/OLYCITY-Live-v4.15.2.zip" download class="live-download-link">
+          ↓ Télécharger v4.15.2 autonome
         </a>
         <div class="live-client-list" id="live-client-list"></div>
       </div>
@@ -398,18 +391,6 @@
     <div id="admin-content"></div>
   </div>
 
-  <!-- ═══════════ PAGE BUILDER ═══════════ -->
-  <div id="page-builder" class="spa-page">
-    <div class="builder-page-inner">
-      <div class="roster-header">
-        <span class="roster-eyebrow">Créer</span>
-        <h2 class="roster-title">Comp Builder</h2>
-        <span class="roster-sub">Compose ta propre comp · Analyse l'agility</span>
-      </div>
-      <div id="comp-builder-wrap"></div>
-    </div>
-  </div>
-
   <!-- FOOTER -->
   <footer class="footer">
     <div class="footer-inner">
@@ -428,6 +409,6 @@
   <script type="module" src="./js/firebase-draw.js?v=20260720-avatars"></script>
   <!-- Présence Firebase -->
   <script src="./js/presence.js?v=20260720-avatars"></script>
-  <script type="module" src="./js/main.js?v=20260806-admin-layout"></script>
+  <script type="module" src="./js/main.js?v=20260806-lol-roster-logan"></script>
 </body>
 </html>
