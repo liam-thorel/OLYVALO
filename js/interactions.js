@@ -5,7 +5,7 @@
 
 import { storage } from './storage.js';
 import { valorantApi } from './api.js';
-import { state } from './main.js';
+import { state } from './state.mjs?v=20260806-admin-accounts';
 import {
   groupLiveSessions,
   mergeSelectedSessionData,
@@ -219,6 +219,7 @@ export function initHeroParticles() {
   const speed = 1.4;
 
   const draw = () => {
+    const leagueMode = document.documentElement.dataset.game === 'lol';
     t += 0.012;
     ctx.clearRect(0, 0, W, H);
 
@@ -241,7 +242,9 @@ export function initHeroParticles() {
       ctx.beginPath();
       ctx.moveTo(points[i - 1].x, points[i - 1].y);
       ctx.lineTo(points[i].x, points[i].y);
-      ctx.strokeStyle = `rgba(255,${Math.floor(40 + progress * 30)},${Math.floor(60 + progress * 20)},${alpha})`;
+      ctx.strokeStyle = leagueMode
+        ? `rgba(201,${Math.floor(125 + progress * 30)},${Math.floor(40 + progress * 22)},${alpha})`
+        : `rgba(255,${Math.floor(40 + progress * 30)},${Math.floor(60 + progress * 20)},${alpha})`;
       ctx.lineWidth = width;
       ctx.lineCap = 'round';
       ctx.stroke();
@@ -249,8 +252,8 @@ export function initHeroParticles() {
 
     // Glowing head dot
     const grd = ctx.createRadialGradient(hx, hy, 0, hx, hy, 18);
-    grd.addColorStop(0, 'rgba(255,80,70,0.45)');
-    grd.addColorStop(1, 'rgba(255,50,60,0)');
+    grd.addColorStop(0, leagueMode ? 'rgba(201,155,63,0.45)' : 'rgba(255,80,70,0.45)');
+    grd.addColorStop(1, leagueMode ? 'rgba(25,120,170,0)' : 'rgba(255,50,60,0)');
     ctx.beginPath();
     ctx.arc(hx, hy, 18, 0, Math.PI * 2);
     ctx.fillStyle = grd;
@@ -259,7 +262,7 @@ export function initHeroParticles() {
     // Bright head core
     ctx.beginPath();
     ctx.arc(hx, hy, 2.5, 0, Math.PI * 2);
-    ctx.fillStyle = 'rgba(255,120,100,0.9)';
+    ctx.fillStyle = leagueMode ? 'rgba(238,205,119,0.95)' : 'rgba(255,120,100,0.9)';
     ctx.fill();
 
     raf = requestAnimationFrame(draw);
@@ -275,19 +278,23 @@ function drawWheel(canvas, size, speed, alpha) {
   const ctx = canvas.getContext('2d');
   const cx = size * 0.5, cy = size * 0.5;
   const R = size * 0.42; // outer radius
-  const gondolaColors = ['#ff4656','#a87fff','#3fcfcf','#ff4656','#a87fff','#3fcfcf','#ff4656','#a87fff'];
   let angle = 0, raf;
 
   const draw = () => {
+    const leagueMode = document.documentElement.dataset.game === 'lol';
+    const primary = leagueMode ? '#c99b3f' : '#ff4656';
+    const secondary = leagueMode ? '#1682b8' : '#a87fff';
+    const tertiary = leagueMode ? '#62b9d4' : '#3fcfcf';
+    const gondolaColors = [primary,secondary,tertiary,primary,secondary,tertiary,primary,secondary];
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     ctx.save();
     ctx.globalAlpha = alpha;
 
     // Supports legs (static)
-    ctx.strokeStyle = '#ff4656'; ctx.lineWidth = size * 0.025;
+    ctx.strokeStyle = primary; ctx.lineWidth = size * 0.025;
     ctx.beginPath(); ctx.moveTo(cx, cy + R * 0.95); ctx.lineTo(cx - R * 0.45, canvas.height - 2); ctx.stroke();
     ctx.beginPath(); ctx.moveTo(cx, cy + R * 0.95); ctx.lineTo(cx + R * 0.45, canvas.height - 2); ctx.stroke();
-    ctx.strokeStyle = '#a87fff'; ctx.lineWidth = size * 0.018;
+    ctx.strokeStyle = secondary; ctx.lineWidth = size * 0.018;
     ctx.beginPath(); ctx.moveTo(cx - R * 0.45, canvas.height - 2); ctx.lineTo(cx + R * 0.45, canvas.height - 2); ctx.stroke();
 
     ctx.save();
@@ -296,11 +303,11 @@ function drawWheel(canvas, size, speed, alpha) {
 
     // Outer ring
     ctx.beginPath(); ctx.arc(0, 0, R, 0, Math.PI * 2);
-    ctx.strokeStyle = '#ff4656'; ctx.lineWidth = size * 0.022; ctx.stroke();
+    ctx.strokeStyle = primary; ctx.lineWidth = size * 0.022; ctx.stroke();
 
     // Inner ring
     ctx.beginPath(); ctx.arc(0, 0, R * 0.32, 0, Math.PI * 2);
-    ctx.strokeStyle = '#ff4656'; ctx.globalAlpha = alpha * 0.4; ctx.lineWidth = size * 0.012; ctx.stroke();
+    ctx.strokeStyle = primary; ctx.globalAlpha = alpha * 0.4; ctx.lineWidth = size * 0.012; ctx.stroke();
     ctx.globalAlpha = alpha;
 
     // 8 spokes
@@ -309,7 +316,7 @@ function drawWheel(canvas, size, speed, alpha) {
       ctx.beginPath();
       ctx.moveTo(Math.cos(a) * R * 0.32, Math.sin(a) * R * 0.32);
       ctx.lineTo(Math.cos(a) * R, Math.sin(a) * R);
-      ctx.strokeStyle = i % 2 === 0 ? '#a87fff' : '#3fcfcf';
+      ctx.strokeStyle = i % 2 === 0 ? secondary : tertiary;
       ctx.lineWidth = size * 0.012;
       ctx.globalAlpha = alpha * 0.8; ctx.stroke(); ctx.globalAlpha = alpha;
     }
@@ -326,9 +333,9 @@ function drawWheel(canvas, size, speed, alpha) {
 
     // Center hub
     ctx.beginPath(); ctx.arc(0, 0, size * 0.07, 0, Math.PI * 2);
-    ctx.fillStyle = '#ff4656'; ctx.fill();
+    ctx.fillStyle = primary; ctx.fill();
     ctx.beginPath(); ctx.arc(0, 0, size * 0.042, 0, Math.PI * 2);
-    ctx.fillStyle = '#a87fff'; ctx.fill();
+    ctx.fillStyle = secondary; ctx.fill();
     ctx.beginPath(); ctx.arc(0, 0, size * 0.022, 0, Math.PI * 2);
     ctx.fillStyle = 'rgba(255,255,255,0.9)'; ctx.fill();
 
@@ -741,7 +748,7 @@ export function initLivePage() {
         updateUI._hideTimer = setTimeout(() => {
           if (waiting) waiting.style.display = 'flex';
           if (content) content.style.display = 'none';
-          if (dot) dot.style.display = 'none';
+          if (dot && document.documentElement.dataset.game === 'valorant') dot.style.display = 'none';
           updateUI._hideTimer = null;
         }, 3000);
       }
@@ -752,7 +759,7 @@ export function initLivePage() {
 
     if (waiting?.style.display !== 'none')  waiting.style.display  = 'none';
     if (content?.style.display !== 'block') content.style.display  = 'block';
-    if (dot?.style.display     !== 'block') dot.style.display      = 'block';
+    if (dot && document.documentElement.dataset.game === 'valorant' && dot.style.display !== 'block') dot.style.display = 'block';
 
     const isPregame = data?.phase === 'pregame' || data?.mode === 'agent-select';
     const liveHeader = content?.querySelector('.live-header');
@@ -1238,12 +1245,20 @@ export function initLivePage() {
     });
   }
 
+  const handleGameChange = event => {
+    if (event.detail?.mode !== 'valorant') return;
+    const dot = document.getElementById('live-dot');
+    if (dot) dot.style.display = currentLiveData?.active ? 'block' : 'none';
+  };
+  document.addEventListener('olycity:gamechange', handleGameChange);
+
   return () => {
     evtSource.close();
     clientsSource.close();
     clearInterval(staleChecker);
     clearInterval(diagnosticTicker);
     if (timerInterval) clearInterval(timerInterval);
+    document.removeEventListener('olycity:gamechange', handleGameChange);
   };
 }
 

@@ -5,41 +5,20 @@
 
 import { valorantApi } from './api.js';
 
-const SITE_VERSION = '20260805-history-compact';
+const SITE_VERSION = '20260806-admin-layout';
 import { syncPlayer as henrikSyncPlayer, syncAllPlayers as henrikSyncAll, persistPlayerStats } from './henrik.js';
-import { rosterHTML, guestCardHTML, mapSectionHTML, stierHTML, agentPageHTML, miniRosterHTML, agentsFiltersHTML, agentsGridHTML, compCompareHTML, compBuilderHTML, savedCompsHTML } from './render.js?v=20260720-avatars';
-import { initTheme, initTilt, initParallax, initSearch, initKeyboard, updateFavCount, initHeroParticles, initWheelLogos, initLivePage, initHistoryPage } from './interactions.js?v=20260805-history-compact';
+import { rosterHTML, guestCardHTML, mapSectionHTML, stierHTML, agentPageHTML, miniRosterHTML, agentsFiltersHTML, agentsGridHTML, compCompareHTML, compBuilderHTML, savedCompsHTML } from './render.js?v=20260806-admin-accounts';
+import { initTheme, initTilt, initParallax, initSearch, initKeyboard, updateFavCount, initHeroParticles, initWheelLogos, initLivePage, initHistoryPage } from './interactions.js?v=20260806-admin-accounts';
 import { storage } from './storage.js';
 import { avatarLayersHTML } from './avatars.mjs';
-import { initAdminPage } from './admin.mjs';
+import { initAdminPage } from './admin.mjs?v=20260806-admin-layout';
 import { initBettingPage } from './betting-page.mjs';
+import { getGameMode, initGameMode } from './game-mode.mjs?v=20260806-lol-mode';
+import { initLolHistoryPage, initLolLivePage } from './lol-pages.mjs?v=20260806-lol-mode';
+import { state } from './state.mjs?v=20260806-admin-accounts';
+export { state };
 
 // ─── STATE ─────────────────────────────────────────
-export const state = {
-  COMPS_DATA: [],
-  ROSTER: [],
-  ROLES: {},
-  ROLE_LABEL: {},
-  ROLE_FULL: {},
-  S_TIER: [],
-  GLOBAL_NOTES: [],
-  AGENT_FR: {},
-  FAVS: [],
-  PLAYER_STATS: {},
-  currentAgentFilter: 'all',
-  currentPage: 'home',
-  compareSelections: [],
-  builderSlots: [null,null,null,null,null],
-  builderFocusSlot: 0,
-  builderMapIdx: null,
-  currentProfile: null,
-  currentMapIdx: 0,
-  builderMapIdx: null,
-  LINEUPS: {},
-  CALLOUTS: {},
-  META: {},
-  currentCompIdx: {},
-};
 
 // ─── LOAD JSON DATA ───────────────────────────────
 async function loadData() {
@@ -103,6 +82,7 @@ function setSyncStatus(html, type = 'info') {
 window.OLYCITY = {
 
   nav(page, pushHistory = true) {
+    if (getGameMode() === 'lol' && ['maps', 'agents', 'builder'].includes(page)) page = 'home';
     sessionStorage.setItem('olycity-page', page);
     // Dynamic title
     const titles = {
@@ -138,9 +118,11 @@ window.OLYCITY = {
       if (!window._liveCleanup) {
         window._liveCleanup = initLivePage();
       }
+      if (!window._lolLiveCleanup) window._lolLiveCleanup = initLolLivePage();
     }
     if (page === 'history') {
       initHistoryPage();
+      initLolHistoryPage();
     }
     if (page === 'admin') {
       initAdminPage();
@@ -925,7 +907,7 @@ async function boot() {
   if (storedVersion !== SITE_VERSION) {
     // Clear cache but KEEP player stats (expensive to re-sync, don't change with code updates)
     const keys = Object.keys(localStorage).filter(k =>
-      k.startsWith('olycity-') && k !== 'olycity-player-stats' && k !== 'olycity-profile' && !k.startsWith('olycity-saved-comps-')
+      k.startsWith('olycity-') && k !== 'olycity-player-stats' && k !== 'olycity-profile' && k !== 'olycity-game' && !k.startsWith('olycity-saved-comps-')
     );
     keys.forEach(k => localStorage.removeItem(k));
     localStorage.setItem('olycity-version', SITE_VERSION);
@@ -935,6 +917,7 @@ async function boot() {
   initHeroParticles();
   initWheelLogos();
   initTheme();
+  initGameMode();
   initParallax();
   initKeyboard(() => window.OLYCITY.closeAgentPage());
 

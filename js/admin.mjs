@@ -12,6 +12,8 @@
  * juste un garde-fou contre un visiteur qui tomberait sur l'URL.
  */
 
+import { accountLiveState, accountRiotId, discoveryRows, normalizeGames } from './admin-account-utils.mjs?v=20260806-admin-accounts';
+
 const FIREBASE_URL = 'https://realtime-database-5bb9f-default-rtdb.europe-west1.firebasedatabase.app';
 // SHA-256 du mot de passe admin. Pour le changer : recalcule le hash d'un
 // nouveau mot de passe et remplace la valeur ci-dessous.
@@ -22,7 +24,12 @@ let staticRoster = [];
 let overlayMembers = {};
 let overlayAccounts = {};
 let overlayHiddenMembers = {};
+let ignoredAccounts = {};
 let discovered = {};
+let lolClients = {};
+let lolSessions = {};
+let valorantClients = {};
+let valorantSessions = {};
 
 function slugify(name) {
   return String(name || '')
@@ -92,20 +99,29 @@ function allMembers() {
 
 function accountsForMember(memberId) {
   const extra = overlayAccounts[memberId] || {};
-  return Object.entries(extra).map(([key, account]) => ({ ...account, key }));
+  return Object.entries(extra).map(([key, account]) => ({ ...account, games: normalizeGames(account), key }));
 }
 
 async function loadAll() {
-  const [roster, overlay, discoveredData] = await Promise.all([
+  const [roster, overlay, discoveredData, lolClientData, lolSessionData, valorantClientData, valorantSessionData] = await Promise.all([
     fetch(`./data/roster.json?v=${Date.now()}`).then(r => r.json()),
     fbGet('rosterOverlay').catch(() => null),
     fbGet('discovered').catch(() => null),
+    fbGet('live/lolClients').catch(() => null),
+    fbGet('live/lolSessions').catch(() => null),
+    fbGet('live/clients').catch(() => null),
+    fbGet('live/sessions').catch(() => null),
   ]);
   staticRoster = roster || [];
   overlayMembers = overlay?.members || {};
   overlayAccounts = overlay?.accounts || {};
   overlayHiddenMembers = overlay?.hiddenMembers || {};
+  ignoredAccounts = overlay?.ignoredAccounts || {};
   discovered = discoveredData || {};
+  lolClients = lolClientData || {};
+  lolSessions = lolSessionData || {};
+  valorantClients = valorantClientData || {};
+  valorantSessions = valorantSessionData || {};
 }
 
 function timeAgo(ts) {
@@ -121,14 +137,16 @@ function escapeHTML(value) {
 }
 
 function renderDiscoveredHTML() {
-  const rows = Object.entries(discovered).map(([key, entry]) => ({ key, ...entry }));
+  const rows = discoveryRows(discovered, lolClients, overlayAccounts, ignoredAccounts);
   if (rows.length === 0) return '<p class="admin-empty">Aucun compte détecté en attente d\'assignation.</p>';
 
   const memberOptions = allMembers().map(m => `<option value="${escapeHTML(m.id)}">${escapeHTML(m.name)}</option>`).join('');
   return `<div class="admin-table">${rows.map(row => `
-    <div class="admin-row" data-discovered-key="${escapeHTML(row.key)}">
-      <span class="admin-account">${escapeHTML(row.playerName)}</span>
-      <span class="admin-dim">vu il y a ${timeAgo(row.lastSeen || row.firstSeen)}</span>
+    <div class="admin-row" data-discovered-key="${escapeHTML(row.key)}" data-source-key="${escapeHTML(row.sourceKey || '')}" data-source="${escapeHTML(row.source || 'valorant')}">
+      <span class="admin-game-badge ${row.source === 'lol' ? 'lol' : 'valorant'}">${row.source === 'lol' ? 'LOL' : 'VAL'}</span>
+      <span class="admin-account-stack"><strong>${escapeHTML(row.playerName)}</strong><small>${escapeHTML(row.region || 'Région inconnue')}${row.puuid ? ` · PUUID ${escapeHTML(String(row.puuid).slice(0, 8))}…` : ''}</small></span>
+      <span class="admin-status ${row.connected === false ? 'offline' : 'online'}">${row.connected === false ? 'Hors ligne' : escapeHTML(row.phase || 'Détecté')}</span>
+      <span class="admin-dim">vu il y a ${timeAgo(row.lastSeen || row.ts || row.firstSeen)}</span>
       <select class="admin-select-member">
         <option value="">— assigner à —</option>
         ${memberOptions}
@@ -141,11 +159,22 @@ function renderDiscoveredHTML() {
 function renderMembersHTML() {
   return allMembers().map(member => {
     const accounts = accountsForMember(member.id);
-    const accountRows = accounts.map(account => `
-        <div class="admin-account-row">
-          <span>${escapeHTML(account.name)}#${escapeHTML(account.tag)}</span>
+    const accountRows = accounts.map(account => {
+      const live = accountLiveState(account, { lolClients, lolSessions, valorantClients, valorantSessions });
+      const scope = account.games.length === 2 ? 'both' : account.games[0];
+      return `
+        <div class="admin-account-row" data-member="${member.id}" data-key="${escapeHTML(account.key)}">
+          <div class="admin-account-details"><strong>${escapeHTML(accountRiotId(account))}</strong><small>${account.puuid ? `PUUID ${escapeHTML(String(account.puuid).slice(0, 10))}… · ` : ''}${escapeHTML(account.region || 'région inconnue')}</small></div>
+          <select class="admin-account-game" data-action="change-games" title="Jeux surveillés">
+            <option value="valorant" ${scope === 'valorant' ? 'selected' : ''}>VAL</option>
+            <option value="lol" ${scope === 'lol' ? 'selected' : ''}>LOL</option>
+            <option value="both" ${scope === 'both' ? 'selected' : ''}>VAL + LOL</option>
+          </select>
+          <span class="admin-status ${live.state}">${escapeHTML(live.label)}</span>
+          <button class="admin-btn admin-btn-small ${account.monitoring ? 'admin-monitor-on' : ''}" data-action="toggle-monitoring" title="Surveillance API centrale" ${account.games.includes('lol') ? '' : 'disabled'}>${account.games.includes('lol') ? (account.monitoring ? '● Suivi actif' : '○ Suivi inactif') : 'API LoL uniquement'}</button>
           <button class="admin-btn admin-btn-small admin-btn-danger" data-action="remove-account" data-member="${member.id}" data-key="${escapeHTML(account.key)}">✕</button>
-        </div>`).join('') || '<span class="admin-dim">Aucun</span>';
+        </div>`;
+    }).join('') || '<span class="admin-dim">Aucun</span>';
 
     return `
       <div class="admin-member-card">
@@ -160,6 +189,9 @@ function renderMembersHTML() {
           <input name="name" placeholder="Pseudo" required>
           <span>#</span>
           <input name="tag" placeholder="TAG" required>
+          <select name="games" title="Jeu du compte"><option value="valorant">VAL</option><option value="lol">LOL</option><option value="both">VAL + LOL</option></select>
+          <input name="puuid" placeholder="PUUID (optionnel)">
+          <input name="region" placeholder="Région (ex: euw1)">
           <button type="submit" class="admin-btn admin-btn-small">+ Ajouter</button>
         </form>
       </div>`;
@@ -237,25 +269,41 @@ function wireEvents(root) {
     if (!button) return;
     const row = button.closest('.admin-row');
     const key = row.dataset.discoveredKey;
+    const entry = discoveryRows(discovered, lolClients, overlayAccounts, ignoredAccounts).find(candidate => candidate.key === key);
+    if (!entry) return;
 
     if (button.dataset.action === 'dismiss-discovered') {
-      await fbDelete(`discovered/${key}`);
+      if (entry.source === 'lol' && entry.sourceKey) await fbPut(`rosterOverlay/ignoredAccounts/${entry.sourceKey}`, true);
+      else await fbDelete(`discovered/${key}`);
       await reloadAndRender(root);
       return;
     }
     if (button.dataset.action === 'assign-discovered') {
       const memberId = row.querySelector('.admin-select-member').value;
       if (!memberId) { alert('Choisis un membre à assigner.'); return; }
-      const entry = discovered[key];
-      if (!entry) return;
       const [name, tag] = entry.playerName.split('#');
-      await fbPost(`rosterOverlay/accounts/${memberId}`, { name, tag: tag || '', addedAt: Date.now() });
-      await fbDelete(`discovered/${key}`);
+      const games = normalizeGames(entry);
+      await fbPost(`rosterOverlay/accounts/${memberId}`, {
+        name, tag: tag || '', puuid: entry.puuid || '', region: entry.region || '', games,
+        monitoring: games.includes('lol'), source: entry.source || entry.game || 'valorant',
+        firstSeen: entry.firstSeen || entry.lastSeen || entry.ts || Date.now(), addedAt: Date.now(),
+      });
+      if (entry.source !== 'lol') await fbDelete(`discovered/${key}`);
       await reloadAndRender(root);
     }
   });
 
   root.querySelector('#admin-members')?.addEventListener('click', async event => {
+    const monitorBtn = event.target.closest('button[data-action="toggle-monitoring"]');
+    if (monitorBtn) {
+      const row = monitorBtn.closest('.admin-account-row');
+      const { member, key } = row.dataset;
+      const account = overlayAccounts?.[member]?.[key] || {};
+      await fbPut(`rosterOverlay/accounts/${member}/${key}/monitoring`, !account.monitoring);
+      await reloadAndRender(root);
+      return;
+    }
+
     const removeAccountBtn = event.target.closest('button[data-action="remove-account"]');
     if (removeAccountBtn) {
       const { member, key } = removeAccountBtn.dataset;
@@ -277,6 +325,17 @@ function wireEvents(root) {
     }
   });
 
+  root.querySelector('#admin-members')?.addEventListener('change', async event => {
+    const select = event.target.closest('select[data-action="change-games"]');
+    if (!select) return;
+    const row = select.closest('.admin-account-row');
+    const { member, key } = row.dataset;
+    const games = select.value === 'both' ? ['valorant', 'lol'] : [select.value];
+    await fbPut(`rosterOverlay/accounts/${member}/${key}/games`, games);
+    if (!games.includes('lol')) await fbPut(`rosterOverlay/accounts/${member}/${key}/monitoring`, false);
+    await reloadAndRender(root);
+  });
+
   root.querySelector('#admin-members')?.addEventListener('submit', async event => {
     const form = event.target.closest('.admin-add-account-form');
     if (!form) return;
@@ -286,7 +345,13 @@ function wireEvents(root) {
     const name = String(formData.get('name') || '').trim();
     const tag = String(formData.get('tag') || '').trim();
     if (!name || !tag) return;
-    await fbPost(`rosterOverlay/accounts/${memberId}`, { name, tag, addedAt: Date.now() });
+    const gameValue = String(formData.get('games') || 'valorant');
+    const games = gameValue === 'both' ? ['valorant', 'lol'] : [gameValue];
+    await fbPost(`rosterOverlay/accounts/${memberId}`, {
+      name, tag, games, puuid: String(formData.get('puuid') || '').trim(),
+      region: String(formData.get('region') || '').trim(), monitoring: games.includes('lol'),
+      source: 'manual', addedAt: Date.now(),
+    });
     await reloadAndRender(root);
   });
 
@@ -377,24 +442,27 @@ const ADMIN_CSS = `
 .admin-error{color:#ff5f6d}
 .admin-empty{color:rgba(232,232,236,.5);font-size:13px}
 .admin-table{display:flex;flex-direction:column;gap:8px;margin-top:12px}
-.admin-row{display:flex;align-items:center;gap:10px;flex-wrap:wrap;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:6px;padding:10px 12px}
-.admin-account{font-weight:600}
+.admin-row{display:flex;align-items:center;gap:10px;flex-wrap:wrap;background:var(--surf,rgba(255,255,255,.04));border:1px solid var(--border,rgba(255,255,255,.08));border-radius:6px;padding:10px 12px}
+.admin-account{font-weight:600}.admin-account-stack,.admin-account-details{display:grid;gap:2px;min-width:150px;flex:1}.admin-account-stack small,.admin-account-details small{color:var(--dim);font-size:10px}.admin-game-badge{padding:4px 7px;border:1px solid;font:700 9px Tomorrow,sans-serif;letter-spacing:1px}.admin-game-badge.valorant{color:#ff6877;border-color:rgba(255,70,86,.38);background:rgba(255,70,86,.1)}.admin-game-badge.lol{color:#e4bd65;border-color:rgba(201,155,63,.42);background:rgba(201,155,63,.1)}
+.admin-status{padding:4px 7px;border-radius:10px;background:rgba(130,140,155,.1);color:var(--muted);font-size:10px;white-space:nowrap}.admin-status.ingame{color:#59d986;background:rgba(68,209,122,.11)}.admin-status.online{color:#62b9d4;background:rgba(35,137,185,.13)}.admin-status.offline,.admin-status.unknown{color:var(--dim)}
 .admin-select-member{background:#161a22;color:inherit;border:1px solid rgba(255,255,255,.15);border-radius:4px;padding:6px 8px}
 .admin-btn{background:rgba(255,255,255,.08);color:inherit;border:1px solid rgba(255,255,255,.15);border-radius:4px;padding:6px 12px;font-size:12px;cursor:pointer}
 .admin-btn:hover{background:rgba(255,255,255,.14)}
+.admin-btn:disabled{cursor:not-allowed;opacity:.38}
 .admin-btn-primary{background:rgba(63,207,207,.18);border-color:rgba(63,207,207,.4);color:#3fcfcf}
 .admin-btn-danger{background:rgba(255,95,109,.12);border-color:rgba(255,95,109,.35);color:#ff5f6d}
 .admin-btn-small{padding:4px 8px;font-size:11px}
-.admin-members-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:16px;margin-top:16px}
-.admin-member-card{background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.08);border-radius:8px;padding:16px}
+.admin-members-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(360px,100%),1fr));gap:16px;margin-top:16px}
+.admin-member-card{min-width:0;overflow:hidden;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.08);border-radius:8px;padding:16px}
 .admin-member-head{display:flex;align-items:center;gap:10px;margin-bottom:12px}
 .admin-delete-member{margin-left:auto}
 .admin-member-avatar{width:32px;height:32px;border-radius:50%;object-fit:cover}
 .admin-member-accounts{display:flex;flex-direction:column;gap:8px;margin-bottom:12px;font-size:13px}
-.admin-account-row{display:flex;align-items:center;justify-content:space-between;padding:2px 0}
-.admin-add-account-form,.admin-add-member-form{display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-top:8px}
-.admin-add-account-form input,.admin-add-member-form input,.admin-add-account-form select{background:#161a22;color:inherit;border:1px solid rgba(255,255,255,.15);border-radius:4px;padding:6px 8px;font-size:12px;min-width:0;flex:1}
+.admin-account-row{display:grid;grid-template-columns:minmax(0,1fr) auto;grid-template-areas:"details details" "game status" "monitor remove";align-items:center;gap:7px 10px;padding:10px 0;border-bottom:1px solid var(--border,rgba(255,255,255,.06))}.admin-account-row:last-child{border-bottom:0}.admin-account-details{grid-area:details;min-width:0}.admin-account-details strong{overflow-wrap:anywhere}.admin-account-game{grid-area:game;width:auto;min-width:82px;background:var(--surf2,#161a22);color:inherit;border:1px solid var(--border2,rgba(255,255,255,.15));border-radius:4px;padding:5px}.admin-account-row .admin-status{grid-area:status;justify-self:end;max-width:100%;overflow:hidden;text-overflow:ellipsis}.admin-account-row [data-action="toggle-monitoring"]{grid-area:monitor;justify-self:start;max-width:100%;white-space:normal;text-align:left}.admin-account-row [data-action="remove-account"]{grid-area:remove;justify-self:end}.admin-monitor-on{color:#59d986;border-color:rgba(68,209,122,.35);background:rgba(68,209,122,.1)}
+.admin-add-account-form{display:grid;grid-template-columns:minmax(0,1.35fr) auto minmax(0,.8fr);gap:6px;align-items:center;margin-top:12px;padding-top:12px;border-top:1px solid var(--border,rgba(255,255,255,.06))}.admin-add-account-form input[name="name"]{grid-column:1}.admin-add-account-form>span{grid-column:2;text-align:center}.admin-add-account-form input[name="tag"]{grid-column:3}.admin-add-account-form select{grid-column:1}.admin-add-account-form input[name="puuid"]{grid-column:2/4}.admin-add-account-form input[name="region"]{grid-column:1/3}.admin-add-account-form button{grid-column:3}.admin-add-member-form{display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-top:8px}
+.admin-add-account-form input,.admin-add-member-form input,.admin-add-account-form select{width:100%;box-sizing:border-box;background:#161a22;color:inherit;border:1px solid rgba(255,255,255,.15);border-radius:4px;padding:6px 8px;font-size:12px;min-width:0}.admin-add-member-form input{flex:1}
 .admin-gate{max-width:360px;text-align:center;padding-top:120px}
 .admin-gate input{width:100%;background:#161a22;color:inherit;border:1px solid rgba(255,255,255,.15);border-radius:4px;padding:10px 12px;margin-bottom:10px}
 .admin-gate form{display:flex;flex-direction:column;gap:10px}
+@media(max-width:700px){.admin-wrap{padding-inline:14px}.admin-row .admin-select-member{flex:1}.admin-section-head{align-items:flex-start;gap:10px}.admin-members-grid{grid-template-columns:1fr}}
 `;
