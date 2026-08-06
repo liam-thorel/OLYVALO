@@ -13,7 +13,7 @@ const { stopLegacyLiveProcesses } = require('./legacy-cleanup.js');
 const { createLolWatcher } = require('./lol-watcher.js');
 
 const FIREBASE_URL = 'https://realtime-database-5bb9f-default-rtdb.europe-west1.firebasedatabase.app';
-const SCRIPT_VERSION = '4.15.2';
+const SCRIPT_VERSION = '4.15.3';
 const INSTANCE_LOCK_PATH = path.join(__dirname, '.olycity-live.lock');
 let ownsInstanceLock = acquireInstanceLock(INSTANCE_LOCK_PATH);
 

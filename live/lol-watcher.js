@@ -43,6 +43,14 @@ const LOCKFILE_PATHS = [
   path.join(process.env.ProgramFiles || '', 'Riot Games', 'League of Legends', 'lockfile'),
 ];
 
+// Journal persistant à côté du script — sert à diagnostiquer à distance
+// pourquoi le client League n'est pas détecté sur un poste donné, sans avoir
+// besoin d'une console visible (le launcher démarre le process minimisé).
+const DEBUG_LOG_PATH = path.join(__dirname, 'olycity-live.log');
+function writeDebugLog(message) {
+  try { fs.appendFileSync(DEBUG_LOG_PATH, `[${new Date().toLocaleTimeString('fr-FR')}] ${message}\n`); } catch {}
+}
+
 function readLockfileFromDisk() {
   for (const lockPath of LOCKFILE_PATHS) {
     try {
@@ -56,21 +64,42 @@ function readLockfileFromDisk() {
 
 // Filet de secours si League est installé ailleurs que les emplacements par défaut :
 // on retrouve port + token dans la ligne de commande du process LeagueClientUx.exe.
+// Timeout généreux (6s) : une requête WMI peut être lente sur un poste chargé
+// (jeu + script en tâche de fond), un timeout trop court fait échouer le filet
+// de secours silencieusement à chaque poll.
 function readLockfileFromProcess() {
   try {
     const output = execFileSync('powershell.exe', [
       '-NoProfile', '-Command',
       "(Get-CimInstance Win32_Process -Filter \"Name='LeagueClientUx.exe'\").CommandLine",
-    ], { timeout: 3000, windowsHide: true, stdio: ['ignore', 'pipe', 'ignore'], encoding: 'utf8' });
+    ], { timeout: 6000, windowsHide: true, stdio: ['ignore', 'pipe', 'ignore'], encoding: 'utf8' });
+    if (!output || !output.trim()) {
+      writeDebugLog('[lockfile] LeagueClientUx.exe introuvable via PowerShell (process absent ou requête vide)');
+      return null;
+    }
     const portMatch = output.match(/--app-port=(\d+)/);
     const tokenMatch = output.match(/--remoting-auth-token=([\w-]+)/);
     if (portMatch && tokenMatch) return { port: Number(portMatch[1]), password: tokenMatch[1], protocol: 'https' };
-  } catch {}
+    writeDebugLog(`[lockfile] Process LeagueClientUx.exe trouvé mais port/token non extraits — commandLine="${output.trim().slice(0, 200)}"`);
+  } catch (error) {
+    writeDebugLog(`[lockfile] Échec requête PowerShell — ${error.message}`);
+  }
   return null;
 }
 
+let lockfileMissCount = 0;
 function readLockfile() {
-  return readLockfileFromDisk() || readLockfileFromProcess();
+  const found = readLockfileFromDisk() || readLockfileFromProcess();
+  if (found) {
+    lockfileMissCount = 0;
+    return found;
+  }
+  lockfileMissCount++;
+  // Log seulement de temps en temps (1er échec, puis ~toutes les minutes à 3s/poll) pour ne pas noyer le fichier.
+  if (lockfileMissCount === 1 || lockfileMissCount % 20 === 0) {
+    writeDebugLog(`[lockfile] Non trouvé sur disque (${LOCKFILE_PATHS.join(' | ')}) ni via process — tentative #${lockfileMissCount}`);
+  }
+  return null;
 }
 
 function lcuGet(lock, endpoint) {
