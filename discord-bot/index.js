@@ -707,9 +707,7 @@ function formatBettingSection(betting) {
 }
 
 // Détection du début de game par transition inactive→active, et de la fin de
-// game dès qu'un `result` apparaît sur une session inactive (poussé par le
-// script local un peu après le passage à active:false, une fois les stats
-// récupérées — donc pas forcément dans le même événement Firebase).
+// game dès qu'un `result` apparaît sur une session inactive.
 // Le premier snapshot reçu à la connexion sert uniquement de référence (pas de
 // spam pour des games déjà en cours au démarrage du bot).
 // Tolérance avant de considérer une clé de session comme réellement disparue :
@@ -719,11 +717,25 @@ function formatBettingSection(betting) {
 // est alors traitée comme une toute nouvelle game (double notification).
 const SESSION_MISSING_TOLERANCE = 2;
 
+// Le script local pousse active:false SANS résultat d'abord, puis le résultat
+// arrive séparément quelques secondes après (le temps de récupérer les stats
+// via l'API Riot) — sauf pour un dodge, où aucun résultat ne viendra jamais.
+// Comme les deux cas sont indiscernables sur l'instant, on attend ce délai de
+// grâce avant de conclure à un remboursement ; si le résultat arrive entre
+// temps, on notifie normalement à la place.
+const NO_RESULT_GRACE_MS = 25 * 1000;
+
 function watchGameSessions(game, firebasePath) {
   const previousActive = new Map();
   const resultNotified = new Set();
   const missingSince = new Map(); // clé -> nb de snapshots consécutifs sans cette clé
+  const pendingNoResultTimers = new Map(); // clé -> timer d'attente du résultat
   let isFirstSnapshot = true;
+
+  const clearPendingTimer = key => {
+    const timer = pendingNoResultTimers.get(key);
+    if (timer) { clearTimeout(timer); pendingNoResultTimers.delete(key); }
+  };
 
   watchNode(firebasePath, snapshot => {
     const entries = Object.entries(snapshot || {});
@@ -735,30 +747,39 @@ function watchGameSessions(game, firebasePath) {
       const active = Boolean(session?.active);
 
       if (!active) {
-        // Pas de garde sur la présence de `result` : une partie annulée avant
-        // le lancement (dodge) passe active:false SANS résultat — c'est
-        // justement le cas que notifyValorantGameEnd/notifyLolGameEnd savent
-        // gérer (remboursement des paris, pas de résumé) via leur branche
-        // "pas de résultat". Exiger `result` ici empêchait ce remboursement.
-        if (!resultNotified.has(key)) {
-          resultNotified.add(key);
-          // Un état déjà inactif au tout premier snapshot correspond à une
-          // game terminée AVANT que le bot ne se (re)connecte (redémarrage,
-          // coupure réseau...) — pas un nouvel événement. Sans ce garde-fou,
-          // il ne serait notifié qu'au prochain événement sur N'IMPORTE QUELLE
-          // autre clé (la boucle réexamine tout à chaque callback), avec
-          // potentiellement plusieurs heures de retard et l'air d'une
-          // "nouvelle" fin de partie.
-          if (!isFirstSnapshot) {
+        if (session?.result) {
+          clearPendingTimer(key);
+          if (!resultNotified.has(key)) {
+            resultNotified.add(key);
+            // Un état déjà inactif au tout premier snapshot correspond à une
+            // game terminée AVANT que le bot ne se (re)connecte (redémarrage,
+            // coupure réseau...) — pas un nouvel événement. Sans ce garde-fou,
+            // il ne serait notifié qu'au prochain événement sur N'IMPORTE
+            // QUELLE autre clé (la boucle réexamine tout à chaque callback),
+            // avec potentiellement plusieurs heures de retard et l'air d'une
+            // "nouvelle" fin de partie.
+            if (!isFirstSnapshot) {
+              const notifyEnd = game === 'lol' ? notifyLolGameEnd(session) : notifyValorantGameEnd(session);
+              notifyEnd.catch(error => console.error(`[notify:${game}-end]`, error.message));
+            }
+          }
+        } else if (!resultNotified.has(key) && !pendingNoResultTimers.has(key) && !isFirstSnapshot) {
+          const timer = setTimeout(() => {
+            pendingNoResultTimers.delete(key);
+            if (resultNotified.has(key)) return; // un résultat est arrivé entre temps
+            resultNotified.add(key);
             const notifyEnd = game === 'lol' ? notifyLolGameEnd(session) : notifyValorantGameEnd(session);
             notifyEnd.catch(error => console.error(`[notify:${game}-end]`, error.message));
-          }
+          }, NO_RESULT_GRACE_MS);
+          timer.unref?.();
+          pendingNoResultTimers.set(key, timer);
         }
         previousActive.set(key, false);
         continue;
       }
 
       resultNotified.delete(key); // nouvelle game : on pourra renotifier sa fin plus tard
+      clearPendingTimer(key); // une nouvelle game a démarré — le remboursement en attente pour la précédente ne s'applique plus
       if (previousActive.get(key)) continue; // déjà actif au tour précédent
       if (isFirstSnapshot) { previousActive.set(key, true); continue; }
 
@@ -779,6 +800,7 @@ function watchGameSessions(game, firebasePath) {
       }
       missingSince.delete(key);
       previousActive.delete(key); resultNotified.delete(key);
+      clearPendingTimer(key);
     }
 
     isFirstSnapshot = false;
