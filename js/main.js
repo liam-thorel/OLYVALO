@@ -5,17 +5,18 @@
 
 import { valorantApi } from './api.js';
 
-const SITE_VERSION = '20260806-no-builder';
+const SITE_VERSION = '20260806-lol-roster';
 import { syncPlayer as henrikSyncPlayer, syncAllPlayers as henrikSyncAll, persistPlayerStats } from './henrik.js';
-import { rosterHTML, guestCardHTML, mapSectionHTML, stierHTML, agentPageHTML, miniRosterHTML, agentsFiltersHTML, agentsGridHTML, compCompareHTML } from './render.js?v=20260806-no-builder';
-import { initTheme, initTilt, initParallax, initSearch, initKeyboard, updateFavCount, initHeroParticles, initWheelLogos, initLivePage, initHistoryPage } from './interactions.js?v=20260806-no-builder';
+import { rosterHTML, guestCardHTML, mapSectionHTML, stierHTML, agentPageHTML, miniRosterHTML, agentsFiltersHTML, agentsGridHTML, compCompareHTML } from './render.js?v=20260806-lol-roster';
+import { initTheme, initTilt, initParallax, initSearch, initKeyboard, updateFavCount, initHeroParticles, initWheelLogos, initLivePage, initHistoryPage } from './interactions.js?v=20260806-lol-roster';
 import { storage } from './storage.js';
 import { avatarLayersHTML } from './avatars.mjs';
 import { initAdminPage } from './admin.mjs?v=20260806-admin-layout';
 import { initBettingPage } from './betting-page.mjs';
 import { getGameMode, initGameMode } from './game-mode.mjs?v=20260806-lol-mode';
 import { initLolHistoryPage, initLolLivePage } from './lol-pages.mjs?v=20260806-lol-mode';
-import { state } from './state.mjs?v=20260806-no-builder';
+import { initLolRosterPages } from './lol-roster.mjs?v=20260806-lol-roster';
+import { state } from './state.mjs?v=20260806-lol-roster';
 export { state };
 
 // ─── STATE ─────────────────────────────────────────
@@ -940,6 +941,7 @@ async function boot() {
   // Expose map icons for firebase-draw.js
   window._valorantApiMaps = valorantApi.maps;
   renderAll();
+  if (!window._lolRosterCleanup) window._lolRosterCleanup = initLolRosterPages();
   initSearch((name) => window.OLYCITY.showAgentPage(name));
 
   // Guest card — Enter key support

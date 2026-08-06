@@ -44,6 +44,8 @@ Site privé pour le five stack OLYCITY. Comps meta, stats live, roster et outils
 
 Script Node.js qui lit l'API locale Valorant **et League of Legends** (LCU) et
 envoie les données en temps réel sur le site et sur Discord via Firebase.
+Le profil LoL publié comprend le rang SoloQ, le bilan de saison, le rôle
+principal et le top 3 champions avec les portraits Riot Data Dragon.
 
 ```
 live/

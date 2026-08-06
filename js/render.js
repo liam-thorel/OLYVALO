@@ -4,7 +4,7 @@
  */
 
 import { valorantApi } from './api.js';
-import { state } from './state.mjs?v=20260806-no-builder';
+import { state } from './state.mjs?v=20260806-lol-roster';
 import { formatRelTime } from './storage.js';
 import { avatarLayersHTML } from './avatars.mjs?v=20260720-avatars';
 
