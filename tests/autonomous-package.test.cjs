@@ -51,7 +51,12 @@ assert.match(
 );
 
 const packageJson = JSON.parse(read('package.json'));
-assert.equal(packageJson.version, '4.15.5');
+assert.equal(packageJson.version, '4.15.7');
 assert.equal(packageJson.dependencies.ws, '8.21.1');
+assert.match(liveIndex, /timeout:\s*5000/, 'Firebase writes must have a bounded timeout');
+assert.match(liveIndex, /split\('\/'\)\.map\(encodeURIComponent\)/, 'Firebase path segments must support Riot IDs containing spaces');
+assert.match(liveIndex, /lolPollRunning/, 'League polling must be single-flight');
+assert.match(liveIndex, /MAX_LOG_BYTES/, 'the persistent log must be capped');
+assert.doesNotMatch(read('lol-watcher.js'), /\[lol-eog-raw\]/, 'raw end-of-game payloads must not flood the log');
 
 console.log('autonomous-package: launchers use only embedded runtime and scoped process management');

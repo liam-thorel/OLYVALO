@@ -308,6 +308,7 @@ function createLolWatcher({ putFB, ts, scriptVersion, log = console.log }) {
   let currentQueueId = null;
   let currentQueueDescription = '';
   let currentMatchId = '';
+  let currentRiotMatchId = '';
   let rankBefore = null;
   let postGameSince = 0;
   let capturedResult = null;
@@ -318,6 +319,8 @@ function createLolWatcher({ putFB, ts, scriptVersion, log = console.log }) {
   let identityPhase = '';
   let profileHeartbeat = 0;
   let profileIdentityKey = '';
+  let profileRefreshRunning = false;
+  let eogLogged = false;
 
   function resetMatchState() {
     wasActive = false;
@@ -329,31 +332,36 @@ function createLolWatcher({ putFB, ts, scriptVersion, log = console.log }) {
     currentQueueId = null;
     currentQueueDescription = '';
     currentMatchId = '';
+    currentRiotMatchId = '';
     rankBefore = null;
     postGameSince = 0;
     capturedResult = null;
+    eogLogged = false;
   }
 
   async function markInactive() {
     if (!wasActive || !sessionKey) return;
-    await putFB(`live/lolSessions/${safeFirebaseKey(sessionKey)}`, {
+    const endedSession = {
       active: false,
       ts: Date.now(),
       playerName: sessionKey,
       matchId: currentMatchId,
       result: capturedResult || null,
-    });
+    };
+    const history = capturedResult ? {
+      key: safeFirebaseKey(currentMatchId || String(matchStartedAt)),
+      value: { playerName: sessionKey, ts: Date.now(), ...capturedResult },
+    } : null;
+
+    // Release local state before external writes so a slow backend cannot keep
+    // the previous match alive or block detection of the next one.
+    resetMatchState();
+    await putFB(`live/lolSessions/${safeFirebaseKey(endedSession.playerName)}`, endedSession);
     // Historique persistant (une entrée par game) — sert à calculer les
     // winrates perso pour le moteur de cotes des paris.
-    if (capturedResult) {
-      const histKey = safeFirebaseKey(currentMatchId || String(matchStartedAt));
-      await putFB(`live/lolHistory/${histKey}`, {
-        playerName: sessionKey,
-        ts: Date.now(),
-        ...capturedResult,
-      });
+    if (history) {
+      await putFB(`live/lolHistory/${history.key}`, history.value);
     }
-    resetMatchState();
   }
 
   async function ensureRegion() {
@@ -387,18 +395,22 @@ function createLolWatcher({ putFB, ts, scriptVersion, log = console.log }) {
       lastSeen: now,
       scriptVersion,
     });
-    if (profileIdentityKey !== key || now - profileHeartbeat >= PROFILE_REFRESH_MS) {
-      const profile = await fetchSoloQueueProfile(cachedLock, summoner);
+    if (!profileRefreshRunning && (profileIdentityKey !== key || now - profileHeartbeat >= PROFILE_REFRESH_MS)) {
       profileIdentityKey = key;
       profileHeartbeat = now;
-      await putFB(`live/lolProfiles/${key}`, {
-        ...identitySnapshot,
-        rank: profile.rank,
-        soloQueue: profile.soloQueue,
-        topChampions: profile.topChampions,
-        updatedAt: now,
-        scriptVersion,
-      });
+      profileRefreshRunning = true;
+      const snapshot = { ...identitySnapshot };
+      void fetchSoloQueueProfile(cachedLock, summoner)
+        .then(profile => putFB(`live/lolProfiles/${key}`, {
+          ...snapshot,
+          rank: profile.rank,
+          soloQueue: profile.soloQueue,
+          topChampions: profile.topChampions,
+          updatedAt: now,
+          scriptVersion,
+        }))
+        .catch(() => {})
+        .finally(() => { profileRefreshRunning = false; });
     }
   }
 
@@ -438,8 +450,10 @@ function createLolWatcher({ putFB, ts, scriptVersion, log = console.log }) {
   async function tryCaptureEndOfGame(myPuuid) {
     const eogRes = await lcuGet(cachedLock, '/lol-end-of-game/v1/eog-stats-block');
     if (eogRes.ok && eogRes.data) {
-      log(`[${ts()}] 🔵 LoL — eog-stats-block reçu (voir olycity-live.log pour le détail brut)`);
-      log(`[${ts()}] [lol-eog-raw] ${JSON.stringify(eogRes.data)}`);
+      if (!eogLogged) {
+        eogLogged = true;
+        log(`[${ts()}] 🔵 LoL — résumé de fin de partie reçu`);
+      }
       const stats = extractEndOfGameStats(eogRes.data, myPuuid);
       const rankAfter = currentQueueId ? await fetchRank(cachedLock, currentQueueId) : null;
       const items = await ensureItemData();
@@ -486,15 +500,18 @@ function createLolWatcher({ putFB, ts, scriptVersion, log = console.log }) {
     missedPolls = 0;
 
     const phase = sessionRes.data?.phase;
-    const queueInfo = sessionRes.data?.gameData?.queue;
-    currentQueueId = queueInfo?.id ?? currentQueueId;
+    const queue = sessionRes.data?.gameData?.queue || {};
+    const observedMatchId = sessionRes.data?.gameData?.gameId
+      ? String(sessionRes.data.gameData.gameId)
+      : '';
+    currentQueueId = queue.id ?? currentQueueId;
     const summonerRes = await lcuGet(cachedLock, '/lol-summoner/v1/current-summoner');
     await publishIdentity(summonerRes.data, phase);
 
     // Practice Tool et Co-op vs IA : présence toujours remontée (publishIdentity
     // ci-dessus, pour le statut "en ligne" du panel admin), mais aucune session
     // trackée — pas de notif Discord, pas de pari, pas de stats pour ces modes.
-    if (isExcludedLolQueue(currentQueueId, queueInfo?.gameMode)) {
+    if (isExcludedLolQueue(currentQueueId, queue.gameMode)) {
       if (wasActive) { log(`[${ts()}] 🔵 LoL — passage en Practice Tool/Co-op vs IA, fin de session trackée`); await markInactive(); }
       else resetMatchState();
       return;
@@ -524,20 +541,28 @@ function createLolWatcher({ putFB, ts, scriptVersion, log = console.log }) {
     if (!gameName || !tagLine) return; // identité pas encore dispo, on retentera au prochain poll
     const playerName = `${gameName}#${tagLine}`;
 
-    const isNewMatch = !wasActive || sessionKey !== playerName;
+    if (wasActive && currentRiotMatchId && observedMatchId && currentRiotMatchId !== observedMatchId) {
+      log(`[${ts()}] 🔵 LoL — nouvelle partie Riot détectée (${observedMatchId})`);
+      await markInactive();
+      currentQueueId = queue.id ?? null;
+    }
+
+    const isNewMatch = !wasActive || sessionKey !== playerName
+      || Boolean(currentRiotMatchId && observedMatchId && currentRiotMatchId !== observedMatchId);
     if (isNewMatch) {
       matchStartedAt = Date.now();
       sessionKey = playerName;
+      currentMatchId = observedMatchId || String(matchStartedAt);
+      currentRiotMatchId = observedMatchId;
       log(`[${ts()}] 🔵 LoL — game détectée pour ${playerName}`);
     }
     wasActive = true;
+    if (!currentRiotMatchId && observedMatchId) currentRiotMatchId = observedMatchId;
 
     const now = Date.now();
     if (!isNewMatch && now - lastHeartbeat < HEARTBEAT_MS) return;
     lastHeartbeat = now;
 
-    const queue = sessionRes.data?.gameData?.queue || {};
-    const gameId = sessionRes.data?.gameData?.gameId;
     const myPuuid = summonerRes.data?.puuid;
     const mySelection = (sessionRes.data?.gameData?.playerChampionSelections || []).find(p => p.puuid === myPuuid);
 
@@ -546,10 +571,6 @@ function createLolWatcher({ putFB, ts, scriptVersion, log = console.log }) {
     const matchup = champSelectMatchupChampionId ? champions[champSelectMatchupChampionId] : null;
     if (champion) currentChampion = champion;
     if (queue.description) currentQueueDescription = queue.description;
-    // Figé une seule fois au début de la game : si le gameId Riot n'est pas encore
-    // dispo au tout premier push, on ne veut pas qu'il change en cours de route
-    // (ça romprait le dédoublonnage des notifs et ouvrirait un 2e round de paris).
-    if (!currentMatchId) currentMatchId = gameId ? String(gameId) : String(matchStartedAt);
     const region = await ensureRegion();
 
     await putFB(`live/lolSessions/${safeFirebaseKey(sessionKey)}`, {

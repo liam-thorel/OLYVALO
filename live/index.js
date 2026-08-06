@@ -13,8 +13,10 @@ const { stopLegacyLiveProcesses } = require('./legacy-cleanup.js');
 const { createLolWatcher } = require('./lol-watcher.js');
 
 const FIREBASE_URL = 'https://realtime-database-5bb9f-default-rtdb.europe-west1.firebasedatabase.app';
-const SCRIPT_VERSION = '4.15.5';
+const SCRIPT_VERSION = '4.15.7';
 const INSTANCE_LOCK_PATH = path.join(__dirname, '.olycity-live.lock');
+const LOG_PATH = path.join(__dirname, 'olycity.log');
+const MAX_LOG_BYTES = 5 * 1024 * 1024;
 let ownsInstanceLock = acquireInstanceLock(INSTANCE_LOCK_PATH);
 
 if (!ownsInstanceLock) process.exit(0);
@@ -192,23 +194,39 @@ function req(port, password, endpoint) {
 
 function putFB(path, data) {
   const body = JSON.stringify(data);
+  const encodedPath = String(path).split('/').map(encodeURIComponent).join('/');
   return new Promise(resolve => {
+    let settled = false;
+    const finish = value => {
+      if (settled) return;
+      settled = true;
+      resolve(value);
+    };
     const r = https.request({
       hostname:'realtime-database-5bb9f-default-rtdb.europe-west1.firebasedatabase.app',
-      path:`/${path}.json`, method:'PUT',
-      headers:{'Content-Type':'application/json','Content-Length':Buffer.byteLength(body)}
+      path:`/${encodedPath}.json?print=silent`, method:'PUT', timeout: 5000,
+      headers:{'Content-Type':'application/json','Content-Length':Buffer.byteLength(body),'Connection':'close'}
     }, res => {
       let d=''; res.on('data',c=>d+=c);
       res.on('end',()=>{
-        if (res.statusCode !== 200 && !putFB._warned) {
+        const accepted = res.statusCode === 200 || res.statusCode === 204;
+        if (!accepted && !putFB._warned) {
           putFB._warned = true;
           console.log(`[FB] ⛔ Écriture refusée (${res.statusCode}) — vérifier les règles Firebase ! ${d.slice(0,80)}`);
         }
-        if (res.statusCode === 200) putFB._warned = false;
-        resolve();
+        if (accepted) putFB._warned = false;
+        finish(accepted);
       });
     });
-    r.on('error', ()=>resolve());
+    r.on('error', ()=>finish(false));
+    r.on('timeout', () => {
+      if (!putFB._timeoutWarned) {
+        putFB._timeoutWarned = true;
+        console.log('[FB] Ecriture trop lente - nouvelle tentative au prochain passage');
+      }
+      r.destroy();
+      finish(false);
+    });
     r.write(body); r.end();
   });
 }
@@ -1350,6 +1368,12 @@ async function updateAndRestart() {
 }
 
 async function start() {
+  try {
+    if (fs.existsSync(LOG_PATH) && fs.statSync(LOG_PATH).size > MAX_LOG_BYTES) {
+      fs.truncateSync(LOG_PATH, 0);
+    }
+  } catch {}
+
   const stopLegacy = () => {
     const stopped = stopLegacyLiveProcesses();
     if (stopped > 0) console.log(`[${ts()}] Ancien script OLYCITY arrêté: ${stopped}`);
@@ -1373,11 +1397,26 @@ async function start() {
   console.log(`  ║  OLYCITY LIVE v${SCRIPT_VERSION} 🔴    ║`);
   console.log('  ╚══════════════════════════════╝\n');
 
+  let lolPollRunning = false;
+  const pollLolOnce = async () => {
+    if (lolPollRunning) return false;
+    lolPollRunning = true;
+    try {
+      await lolWatcher.poll();
+      return true;
+    } catch (error) {
+      console.log(`[${ts()}] LoL - erreur temporaire: ${error.message}`);
+      return false;
+    } finally {
+      lolPollRunning = false;
+    }
+  };
+
   setInterval(poll, 2000);
-  setInterval(() => lolWatcher.poll().catch(() => {}), 3000);
+  setInterval(pollLolOnce, 3000);
   setInterval(updateAndRestart, 30 * 60 * 1000);
   poll();
-  lolWatcher.poll().catch(() => {});
+  pollLolOnce();
 }
 
 start();
