@@ -51,7 +51,7 @@ assert.match(
 );
 
 const packageJson = JSON.parse(read('package.json'));
-assert.equal(packageJson.version, '4.15.4');
+assert.equal(packageJson.version, '4.15.5');
 assert.equal(packageJson.dependencies.ws, '8.21.1');
 
 console.log('autonomous-package: launchers use only embedded runtime and scoped process management');
