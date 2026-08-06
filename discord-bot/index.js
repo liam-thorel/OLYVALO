@@ -134,9 +134,13 @@ function betChoiceLabel(choice) {
   return choice === 'win' ? "sur l'équipe suivie" : "sur l'équipe adverse";
 }
 
+// `color` = couleur de marque du jeu (résultats de fin de partie, en dehors
+// win/loss). `startColor` = couleur des cartes "info" (game commencée, paris
+// ouverts) — le rouge de marque Valorant est trop proche du rouge défaite
+// (RESULT_COLORS.loss), d'où une couleur ambre dédiée pour ne pas les confondre.
 const GAME_META = {
-  valorant: { label: 'Valorant', color: 0xff4655, emoji: '🔴' },
-  lol: { label: 'League of Legends', color: 0x0ac8b9, emoji: '🔵' },
+  valorant: { label: 'Valorant', color: 0xff4655, startColor: 0xffb703, emoji: '🔴' },
+  lol: { label: 'League of Legends', color: 0x0ac8b9, startColor: 0x0ac8b9, emoji: '🔵' },
 };
 
 const VALORANT_MODE_LABELS_FR = {
@@ -149,20 +153,25 @@ function formatValorantMode(mode) {
   return VALORANT_MODE_LABELS_FR[String(mode || '').toLowerCase()] || mode || '—';
 }
 
-function buildValorantPlayerEmbed(member, session) {
+// Une seule carte pour tout le groupe : Map/Mode sont partagés (même match),
+// les répéter dans un embed par joueur n'apportait que du doublon — seul le
+// side (qui peut différer si les joueurs sont sur des équipes opposées) reste
+// affiché par joueur.
+function buildValorantGroupEmbed(rosterPlayers) {
   const meta = GAME_META.valorant;
-  const embed = new EmbedBuilder()
-    .setColor(meta.color)
-    .setAuthor({ name: `${member.name} vient de lancer une game ${meta.label}`, iconURL: member.avatar || undefined })
-    .setTimestamp(session.ts ? new Date(session.ts) : new Date())
+  const first = rosterPlayers[0]?.session;
+  const lines = rosterPlayers.map(({ member, session: s }) => {
+    const sideLabel = s.side ? (s.side === 'ATTAQUE' ? '⚔️ Attaque' : '🛡️ Défense') : null;
+    return sideLabel ? `**${member.name}** — ${sideLabel}` : `**${member.name}**`;
+  });
+  return new EmbedBuilder()
+    .setColor(meta.startColor)
+    .setTimestamp(first?.ts ? new Date(first.ts) : new Date())
     .addFields(
-      { name: 'Map', value: session.mapClean || session.map || '—', inline: true },
-      { name: 'Mode', value: formatValorantMode(session.mode), inline: true },
+      { name: 'Map', value: first?.mapClean || first?.map || '—', inline: true },
+      { name: 'Mode', value: formatValorantMode(first?.mode), inline: true },
+      { name: rosterPlayers.length > 1 ? 'Joueurs' : 'Joueur', value: lines.join('\n'), inline: false },
     );
-  if (session.side) {
-    embed.addFields({ name: 'Side', value: session.side === 'ATTAQUE' ? '⚔️ Attaque' : '🛡️ Défense', inline: true });
-  }
-  return embed;
 }
 
 const notifiedValorantMatches = new Set();
@@ -216,7 +225,7 @@ async function notifyValorantGameStart(session, snapshot) {
   });
   if (channelIds.size === 0) return;
 
-  const embeds = rosterPlayers.map(({ session: s, member }) => buildValorantPlayerEmbed(member, s)).slice(0, 10);
+  const embeds = [buildValorantGroupEmbed(rosterPlayers)];
   const names = rosterPlayers.map(({ member }) => member.name).join(', ');
   const stackBanner = rosterPlayers.length > 1 ? `🔥 **STACK OLYCITY** — ${rosterPlayers.length} joueurs dans la même game !\n` : '';
 
@@ -746,7 +755,7 @@ async function openBettingRound(game, matchId, channelId, rosterPlayers, viewUrl
     sentMessage = await channel.send({
       content: `🎲 **Paris ouverts !** ${round.players.join(', ')} en game ${GAME_META[game].label}.`,
       embeds: [new EmbedBuilder()
-        .setColor(GAME_META[game].color)
+        .setColor(GAME_META[game].startColor)
         .setDescription(
           `Cote équipe suivie : **x${round.oddsWin}** · Cote équipe adverse : **x${round.oddsLose}**\n` +
           (probabilityPct != null ? `Probabilité de victoire estimée : **${probabilityPct}%**\n` : '') +
