@@ -457,6 +457,7 @@ function createLolWatcher({ putFB, ts, scriptVersion, log = console.log }) {
       const stats = extractEndOfGameStats(eogRes.data, myPuuid);
       const rankAfter = currentQueueId ? await fetchRank(cachedLock, currentQueueId) : null;
       const items = await ensureItemData();
+      const region = await ensureRegion();
 
       capturedResult = {
         ...stats,
@@ -468,6 +469,7 @@ function createLolWatcher({ putFB, ts, scriptVersion, log = console.log }) {
         rankBefore,
         rankAfter,
         position: champSelectPosition || '',
+        region: region || '',
       };
       return true;
     }
