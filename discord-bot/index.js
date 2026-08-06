@@ -734,10 +734,18 @@ function watchGameSessions(game, firebasePath) {
       const active = Boolean(session?.active);
 
       if (!active) {
-        if (session?.result && !resultNotified.has(key) && !isFirstSnapshot) {
+        if (session?.result && !resultNotified.has(key)) {
           resultNotified.add(key);
-          const notifyEnd = game === 'lol' ? notifyLolGameEnd(session) : notifyValorantGameEnd(session);
-          notifyEnd.catch(error => console.error(`[notify:${game}-end]`, error.message));
+          // Un résultat déjà présent au tout premier snapshot est une game
+          // terminée AVANT que le bot ne se (re)connecte (redémarrage, coupure
+          // réseau...) — pas un nouvel événement. Sans ce garde-fou, il ne
+          // serait notifié qu'au prochain événement sur N'IMPORTE QUELLE autre
+          // clé (la boucle réexamine tout à chaque callback), avec potentiellement
+          // plusieurs heures de retard et l'air d'une "nouvelle" fin de partie.
+          if (!isFirstSnapshot) {
+            const notifyEnd = game === 'lol' ? notifyLolGameEnd(session) : notifyValorantGameEnd(session);
+            notifyEnd.catch(error => console.error(`[notify:${game}-end]`, error.message));
+          }
         }
         previousActive.set(key, false);
         continue;
