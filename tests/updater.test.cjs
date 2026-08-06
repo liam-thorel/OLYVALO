@@ -24,7 +24,7 @@ const liveIndex = fs.readFileSync(path.join(liveDir, 'index.js'), 'utf8');
 assert.doesNotMatch(liveIndex, /updateCheckRunning\s*\|\|\s*inGame/, 'an active game must not block the background download');
 assert.match(liveIndex, /pendingUpdateVersion/, 'an update downloaded in game must wait for the automatic restart');
 const manifest = JSON.parse(fs.readFileSync(path.join(liveDir, 'update-manifest.json'), 'utf8'));
-const releaseFiles = validateManifest(manifest, '4.15.5');
+const releaseFiles = validateManifest(manifest, '4.15.6');
 assert.equal(JSON.parse(fs.readFileSync(path.join(liveDir, 'package.json'), 'utf8')).version, manifest.version);
 releaseFiles.forEach(file => assert.equal(fs.existsSync(path.join(liveDir, file)), true, `${file} is missing`));
 

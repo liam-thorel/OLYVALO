@@ -13,7 +13,7 @@ const { stopLegacyLiveProcesses } = require('./legacy-cleanup.js');
 const { createLolWatcher } = require('./lol-watcher.js');
 
 const FIREBASE_URL = 'https://realtime-database-5bb9f-default-rtdb.europe-west1.firebasedatabase.app';
-const SCRIPT_VERSION = '4.15.5';
+const SCRIPT_VERSION = '4.15.6';
 const INSTANCE_LOCK_PATH = path.join(__dirname, '.olycity-live.lock');
 const LOG_PATH = path.join(__dirname, 'olycity.log');
 const MAX_LOG_BYTES = 5 * 1024 * 1024;
@@ -194,6 +194,7 @@ function req(port, password, endpoint) {
 
 function putFB(path, data) {
   const body = JSON.stringify(data);
+  const encodedPath = String(path).split('/').map(encodeURIComponent).join('/');
   return new Promise(resolve => {
     let settled = false;
     const finish = value => {
@@ -203,7 +204,7 @@ function putFB(path, data) {
     };
     const r = https.request({
       hostname:'realtime-database-5bb9f-default-rtdb.europe-west1.firebasedatabase.app',
-      path:`/${path}.json?print=silent`, method:'PUT', timeout: 5000,
+      path:`/${encodedPath}.json?print=silent`, method:'PUT', timeout: 5000,
       headers:{'Content-Type':'application/json','Content-Length':Buffer.byteLength(body),'Connection':'close'}
     }, res => {
       let d=''; res.on('data',c=>d+=c);
