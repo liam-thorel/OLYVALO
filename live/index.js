@@ -13,7 +13,7 @@ const { stopLegacyLiveProcesses } = require('./legacy-cleanup.js');
 const { createLolWatcher } = require('./lol-watcher.js');
 
 const FIREBASE_URL = 'https://realtime-database-5bb9f-default-rtdb.europe-west1.firebasedatabase.app';
-const SCRIPT_VERSION = '4.15.11';
+const SCRIPT_VERSION = '4.15.12';
 const INSTANCE_LOCK_PATH = path.join(__dirname, '.olycity-live.lock');
 const LOG_PATH = path.join(__dirname, 'olycity.log');
 const MAX_LOG_BYTES = 5 * 1024 * 1024;
@@ -873,6 +873,23 @@ async function poll() {
           await publishPregame(pregameState);
           missedPolls = 0;
           return;
+        }
+        if (transition.action === 'clear-pregame') {
+          // Dodge / partie annulée en sélection d'agents : aucune vraie game
+          // n'a démarré, donc jamais de "fin de game" classique plus bas dans
+          // poll() (celle-ci exige inGame===true, qui ne devient vrai qu'une
+          // fois en core-game). Sans ce push, la session restait active:true
+          // pour toujours côté Firebase — pas de notif de fin, pas de
+          // remboursement des paris.
+          const sKey = stableSessionKey || 'unknown';
+          if (sKey !== 'unknown') {
+            await putFB(`live/sessions/${sKey}`, {
+              active: false, ts: Date.now(),
+              playerName: playerName || diagnosticPlayerName || '',
+              matchId: pregameState.matchId,
+            });
+          }
+          console.log(`[${ts()}] 🚫 Dodge détecté — partie annulée avant le lancement`);
         }
         pregameState = null;
       } else {

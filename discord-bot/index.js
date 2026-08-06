@@ -734,14 +734,20 @@ function watchGameSessions(game, firebasePath) {
       const active = Boolean(session?.active);
 
       if (!active) {
-        if (session?.result && !resultNotified.has(key)) {
+        // Pas de garde sur la présence de `result` : une partie annulée avant
+        // le lancement (dodge) passe active:false SANS résultat — c'est
+        // justement le cas que notifyValorantGameEnd/notifyLolGameEnd savent
+        // gérer (remboursement des paris, pas de résumé) via leur branche
+        // "pas de résultat". Exiger `result` ici empêchait ce remboursement.
+        if (!resultNotified.has(key)) {
           resultNotified.add(key);
-          // Un résultat déjà présent au tout premier snapshot est une game
-          // terminée AVANT que le bot ne se (re)connecte (redémarrage, coupure
-          // réseau...) — pas un nouvel événement. Sans ce garde-fou, il ne
-          // serait notifié qu'au prochain événement sur N'IMPORTE QUELLE autre
-          // clé (la boucle réexamine tout à chaque callback), avec potentiellement
-          // plusieurs heures de retard et l'air d'une "nouvelle" fin de partie.
+          // Un état déjà inactif au tout premier snapshot correspond à une
+          // game terminée AVANT que le bot ne se (re)connecte (redémarrage,
+          // coupure réseau...) — pas un nouvel événement. Sans ce garde-fou,
+          // il ne serait notifié qu'au prochain événement sur N'IMPORTE QUELLE
+          // autre clé (la boucle réexamine tout à chaque callback), avec
+          // potentiellement plusieurs heures de retard et l'air d'une
+          // "nouvelle" fin de partie.
           if (!isFirstSnapshot) {
             const notifyEnd = game === 'lol' ? notifyLolGameEnd(session) : notifyValorantGameEnd(session);
             notifyEnd.catch(error => console.error(`[notify:${game}-end]`, error.message));
