@@ -376,6 +376,10 @@ function wireEvents(root) {
       await fbPut(`rosterOverlay/members/${id}`, {
         name, role: String(formData.get('role') || '').trim(), avatar: String(formData.get('avatar') || '').trim(),
       });
+      // Un membre précédemment supprimé (masqué via hiddenMembers) qu'on rajoute
+      // explicitement doit redevenir visible, sinon il resterait caché malgré
+      // la nouvelle fiche qu'on vient d'écrire.
+      await fbDelete(`rosterOverlay/hiddenMembers/${id}`);
       await reloadAndRender(root);
     });
   });
