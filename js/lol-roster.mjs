@@ -8,6 +8,11 @@ const PLAYERS = [
   { name: 'Noé', riotId: 'NoWaY#alone' },
   { name: 'Rayhan', riotId: 'RayBaz#OLY' },
   { name: 'Mathis', riotId: 'MrScooby#MYSTR' },
+  {
+    name: 'Logan',
+    riotId: 'Stupefiant#NOXUS',
+    avatar: 'https://cdn.discordapp.com/avatars/241287549719412746/39da0611d8869e0b82374fbea0331bbd.png?size=256',
+  },
 ];
 const ROLE_LABELS = { top:'Top', jungle:'Jungle', mid:'Mid', adc:'ADC', support:'Support' };
 const esc = value => String(value ?? '').replace(/[&<>'"]/g, char => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', "'":'&#39;', '"':'&quot;' }[char]));
@@ -25,7 +30,7 @@ function rankClass(rank) {
 }
 
 function avatarFor(player) {
-  return state.ROSTER.find(member => normalizeId(member.name) === normalizeId(player.name))?.avatar || '';
+  return player.avatar || state.ROSTER.find(member => normalizeId(member.name) === normalizeId(player.name))?.avatar || '';
 }
 
 function historyFallback(matches, riotId) {

@@ -2,13 +2,14 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import { PLAYERS, historyFallback, rankLabel } from '../js/lol-roster.mjs';
 
-test('League roster uses the five requested Riot IDs', () => {
+test('League roster uses the six requested Riot IDs', () => {
   assert.deepEqual(PLAYERS.map(player => `${player.name}:${player.riotId}`), [
     'Nico:phileas fogg#OLY',
     'Liam:FakePlasticTrees#1706',
     'Noé:NoWaY#alone',
     'Rayhan:RayBaz#OLY',
     'Mathis:MrScooby#MYSTR',
+    'Logan:Stupefiant#NOXUS',
   ]);
 });
 
