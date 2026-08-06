@@ -13,7 +13,7 @@ const { stopLegacyLiveProcesses } = require('./legacy-cleanup.js');
 const { createLolWatcher } = require('./lol-watcher.js');
 
 const FIREBASE_URL = 'https://realtime-database-5bb9f-default-rtdb.europe-west1.firebasedatabase.app';
-const SCRIPT_VERSION = '4.15.12';
+const SCRIPT_VERSION = '4.15.13';
 const INSTANCE_LOCK_PATH = path.join(__dirname, '.olycity-live.lock');
 const LOG_PATH = path.join(__dirname, 'olycity.log');
 const MAX_LOG_BYTES = 5 * 1024 * 1024;
@@ -989,7 +989,14 @@ async function poll() {
       const postMatchTokens = authTokens ? { ...authTokens } : null;
       lastPregameMap = ''; pregameState = null; pregameMissedPolls = 0;
       const sKey = stableSessionKey || 'unknown';
-      if (sKey !== 'unknown') await putFB(`live/sessions/${sKey}`, { active:false, ts:Date.now(), playerName, matchId: lastGameInfo?.matchId || '' });
+      // À ce stade la présence Riot ne rapporte déjà plus le joueur "en jeu"
+      // (c'est justement ce qui déclenche cette branche), donc `playerName`
+      // — recalculé à chaque poll depuis la présence — est vide ici. On
+      // retombe sur la dernière identité connue pendant la partie, sans quoi
+      // le bot Discord ne peut identifier à qui appartient le résultat et
+      // abandonne silencieusement la notification de fin de partie.
+      const endingPlayerName = playerName || lastGameInfo?.player || diagnosticPlayerName || '';
+      if (sKey !== 'unknown') await putFB(`live/sessions/${sKey}`, { active:false, ts:Date.now(), playerName: endingPlayerName, matchId: lastGameInfo?.matchId || '' });
       await publishDiagnostic('game-ended', { error: '', map: lastGameInfo?.map || '' }, true);
 
       // Push game to history (deduped by matchId)
