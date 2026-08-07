@@ -12,6 +12,7 @@
 const { EmbedBuilder } = require('discord.js');
 const { fbGet, fbPut, watchNode } = require('./firebase.js');
 const { allTrackedChannelIds } = require('./trackers.js');
+const { filterRecapChannels } = require('./recap-settings.js');
 
 const RECAP_HOUR = 7; // heure locale Europe/Paris
 const CHECK_INTERVAL_MS = 10 * 60 * 1000;
@@ -46,7 +47,7 @@ async function resetDailyBaselines() {
 
 async function runDailyRecap(client) {
   const gains = await dailyGains();
-  const channelIds = allTrackedChannelIds();
+  const channelIds = await filterRecapChannels(allTrackedChannelIds());
 
   if (gains.length > 0 && channelIds.length > 0) {
     const medals = ['🥇', '🥈', '🥉'];

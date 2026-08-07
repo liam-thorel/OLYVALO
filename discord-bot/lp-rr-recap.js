@@ -9,6 +9,7 @@
 const { EmbedBuilder } = require('discord.js');
 const { fbGet, fbPut, watchNode } = require('./firebase.js');
 const { allTrackedChannelIds } = require('./trackers.js');
+const { filterRecapChannels } = require('./recap-settings.js');
 const { allRankGains, resetRankGains } = require('./rank-tracking.js');
 
 const RECAP_HOUR = 7;
@@ -48,7 +49,7 @@ async function runLpRrRecap(client) {
   const [soloGains, flexGains, valorantGains] = await Promise.all([
     allRankGains('lol-solo'), allRankGains('lol-flex'), allRankGains('valorant'),
   ]);
-  const channelIds = allTrackedChannelIds();
+  const channelIds = await filterRecapChannels(allTrackedChannelIds());
 
   if (channelIds.length > 0) {
     const lolSections = [

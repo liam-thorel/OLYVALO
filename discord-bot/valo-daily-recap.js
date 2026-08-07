@@ -10,6 +10,7 @@
 const { EmbedBuilder } = require('discord.js');
 const { fbGet, fbPut, watchNode } = require('./firebase.js');
 const { allTrackedChannelIds } = require('./trackers.js');
+const { filterRecapChannels } = require('./recap-settings.js');
 const { ensureRoster } = require('./roster.js');
 const { historyFor, averageKDA, averageHsPercent } = require('./stats.js');
 
@@ -66,7 +67,7 @@ async function runValoDailyRecap(client, dateKey = null) {
     });
 
   if (lines.length > 0) {
-    const channelIds = allTrackedChannelIds();
+    const channelIds = await filterRecapChannels(allTrackedChannelIds());
     const embed = new EmbedBuilder()
       .setColor(0xff4655)
       .setAuthor({ name: '🔴 Récap quotidien (Valorant)' })
