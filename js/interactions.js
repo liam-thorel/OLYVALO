@@ -16,7 +16,7 @@ import { freshLiveClients, isVersionAtLeast, liveClientSummary } from './live-cl
 import { serverVisual } from './server-visuals.mjs?v=20260805-live-stable';
 import { avatarLayersHTML } from './avatars.mjs?v=20260720-avatars';
 import { filterHistoryGames, historyDailyPerformances, historyGameForOwner, historyMode, historyOwnerKey, historyOwnerLabel, historyPlayerName, historyPlayerPerformance, historyPlayerPerformances, historyRankedPlayers, historyReports, isHistorySelf, normalizeHistoryEntries } from './history-utils.mjs?v=20260720-history-multi';
-import { initCurse } from './curse.mjs?v=20260807-curse2';
+import { initCurse } from './curse.mjs?v=20260807-curse3';
 
 // ─── THEME TOGGLE ─────────────────────────────────
 export function initTheme() {
@@ -1036,6 +1036,7 @@ export function initLivePage() {
     const isDM = /deathmatch/i.test(data.mode || '') || all.some(p => p.team === 'NEUTRAL') || allies.length === all.length || enemies.length === 0;
 
     curse?.setRoster([...new Set(allies.map(p => olycityMember(p.name)).filter(Boolean))]);
+    curse?.setMatch(data.matchId || '');
     curse?.setLive(true);
 
     // Ranks arrive asynchronously after the roster. Include every displayed rank

@@ -1,12 +1,17 @@
 /**
- * OLYCITY · Malédiction — easter egg cosmétique de la page live. Tant qu'une
- * game est suivie, n'importe qui peut « maudire » la partie : des tentacules
- * montent du bas de l'écran, une vignette sombre s'intensifie, une nappe
- * sonore inquiétante s'installe et des phrases glitchées flottent, ciblant
- * au hasard un membre du roster OLYCITY présent dans le match. Irréversible
- * une fois lancée (le bouton fuit le curseur) — tout se réinitialise seul à
- * la fin de la game (voir setLive(false), appelé depuis interactions.js).
+ * OLYCITY · Malédiction — easter egg cosmétique de la page live, PARTAGÉ
+ * entre tous les visiteurs du site (via Firebase) : si quelqu'un maudit la
+ * game, tout le monde qui a la page live ouverte voit les tentacules, la
+ * vignette, entend le son et voit les phrases — pas juste la personne qui a
+ * cliqué. L'état vit dans live/curse {active, curser, matchId, startedAt} ;
+ * applyCurseState() est le SEUL point qui déclenche les effets visuels/sonores
+ * locaux, que le changement vienne de notre propre clic ou d'un autre
+ * visiteur. Irréversible une fois lancée (le bouton fuit le curseur) — tout
+ * se réinitialise pour tout le monde à la fin de la game (setLive(false)).
  */
+
+const FIREBASE_URL = 'https://realtime-database-5bb9f-default-rtdb.europe-west1.firebasedatabase.app';
+const CURSE_PATH = 'live/curse';
 
 const DOSE = 10; // intensité du glitch zalgo, validée avec l'utilisateur
 const TENTACLE_COUNT = 7;
@@ -55,6 +60,14 @@ function buildPhrases(curser, roster){
     player + ', ton ping va grimper',
     player + ' va afk au spawn',
   ];
+}
+
+function fbPutJSON(path, data){
+  return fetch(`${FIREBASE_URL}/${path}.json`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data),
+  });
 }
 
 export function initCurse(){
@@ -326,13 +339,8 @@ export function initCurse(){
   let currentRoster = [];
   let spawnTimer = null;
 
-  function currentCurser(){
-    const profile = localStorage.getItem('olycity-profile') || '';
-    return profile.split('#')[0] || 'Quelqu’un';
-  }
-
-  function spawnPhrase(){
-    const phrases = buildPhrases(currentCurser(), currentRoster);
+  function spawnPhrase(curserName){
+    const phrases = buildPhrases(curserName, currentRoster);
     const text = phrases[(Math.random() * phrases.length) | 0];
     const el = document.createElement('div');
     el.className = 'curse-phrase';
@@ -346,10 +354,10 @@ export function initCurse(){
     setTimeout(() => el.remove(), 9500);
   }
 
-  function scheduleSpawn(){
-    spawnPhrase();
+  function scheduleSpawn(curserName){
+    spawnPhrase(curserName);
     const delay = (1600 + Math.random() * 1800) / 1.5;
-    spawnTimer = setTimeout(scheduleSpawn, delay);
+    spawnTimer = setTimeout(() => scheduleSpawn(curserName), delay);
   }
 
   function stopSpawning(){
@@ -360,6 +368,7 @@ export function initCurse(){
   /* ---------------- button: one-way lock, dodges the cursor ---------------- */
   let cursed = false;
   let locked = false;
+  let currentMatchId = '';
 
   function dodge(){
     const margin = 70;
@@ -387,34 +396,80 @@ export function initCurse(){
     if (muteBtn) muteBtn.textContent = '🔊';
   }
 
+  // Seule fonction qui déclenche les effets locaux (tentacules, vignette,
+  // son, phrases, verrouillage du bouton) — appelée par le flux Firebase,
+  // jamais directement par le clic. Ainsi la personne qui clique et tous les
+  // autres visiteurs passent exactement par le même chemin.
+  function applyCurseState(state){
+    const staleForThisMatch = !!(state?.matchId && currentMatchId && state.matchId !== currentMatchId);
+    const isActive = !!(state && state.active) && !staleForThisMatch;
+
+    if (isActive === cursed) return; // déjà synchronisé
+    if (isActive){
+      cursed = true;
+      locked = true;
+      curseStartTime = state.startedAt || Date.now();
+      btn.classList.add('on', 'locked');
+      btn.setAttribute('aria-pressed', 'true');
+      btnLabel.textContent = 'Annuler la curse';
+      setTentaclesActive(true);
+      scheduleSpawn(state.curser || 'Quelqu’un');
+      startAmbience();
+      if (muteBtn) muteBtn.classList.add('visible');
+    } else {
+      setTentaclesActive(false);
+      stopSpawning();
+      stopAmbience();
+      resetButton();
+    }
+  }
+
+  function currentCurser(){
+    const profile = localStorage.getItem('olycity-profile') || '';
+    return profile.split('#')[0] || 'Quelqu’un';
+  }
+
   btn.addEventListener('click', () => {
     if (locked){ dodge(); return; }
-    cursed = true;
-    locked = true;
-    curseStartTime = Date.now();
-    btn.classList.add('on', 'locked');
-    btn.setAttribute('aria-pressed', 'true');
-    btnLabel.textContent = 'Annuler la curse';
-    setTentaclesActive(true);
-    scheduleSpawn();
-    startAmbience();
-    if (muteBtn) muteBtn.classList.add('visible');
+    fbPutJSON(CURSE_PATH, {
+      active: true,
+      curser: currentCurser(),
+      matchId: currentMatchId,
+      startedAt: Date.now(),
+    }).catch(() => {});
   });
   btn.addEventListener('pointerenter', () => { if (locked) dodge(); });
+
+  /* ---------------- sync with Firebase (shared across all visitors) ---------------- */
+  fetch(`${FIREBASE_URL}/${CURSE_PATH}.json`)
+    .then(res => res.ok ? res.json() : null)
+    .then(state => applyCurseState(state))
+    .catch(() => {});
+
+  const curseSource = new EventSource(`${FIREBASE_URL}/${CURSE_PATH}.json`);
+  curseSource.addEventListener('put', e => {
+    try {
+      const message = JSON.parse(e.data);
+      if ((message.path || '/') === '/') applyCurseState(message.data);
+    } catch { /* flux temporairement invalide, ignoré */ }
+  });
 
   /* ---------------- public API, driven by updateUI() ---------------- */
   function setRoster(names){
     currentRoster = Array.isArray(names) ? names.filter(Boolean) : [];
   }
 
-  function setLive(isLive){
-    if (isLive) return; // rien à faire tant que la game continue
-    if (!cursed && !locked) return; // pas de curse en cours, rien à réinitialiser
-    setTentaclesActive(false);
-    stopSpawning();
-    stopAmbience();
-    resetButton();
+  function setMatch(matchId){
+    currentMatchId = matchId || '';
   }
 
-  return { setRoster, setLive };
+  function setLive(isLive){
+    if (isLive) return; // rien à faire tant que la game continue
+    // Fin de partie détectée localement : on efface l'état partagé pour que
+    // tout le monde reparte de zéro sur la prochaine game. Idempotent — peu
+    // importe si plusieurs visiteurs déclenchent ce reset au même moment.
+    fbPutJSON(CURSE_PATH, null).catch(() => {});
+  }
+
+  return { setRoster, setMatch, setLive };
 }
