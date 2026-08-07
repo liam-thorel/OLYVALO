@@ -35,6 +35,8 @@ async function valorantHistoryFor(riotIds) {
         hsPercent: self.stats?.hsPercent ?? null,
         map: report.map || '',
         mode: report.mode || '',
+        tier: report.rr?.tier ?? null,
+        rr: report.rr?.after ?? null,
         ts: report.ts || report.endTs || 0,
       };
     })

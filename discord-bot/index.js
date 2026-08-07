@@ -20,6 +20,7 @@ const {
   startLolSoloMonthlyRecapScheduler, startLolFlexMonthlyRecapScheduler,
 } = require('./lol-recap.js');
 const { startValoDailyRecapScheduler, startValoWeeklyRecapScheduler, startValoMonthlyRecapScheduler } = require('./valo-daily-recap.js');
+const { startLeaderboardScheduler } = require('./leaderboard-rank.js');
 const { rewardForGamePlayed } = require('./wallet.js');
 const { recordRankGain, lolRankPoints } = require('./rank-tracking.js');
 const { recordAward } = require('./valorant-awards.js');
@@ -59,6 +60,9 @@ process.on('uncaughtException', error => {
   './commands/balance.js',
   './commands/bet.js',
   './commands/leaderboard.js',
+  './commands/leaderboard-channel.js',
+  './commands/leaderboard-lol-solo.js',
+  './commands/leaderboard-valo.js',
   './commands/list.js',
   './commands/mybets.js',
   './commands/recap-channel.js',
@@ -1045,6 +1049,7 @@ client.once('ready', async () => {
   startValoDailyRecapScheduler(client);
   startValoWeeklyRecapScheduler(client);
   startValoMonthlyRecapScheduler(client);
+  startLeaderboardScheduler(client);
   console.log('👂 Écoute des sessions Valorant et LoL en cours...');
 });
 
