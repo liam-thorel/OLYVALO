@@ -267,7 +267,9 @@ export function initCurse(){
   let audioCtx = null, masterGain = null, whisperTimer = null, muted = false;
 
   function startAmbience(){
-    if (audioCtx || reduceMotion) return;
+    // Le son n'est pas un effet de "mouvement" — pas de garde reduceMotion
+    // ici, seul le bouton muet contrôle ça.
+    if (audioCtx) return;
     const AC = window.AudioContext || window.webkitAudioContext;
     if (!AC) return;
     audioCtx = new AC();
@@ -431,6 +433,13 @@ export function initCurse(){
 
   btn.addEventListener('click', () => {
     if (locked){ dodge(); return; }
+    // Démarre l'ambiance sonore ici, en synchrone avec le vrai clic — les
+    // navigateurs bloquent Web Audio hors d'un geste utilisateur direct, et
+    // l'écho Firebase (qui déclenche applyCurseState pour tout le monde,
+    // nous y compris) arrive toujours de façon asynchrone, donc trop tard
+    // pour compter comme ce geste. startAmbience() est idempotent (no-op si
+    // déjà démarré), donc le second appel via applyCurseState ne fait rien.
+    startAmbience();
     fbPutJSON(CURSE_PATH, {
       active: true,
       curser: currentCurser(),
