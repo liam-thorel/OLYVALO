@@ -12,7 +12,7 @@ const { fbGet, fbPut, watchNode } = require('./firebase.js');
 const { allTrackedChannelIds } = require('./trackers.js');
 const { filterRecapChannels } = require('./recap-settings.js');
 const { ensureRoster } = require('./roster.js');
-const { historyFor, averageKDA, averageHsPercent } = require('./stats.js');
+const { historyFor, averageKDA, averageHsPercent, rankedOnly } = require('./stats.js');
 
 const RECAP_HOUR = 7; // heure locale Europe/Paris
 const RECAP_MINUTE = 30;
@@ -40,7 +40,7 @@ async function runValoDailyRecap(client, dateKey = null) {
 
   const members = await ensureRoster();
   const rows = await Promise.all(members.map(async member => {
-    const entries = await historyFor('valorant', member.riotIds);
+    const entries = rankedOnly('valorant', await historyFor('valorant', member.riotIds));
     const recent = since ? entries.filter(e => (e.ts || 0) > since) : entries;
     const withResult = recent.filter(e => typeof e.win === 'boolean');
     const wins = withResult.filter(e => e.win).length;
@@ -70,9 +70,9 @@ async function runValoDailyRecap(client, dateKey = null) {
     const channelIds = await filterRecapChannels(allTrackedChannelIds());
     const embed = new EmbedBuilder()
       .setColor(0xff4655)
-      .setAuthor({ name: '🔴 Récap quotidien (Valorant)' })
+      .setAuthor({ name: '🔴 Récap quotidien (Valorant Compétitif)' })
       .setDescription(lines.join('\n'))
-      .setFooter({ text: 'Games jouées depuis hier 7h30' })
+      .setFooter({ text: 'Games classées jouées depuis hier 7h30' })
       .setTimestamp();
 
     await Promise.all(channelIds.map(async channelId => {

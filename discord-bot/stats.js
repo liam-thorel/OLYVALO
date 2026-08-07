@@ -34,6 +34,7 @@ async function valorantHistoryFor(riotIds) {
         assists: self.stats?.assists ?? null,
         hsPercent: self.stats?.hsPercent ?? null,
         map: report.map || '',
+        mode: report.mode || '',
         ts: report.ts || report.endTs || 0,
       };
     })
@@ -96,6 +97,16 @@ function averageHsPercent(entries) {
   return withHs.reduce((sum, e) => sum + e.hsPercent, 0) / withHs.length;
 }
 
+// Ne garde que les games en file classée : Compétitif pour Valorant (les
+// autres modes — Swift Play, Deathmatch, Spike Rush... — faussent le
+// winrate/KDA d'un récap censé refléter le classé). Aucun filtre nécessaire
+// côté LoL : live/index.js ne track déjà que les queues classées (420/440).
+const RANKED_VALORANT_MODE = 'competitive';
+function rankedOnly(game, entries) {
+  return game === 'valorant' ? entries.filter(e => e.mode === RANKED_VALORANT_MODE) : entries;
+}
+
 module.exports = {
   historyFor, winrateFor, mostPlayed, recentForm, killDeathRatio, averageKDA, averageHsPercent, HISTORY_SAMPLE_SIZE,
+  rankedOnly, RANKED_VALORANT_MODE,
 };

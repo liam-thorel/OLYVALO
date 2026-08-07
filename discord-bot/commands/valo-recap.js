@@ -1,18 +1,18 @@
 const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
 const { ensureRoster } = require('../roster.js');
-const { historyFor, averageKDA, averageHsPercent } = require('../stats.js');
+const { historyFor, averageKDA, averageHsPercent, rankedOnly } = require('../stats.js');
 
 module.exports = {
   data: new SlashCommandBuilder()
     .setName('valo-recap')
-    .setDescription('Poste le récap Valorant du roster dans ce salon (winrate, KDA moyen, HS%)'),
+    .setDescription('Poste le récap Valorant Compétitif du roster dans ce salon (winrate, KDA moyen, HS%)'),
 
   async execute(interaction) {
     await interaction.deferReply();
     const members = await ensureRoster();
 
     const rows = await Promise.all(members.map(async member => {
-      const entries = await historyFor('valorant', member.riotIds);
+      const entries = rankedOnly('valorant', await historyFor('valorant', member.riotIds));
       const withResult = entries.filter(e => typeof e.win === 'boolean');
       const wins = withResult.filter(e => e.win).length;
       return {
@@ -38,13 +38,13 @@ module.exports = {
       });
 
     if (lines.length === 0) {
-      await interaction.editReply('Pas encore de games Valorant enregistrées.');
+      await interaction.editReply('Pas encore de games Valorant Compétitif enregistrées.');
       return;
     }
 
     const embed = new EmbedBuilder()
       .setColor(0xff4655)
-      .setAuthor({ name: '🔴 Récap Valorant du roster' })
+      .setAuthor({ name: '🔴 Récap Valorant Compétitif du roster' })
       .setDescription(lines.join('\n'))
       .setTimestamp();
 

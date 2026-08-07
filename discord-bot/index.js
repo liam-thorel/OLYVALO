@@ -57,6 +57,8 @@ process.on('uncaughtException', error => {
   './commands/leaderboard.js',
   './commands/list.js',
   './commands/mybets.js',
+  './commands/recap-lp-rr.js',
+  './commands/recap-paris.js',
   './commands/stats.js',
   './commands/track-lol-all.js',
   './commands/track-valo-all.js',
@@ -504,10 +506,12 @@ async function notifyLolGameEnd(sessions) {
     if (result?.rankBefore?.tier && result?.rankAfter?.tier) {
       const beforePts = lolRankPoints(result.rankBefore);
       const afterPts = lolRankPoints(result.rankAfter);
-      if (beforePts != null && afterPts != null) {
-        // queueId 420 = Solo/Duo, 440 = Flex (seules queues classées suivies) —
-        // trackées séparément, la progression des deux n'ayant rien à voir.
-        const queueBucket = result.queueId === 440 ? 'lol-flex' : 'lol-solo';
+      // queueId 420 = Solo/Duo, 440 = Flex — seules queues classées suivies
+      // (live/index.js ne track déjà que celles-ci), trackées séparément
+      // puisque la progression des deux n'a rien à voir. Toute autre valeur
+      // est ignorée par sécurité plutôt que rangée dans "solo" par défaut.
+      const queueBucket = result.queueId === 420 ? 'lol-solo' : result.queueId === 440 ? 'lol-flex' : null;
+      if (queueBucket && beforePts != null && afterPts != null) {
         recordRankGain(queueBucket, session.playerName, member.name, afterPts - beforePts)
           .catch(error => console.error('[rank-tracking]', error.message));
       }

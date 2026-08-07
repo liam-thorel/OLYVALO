@@ -106,4 +106,4 @@ function startLpRrRecapScheduler(client) {
   }, error => console.error('[lp-rr-recap:trigger-watch]', error.message));
 }
 
-module.exports = { startLpRrRecapScheduler };
+module.exports = { startLpRrRecapScheduler, formatLolSection };

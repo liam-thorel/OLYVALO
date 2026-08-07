@@ -104,4 +104,4 @@ function startDailyRecapScheduler(client) {
   }, error => console.error('[daily-recap:trigger-watch]', error.message));
 }
 
-module.exports = { startDailyRecapScheduler };
+module.exports = { startDailyRecapScheduler, dailyGains };
