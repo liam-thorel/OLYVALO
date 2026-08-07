@@ -1028,16 +1028,16 @@ client.once('ready', async () => {
   watchGameSessions('valorant', 'live/sessions');
   watchGameSessions('lol', 'live/lolSessions');
   startWeeklyScheduler(client);
-  startDailyRecapScheduler(client);
-  startLolSoloRecapScheduler(client);
-  startLolFlexRecapScheduler(client);
-  startLolSoloWeeklyRecapScheduler(client);
-  startLolFlexWeeklyRecapScheduler(client);
-  startLolSoloMonthlyRecapScheduler(client);
-  startLolFlexMonthlyRecapScheduler(client);
-  startValoDailyRecapScheduler(client);
-  startValoWeeklyRecapScheduler(client);
-  startValoMonthlyRecapScheduler(client);
+  startDailyRecapScheduler();
+  startLolSoloRecapScheduler();
+  startLolFlexRecapScheduler();
+  startLolSoloWeeklyRecapScheduler();
+  startLolFlexWeeklyRecapScheduler();
+  startLolSoloMonthlyRecapScheduler();
+  startLolFlexMonthlyRecapScheduler();
+  startValoDailyRecapScheduler();
+  startValoWeeklyRecapScheduler();
+  startValoMonthlyRecapScheduler();
   console.log('👂 Écoute des sessions Valorant et LoL en cours...');
 });
 
