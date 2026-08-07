@@ -26,6 +26,14 @@ async function valorantHistoryFor(riotIds) {
     .map(report => {
       const self = (report.players || []).find(p => riotIds.some(id => id.toLowerCase() === String(p.name || '').toLowerCase()));
       if (!self) return null;
+      // report.rr est le rang APRÈS-MATCH précis, mais il n'appartient qu'au
+      // joueur dont le script a généré ce rapport (report.playerPuuid) — pas
+      // à n'importe quel joueur listé dans report.players. Quand deux membres
+      // du roster sont stackés dans la même game, chacun a SON PROPRE rapport
+      // (un par script) ; on n'attribue donc rr/tier que si self EST le
+      // reporter, sinon on laisse null plutôt que de reprendre par erreur le
+      // rang d'un coéquipier.
+      const isReporter = report.playerPuuid && self.puuid && report.playerPuuid === self.puuid;
       return {
         win: report.result === 'win' ? true : report.result === 'loss' ? false : null,
         champion: self.agent ? { name: self.agent } : null,
@@ -35,8 +43,8 @@ async function valorantHistoryFor(riotIds) {
         hsPercent: self.stats?.hsPercent ?? null,
         map: report.map || '',
         mode: report.mode || '',
-        tier: report.rr?.tier ?? null,
-        rr: report.rr?.after ?? null,
+        tier: isReporter ? (report.rr?.tier ?? null) : null,
+        rr: isReporter ? (report.rr?.after ?? null) : null,
         ts: report.ts || report.endTs || 0,
       };
     })
