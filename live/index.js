@@ -13,7 +13,7 @@ const { stopLegacyLiveProcesses } = require('./legacy-cleanup.js');
 const { createLolWatcher } = require('./lol-watcher.js');
 
 const FIREBASE_URL = 'https://realtime-database-5bb9f-default-rtdb.europe-west1.firebasedatabase.app';
-const SCRIPT_VERSION = '4.15.17';
+const SCRIPT_VERSION = '4.15.18';
 const INSTANCE_LOCK_PATH = path.join(__dirname, '.olycity-live.lock');
 const LOG_PATH = path.join(__dirname, 'olycity.log');
 const MAX_LOG_BYTES = 5 * 1024 * 1024;
@@ -415,7 +415,14 @@ let rankMap = {};
 let lastKnownRoster = [];
 let lastKnownRosterMatchId = '';
 const rankHistoryCache = new Map();
-const RANK_HISTORY_CACHE_MS = 6 * 60 * 60 * 1000;
+// Réduit de 6h à 45 min : au-delà du coût des appels Riot (le but premier de
+// ce cache), c'est aussi ce qui plafonne la durée pendant laquelle un
+// visiteur peut voir des chiffres de saison en cours périmés si l'endpoint
+// MMR complet de Riot a un souci passager (constaté en prod : 500 répétés
+// sur /mmr/v1/players/{puuid}, qui alimente historicalPeakTier ET
+// currentSeasonStats) — mieux vaut se re-synchroniser plus vite une fois
+// l'API redevenue fiable que de rester figé sur un cache de plusieurs heures.
+const RANK_HISTORY_CACHE_MS = 45 * 60 * 1000;
 let stableSessionKey = null;
 let missedPolls = 0;
 let roundPhase = '';
