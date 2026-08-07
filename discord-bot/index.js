@@ -14,7 +14,7 @@ const {
 } = require('./betting.js');
 const { startWeeklyScheduler } = require('./weekly.js');
 const { startDailyRecapScheduler } = require('./daily-recap.js');
-const { startLpRrRecapScheduler } = require('./lp-rr-recap.js');
+const { startLolSoloRecapScheduler, startLolFlexRecapScheduler } = require('./lol-recap.js');
 const { startValoDailyRecapScheduler } = require('./valo-daily-recap.js');
 const { rewardForGamePlayed } = require('./wallet.js');
 const { recordRankGain, lolRankPoints } = require('./rank-tracking.js');
@@ -57,14 +57,15 @@ process.on('uncaughtException', error => {
   './commands/leaderboard.js',
   './commands/list.js',
   './commands/mybets.js',
-  './commands/recap-lp-rr.js',
+  './commands/recap-lol-flex.js',
+  './commands/recap-lol-solo.js',
   './commands/recap-paris.js',
+  './commands/recap-valo.js',
   './commands/stats.js',
   './commands/track-lol-all.js',
   './commands/track-valo-all.js',
   './commands/track.js',
   './commands/untrack.js',
-  './commands/valo-recap.js',
 ].forEach(file => {
   const command = require(file);
   client.commands.set(command.data.name, command);
@@ -1018,7 +1019,8 @@ client.once('ready', async () => {
   watchGameSessions('lol', 'live/lolSessions');
   startWeeklyScheduler(client);
   startDailyRecapScheduler(client);
-  startLpRrRecapScheduler(client);
+  startLolSoloRecapScheduler(client);
+  startLolFlexRecapScheduler(client);
   startValoDailyRecapScheduler(client);
   console.log('👂 Écoute des sessions Valorant et LoL en cours...');
 });

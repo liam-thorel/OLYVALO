@@ -213,10 +213,13 @@ function render() {
         <p class="admin-dim">Envoyé automatiquement tous les jours à 7h dans les salons trackés. Le bouton ci-dessous déclenche le même récap immédiatement, pour tester.</p>
         <button class="admin-btn admin-btn-primary" id="admin-trigger-daily-recap-btn">☀️ Déclencher le récap des gains maintenant (test)</button>
         <span class="admin-dim" id="admin-trigger-daily-recap-status"></span>
-        <p class="admin-dim" style="margin-top:14px">Récap des LP/RR gagnés ou perdus, par personne et par compte — envoyé à 7h15.</p>
-        <button class="admin-btn admin-btn-primary" id="admin-trigger-lp-rr-recap-btn">📈 Déclencher le récap LP/RR maintenant (test)</button>
-        <span class="admin-dim" id="admin-trigger-lp-rr-recap-status"></span>
-        <p class="admin-dim" style="margin-top:14px">Récap Valorant du roster (winrate, KDA moyen, % headshots) — envoyé à 7h30.</p>
+        <p class="admin-dim" style="margin-top:14px">LP SoloQ + winrate/KDA/CS, uniquement file Solo/Duo — envoyé à 7h15.</p>
+        <button class="admin-btn admin-btn-primary" id="admin-trigger-lol-solo-recap-btn">🔵 Déclencher le récap SoloQ maintenant (test)</button>
+        <span class="admin-dim" id="admin-trigger-lol-solo-recap-status"></span>
+        <p class="admin-dim" style="margin-top:14px">LP Flex + winrate/KDA/CS, uniquement file Flex — envoyé à 7h20.</p>
+        <button class="admin-btn admin-btn-primary" id="admin-trigger-lol-flex-recap-btn">🟣 Déclencher le récap Flex maintenant (test)</button>
+        <span class="admin-dim" id="admin-trigger-lol-flex-recap-status"></span>
+        <p class="admin-dim" style="margin-top:14px">RR + winrate/KDA/HS, uniquement file Compétitif — envoyé à 7h30.</p>
         <button class="admin-btn admin-btn-primary" id="admin-trigger-valo-recap-btn">🔴 Déclencher le récap Valorant maintenant (test)</button>
         <span class="admin-dim" id="admin-trigger-valo-recap-status"></span>
       </section>
@@ -257,10 +260,20 @@ function wireEvents(root) {
     }
   });
 
-  root.querySelector('#admin-trigger-lp-rr-recap-btn')?.addEventListener('click', async () => {
-    const status = root.querySelector('#admin-trigger-lp-rr-recap-status');
+  root.querySelector('#admin-trigger-lol-solo-recap-btn')?.addEventListener('click', async () => {
+    const status = root.querySelector('#admin-trigger-lol-solo-recap-status');
     try {
-      await fbPut('adminActions/lpRrRecapTrigger', { ts: Date.now() });
+      await fbPut('adminActions/lolSoloRecapTrigger', { ts: Date.now() });
+      if (status) status.textContent = '✅ Déclenché — vérifie les salons Discord trackés dans quelques secondes.';
+    } catch (error) {
+      if (status) status.textContent = `❌ Échec : ${error.message}`;
+    }
+  });
+
+  root.querySelector('#admin-trigger-lol-flex-recap-btn')?.addEventListener('click', async () => {
+    const status = root.querySelector('#admin-trigger-lol-flex-recap-status');
+    try {
+      await fbPut('adminActions/lolFlexRecapTrigger', { ts: Date.now() });
       if (status) status.textContent = '✅ Déclenché — vérifie les salons Discord trackés dans quelques secondes.';
     } catch (error) {
       if (status) status.textContent = `❌ Échec : ${error.message}`;

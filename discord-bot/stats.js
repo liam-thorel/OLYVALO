@@ -97,6 +97,13 @@ function averageHsPercent(entries) {
   return withHs.reduce((sum, e) => sum + e.hsPercent, 0) / withHs.length;
 }
 
+// CS moyen (LoL) sur les games où la donnée est disponible.
+function averageCs(entries) {
+  const withCs = entries.filter(e => typeof e.cs === 'number');
+  if (!withCs.length) return null;
+  return withCs.reduce((sum, e) => sum + e.cs, 0) / withCs.length;
+}
+
 // Ne garde que les games en file classée : Compétitif pour Valorant (les
 // autres modes — Swift Play, Deathmatch, Spike Rush... — faussent le
 // winrate/KDA d'un récap censé refléter le classé). Aucun filtre nécessaire
@@ -107,6 +114,6 @@ function rankedOnly(game, entries) {
 }
 
 module.exports = {
-  historyFor, winrateFor, mostPlayed, recentForm, killDeathRatio, averageKDA, averageHsPercent, HISTORY_SAMPLE_SIZE,
+  historyFor, winrateFor, mostPlayed, recentForm, killDeathRatio, averageKDA, averageHsPercent, averageCs, HISTORY_SAMPLE_SIZE,
   rankedOnly, RANKED_VALORANT_MODE,
 };
