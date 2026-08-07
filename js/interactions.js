@@ -600,7 +600,7 @@ export function initLivePage() {
         server: liveData?.server, scriptVersion: liveData?.scriptVersion,
         activeCount: active.length,
         allPlayers: active.map(([,s]) => (s.players||[]).length).join(','),
-        players: (liveData?.players||[]).map(p=>`${p.name}|${p.agentId||p.agent}|${p.team}|${p.rank?.tier??''}|${p.rank?.peakTier??''}|${p.rank?.peakHistorical??''}|${p.rank?.level??''}|${(p.rank?.rrHistory||[]).join('.')}|${p.rank?.rrEarned??''}`)
+        players: (liveData?.players||[]).map(p=>`${p.name}|${p.agentId||p.agent}|${p.team}|${p.rank?.tier??''}|${p.rank?.peakTier??''}|${p.rank?.peakHistorical??''}|${p.rank?.level??''}|${(p.rank?.rrHistory||[]).join('.')}|${p.rank?.rrEarned??''}|${p.rank?.season?.games??''}|${p.rank?.season?.winRatePct??''}`)
       });
       if (key !== lastDataKey) {
         lastDataKey = key;
@@ -1035,7 +1035,7 @@ export function initLivePage() {
     // field so the player rows refresh immediately without requiring an F5.
     const stableKey = all.map(p => {
       const rank = p.rank || {};
-      return `${p.name}|${p.agent}|${p.team}|${rank.tier ?? ''}|${rank.rr ?? ''}|${rank.peakTier ?? ''}|${rank.level ?? ''}|${(rank.rrHistory || []).join('.')}|${rank.rrEarned ?? ''}`;
+      return `${p.name}|${p.agent}|${p.team}|${rank.tier ?? ''}|${rank.rr ?? ''}|${rank.peakTier ?? ''}|${rank.level ?? ''}|${(rank.rrHistory || []).join('.')}|${rank.rrEarned ?? ''}|${rank.season?.games ?? ''}|${rank.season?.winRatePct ?? ''}`;
     }).join(',');
     if (playersEl && playersEl.dataset.key !== stableKey) {
       playersEl.dataset.key = stableKey;
@@ -1139,6 +1139,13 @@ export function initLivePage() {
     return `<span title="${title}" style="font-size:8px;font-family:Tomorrow,sans-serif;letter-spacing:1px;color:${color};border-left:1px solid #333;padding-left:6px"><span style="color:#777">${label}</span> ${name}</span>`;
   }
 
+  function seasonDisplay(rank) {
+    if (!rank?.season?.games) return '';
+    const { games, winRatePct } = rank.season;
+    const wr = winRatePct != null ? `${winRatePct}% WR · ` : '';
+    return `<span title="Acte compétitif en cours" style="font-size:8px;font-family:Tomorrow,sans-serif;letter-spacing:1px;color:#888;border-left:1px solid #333;padding-left:6px">${wr}${games} game${games > 1 ? 's' : ''}</span>`;
+  }
+
   // Agent UUID → icon URL cache
   const agentIconCache = {};
   let agentUuidMap = {}; // name → uuid
@@ -1199,6 +1206,7 @@ export function initLivePage() {
         <div style="margin-top:3px;display:flex;align-items:center;gap:6px">
           ${rankDisplay(p.rank)}
           ${peakDisplay(p.rank)}
+          ${seasonDisplay(p.rank)}
           ${rrDisplay(p.rank)}
           ${smurfBadge(p.rank)}
         </div>

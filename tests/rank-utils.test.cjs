@@ -2,6 +2,7 @@ const assert = require('node:assert/strict');
 const {
   buildRankSnapshot,
   historicalPeakTier,
+  currentSeasonStats,
   rrDelta,
 } = require('../live/rank-utils.js');
 
@@ -12,10 +13,14 @@ const mmr = {
         oldAct: {
           CompetitiveTier: 18,
           WinsByTier: { 18: 4, 19: 2, 20: 0 },
+          NumberOfGames: 40,
+          NumberOfWins: 22,
         },
         currentAct: {
           CompetitiveTier: 15,
           WinsByTier: { 15: 7 },
+          NumberOfGames: 30,
+          NumberOfWins: 18,
         },
       },
     },
@@ -59,8 +64,18 @@ assert.deepEqual(buildRankSnapshot(mmr, updates, 231), {
   peakTier: 19,
   peakHistorical: true,
   peakSource: 'season-history',
+  season: { games: 30, wins: 18, winRatePct: 60 },
   level: 231,
 });
+
+// currentSeasonStats prend le DERNIER acte du dict (le plus récent) — ici
+// currentAct (30 games, 18 wins), pas oldAct malgré son nom trompeur.
+assert.deepEqual(currentSeasonStats(mmr), { games: 30, wins: 18, winRatePct: 60 });
+assert.equal(currentSeasonStats(null), null);
+assert.equal(currentSeasonStats({ QueueSkills: { competitive: { SeasonalInfoBySeasonID: {} } } }), null);
+assert.equal(currentSeasonStats({
+  QueueSkills: { competitive: { SeasonalInfoBySeasonID: { act: { CompetitiveTier: 10 } } } },
+}), null); // pas de NumberOfGames dans cet acte → pas de stats exploitables
 
 const anonymousFallback = buildRankSnapshot(null, {
   Matches: [
@@ -71,7 +86,8 @@ const anonymousFallback = buildRankSnapshot(null, {
 assert.equal(anonymousFallback.peakTier, 14);
 assert.equal(anonymousFallback.peakHistorical, false);
 assert.equal(anonymousFallback.peakSource, 'recent-matches');
+assert.equal(anonymousFallback.season, null);
 
 assert.equal(buildRankSnapshot(null, null), null);
 
-console.log('rank-utils: historical peak and anonymous fallback validated');
+console.log('rank-utils: historical peak, season stats and anonymous fallback validated');

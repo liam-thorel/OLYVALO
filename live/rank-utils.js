@@ -34,6 +34,28 @@ function historicalPeakTier(mmr) {
   return peak;
 }
 
+// Winrate/games de l'acte compétitif en cours. Riot n'indique nulle part
+// explicitement quel acte de SeasonalInfoBySeasonID est "en cours" — les
+// actes y sont ajoutés dans l'ordre chronologique, donc le dernier objet du
+// dict est le plus récent.
+function currentSeasonStats(mmr) {
+  const seasons = mmr?.QueueSkills?.competitive?.SeasonalInfoBySeasonID;
+  if (!seasons || typeof seasons !== 'object') return null;
+  const entries = Object.values(seasons);
+  if (!entries.length) return null;
+
+  const current = entries[entries.length - 1];
+  const games = Number(current?.NumberOfGames);
+  const wins = Number(current?.NumberOfWins);
+  if (!Number.isFinite(games) || games <= 0) return null;
+
+  return {
+    games,
+    wins: Number.isFinite(wins) ? wins : null,
+    winRatePct: Number.isFinite(wins) ? Math.round((wins / games) * 100) : null,
+  };
+}
+
 function buildRankSnapshot(mmr, updates, level = null) {
   const matches = Array.isArray(updates?.Matches) ? updates.Matches : [];
   const latest = matches[0] || mmr?.LatestCompetitiveUpdate || null;
@@ -61,8 +83,9 @@ function buildRankSnapshot(mmr, updates, level = null) {
     peakTier,
     peakHistorical: historyAvailable,
     peakSource: historyAvailable ? 'season-history' : (recentPeak > 0 ? 'recent-matches' : 'unavailable'),
+    season: currentSeasonStats(mmr),
     ...(level == null ? {} : { level: Number(level) || 0 }),
   };
 }
 
-module.exports = { buildRankSnapshot, historicalPeakTier, rrDelta, tierNumber };
+module.exports = { buildRankSnapshot, historicalPeakTier, currentSeasonStats, rrDelta, tierNumber };
