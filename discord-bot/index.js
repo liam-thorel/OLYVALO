@@ -14,8 +14,12 @@ const {
 } = require('./betting.js');
 const { startWeeklyScheduler } = require('./weekly.js');
 const { startDailyRecapScheduler } = require('./daily-recap.js');
-const { startLolSoloRecapScheduler, startLolFlexRecapScheduler } = require('./lol-recap.js');
-const { startValoDailyRecapScheduler } = require('./valo-daily-recap.js');
+const {
+  startLolSoloRecapScheduler, startLolFlexRecapScheduler,
+  startLolSoloWeeklyRecapScheduler, startLolFlexWeeklyRecapScheduler,
+  startLolSoloMonthlyRecapScheduler, startLolFlexMonthlyRecapScheduler,
+} = require('./lol-recap.js');
+const { startValoDailyRecapScheduler, startValoWeeklyRecapScheduler, startValoMonthlyRecapScheduler } = require('./valo-daily-recap.js');
 const { rewardForGamePlayed } = require('./wallet.js');
 const { recordRankGain, lolRankPoints } = require('./rank-tracking.js');
 const { recordAward } = require('./valorant-awards.js');
@@ -58,9 +62,15 @@ process.on('uncaughtException', error => {
   './commands/list.js',
   './commands/mybets.js',
   './commands/recap-lol-flex.js',
+  './commands/recap-lol-flex-monthly.js',
+  './commands/recap-lol-flex-weekly.js',
   './commands/recap-lol-solo.js',
+  './commands/recap-lol-solo-monthly.js',
+  './commands/recap-lol-solo-weekly.js',
   './commands/recap-paris.js',
   './commands/recap-valo.js',
+  './commands/recap-valo-monthly.js',
+  './commands/recap-valo-weekly.js',
   './commands/stats.js',
   './commands/track-lol-all.js',
   './commands/track-valo-all.js',
@@ -1021,7 +1031,13 @@ client.once('ready', async () => {
   startDailyRecapScheduler(client);
   startLolSoloRecapScheduler(client);
   startLolFlexRecapScheduler(client);
+  startLolSoloWeeklyRecapScheduler(client);
+  startLolFlexWeeklyRecapScheduler(client);
+  startLolSoloMonthlyRecapScheduler(client);
+  startLolFlexMonthlyRecapScheduler(client);
   startValoDailyRecapScheduler(client);
+  startValoWeeklyRecapScheduler(client);
+  startValoMonthlyRecapScheduler(client);
   console.log('👂 Écoute des sessions Valorant et LoL en cours...');
 });
 

@@ -8,7 +8,7 @@ module.exports = {
 
   async execute(interaction) {
     await interaction.deferReply();
-    const embeds = await buildQueueRecapEmbeds('flex', null);
+    const embeds = await buildQueueRecapEmbeds('flex', 'daily', null);
     if (embeds.length === 0) {
       await interaction.editReply('Pas encore de games Flex enregistrées.');
       return;

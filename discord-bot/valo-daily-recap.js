@@ -1,22 +1,23 @@
 /**
- * Récap quotidien Valorant Compétitif du roster, envoyé chaque jour à 7h30
- * heure de Paris — combine deux embeds envoyés ensemble : RR gagnés/perdus
- * (par personne et par compte) et winrate/KDA/HS% moyens, uniquement sur les
- * games en file Compétitif (Swift Play/Deathmatch/etc. exclus).
+ * Récap Valorant Compétitif du roster — quotidien (7h30), hebdo (tous les
+ * lundis à minuit) et mensuel (le 1er du mois à minuit). Combine deux embeds
+ * envoyés ensemble : RR gagnés/perdus (par personne et par compte) et
+ * winrate/KDA/HS% moyens, uniquement sur les games en file Compétitif
+ * (Swift Play/Deathmatch/etc. exclus).
  */
 const { EmbedBuilder } = require('discord.js');
 const { fbGet, fbPut, watchNode } = require('./firebase.js');
 const { allTrackedChannelIds } = require('./trackers.js');
 const { filterRecapChannels } = require('./recap-settings.js');
 const { ensureRoster } = require('./roster.js');
-const { historyFor, averageKDA, averageHsPercent, rankedOnly } = require('./stats.js');
+const { historyFor, aggregateKDA, averageHsPercent, rankedOnly } = require('./stats.js');
 const { allRankGains, resetRankGains } = require('./rank-tracking.js');
 
-const RECAP_HOUR = 7; // heure locale Europe/Paris
-const RECAP_MINUTE = 30;
 const CHECK_INTERVAL_MS = 10 * 60 * 1000;
-const STATE_PATH = 'betting/valoDaily';
-const TRIGGER_PATH = 'adminActions/valoRecapTrigger';
+const DAILY_HOUR = 7; // heure locale Europe/Paris
+const DAILY_MINUTE = 30;
+
+const PERIOD_LABELS = { daily: 'quotidien', weekly: 'hebdo', monthly: 'mensuel' };
 
 function parisParts(now = new Date()) {
   const fmt = new Intl.DateTimeFormat('fr-FR', {
@@ -24,13 +25,36 @@ function parisParts(now = new Date()) {
     year: 'numeric', month: '2-digit', day: '2-digit',
   });
   const parts = Object.fromEntries(fmt.formatToParts(now).map(p => [p.type, p.value]));
-  return { hour: Number(parts.hour), minute: Number(parts.minute), dateKey: `${parts.year}-${parts.month}-${parts.day}` };
+  const year = Number(parts.year), month = Number(parts.month), day = Number(parts.day);
+  // 0=dimanche, 1=lundi... calculé sur la date locale Paris plutôt que via un
+  // libellé de jour localisé (fragile selon la locale/plateforme).
+  const weekday = new Date(Date.UTC(year, month - 1, day)).getUTCDay();
+  return { hour: Number(parts.hour), minute: Number(parts.minute), day, weekday, dateKey: `${parts.year}-${parts.month}-${parts.day}` };
+}
+
+function statePath(period) {
+  return period === 'daily' ? 'betting/valoDaily' : `betting/valo${period[0].toUpperCase()}${period.slice(1)}`;
+}
+
+function triggerPath(period) {
+  const periodSuffix = period === 'daily' ? '' : period[0].toUpperCase() + period.slice(1);
+  return `adminActions/valo${periodSuffix}RecapTrigger`;
+}
+
+// Quotidien : fenêtre horaire fixe (7h30). Hebdo : tous les lundis à partir
+// de minuit. Mensuel : le 1er du mois à partir de minuit. Le garde-fou
+// `lastRecapDate` (une seule fois par date déclenchante) suffit dans les 3
+// cas puisque chacune de ces dates ne revient qu'une fois par cycle.
+function isDue(period, parts) {
+  if (period === 'daily') return parts.hour === DAILY_HOUR && parts.minute >= DAILY_MINUTE;
+  if (period === 'weekly') return parts.weekday === 1 && parts.hour === 0 && parts.minute < 10;
+  return parts.day === 1 && parts.hour === 0 && parts.minute < 10; // monthly
 }
 
 // sinceTs=null → tout l'historique connu (commande manuelle) ; sinon ne garde
-// que les games postérieures (récap planifié, fenêtre "depuis le dernier récap").
-async function buildValoRecapEmbeds(sinceTs = null) {
-  const [gains, members] = await Promise.all([allRankGains('valorant'), ensureRoster()]);
+// que les games postérieures (récap planifié, fenêtre "depuis le dernier récap DE CETTE CADENCE").
+async function buildValoRecapEmbeds(period, sinceTs = null) {
+  const [gains, members] = await Promise.all([allRankGains('valorant', period), ensureRoster()]);
 
   const embeds = [];
   if (gains.length > 0) {
@@ -38,7 +62,7 @@ async function buildValoRecapEmbeds(sinceTs = null) {
       .map(g => `🔴 **${g.memberName}** (${g.riotId}) — ${g.delta >= 0 ? '+' : ''}${g.delta} RR`);
     embeds.push(new EmbedBuilder()
       .setColor(0xff4655)
-      .setAuthor({ name: '📈 RR (Valorant Compétitif)' })
+      .setAuthor({ name: `📈 RR Valorant (${PERIOD_LABELS[period]})` })
       .setDescription(lines.join('\n'))
       .setTimestamp());
   }
@@ -52,7 +76,7 @@ async function buildValoRecapEmbeds(sinceTs = null) {
       name: member.name,
       games: recent.length,
       winRatePct: withResult.length ? Math.round((wins / withResult.length) * 100) : null,
-      kda: averageKDA(recent),
+      kda: aggregateKDA(recent),
       hs: averageHsPercent(recent),
     };
   }));
@@ -72,7 +96,7 @@ async function buildValoRecapEmbeds(sinceTs = null) {
   if (lines.length > 0) {
     embeds.push(new EmbedBuilder()
       .setColor(0xff4655)
-      .setAuthor({ name: '📊 Stats (Valorant Compétitif)' })
+      .setAuthor({ name: `📊 Stats Valorant Compétitif (${PERIOD_LABELS[period]})` })
       .setDescription(lines.join('\n'))
       .setTimestamp());
   }
@@ -80,12 +104,13 @@ async function buildValoRecapEmbeds(sinceTs = null) {
   return embeds;
 }
 
-async function runValoDailyRecap(client, dateKey = null) {
-  const state = await fbGet(STATE_PATH).catch(() => null) || {};
+async function runValoRecap(client, period, dateKey = null) {
+  const path = statePath(period);
+  const state = await fbGet(path).catch(() => null) || {};
   const since = state.lastRecapTs || 0;
   const now = Date.now();
 
-  const embeds = await buildValoRecapEmbeds(since);
+  const embeds = await buildValoRecapEmbeds(period, since);
   if (embeds.length > 0) {
     const channelIds = await filterRecapChannels(allTrackedChannelIds());
     await Promise.all(channelIds.map(async channelId => {
@@ -93,40 +118,48 @@ async function runValoDailyRecap(client, dateKey = null) {
         const channel = await client.channels.fetch(channelId);
         await channel.send({ embeds });
       } catch (error) {
-        console.error('[valo-daily-recap:announce]', error.message);
+        console.error(`[valo-recap:${period}:announce]`, error.message);
       }
     }));
   }
 
-  await resetRankGains('valorant');
+  await resetRankGains('valorant', period);
   const nextState = { ...state, lastRecapTs: now };
   if (dateKey) nextState.lastRecapDate = dateKey;
-  await fbPut(STATE_PATH, nextState);
+  await fbPut(path, nextState);
 }
 
-function startValoDailyRecapScheduler(client) {
+function startRecapScheduler(client, period) {
+  const path = statePath(period);
+  const trigger = triggerPath(period);
+
   const checkSchedule = async () => {
-    const { hour, minute, dateKey } = parisParts();
-    const state = await fbGet(STATE_PATH).catch(() => null) || {};
-    if (hour !== RECAP_HOUR || minute < RECAP_MINUTE || state.lastRecapDate === dateKey) return;
-    await runValoDailyRecap(client, dateKey);
+    const parts = parisParts();
+    if (!isDue(period, parts)) return;
+    const state = await fbGet(path).catch(() => null) || {};
+    if (state.lastRecapDate === parts.dateKey) return;
+    await runValoRecap(client, period, parts.dateKey);
   };
 
-  checkSchedule().catch(error => console.error('[valo-daily-recap:schedule]', error.message));
-  setInterval(() => checkSchedule().catch(error => console.error('[valo-daily-recap:schedule]', error.message)), CHECK_INTERVAL_MS);
+  checkSchedule().catch(error => console.error(`[valo-recap:${period}:schedule]`, error.message));
+  setInterval(() => checkSchedule().catch(error => console.error(`[valo-recap:${period}:schedule]`, error.message)), CHECK_INTERVAL_MS);
 
-  // Déclenchement manuel depuis le panel admin du site (bouton "tester"). Le
-  // tout premier événement reçu à la connexion reflète l'état déjà existant
-  // (pas un nouveau clic) — on l'ignore pour ne pas redéclencher au démarrage.
+  // Déclenchement manuel depuis le panel admin du site (bouton "tester") ou
+  // via /recap-*. Le tout premier événement reçu à la connexion reflète juste
+  // l'état déjà existant (pas un nouveau clic) — on l'ignore.
   let lastTriggerTs = null;
   let isFirstTriggerSnapshot = true;
-  watchNode(TRIGGER_PATH, data => {
+  watchNode(trigger, data => {
     const ts = data?.ts || null;
     if (isFirstTriggerSnapshot) { isFirstTriggerSnapshot = false; lastTriggerTs = ts; return; }
     if (!ts || ts === lastTriggerTs) return;
     lastTriggerTs = ts;
-    runValoDailyRecap(client).catch(error => console.error('[valo-daily-recap:manual]', error.message));
-  }, error => console.error('[valo-daily-recap:trigger-watch]', error.message));
+    runValoRecap(client, period).catch(error => console.error(`[valo-recap:${period}:manual]`, error.message));
+  }, error => console.error(`[valo-recap:${period}:trigger-watch]`, error.message));
 }
 
-module.exports = { startValoDailyRecapScheduler, buildValoRecapEmbeds };
+function startValoDailyRecapScheduler(client) { startRecapScheduler(client, 'daily'); }
+function startValoWeeklyRecapScheduler(client) { startRecapScheduler(client, 'weekly'); }
+function startValoMonthlyRecapScheduler(client) { startRecapScheduler(client, 'monthly'); }
+
+module.exports = { startValoDailyRecapScheduler, startValoWeeklyRecapScheduler, startValoMonthlyRecapScheduler, buildValoRecapEmbeds };

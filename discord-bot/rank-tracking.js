@@ -1,13 +1,19 @@
 /**
  * Accumulateur de gains/pertes de LP (LoL) et RR (Valorant) par compte, entre
- * deux récaps quotidiens. Contrairement aux points de paris (wallet.js), il
- * n'y a pas de "solde" de LP/RR interrogeable à tout moment dans Firebase — on
- * accumule donc le delta de chaque game classée au fil de l'eau (appelé par
- * index.js à chaque fin de game), puis on remet à zéro après chaque récap.
+ * deux récaps. Contrairement aux points de paris (wallet.js), il n'y a pas de
+ * "solde" de LP/RR interrogeable à tout moment dans Firebase — on accumule
+ * donc le delta de chaque game classée au fil de l'eau (appelé par index.js à
+ * chaque fin de game).
+ *
+ * Trois fenêtres d'accumulation indépendantes (quotidien/hebdo/mensuel) sont
+ * tenues à jour en parallèle pour chaque game — chaque récap (à sa propre
+ * cadence) ne lit et ne remet à zéro QUE sa propre fenêtre, les deux autres
+ * continuant d'accumuler sans interruption.
  */
 const { fbGet, fbPut } = require('./firebase.js');
 
 const PATH = 'rankTracking';
+const PERIODS = ['daily', 'weekly', 'monthly'];
 
 function safeKey(str) {
   return String(str || '').replace(/[.#$[\]/]/g, '_');
@@ -30,20 +36,23 @@ function lolRankPoints(rank) {
 async function recordRankGain(game, riotId, memberName, delta) {
   if (!riotId || !Number.isFinite(delta) || delta === 0) return;
   const key = safeKey(riotId);
-  const existing = await fbGet(`${PATH}/${game}/${key}`).catch(() => null);
-  const total = (existing?.delta || 0) + delta;
-  await fbPut(`${PATH}/${game}/${key}`, { riotId, memberName, delta: total, updatedAt: Date.now() });
+  await Promise.all(PERIODS.map(async period => {
+    const path = `${PATH}/${period}/${game}/${key}`;
+    const existing = await fbGet(path).catch(() => null);
+    const total = (existing?.delta || 0) + delta;
+    await fbPut(path, { riotId, memberName, delta: total, updatedAt: Date.now() });
+  }));
 }
 
-async function allRankGains(game) {
-  const data = await fbGet(`${PATH}/${game}`).catch(() => null);
+async function allRankGains(game, period = 'daily') {
+  const data = await fbGet(`${PATH}/${period}/${game}`).catch(() => null);
   return Object.values(data || {}).filter(entry => entry.delta);
 }
 
-async function resetRankGains(game) {
-  const data = await fbGet(`${PATH}/${game}`).catch(() => null);
+async function resetRankGains(game, period = 'daily') {
+  const data = await fbGet(`${PATH}/${period}/${game}`).catch(() => null);
   await Promise.all(Object.entries(data || {}).map(([key, entry]) =>
-    fbPut(`${PATH}/${game}/${key}`, { ...entry, delta: 0 })));
+    fbPut(`${PATH}/${period}/${game}/${key}`, { ...entry, delta: 0 })));
 }
 
 module.exports = { recordRankGain, allRankGains, resetRankGains, lolRankPoints };

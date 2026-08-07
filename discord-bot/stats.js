@@ -81,13 +81,17 @@ function killDeathRatio(entries) {
   return totalKills / totalDeaths;
 }
 
-// KDA moyen : moyenne du (kills+assists)/morts de chaque game individuelle
-// (différent du ratio K/D agrégé ci-dessus, qui ignore les assists).
-function averageKDA(entries) {
+// KDA agrégé : (somme des kills + somme des assists) / somme des morts sur
+// toutes les games — pas une moyenne des KDA individuels, qui pondérerait
+// chaque game de façon égale peu importe combien de kills/morts elle contient.
+function aggregateKDA(entries) {
   const withStats = entries.filter(e => e.kills != null && e.deaths != null);
   if (!withStats.length) return null;
-  const total = withStats.reduce((sum, e) => sum + (e.kills + (e.assists || 0)) / Math.max(1, e.deaths), 0);
-  return total / withStats.length;
+  const totalKills = withStats.reduce((sum, e) => sum + (e.kills || 0), 0);
+  const totalAssists = withStats.reduce((sum, e) => sum + (e.assists || 0), 0);
+  const totalDeaths = withStats.reduce((sum, e) => sum + (e.deaths || 0), 0);
+  if (totalDeaths === 0) return totalKills + totalAssists;
+  return (totalKills + totalAssists) / totalDeaths;
 }
 
 // % de headshots moyen sur les games où la donnée est disponible.
@@ -114,6 +118,6 @@ function rankedOnly(game, entries) {
 }
 
 module.exports = {
-  historyFor, winrateFor, mostPlayed, recentForm, killDeathRatio, averageKDA, averageHsPercent, averageCs, HISTORY_SAMPLE_SIZE,
+  historyFor, winrateFor, mostPlayed, recentForm, killDeathRatio, aggregateKDA, averageHsPercent, averageCs, HISTORY_SAMPLE_SIZE,
   rankedOnly, RANKED_VALORANT_MODE,
 };
