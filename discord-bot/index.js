@@ -920,11 +920,17 @@ function watchGameSessions(game, firebasePath) {
   // Comme pour les fins de partie, deux joueurs OLYCITY dans la même game
   // publient leur session Firebase à des cycles de poll indépendants (leurs
   // scripts locaux respectifs) — au moment exact où le premier passe actif,
-  // le second peut ne pas encore être présent dans le snapshot. On attend
-  // une courte fenêtre avant d'envoyer la notif de départ, en relisant le
+  // le second peut ne pas encore être présent, ou pas encore sur le même
+  // matchId stabilisé (le matchId peut prendre du temps à se stabiliser
+  // pendant la sélection d'agent). On attend une fenêtre plus généreuse
+  // qu'en fin de partie avant d'envoyer la notif de départ, en relisant le
   // DERNIER snapshot reçu (pas celui capturé au moment de la programmation)
-  // pour laisser une chance aux coéquipiers d'apparaître entre-temps.
-  const GROUPED_START_WINDOW_MS = 10 * 1000;
+  // pour laisser le temps aux coéquipiers plus lents d'apparaître. Repéré en
+  // prod : avec 10s, un coéquipier resté "actif" en continu depuis le
+  // pregame (donc sans transition inactif→actif détectable de notre côté)
+  // n'était rattrapé que par le lookup sameMatch du premier joueur — et son
+  // matchId n'avait pas toujours fini de se stabiliser à temps.
+  const GROUPED_START_WINDOW_MS = 25 * 1000;
   const pendingStartTimers = new Map(); // matchId -> timer
   let latestSnapshot = null;
   let isFirstSnapshot = true;
