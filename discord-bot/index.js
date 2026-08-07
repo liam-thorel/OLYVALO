@@ -256,6 +256,12 @@ async function notifyValorantGameStart(session, snapshot) {
     }
   }));
 
+  // Pas de paris en deathmatch — un score de kills en FFA n'a rien à voir
+  // avec une victoire/défaite d'équipe, "équipe suivie vs adverse" n'a pas
+  // de sens dans ce mode.
+  const isDeathmatch = /deathmatch/i.test(session.mode || '');
+  if (isDeathmatch) return;
+
   const bettingPlayers = rosterPlayers.map(({ session: s, member }) => ({
     member, rank: s.rank || null, championOrAgentName: null,
   }));
