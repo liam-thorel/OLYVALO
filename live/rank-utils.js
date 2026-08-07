@@ -34,17 +34,23 @@ function historicalPeakTier(mmr) {
   return peak;
 }
 
-// Winrate/games de l'acte compétitif en cours. Riot n'indique nulle part
-// explicitement quel acte de SeasonalInfoBySeasonID est "en cours" — les
-// actes y sont ajoutés dans l'ordre chronologique, donc le dernier objet du
-// dict est le plus récent.
-function currentSeasonStats(mmr) {
+// Winrate/games de l'acte compétitif en cours. Riot n'indique nulle part sur
+// SeasonalInfoBySeasonID lui-même quel acte est "en cours" — mais chaque
+// match de `updates.Matches` (l'historique récent, déjà récupéré) porte un
+// SeasonID : celui du match le plus récent identifie l'acte en cours de
+// façon certaine, sans supposer un ordre particulier des clés du dict (une
+// première version faisait cette hypothèse — jamais vérifiable sans données
+// réelles à l'époque — et donnait de mauvais chiffres pour certains comptes).
+function currentSeasonStats(mmr, updates) {
   const seasons = mmr?.QueueSkills?.competitive?.SeasonalInfoBySeasonID;
   if (!seasons || typeof seasons !== 'object') return null;
   const entries = Object.values(seasons);
   if (!entries.length) return null;
 
-  const current = entries[entries.length - 1];
+  const matches = Array.isArray(updates?.Matches) ? updates.Matches : [];
+  const currentSeasonId = matches[0]?.SeasonID || null;
+  const current = (currentSeasonId && seasons[currentSeasonId]) || entries[entries.length - 1];
+
   const games = Number(current?.NumberOfGames);
   const wins = Number(current?.NumberOfWins);
   if (!Number.isFinite(games) || games <= 0) return null;
@@ -83,7 +89,7 @@ function buildRankSnapshot(mmr, updates, level = null) {
     peakTier,
     peakHistorical: historyAvailable,
     peakSource: historyAvailable ? 'season-history' : (recentPeak > 0 ? 'recent-matches' : 'unavailable'),
-    season: currentSeasonStats(mmr),
+    season: currentSeasonStats(mmr, updates),
     ...(level == null ? {} : { level: Number(level) || 0 }),
   };
 }
