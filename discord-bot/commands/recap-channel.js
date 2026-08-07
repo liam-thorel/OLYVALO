@@ -5,7 +5,7 @@ const { RECAP_CHANNEL_PATH } = require('../recap-channel.js');
 module.exports = {
   data: new SlashCommandBuilder()
     .setName('recap-channel')
-    .setDescription('Fait de ce salon la destination des récaps automatiques (SoloQ, Flex, Valorant — quotidien/hebdo/mensuel)')
+    .setDescription('Fait de ce salon la destination des récaps auto (SoloQ, Flex, Valorant)')
     .setDefaultMemberPermissions(PermissionFlagsBits.ManageChannels),
 
   async execute(interaction) {
