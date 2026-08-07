@@ -1,0 +1,71 @@
+/* ════════════════════════════════════════════════
+   OLYCITY · Malédiction (easter egg page live)
+   Bouton "Maudire la game" + tentacules + texte glitché
+   ════════════════════════════════════════════════ */
+
+.curse-toggle{
+  position:relative;
+  margin-left:auto;
+  display:flex; align-items:center; gap:9px;
+  padding:9px 16px 9px 13px;
+  border-radius:8px;
+  border:1px solid var(--border2);
+  background:var(--surf2);
+  color:var(--text);
+  font-family:'Tomorrow',sans-serif; font-size:11px; font-weight:700; letter-spacing:2px;
+  text-transform:uppercase;
+  cursor:pointer;
+  transition:border-color .25s ease, background .25s ease, box-shadow .35s ease, color .25s ease;
+  -webkit-tap-highlight-color:transparent;
+}
+.curse-toggle .glyph{ font-size:15px; line-height:1; filter:grayscale(1) brightness(1.4); transition:filter .35s ease, transform .35s ease; }
+.curse-toggle:hover{ border-color:rgba(167,85,232,.35); }
+.curse-toggle.on{
+  background:linear-gradient(155deg,#190826,#0d0414);
+  border-color:rgba(167,85,232,.55);
+  color:#e7d3ff;
+  box-shadow:0 0 0 1px rgba(167,85,232,.12), 0 6px 22px -6px rgba(139,47,201,.55), inset 0 0 14px rgba(139,47,201,.12);
+  animation:curse-toggle-throb 2.6s ease-in-out infinite;
+}
+.curse-toggle.on .glyph{ filter:none; transform:scale(1.08); }
+@keyframes curse-toggle-throb{
+  0%,100%{ box-shadow:0 0 0 1px rgba(167,85,232,.12), 0 6px 22px -6px rgba(139,47,201,.55), inset 0 0 14px rgba(139,47,201,.12); }
+  50%{ box-shadow:0 0 0 1px rgba(167,85,232,.22), 0 6px 30px -4px rgba(139,47,201,.8), inset 0 0 20px rgba(139,47,201,.22); }
+}
+.curse-toggle.locked{
+  cursor:not-allowed;
+  z-index:80;
+  transition:left .16s cubic-bezier(.3,1.4,.6,1), top .16s cubic-bezier(.3,1.4,.6,1),
+             border-color .25s ease, background .25s ease, box-shadow .35s ease, color .25s ease;
+}
+
+#curse-tentacle-canvas{
+  position:fixed; inset:0; width:100%; height:100%;
+  pointer-events:none; z-index:40;
+}
+
+#curse-layer{ position:fixed; inset:0; pointer-events:none; z-index:41; overflow:hidden; }
+.curse-phrase{
+  position:absolute;
+  font-family:'Tomorrow',sans-serif; font-weight:700;
+  color:#c99bf5;
+  text-shadow:
+    0 0 6px rgba(167,85,232,.9),
+    0 0 18px rgba(139,47,201,.65),
+    0 0 34px rgba(92,31,176,.4);
+  white-space:nowrap;
+  opacity:0;
+  letter-spacing:.5px;
+  animation:curse-float 6.5s ease-in-out forwards;
+}
+@keyframes curse-float{
+  0%{ opacity:0; transform:translateY(18px) scale(.97); }
+  10%{ opacity:1; transform:translateY(0) scale(1); }
+  78%{ opacity:.92; }
+  100%{ opacity:0; transform:translateY(-46px) scale(1.015); }
+}
+
+@media (prefers-reduced-motion: reduce){
+  .curse-toggle.on{ animation:none; }
+  .curse-phrase{ animation-duration:9s; }
+}

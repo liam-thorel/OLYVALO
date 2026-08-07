@@ -16,6 +16,7 @@ import { freshLiveClients, isVersionAtLeast, liveClientSummary } from './live-cl
 import { serverVisual } from './server-visuals.mjs?v=20260805-live-stable';
 import { avatarLayersHTML } from './avatars.mjs?v=20260720-avatars';
 import { filterHistoryGames, historyDailyPerformances, historyGameForOwner, historyMode, historyOwnerKey, historyOwnerLabel, historyPlayerName, historyPlayerPerformance, historyPlayerPerformances, historyRankedPlayers, historyReports, isHistorySelf, normalizeHistoryEntries } from './history-utils.mjs?v=20260720-history-multi';
+import { initCurse } from './curse.mjs?v=20260807-curse';
 
 // ─── THEME TOGGLE ─────────────────────────────────
 export function initTheme() {
@@ -371,6 +372,8 @@ export function initLivePage() {
   let lastMapName = null;
   let raf = null;
   let currentLiveData = null;
+
+  const curse = initCurse();
 
   const canvas = document.getElementById('live-map-canvas');
   const ctx = canvas?.getContext('2d');
@@ -749,6 +752,7 @@ export function initLivePage() {
           if (waiting) waiting.style.display = 'flex';
           if (content) content.style.display = 'none';
           if (dot && document.documentElement.dataset.game === 'valorant') dot.style.display = 'none';
+          curse?.setLive(false);
           updateUI._hideTimer = null;
         }, 3000);
       }
@@ -1030,6 +1034,9 @@ export function initLivePage() {
     const allies = all.filter(p => p.team === 'ORDER');
     const enemies = all.filter(p => p.team === 'CHAOS');
     const isDM = /deathmatch/i.test(data.mode || '') || all.some(p => p.team === 'NEUTRAL') || allies.length === all.length || enemies.length === 0;
+
+    curse?.setRoster([...new Set(allies.map(p => olycityMember(p.name)).filter(Boolean))]);
+    curse?.setLive(true);
 
     // Ranks arrive asynchronously after the roster. Include every displayed rank
     // field so the player rows refresh immediately without requiring an F5.

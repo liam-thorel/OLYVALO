@@ -17,6 +17,7 @@
   <link rel="stylesheet" href="./css/agent-page.css?v=20260720-avatars">
   <link rel="stylesheet" href="./css/responsive.css?v=20260806-no-builder">
   <link rel="stylesheet" href="./css/lol-mode.css?v=20260806-lol-roster-compact">
+  <link rel="stylesheet" href="./css/curse.css?v=20260807-curse">
 </head>
 <body>
 
@@ -361,6 +362,9 @@
           <div class="live-map-name" id="live-map-name">—</div>
           <div class="live-server" id="live-server" style="display:none">—</div>
           <div class="live-phase" id="live-phase">—</div>
+          <button class="curse-toggle" id="curse-btn" type="button" aria-pressed="false">
+            <span class="glyph">🐙</span><span id="curse-btn-label">Maudire la game</span>
+          </button>
         </div>
         <div class="live-data-notice" id="live-data-notice" style="display:none"></div>
         <div class="live-body">
@@ -384,6 +388,8 @@
         </div>
       </div>
     </div>
+    <canvas id="curse-tentacle-canvas"></canvas>
+    <div id="curse-layer"></div>
   </div>
 
   <!-- ═══════════ PAGE ADMIN (pas de lien dans le nav — accès direct via #admin) ═══════════ -->
