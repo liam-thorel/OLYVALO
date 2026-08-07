@@ -1,14 +1,16 @@
 /**
  * OLYCITY · Malédiction — easter egg cosmétique de la page live. Tant qu'une
  * game est suivie, n'importe qui peut « maudire » la partie : des tentacules
- * montent du bas de l'écran et des phrases glitchées flottent, ciblant au
- * hasard un membre du roster OLYCITY présent dans le match. Irréversible une
- * fois lancée (le bouton fuit le curseur) — tout se réinitialise seul à la
- * fin de la game (voir updateCurseMatch(false, ...) dans interactions.js).
+ * montent du bas de l'écran, une vignette sombre s'intensifie, une nappe
+ * sonore inquiétante s'installe et des phrases glitchées flottent, ciblant
+ * au hasard un membre du roster OLYCITY présent dans le match. Irréversible
+ * une fois lancée (le bouton fuit le curseur) — tout se réinitialise seul à
+ * la fin de la game (voir setLive(false), appelé depuis interactions.js).
  */
 
 const DOSE = 10; // intensité du glitch zalgo, validée avec l'utilisateur
 const TENTACLE_COUNT = 7;
+const AMBIENCE_TARGET_GAIN = 0.32;
 
 // Marques combinantes Unicode "haut"/"bas" uniquement — les marques "mid"
 // (barrées/traversantes) sont volontairement exclues : ce sont elles qui
@@ -60,6 +62,8 @@ export function initCurse(){
   const btnLabel = document.getElementById('curse-btn-label');
   const canvas = document.getElementById('curse-tentacle-canvas');
   const cursedLayer = document.getElementById('curse-layer');
+  const vignetteEl = document.getElementById('curse-vignette');
+  const muteBtn = document.getElementById('curse-mute-btn');
   if (!btn || !btnLabel || !canvas || !cursedLayer) return null;
 
   const reduceMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -99,6 +103,7 @@ export function initCurse(){
   let tentaclesActive = false;
   let t = 0;
   let raf = null;
+  let curseStartTime = 0;
 
   function drawTentacle(tn, time){
     const baseX = tn.baseX + Math.sin(time * 0.05 + tn.phase) * tn.drift;
@@ -162,20 +167,79 @@ export function initCurse(){
     }
   }
 
+  /* ---------------- cursor ink trail ---------------- */
+  const inkParticles = [];
+  let lastInkSpawn = 0;
+  document.addEventListener('pointermove', e => {
+    if (!locked || reduceMotion) return;
+    const now = performance.now();
+    if (now - lastInkSpawn < 45) return;
+    lastInkSpawn = now;
+    inkParticles.push({
+      x: e.clientX, y: e.clientY,
+      vx: (Math.random() - 0.5) * 6, vy: -0.4 - Math.random() * 0.8,
+      life: 0, maxLife: 700 + Math.random() * 500,
+      size: 4 + Math.random() * 7,
+    });
+    if (inkParticles.length > 120) inkParticles.splice(0, inkParticles.length - 120);
+  });
+
+  function updateInk(dtMs){
+    for (let i = inkParticles.length - 1; i >= 0; i--){
+      const p = inkParticles[i];
+      p.life += dtMs;
+      if (p.life >= p.maxLife){ inkParticles.splice(i, 1); continue; }
+      p.x += p.vx * (dtMs / 16);
+      p.y += p.vy * (dtMs / 16);
+      const f = 1 - p.life / p.maxLife;
+      ctx.beginPath();
+      ctx.ellipse(p.x, p.y, p.size * (0.5 + f * 0.5), p.size * (0.5 + f * 0.5), 0, 0, Math.PI * 2);
+      ctx.fillStyle = `rgba(90,30,140,${(f * 0.45).toFixed(3)})`;
+      ctx.shadowColor = 'rgba(167,85,232,.5)';
+      ctx.shadowBlur = 10;
+      ctx.fill();
+      ctx.shadowBlur = 0;
+    }
+  }
+
+  let lastFrameTime = performance.now();
+
   function loop(){
     raf = requestAnimationFrame(loop);
+    const now = performance.now();
+    const dtMs = now - lastFrameTime;
+    lastFrameTime = now;
     t += reduceMotion ? 0.006 : 0.016;
     ctx.clearRect(0, 0, window.innerWidth, window.innerHeight);
 
     let anyVisible = false;
+    let avgRise = 0;
     for (let i = 0; i < tentacleList.length; i++){
       const tn = tentacleList[i];
       const target = tentaclesActive ? 1 : 0;
       tn.rise += (target - tn.rise) * (reduceMotion ? 0.03 : 0.045);
+      avgRise += tn.rise;
       if (tn.rise > 0.003){ anyVisible = true; drawTentacle(tn, t + i * 3.1); }
     }
+    avgRise /= tentacleList.length;
 
-    if (!tentaclesActive && !anyVisible){
+    updateInk(dtMs);
+
+    // Vignette : présente dès le début (pas un fondu depuis zéro), puis
+    // continue de s'intensifier tant que la curse dure (plafonnée). Le throb
+    // (pulsation synchronisée au balancement des tentacules) reste actif en
+    // permanence, y compris en prefers-reduced-motion — seule l'amplitude
+    // du balancement des tentacules elles-mêmes est réduite dans ce cas.
+    if (vignetteEl){
+      const minAlpha = 0.16;
+      const age = tentaclesActive ? (Date.now() - curseStartTime) / 45000 : 0;
+      const throb = Math.sin(t * 1.1) * 0.05;
+      const baseAlpha = tentaclesActive ? minAlpha + Math.min(0.34, age * 0.34) : 0;
+      const alpha = Math.max(0, (baseAlpha + throb) * avgRise);
+      vignetteEl.style.background = `radial-gradient(ellipse at center, transparent 30%, rgba(8,2,16,${alpha.toFixed(3)}) 100%)`;
+    }
+
+    if (!tentaclesActive && !anyVisible && inkParticles.length === 0){
       cancelAnimationFrame(raf);
       raf = null;
     }
@@ -184,6 +248,78 @@ export function initCurse(){
   function setTentaclesActive(v){
     tentaclesActive = v;
     if (!raf) loop();
+  }
+
+  /* ---------------- ambient sound (drone + whispers, no external asset) ---------------- */
+  let audioCtx = null, masterGain = null, whisperTimer = null, muted = false;
+
+  function startAmbience(){
+    if (audioCtx || reduceMotion) return;
+    const AC = window.AudioContext || window.webkitAudioContext;
+    if (!AC) return;
+    audioCtx = new AC();
+    masterGain = audioCtx.createGain();
+    masterGain.gain.value = 0;
+    masterGain.connect(audioCtx.destination);
+    masterGain.gain.linearRampToValueAtTime(muted ? 0 : AMBIENCE_TARGET_GAIN, audioCtx.currentTime + 3);
+
+    const osc1 = audioCtx.createOscillator(); osc1.type = 'sawtooth'; osc1.frequency.value = 55;
+    const osc2 = audioCtx.createOscillator(); osc2.type = 'sine'; osc2.frequency.value = 55 * 1.5;
+    const filter = audioCtx.createBiquadFilter(); filter.type = 'lowpass'; filter.frequency.value = 220; filter.Q.value = 4;
+    const droneGain = audioCtx.createGain(); droneGain.gain.value = 0.55;
+    osc1.connect(filter); osc2.connect(filter); filter.connect(droneGain); droneGain.connect(masterGain);
+
+    const lfo = audioCtx.createOscillator(); lfo.frequency.value = 0.07;
+    const lfoGain = audioCtx.createGain(); lfoGain.gain.value = 65;
+    lfo.connect(lfoGain); lfoGain.connect(filter.frequency);
+
+    osc1.start(); osc2.start(); lfo.start();
+    scheduleWhisper();
+  }
+
+  function scheduleWhisper(){
+    whisperTimer = setTimeout(() => { playWhisperBurst(); scheduleWhisper(); }, 3500 + Math.random() * 5000);
+  }
+
+  function playWhisperBurst(){
+    if (!audioCtx) return;
+    const dur = 1.2 + Math.random() * 1.5;
+    const bufferSize = Math.floor(audioCtx.sampleRate * dur);
+    const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
+    const data = buffer.getChannelData(0);
+    for (let i = 0; i < bufferSize; i++) data[i] = (Math.random() * 2 - 1) * 0.6;
+    const noise = audioCtx.createBufferSource(); noise.buffer = buffer;
+    const bp = audioCtx.createBiquadFilter(); bp.type = 'bandpass'; bp.frequency.value = 500 + Math.random() * 900; bp.Q.value = 1.4;
+    const g = audioCtx.createGain(); g.gain.value = 0;
+    const now = audioCtx.currentTime;
+    g.gain.linearRampToValueAtTime(0.2, now + dur * 0.3);
+    g.gain.linearRampToValueAtTime(0, now + dur);
+    noise.connect(bp); bp.connect(g); g.connect(masterGain);
+    noise.start(); noise.stop(now + dur);
+  }
+
+  function stopAmbience(){
+    if (whisperTimer){ clearTimeout(whisperTimer); whisperTimer = null; }
+    if (masterGain && audioCtx){
+      const now = audioCtx.currentTime;
+      masterGain.gain.cancelScheduledValues(now);
+      masterGain.gain.setValueAtTime(masterGain.gain.value, now);
+      masterGain.gain.linearRampToValueAtTime(0, now + 1.2);
+      const ctxToClose = audioCtx;
+      setTimeout(() => { try { ctxToClose.close(); } catch { /* déjà fermé */ } }, 1300);
+    }
+    audioCtx = null; masterGain = null;
+  }
+
+  if (muteBtn){
+    muteBtn.addEventListener('click', () => {
+      muted = !muted;
+      muteBtn.classList.toggle('muted', muted);
+      muteBtn.textContent = muted ? '🔇' : '🔊';
+      if (masterGain && audioCtx){
+        masterGain.gain.linearRampToValueAtTime(muted ? 0 : AMBIENCE_TARGET_GAIN, audioCtx.currentTime + 0.3);
+      }
+    });
   }
 
   /* ---------------- floating cursed text ---------------- */
@@ -247,17 +383,22 @@ export function initCurse(){
     btn.style.left = '';
     btn.style.top = '';
     btn.style.right = '';
+    if (muteBtn) muteBtn.classList.remove('visible', 'muted');
+    if (muteBtn) muteBtn.textContent = '🔊';
   }
 
   btn.addEventListener('click', () => {
     if (locked){ dodge(); return; }
     cursed = true;
     locked = true;
+    curseStartTime = Date.now();
     btn.classList.add('on', 'locked');
     btn.setAttribute('aria-pressed', 'true');
     btnLabel.textContent = 'Annuler la curse';
     setTentaclesActive(true);
     scheduleSpawn();
+    startAmbience();
+    if (muteBtn) muteBtn.classList.add('visible');
   });
   btn.addEventListener('pointerenter', () => { if (locked) dodge(); });
 
@@ -271,6 +412,7 @@ export function initCurse(){
     if (!cursed && !locked) return; // pas de curse en cours, rien à réinitialiser
     setTentaclesActive(false);
     stopSpawning();
+    stopAmbience();
     resetButton();
   }
 

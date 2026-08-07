@@ -3,9 +3,10 @@
    Bouton "Maudire la game" + tentacules + texte glitché
    ════════════════════════════════════════════════ */
 
+.curse-controls{ display:flex; align-items:center; gap:8px; margin-left:auto; }
+
 .curse-toggle{
   position:relative;
-  margin-left:auto;
   display:flex; align-items:center; gap:9px;
   padding:9px 16px 9px 13px;
   border-radius:8px;
@@ -18,7 +19,8 @@
   transition:border-color .25s ease, background .25s ease, box-shadow .35s ease, color .25s ease;
   -webkit-tap-highlight-color:transparent;
 }
-.curse-toggle .glyph{ font-size:15px; line-height:1; filter:grayscale(1) brightness(1.4); transition:filter .35s ease, transform .35s ease; }
+.curse-toggle .glyph{ display:inline-flex; color:inherit; opacity:.75; transition:opacity .35s ease, transform .35s ease; }
+.curse-toggle .glyph svg{ display:block; }
 .curse-toggle:hover{ border-color:rgba(167,85,232,.35); }
 .curse-toggle.on{
   background:linear-gradient(155deg,#190826,#0d0414);
@@ -27,7 +29,7 @@
   box-shadow:0 0 0 1px rgba(167,85,232,.12), 0 6px 22px -6px rgba(139,47,201,.55), inset 0 0 14px rgba(139,47,201,.12);
   animation:curse-toggle-throb 2.6s ease-in-out infinite;
 }
-.curse-toggle.on .glyph{ filter:none; transform:scale(1.08); }
+.curse-toggle.on .glyph{ opacity:1; transform:scale(1.08); }
 @keyframes curse-toggle-throb{
   0%,100%{ box-shadow:0 0 0 1px rgba(167,85,232,.12), 0 6px 22px -6px rgba(139,47,201,.55), inset 0 0 14px rgba(139,47,201,.12); }
   50%{ box-shadow:0 0 0 1px rgba(167,85,232,.22), 0 6px 30px -4px rgba(139,47,201,.8), inset 0 0 20px rgba(139,47,201,.22); }
@@ -43,6 +45,21 @@
   position:fixed; inset:0; width:100%; height:100%;
   pointer-events:none; z-index:40;
 }
+
+#curse-vignette{ position:fixed; inset:0; pointer-events:none; z-index:39; }
+
+.curse-mute{
+  display:none;
+  align-items:center; justify-content:center;
+  width:34px; height:34px; flex-shrink:0;
+  border-radius:8px; border:1px solid var(--border2);
+  background:var(--surf2); color:var(--muted);
+  font-size:14px; cursor:pointer;
+  transition:border-color .25s ease, color .25s ease;
+}
+.curse-mute.visible{ display:flex; }
+.curse-mute:hover{ border-color:rgba(167,85,232,.4); color:var(--text); }
+.curse-mute.muted{ color:#6b3fa0; }
 
 #curse-layer{ position:fixed; inset:0; pointer-events:none; z-index:41; overflow:hidden; }
 .curse-phrase{
