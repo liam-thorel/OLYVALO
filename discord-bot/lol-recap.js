@@ -1,20 +1,19 @@
 /**
  * Récap LoL par file classée (SoloQ / Flex) ET par cadence (quotidien 7h,
- * hebdo tous les lundis à minuit, mensuel le 1er du mois à minuit). Ne poste
- * plus rien automatiquement dans les salons trackés — seules les commandes
- * /recap-lol-solo(-weekly|-monthly) et /recap-lol-flex(-weekly|-monthly)
- * affichent ces chiffres, à la demande, dans le salon où elles sont
- * invoquées (voir buildQueueRecapEmbeds). Les 6 schedulers ci-dessous
- * continuent de tourner en silence pour remettre à zéro l'accumulateur LP de
- * rank-tracking.js à leur cadence respective, sinon les commandes
- * afficheraient un delta qui grossit indéfiniment plutôt qu'un delta
- * "depuis le dernier cycle".
+ * hebdo tous les lundis à minuit, mensuel le 1er du mois à minuit). Posté
+ * automatiquement dans le salon défini via /recap-channel (s'il y en a un) ;
+ * chaque /recap-lol-solo(-weekly|-monthly) ou /recap-lol-flex(-weekly|-monthly)
+ * permet aussi de l'afficher à la demande, dans le salon où la commande est
+ * invoquée (voir buildQueueRecapEmbeds). Dans les deux cas, le passage du
+ * récap remet à zéro l'accumulateur LP de rank-tracking.js pour cette
+ * cadence.
  */
+const { EmbedBuilder } = require('discord.js');
 const { fbGet, fbPut } = require('./firebase.js');
 const { ensureRoster } = require('./roster.js');
 const { historyFor, aggregateKDA, averageCs } = require('./stats.js');
 const { allRankGains, resetRankGains } = require('./rank-tracking.js');
-const { EmbedBuilder } = require('discord.js');
+const { getRecapChannelId } = require('./recap-channel.js');
 
 const CHECK_INTERVAL_MS = 5 * 60 * 1000;
 const DAILY_HOUR = 7; // heure locale Europe/Paris
@@ -107,10 +106,24 @@ async function buildQueueRecapEmbeds(queueKey, period, sinceTs = null) {
   return embeds;
 }
 
-async function resetQueueRecap(queueKey, period, dateKey = null) {
+async function runQueueRecap(client, queueKey, period, dateKey = null) {
   const cfg = QUEUES[queueKey];
   const path = statePath(queueKey, period);
   const state = await fbGet(path).catch(() => null) || {};
+  const since = state.lastRecapTs || 0;
+
+  const channelId = await getRecapChannelId();
+  if (channelId) {
+    const embeds = await buildQueueRecapEmbeds(queueKey, period, since);
+    if (embeds.length > 0) {
+      try {
+        const channel = await client.channels.fetch(channelId);
+        await channel.send({ embeds });
+      } catch (error) {
+        console.error(`[lol-recap:${queueKey}:${period}:announce]`, error.message);
+      }
+    }
+  }
 
   await resetRankGains(cfg.rankBucket, period);
   const nextState = { ...state, lastRecapTs: Date.now() };
@@ -118,7 +131,7 @@ async function resetQueueRecap(queueKey, period, dateKey = null) {
   await fbPut(path, nextState);
 }
 
-function startQueueRecapScheduler(queueKey, period) {
+function startQueueRecapScheduler(client, queueKey, period) {
   const cfg = QUEUES[queueKey];
   const path = statePath(queueKey, period);
 
@@ -127,19 +140,19 @@ function startQueueRecapScheduler(queueKey, period) {
     if (!isDue(period, cfg, parts)) return;
     const state = await fbGet(path).catch(() => null) || {};
     if (state.lastRecapDate === parts.dateKey) return;
-    await resetQueueRecap(queueKey, period, parts.dateKey);
+    await runQueueRecap(client, queueKey, period, parts.dateKey);
   };
 
   checkSchedule().catch(error => console.error(`[lol-recap:${queueKey}:${period}:schedule]`, error.message));
   setInterval(() => checkSchedule().catch(error => console.error(`[lol-recap:${queueKey}:${period}:schedule]`, error.message)), CHECK_INTERVAL_MS);
 }
 
-function startLolSoloRecapScheduler() { startQueueRecapScheduler('solo', 'daily'); }
-function startLolFlexRecapScheduler() { startQueueRecapScheduler('flex', 'daily'); }
-function startLolSoloWeeklyRecapScheduler() { startQueueRecapScheduler('solo', 'weekly'); }
-function startLolFlexWeeklyRecapScheduler() { startQueueRecapScheduler('flex', 'weekly'); }
-function startLolSoloMonthlyRecapScheduler() { startQueueRecapScheduler('solo', 'monthly'); }
-function startLolFlexMonthlyRecapScheduler() { startQueueRecapScheduler('flex', 'monthly'); }
+function startLolSoloRecapScheduler(client) { startQueueRecapScheduler(client, 'solo', 'daily'); }
+function startLolFlexRecapScheduler(client) { startQueueRecapScheduler(client, 'flex', 'daily'); }
+function startLolSoloWeeklyRecapScheduler(client) { startQueueRecapScheduler(client, 'solo', 'weekly'); }
+function startLolFlexWeeklyRecapScheduler(client) { startQueueRecapScheduler(client, 'flex', 'weekly'); }
+function startLolSoloMonthlyRecapScheduler(client) { startQueueRecapScheduler(client, 'solo', 'monthly'); }
+function startLolFlexMonthlyRecapScheduler(client) { startQueueRecapScheduler(client, 'flex', 'monthly'); }
 
 module.exports = {
   startLolSoloRecapScheduler, startLolFlexRecapScheduler,

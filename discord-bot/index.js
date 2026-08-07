@@ -61,6 +61,7 @@ process.on('uncaughtException', error => {
   './commands/leaderboard.js',
   './commands/list.js',
   './commands/mybets.js',
+  './commands/recap-channel.js',
   './commands/recap-lol-flex.js',
   './commands/recap-lol-flex-monthly.js',
   './commands/recap-lol-flex-weekly.js',
@@ -1029,15 +1030,15 @@ client.once('ready', async () => {
   watchGameSessions('lol', 'live/lolSessions');
   startWeeklyScheduler(client);
   startDailyRecapScheduler();
-  startLolSoloRecapScheduler();
-  startLolFlexRecapScheduler();
-  startLolSoloWeeklyRecapScheduler();
-  startLolFlexWeeklyRecapScheduler();
-  startLolSoloMonthlyRecapScheduler();
-  startLolFlexMonthlyRecapScheduler();
-  startValoDailyRecapScheduler();
-  startValoWeeklyRecapScheduler();
-  startValoMonthlyRecapScheduler();
+  startLolSoloRecapScheduler(client);
+  startLolFlexRecapScheduler(client);
+  startLolSoloWeeklyRecapScheduler(client);
+  startLolFlexWeeklyRecapScheduler(client);
+  startLolSoloMonthlyRecapScheduler(client);
+  startLolFlexMonthlyRecapScheduler(client);
+  startValoDailyRecapScheduler(client);
+  startValoWeeklyRecapScheduler(client);
+  startValoMonthlyRecapScheduler(client);
   console.log('👂 Écoute des sessions Valorant et LoL en cours...');
 });
 

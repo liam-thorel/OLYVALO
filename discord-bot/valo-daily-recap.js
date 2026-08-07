@@ -1,19 +1,18 @@
 /**
  * Récap Valorant Compétitif du roster — quotidien (7h30), hebdo (tous les
- * lundis à minuit) et mensuel (le 1er du mois à minuit). Ne poste plus rien
- * automatiquement dans les salons trackés — seules les commandes
- * /recap-valo(-weekly|-monthly) affichent ces chiffres, à la demande, dans
- * le salon où elles sont invoquées (voir buildValoRecapEmbeds). Les 3
- * schedulers ci-dessous continuent de tourner en silence pour remettre à
- * zéro l'accumulateur RR de rank-tracking.js à leur cadence respective,
- * sinon les commandes afficheraient un delta qui grossit indéfiniment
- * plutôt qu'un delta "depuis le dernier cycle".
+ * lundis à minuit) et mensuel (le 1er du mois à minuit). Posté
+ * automatiquement dans le salon défini via /recap-channel (s'il y en a un) ;
+ * /recap-valo(-weekly|-monthly) permet aussi de l'afficher à la demande,
+ * dans le salon où la commande est invoquée (voir buildValoRecapEmbeds).
+ * Dans les deux cas, le passage du récap remet à zéro l'accumulateur RR de
+ * rank-tracking.js pour cette cadence.
  */
 const { EmbedBuilder } = require('discord.js');
 const { fbGet, fbPut } = require('./firebase.js');
 const { ensureRoster } = require('./roster.js');
 const { historyFor, aggregateKDA, averageHsPercent, rankedOnly } = require('./stats.js');
 const { allRankGains, resetRankGains } = require('./rank-tracking.js');
+const { getRecapChannelId } = require('./recap-channel.js');
 
 const DAILY_HOUR = 7; // heure locale Europe/Paris
 const DAILY_MINUTE = 30;
@@ -101,9 +100,23 @@ async function buildValoRecapEmbeds(period, sinceTs = null) {
   return embeds;
 }
 
-async function resetValoRecap(period, dateKey = null) {
+async function runValoRecap(client, period, dateKey = null) {
   const path = statePath(period);
   const state = await fbGet(path).catch(() => null) || {};
+  const since = state.lastRecapTs || 0;
+
+  const channelId = await getRecapChannelId();
+  if (channelId) {
+    const embeds = await buildValoRecapEmbeds(period, since);
+    if (embeds.length > 0) {
+      try {
+        const channel = await client.channels.fetch(channelId);
+        await channel.send({ embeds });
+      } catch (error) {
+        console.error(`[valo-recap:${period}:announce]`, error.message);
+      }
+    }
+  }
 
   await resetRankGains('valorant', period);
   const nextState = { ...state, lastRecapTs: Date.now() };
@@ -111,7 +124,7 @@ async function resetValoRecap(period, dateKey = null) {
   await fbPut(path, nextState);
 }
 
-function startRecapScheduler(period) {
+function startRecapScheduler(client, period) {
   const path = statePath(period);
 
   const checkSchedule = async () => {
@@ -119,15 +132,15 @@ function startRecapScheduler(period) {
     if (!isDue(period, parts)) return;
     const state = await fbGet(path).catch(() => null) || {};
     if (state.lastRecapDate === parts.dateKey) return;
-    await resetValoRecap(period, parts.dateKey);
+    await runValoRecap(client, period, parts.dateKey);
   };
 
   checkSchedule().catch(error => console.error(`[valo-recap:${period}:schedule]`, error.message));
   setInterval(() => checkSchedule().catch(error => console.error(`[valo-recap:${period}:schedule]`, error.message)), CHECK_INTERVAL_MS);
 }
 
-function startValoDailyRecapScheduler() { startRecapScheduler('daily'); }
-function startValoWeeklyRecapScheduler() { startRecapScheduler('weekly'); }
-function startValoMonthlyRecapScheduler() { startRecapScheduler('monthly'); }
+function startValoDailyRecapScheduler(client) { startRecapScheduler(client, 'daily'); }
+function startValoWeeklyRecapScheduler(client) { startRecapScheduler(client, 'weekly'); }
+function startValoMonthlyRecapScheduler(client) { startRecapScheduler(client, 'monthly'); }
 
 module.exports = { startValoDailyRecapScheduler, startValoWeeklyRecapScheduler, startValoMonthlyRecapScheduler, buildValoRecapEmbeds };
