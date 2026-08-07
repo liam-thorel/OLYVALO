@@ -450,11 +450,13 @@ export function initCurse(){
   btn.addEventListener('pointerenter', () => { if (locked) dodge(); });
 
   /* ---------------- sync with Firebase (shared across all visitors) ---------------- */
-  fetch(`${FIREBASE_URL}/${CURSE_PATH}.json`)
-    .then(res => res.ok ? res.json() : null)
-    .then(state => applyCurseState(state))
-    .catch(() => {});
-
+  // Pas de fetch initial séparé ici : Firebase envoie toujours un premier
+  // événement "put" avec la valeur complète dès l'ouverture du flux, et
+  // live/curse est un tout petit objet (pas de délai notable à attendre,
+  // contrairement à live/sessions qui a sa propre justification pour un
+  // seed fetch). Lancer les deux en parallèle créait une course : un clic
+  // juste après le chargement de la page pouvait voir le fetch initial
+  // (plus lent) écraser l'état "actif" tout juste confirmé par le flux.
   const curseSource = new EventSource(`${FIREBASE_URL}/${CURSE_PATH}.json`);
   curseSource.addEventListener('put', e => {
     try {
