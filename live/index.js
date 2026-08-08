@@ -282,8 +282,13 @@ function openIdentityPrompt() {
     // Le process parent est lancé par silent.vbs, donc sans console : hériter
     // de ses handles ne donnerait aucun clavier à readline. `cmd /c start`
     // alloue une vraie fenêtre à laquelle l'invite peut s'attacher.
+    // Le titre vide ('') est obligatoire, pas cosmétique : `start` interprète
+    // son premier argument entre guillemets comme le titre de la fenêtre, et
+    // process.execPath contient un espace (…\OLYCITY Live\runtime\node.exe).
+    // Sans ce '', cmd prendrait le chemin de node pour un titre et
+    // n'exécuterait rien du tout.
     const child = process.platform === 'win32'
-      ? spawn('cmd.exe', ['/c', 'start', '"OLYCITY LIVE"', '/wait', process.execPath, script], {
+      ? spawn('cmd.exe', ['/c', 'start', '', '/wait', process.execPath, script], {
         cwd: __dirname, detached: true, stdio: 'ignore', windowsHide: false,
       })
       : spawn(process.execPath, [script], {
