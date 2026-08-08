@@ -22,6 +22,16 @@ les comptes secondaires assignés depuis `#admin`) peuvent être suivis : le
 suivi ne fonctionne que pour les joueurs qui font tourner le script local. Un
 compte quelconque ne peut pas être suivi sans lui.
 
+**Identification d'un joueur.** Le bot résout le membre derrière une session
+dans cet ordre (`roster.js` → `memberByIdentity`) :
+
+1. `memberId` — la personne s'est identifiée à l'installation du script
+   (depuis `live/` v4.16.0). Insensible aux renommages et aux comptes multiples.
+2. `puuid` — identifiant Riot permanent, survit lui aussi aux renommages.
+3. `playerName` (`pseudo#tag`) — repli historique, qui casse dès qu'un joueur
+   se renomme. C'était l'unique méthode avant la v4.16.0, d'où les pertes de
+   suivi après un changement de pseudo.
+
 ## 1. Créer l'application Discord
 
 1. https://discord.com/developers/applications → **New Application**.

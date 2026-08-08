@@ -49,15 +49,26 @@ principal et le top 3 champions avec les portraits Riot Data Dragon.
 
 ```
 live/
-├── index.js          Script principal
-├── rank-utils.js     Calcul du rang actuel et du peak historique
-├── runtime/node.exe  Runtime Node.js LTS autonome
-├── INSTALLER.bat     Installation + tâche planifiée Windows
-├── VERIFIER.bat      Vérifier si le script tourne + voir les logs
-├── REINSTALLER.bat   Clean reinstall
-├── DESINSTALLER.bat  Tout supprimer
-└── silent.vbs        Lanceur silencieux (no window)
+├── index.js           Script principal
+├── lol-watcher.js     Détection des games League of Legends (LCU)
+├── rank-utils.js      Calcul du rang actuel et du peak historique
+├── identity.js        Membre OLYCITY associé à cette installation
+├── ask-identity.js    Invite « qui es-tu ? » (une fois, à l'installation)
+├── account-binding.js Rattache le compte Riot courant au membre choisi
+├── updater.js         Mise à jour automatique depuis les releases GitHub
+├── runtime/node.exe   Runtime Node.js LTS autonome
+├── INSTALLER.bat      Installation + tâche planifiée Windows
+├── IDENTITE.bat       Changer la personne associée à ce PC
+├── VERIFIER.bat       Vérifier si le script tourne + voir les logs
+├── REINSTALLER.bat    Clean reinstall
+├── DESINSTALLER.bat   Tout supprimer
+└── silent.vbs         Lanceur silencieux (no window)
 ```
+
+**Identification :** à la première installation, le script demande qui joue sur
+ce PC (liste du roster + option « Autre » pour ajouter quelqu'un). Le membre
+choisi est mémorisé et publié avec chaque session, ce qui garde le suivi valide
+même après un changement de pseudo Riot ou un changement de compte.
 
 **Setup :**
 1. Décompresser complètement le ZIP de la dernière release.

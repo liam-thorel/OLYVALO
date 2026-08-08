@@ -399,6 +399,19 @@ export function initLivePage() {
     return matchingKey ? _rosterCache[matchingKey] : null;
   }
 
+  // Depuis la v4.16.0, chaque script publie le membre OLYCITY choisi à
+  // l'installation. C'est la source la plus fiable : contrairement au Riot ID,
+  // elle reste juste immédiatement après un changement de pseudo, sans
+  // attendre que rosterOverlay/accounts soit relu.
+  function profileForEntry(entry = {}) {
+    const declared = entry.member;
+    if (declared) {
+      const known = Object.values(_rosterCache).find(profile => profile.member === declared);
+      return known || { avatar: '', member: declared };
+    }
+    return rosterProfileForName(entry.playerName || '');
+  }
+
   function ensureRosterCache() {
     if (_rosterFetched) return;
     _rosterFetched = true;
@@ -490,7 +503,7 @@ export function initLivePage() {
     version.textContent = versions.length === 1 ? `v${versions[0]}` : `${versions.length} versions`;
 
     list.innerHTML = clients.map(client => {
-      const profile = rosterProfileForName(client.playerName);
+      const profile = profileForEntry(client);
       const displayName = profile?.member || client.playerName?.split('#')[0] || 'Joueur inconnu';
       const safeName = escapeDiagnosticText(displayName);
       const avatar = profile
@@ -683,8 +696,7 @@ export function initLivePage() {
 
         // Find roster avatars for players in this game
         const rosterAvatars = sessions.map(s => {
-          const name = s.playerName || '';
-          const hit = rosterProfileForName(name);
+          const hit = profileForEntry(s);
           return hit ? { avatar: hit.avatar, member: hit.member } : null;
         }).filter(Boolean);
 
@@ -825,7 +837,7 @@ export function initLivePage() {
       const scriptVersion = data.scriptVersion || selectedClient.version || '';
       if (missingHistoricalPeaks > 0 && !isVersionAtLeast(scriptVersion, '4.12.0')) {
         const observer = escapeDiagnosticText(
-          rosterProfileForName(data.playerName)?.member
+          profileForEntry(data)?.member
             || data.playerName?.split('#')[0]
             || 'Le joueur',
         );

@@ -3,8 +3,10 @@ const { fbGet } = require('./firebase.js');
 
 const REFRESH_MS = 5 * 60 * 1000;
 
-let members = [];       // [{ id, name, avatar, riotIds: ['name#tag', ...] }]
+let members = [];       // [{ id, name, avatar, riotIds: ['name#tag', ...], puuids: [...] }]
 let riotIdIndex = {};   // 'name#tag' lowercase -> member
+let memberIdIndex = {}; // id de membre -> member
+let puuidIndex = {};    // puuid -> member
 let lastFetch = 0;
 
 // Les avatars du roster pointent vers le CDN Discord (cdn.discordapp.com/avatars/{id}/...) —
@@ -31,25 +33,32 @@ function indexRoster(roster, overlay) {
 
   const staticMembers = roster.map(player => ({
     id: slugify(player.name), name: player.name, avatar: player.avatar || null,
-    discordId: extractDiscordId(player.avatar), riotIds: [],
+    discordId: extractDiscordId(player.avatar), riotIds: [], puuids: [],
   }));
 
   const staticIds = new Set(staticMembers.map(m => m.id));
   const extraMembers = Object.entries(overlayMembers)
     .filter(([id]) => !staticIds.has(id))
-    .map(([id, m]) => ({ id, name: m.name, avatar: m.avatar || null, discordId: extractDiscordId(m.avatar), riotIds: [] }));
+    .map(([id, m]) => ({ id, name: m.name, avatar: m.avatar || null, discordId: extractDiscordId(m.avatar), riotIds: [], puuids: [] }));
 
   members = [...staticMembers, ...extraMembers];
 
   members.forEach(member => {
     const accounts = overlayAccounts[member.id];
     if (!accounts) return;
-    Object.values(accounts).forEach(account => member.riotIds.push(`${account.name}#${account.tag}`));
+    Object.values(accounts).forEach(account => {
+      member.riotIds.push(`${account.name}#${account.tag}`);
+      if (account.puuid) member.puuids.push(String(account.puuid));
+    });
   });
 
   riotIdIndex = {};
+  memberIdIndex = {};
+  puuidIndex = {};
   members.forEach(member => {
+    memberIdIndex[member.id] = member;
     member.riotIds.forEach(riotId => { riotIdIndex[riotId.toLowerCase()] = member; });
+    member.puuids.forEach(puuid => { puuidIndex[puuid] = member; });
   });
 }
 
@@ -77,4 +86,33 @@ function memberByRiotId(riotId) {
   return riotIdIndex[String(riotId || '').toLowerCase()] || null;
 }
 
-module.exports = { ensureRoster, memberNames, memberByName, memberByRiotId };
+function memberById(memberId) {
+  return memberIdIndex[String(memberId || '')] || null;
+}
+
+function memberByPuuid(puuid) {
+  return puuidIndex[String(puuid || '')] || null;
+}
+
+/**
+ * Résout le membre OLYCITY derrière une session live, du signal le plus stable
+ * au moins stable :
+ *   1. memberId — la personne s'est identifiée à l'installation du script
+ *      (ask-identity.js). Insensible aux renommages et aux comptes multiples.
+ *   2. puuid — identifiant Riot permanent, survit lui aussi aux renommages.
+ *   3. Riot ID — dernier recours, casse dès que le joueur se renomme (c'était
+ *      l'unique méthode avant la v4.16.0).
+ */
+function memberByIdentity(session) {
+  if (!session) return null;
+  return memberById(session.memberId)
+    || memberByPuuid(session.puuid)
+    || memberByRiotId(session.playerName);
+}
+
+module.exports = {
+  ensureRoster, memberNames, memberByName, memberByRiotId,
+  memberById, memberByPuuid, memberByIdentity,
+  // Exposé pour les tests : rejouer l'indexation sans passer par le réseau.
+  __test: { indexRoster },
+};

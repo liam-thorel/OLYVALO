@@ -1,5 +1,5 @@
 {
-  "version": "4.15.18",
+  "version": "4.16.0",
   "files": [
     "index.js",
     "lol-watcher.js",
@@ -11,6 +11,10 @@
     "instance-lock.js",
     "legacy-cleanup.js",
     "package.json",
+    "identity.js",
+    "ask-identity.js",
+    "account-binding.js",
+    "IDENTITE.bat",
     "updater.js",
     "update-manifest.json",
     "OLYCITY-LIVE.bat",
