@@ -11,9 +11,11 @@ const { ensureStartupLauncher } = require('./startup.js');
 const { acquireInstanceLock, releaseInstanceLock } = require('./instance-lock.js');
 const { stopLegacyLiveProcesses } = require('./legacy-cleanup.js');
 const { createLolWatcher } = require('./lol-watcher.js');
+const { readIdentity } = require('./identity.js');
+const { createAccountBinder } = require('./account-binding.js');
 
 const FIREBASE_URL = 'https://realtime-database-5bb9f-default-rtdb.europe-west1.firebasedatabase.app';
-const SCRIPT_VERSION = '4.15.18';
+const SCRIPT_VERSION = '4.16.0';
 const INSTANCE_LOCK_PATH = path.join(__dirname, '.olycity-live.lock');
 const LOG_PATH = path.join(__dirname, 'olycity.log');
 const MAX_LOG_BYTES = 5 * 1024 * 1024;
@@ -27,7 +29,11 @@ function releaseOwnedInstanceLock() {
   ownsInstanceLock = false;
 }
 
-const lolWatcher = createLolWatcher({ putFB, ts, scriptVersion: SCRIPT_VERSION });
+const lolWatcher = createLolWatcher({
+  putFB, ts, scriptVersion: SCRIPT_VERSION,
+  getIdentity: () => identity,
+  bindAccount: options => accountBinder.bind(options),
+});
 
 process.on('exit', releaseOwnedInstanceLock);
 
@@ -229,6 +235,92 @@ function putFB(path, data) {
     });
     r.write(body); r.end();
   });
+}
+
+function getFB(path) {
+  const encodedPath = String(path).split('/').map(encodeURIComponent).join('/');
+  return new Promise(resolve => {
+    const r = https.get({
+      hostname: 'realtime-database-5bb9f-default-rtdb.europe-west1.firebasedatabase.app',
+      path: `/${encodedPath}.json`, timeout: 5000,
+    }, res => {
+      let d = '';
+      res.on('data', c => d += c);
+      res.on('end', () => {
+        if (res.statusCode !== 200) return resolve(null);
+        try { resolve(JSON.parse(d)); } catch { resolve(null); }
+      });
+    });
+    r.on('error', () => resolve(null));
+    r.on('timeout', () => { r.destroy(); resolve(null); });
+  });
+}
+
+// ─── IDENTITÉ OLYCITY ────────────────────────────────────────────────────────
+// Qui est la personne derrière ce PC (choisie une fois à l'installation, voir
+// ask-identity.js). C'est elle — et non le Riot ID, qui change au gré des
+// renommages — qui sert de clé de suivi côté bot et côté site.
+let identity = readIdentity(__dirname);
+let identityPromptOpenedAt = 0;
+let lastIdentityWarning = 0;
+
+const accountBinder = createAccountBinder({
+  putFB,
+  getFB,
+  log: message => console.log(`[${ts()}] 🔗 ${message}`),
+});
+
+// Le script tourne en fenêtre cachée (silent.vbs) : impossible d'y poser une
+// question. On ouvre donc une vraie console le temps du choix, une seule fois,
+// puis on relit le fichier au fil des polls sans jamais bloquer la boucle.
+function openIdentityPrompt() {
+  const now = Date.now();
+  if (now - identityPromptOpenedAt < 5 * 60 * 1000) return;
+  identityPromptOpenedAt = now;
+  const script = path.join(__dirname, 'ask-identity.js');
+  try {
+    // Le process parent est lancé par silent.vbs, donc sans console : hériter
+    // de ses handles ne donnerait aucun clavier à readline. `cmd /c start`
+    // alloue une vraie fenêtre à laquelle l'invite peut s'attacher.
+    const child = process.platform === 'win32'
+      ? spawn('cmd.exe', ['/c', 'start', '"OLYCITY LIVE"', '/wait', process.execPath, script], {
+        cwd: __dirname, detached: true, stdio: 'ignore', windowsHide: false,
+      })
+      : spawn(process.execPath, [script], {
+        cwd: __dirname, detached: true, stdio: 'inherit',
+      });
+    child.unref();
+    console.log(`[${ts()}] 👤 Identité OLYCITY inconnue — fenêtre de choix ouverte.`);
+  } catch (error) {
+    console.log(`[${ts()}] Impossible d'ouvrir la fenêtre d'identification — ${error.message}`);
+  }
+}
+
+function ensureIdentity() {
+  if (identity) return identity;
+  identity = readIdentity(__dirname);
+  if (identity) {
+    console.log(`[${ts()}] 👤 Identité OLYCITY : ${identity.memberName}`);
+    return identity;
+  }
+  const now = Date.now();
+  if (now - lastIdentityWarning > 60000) {
+    lastIdentityWarning = now;
+    console.log(`[${ts()}] ⚠ Aucune identité OLYCITY choisie — le suivi reste anonyme tant que personne ne répond.`);
+  }
+  openIdentityPrompt();
+  return null;
+}
+
+// Rattache le compte Riot courant au membre choisi. Idempotent : ne réécrit
+// dans Firebase que si le Riot ID (ou le jeu observé) a réellement changé —
+// c'est exactement ce qui répare un renommage tout seul.
+function bindCurrentAccount(playerName, puuid, game) {
+  const current = identity || ensureIdentity();
+  if (!current || !playerName) return;
+  accountBinder
+    .bind({ memberId: current.memberId, memberName: current.memberName, playerName, puuid, game })
+    .catch(error => console.log(`[${ts()}] Rattachement du compte impossible — ${error.message}`));
 }
 
 function reqNoAuth(port, endpoint) {
@@ -458,6 +550,8 @@ async function publishDiagnostic(state, details = {}, force = false) {
     ts: now,
     version: SCRIPT_VERSION,
     playerName,
+    memberId: identity?.memberId || '',
+    member: identity?.memberName || '',
     state,
     riotClient: !!lockPort,
     ...details,
@@ -597,12 +691,16 @@ async function refreshSelfIdentity(lock, force = false) {
         active: false,
         ts: now,
         playerName: diagnosticPlayerName || '',
+        memberId: identity?.memberId || '',
+        member: identity?.memberName || '',
       }),
       putFB(`live/clients/${previousKey}`, {
         online: false,
         state: 'stopped',
         ts: now,
         playerName: diagnosticPlayerName || '',
+        memberId: identity?.memberId || '',
+        member: identity?.memberName || '',
         version: SCRIPT_VERSION,
       }),
     ]);
@@ -835,6 +933,10 @@ async function poll() {
   const ownIdentity = myPresences.find(p => p.game_name);
   if (ownIdentity) {
     diagnosticPlayerName = `${ownIdentity.game_name}#${ownIdentity.game_tag || ''}`.replace(/#$/, '');
+    // Le Riot ID courant est réenregistré sous le membre choisi à
+    // l'installation : un renommage se répercute ici, sans réassignation
+    // manuelle dans #admin.
+    bindCurrentAccount(diagnosticPlayerName, selfPuuid || stableSessionKey, 'valorant');
   }
 
   let found = null;
@@ -856,6 +958,9 @@ async function poll() {
           map: state.map, mapClean: state.mapClean, mapInternal: state.map,
           mode: state.mode || 'competitive', phase: 'pregame', side: state.side,
           matchId: state.matchId, playerName: observedPlayerName, players: [], activePlayer: {},
+          puuid: stableSessionKey || '',
+          memberId: identity?.memberId || '',
+          member: identity?.memberName || '',
           rank: rankMap[authTokens?.puuid] || null,
           scriptVersion: SCRIPT_VERSION,
           server: state.server || '',
@@ -923,6 +1028,8 @@ async function poll() {
             await putFB(`live/sessions/${sKey}`, {
               active: false, ts: Date.now(),
               playerName: playerName || diagnosticPlayerName || '',
+              memberId: identity?.memberId || '',
+              member: identity?.memberName || '',
               matchId: pregameState.matchId,
             });
           }
@@ -1033,7 +1140,14 @@ async function poll() {
       // le bot Discord ne peut identifier à qui appartient le résultat et
       // abandonne silencieusement la notification de fin de partie.
       const endingPlayerName = playerName || lastGameInfo?.player || diagnosticPlayerName || '';
-      if (sKey !== 'unknown') await putFB(`live/sessions/${sKey}`, { active:false, ts:Date.now(), playerName: endingPlayerName, matchId: lastGameInfo?.matchId || '' });
+      if (sKey !== 'unknown') await putFB(`live/sessions/${sKey}`, {
+        active: false, ts: Date.now(), playerName: endingPlayerName,
+        // Ce PUT remplace la session entière : sans ça, le membre publié
+        // pendant la game serait effacé juste avant que le bot lise le résultat.
+        memberId: identity?.memberId || '',
+        member: identity?.memberName || '',
+        matchId: lastGameInfo?.matchId || '',
+      });
       await publishDiagnostic('game-ended', { error: '', map: lastGameInfo?.map || '' }, true);
 
       // Push game to history (deduped by matchId)
@@ -1338,6 +1452,9 @@ async function poll() {
     mode:        queueId,
     matchId:     pregameState?.matchId || persistentMatchId || realMatchId || '',
     playerName:  playerName,
+    puuid:       stableSessionKey || '',
+    memberId:    identity?.memberId || '',
+    member:      identity?.memberName || '',
     players,
     activePlayer,
     rank:         rankMap[authTokens?.puuid || selfPuuid] || null,
@@ -1460,6 +1577,13 @@ async function start() {
   console.log(`  ║  OLYCITY LIVE v${SCRIPT_VERSION} 🔴    ║`);
   console.log('  ╚══════════════════════════════╝\n');
 
+  // Première chose : savoir à qui on a affaire. Si personne n'a encore
+  // répondu (mise à jour d'une installation existante), une fenêtre s'ouvre —
+  // le suivi continue en attendant, il sera simplement anonyme.
+  if (ensureIdentity()) {
+    console.log(`[${ts()}] 👤 OLYCITY Live tourne pour ${identity.memberName}`);
+  }
+
   let lolPollRunning = false;
   const pollLolOnce = async () => {
     if (lolPollRunning) return false;
@@ -1477,6 +1601,13 @@ async function start() {
 
   setInterval(poll, 2000);
   setInterval(pollLolOnce, 3000);
+  // Relit olycity-identity.json tant que le choix n'a pas été fait, pour
+  // prendre en compte la réponse sans avoir à redémarrer le script.
+  const identityWatcher = setInterval(() => {
+    if (identity) { clearInterval(identityWatcher); return; }
+    ensureIdentity();
+  }, 10000);
+  identityWatcher.unref?.();
   setInterval(updateAndRestart, 30 * 60 * 1000);
   poll();
   pollLolOnce();
@@ -1493,6 +1624,8 @@ async function markSessionInactiveAndExit(signal) {
     await putFB(`live/sessions/${sessionKey}`, {
       active: false,
       ts: Date.now(),
+      memberId: identity?.memberId || '',
+      member: identity?.memberName || '',
       stoppedBy: signal,
     });
     await putFB(`live/clients/${sessionKey}`, {

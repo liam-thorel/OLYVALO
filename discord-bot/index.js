@@ -4,7 +4,7 @@ const {
   ActionRowBuilder, ButtonBuilder, ButtonStyle, ModalBuilder, TextInputBuilder, TextInputStyle,
 } = require('discord.js');
 const { DISCORD_TOKEN, DISCORD_LOG_CHANNEL_ID } = require('./config.js');
-const { ensureRoster, memberByRiotId } = require('./roster.js');
+const { ensureRoster, memberByIdentity } = require('./roster.js');
 const { startTrackerSync, loadTrackersOnce, trackersForPlayerGame } = require('./trackers.js');
 const { recordDiscovered } = require('./discovered.js');
 const { watchNode, fbGet } = require('./firebase.js');
@@ -224,7 +224,7 @@ async function notifyValorantGameStart(session, snapshot) {
     ? Object.values(snapshot || {}).filter(s => s?.active && s.matchId === matchId)
     : [session];
   const rosterPlayers = sameMatch
-    .map(s => ({ session: s, member: memberByRiotId(s.playerName) }))
+    .map(s => ({ session: s, member: memberByIdentity(s) }))
     .filter(entry => entry.member);
 
   if (rosterPlayers.length === 0) {
@@ -323,7 +323,7 @@ async function notifyValorantGameEnd(sessions) {
   });
 
   const players = sessions
-    .map(session => ({ session, member: memberByRiotId(session.playerName) }))
+    .map(session => ({ session, member: memberByIdentity(session) }))
     .filter(({ member }) => member && trackersForPlayerGame(member.name, 'valorant').length > 0);
   if (players.length === 0) return;
 
@@ -488,7 +488,7 @@ async function notifyLolGameEnd(sessions) {
   });
 
   const players = sessions
-    .map(session => ({ session, member: memberByRiotId(session.playerName) }))
+    .map(session => ({ session, member: memberByIdentity(session) }))
     .filter(({ member }) => member && trackersForPlayerGame(member.name, 'lol').length > 0);
   if (players.length === 0) return;
 
@@ -682,7 +682,7 @@ async function notifyLolGameStart(session, snapshot) {
 
   const sameMatch = Object.values(snapshot || {}).filter(s => s?.active && s.matchId === matchId);
   const rosterPlayers = sameMatch
-    .map(s => ({ session: s, member: memberByRiotId(s.playerName) }))
+    .map(s => ({ session: s, member: memberByIdentity(s) }))
     .filter(entry => entry.member);
 
   if (rosterPlayers.length === 0) {

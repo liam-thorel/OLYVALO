@@ -36,6 +36,30 @@ Node.js LTS et la dépendance WebSocket sont inclus dans le dossier. Il n'y a ri
 
 Le package embarque le binaire Windows officiel Node.js 24.18.0 LTS et `ws` 8.21.1. Leurs licences sont fournies dans `runtime/NODE-LICENSE.txt` et `node_modules/ws/LICENSE`.
 
+## Qui joue sur ce PC ?
+
+À la toute première installation (et une seule fois), OLYCITY LIVE demande à
+qui il a affaire : la liste du roster s'affiche, tu tapes ton numéro. Si tu n'y
+es pas encore, choisis **Autre** et donne ton prénom — tu es ajouté au roster
+OLYCITY automatiquement.
+
+Ce choix est mémorisé dans `olycity-identity.json`, à côté du script. Il n'est
+pas touché par les mises à jour automatiques.
+
+À quoi ça sert : avant, le suivi reposait uniquement sur ton Riot ID. Dès que
+tu changeais de pseudo, le bot ne te reconnaissait plus et il fallait
+réassigner ton compte à la main dans la page `#admin`. Maintenant le script
+sait qui tu es, rattache tout seul ton compte Riot courant à ton nom, et
+continue de te suivre après n'importe quel renommage — ou si tu joues sur un
+autre compte.
+
+Si tu mets à jour une installation existante, une fenêtre s'ouvrira une fois
+pour poser la question. En attendant la réponse, le suivi continue de
+fonctionner comme avant.
+
+Pour changer de personne plus tard (PC prêté, erreur de choix) : double-clique
+sur **IDENTITE.bat**.
+
 ## Mises à jour automatiques
 
 Le script vérifie les releases officielles au démarrage et toutes les 30 minutes, même pendant une partie. Une nouvelle version est téléchargée et vérifiée silencieusement en arrière-plan. Si une game est en cours, le script attend sa fin puis se redémarre tout seul ; personne n'a besoin de le fermer ou de le relancer. Le dossier `node_modules`, le runtime portable et les logs sont conservés.
@@ -64,4 +88,6 @@ Double-clique sur **DESINSTALLER.bat** pour tout supprimer.
 
 ## Logs
 
-Si quelque chose ne marche pas, consulte le fichier **olycity-live.log** dans ce dossier.
+Si quelque chose ne marche pas, consulte le fichier **olycity.log** dans ce
+dossier (`olycity-live.log` ne contient que le diagnostic de détection du
+client League).

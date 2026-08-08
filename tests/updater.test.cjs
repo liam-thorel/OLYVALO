@@ -24,8 +24,25 @@ const liveIndex = fs.readFileSync(path.join(liveDir, 'index.js'), 'utf8');
 assert.doesNotMatch(liveIndex, /updateCheckRunning\s*\|\|\s*inGame/, 'an active game must not block the background download');
 assert.match(liveIndex, /pendingUpdateVersion/, 'an update downloaded in game must wait for the automatic restart');
 const manifest = JSON.parse(fs.readFileSync(path.join(liveDir, 'update-manifest.json'), 'utf8'));
-const releaseFiles = validateManifest(manifest, '4.15.18');
-assert.equal(JSON.parse(fs.readFileSync(path.join(liveDir, 'package.json'), 'utf8')).version, manifest.version);
+const packageVersion = JSON.parse(fs.readFileSync(path.join(liveDir, 'package.json'), 'utf8')).version;
+
+// La version vit à trois endroits qu'il faut bumper ensemble ; on vérifie leur
+// cohérence plutôt qu'un numéro figé, pour ne pas rougir à chaque release.
+assert.equal(manifest.version, packageVersion, 'update-manifest.json et package.json doivent être alignés');
+assert.match(
+  fs.readFileSync(path.join(liveDir, 'index.js'), 'utf8'),
+  new RegExp(`SCRIPT_VERSION = '${packageVersion.replace(/\./g, '\\.')}'`),
+  'SCRIPT_VERSION dans index.js doit suivre package.json',
+);
+
+const releaseFiles = validateManifest(manifest, packageVersion);
 releaseFiles.forEach(file => assert.equal(fs.existsSync(path.join(liveDir, file)), true, `${file} is missing`));
+
+// L'identité choisie par le joueur ne doit JAMAIS être livrée par l'updater :
+// elle serait écrasée à chaque mise à jour et il faudrait tout re-répondre.
+const { IDENTITY_FILENAME } = require('../live/identity.js');
+assert.equal(releaseFiles.includes(IDENTITY_FILENAME), false, `${IDENTITY_FILENAME} doit survivre aux mises à jour`);
+['identity.js', 'ask-identity.js', 'account-binding.js'].forEach(file =>
+  assert.equal(releaseFiles.includes(file), true, `${file} doit être livré aux joueurs`));
 
 console.log('updater: version comparison and manifest validation validated');

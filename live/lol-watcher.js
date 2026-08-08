@@ -290,7 +290,10 @@ function extractEndOfGameStats(data, myPuuid) {
   return { kills, deaths, assists, cs, level, gameLengthSeconds: gameLength, win, killParticipation, itemIds };
 }
 
-function createLolWatcher({ putFB, ts, scriptVersion, log = console.log }) {
+function createLolWatcher({
+  putFB, ts, scriptVersion, log = console.log,
+  getIdentity = () => null, bindAccount = async () => {},
+}) {
   let wasActive = false;
   let sessionKey = '';
   let matchStartedAt = 0;
@@ -336,16 +339,27 @@ function createLolWatcher({ putFB, ts, scriptVersion, log = console.log }) {
 
   async function markInactive() {
     if (!wasActive || !sessionKey) return;
+    const member = getIdentity();
     const endedSession = {
       active: false,
       ts: Date.now(),
       playerName: sessionKey,
+      // Reporté aussi sur la fin de game : c'est ce message-là que le bot lit
+      // pour poster le résumé et résoudre les paris.
+      memberId: member?.memberId || '',
+      member: member?.memberName || '',
       matchId: currentMatchId,
       result: capturedResult || null,
     };
     const history = capturedResult ? {
       key: safeFirebaseKey(currentMatchId || String(matchStartedAt)),
-      value: { playerName: sessionKey, ts: Date.now(), ...capturedResult },
+      value: {
+        playerName: sessionKey,
+        memberId: member?.memberId || '',
+        member: member?.memberName || '',
+        ts: Date.now(),
+        ...capturedResult,
+      },
     } : null;
 
     // Release local state before external writes so a slow backend cannot keep
@@ -381,10 +395,19 @@ function createLolWatcher({ putFB, ts, scriptVersion, log = console.log }) {
     identityPhase = phase || '';
     identityHeartbeat = now;
     identitySnapshot = { playerName, puuid, region: region || '' };
+    const member = getIdentity();
+    // Le compte LoL courant est réenregistré sous le membre choisi à
+    // l'installation — c'est ce qui garde le suivi valide après un renommage.
+    await bindAccount({
+      memberId: member?.memberId, memberName: member?.memberName,
+      playerName, puuid, game: 'lol',
+    }).catch(() => {});
     await putFB(`live/lolClients/${key}`, {
       ...identitySnapshot,
       game: 'lol',
       games: ['lol'],
+      memberId: member?.memberId || '',
+      member: member?.memberName || '',
       connected: true,
       phase: phase || 'Unknown',
       lastSeen: now,
@@ -571,11 +594,14 @@ function createLolWatcher({ putFB, ts, scriptVersion, log = console.log }) {
     if (queue.description) currentQueueDescription = queue.description;
     const region = await ensureRegion();
 
+    const sessionMember = getIdentity();
     await putFB(`live/lolSessions/${safeFirebaseKey(sessionKey)}`, {
       active: true,
       ts: now,
       matchId: currentMatchId,
       playerName: sessionKey,
+      memberId: sessionMember?.memberId || '',
+      member: sessionMember?.memberName || '',
       puuid: myPuuid || '',
       mode: queue.gameMode || '',
       queueDescription: queue.description || '',

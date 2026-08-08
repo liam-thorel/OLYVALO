@@ -34,6 +34,16 @@ echo   Dependances embarquees OK
 echo.
 
 powershell.exe -NoProfile -ExecutionPolicy Bypass -File "%SCRIPT_DIR%manage.ps1" stop >nul 2>&1
+
+rem Identification du joueur : une seule fois, avant de lancer le service en
+rem fond. Sans ca le suivi repose sur le Riot ID, qui casse au moindre
+rem changement de pseudo.
+"%NODE_EXE%" "%SCRIPT_DIR%ask-identity.js"
+if errorlevel 1 (
+    echo   [!] Identification interrompue - relance INSTALLER.bat pour la refaire.
+    echo.
+)
+
 schtasks /delete /tn "OlycityLive" /f >nul 2>&1
 set "TASK_OK=0"
 schtasks /create /tn "OlycityLive" /tr "wscript.exe \"%SCRIPT_DIR%silent.vbs\"" /sc ONLOGON /rl LIMITED /f >nul 2>&1
