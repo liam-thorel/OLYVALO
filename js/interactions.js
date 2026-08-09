@@ -409,7 +409,7 @@ export function initLivePage() {
   function ensureRosterCache() {
     if (_rosterFetched) return;
     _rosterFetched = true;
-    fetch('./data/roster.json?v=20260720-live-clients').then(response => response.json()).then(roster => {
+    fetch('./data/roster.json?v=20260809-live-groups').then(response => response.json()).then(roster => {
       // Le roster local suffit immédiatement pour les comptes principaux et
       // les smurfs connus. Firebase enrichit ensuite l'index avec les comptes
       // rattachés dans l'admin, sans pouvoir bloquer l'affichage des prénoms.
