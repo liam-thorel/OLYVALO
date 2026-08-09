@@ -13,10 +13,11 @@ const { stopLegacyLiveProcesses } = require('./legacy-cleanup.js');
 const { createLolWatcher } = require('./lol-watcher.js');
 const { readIdentity } = require('./identity.js');
 const { createAccountBinder } = require('./account-binding.js');
-const { cleanupStalePresence } = require('./maintenance.js');
+const { cleanupStalePresence, PRESENCE_CLEANUP_INTERVAL_MS } = require('./maintenance.js');
+const { presenceRecordForPath } = require('./presence-schema.js');
 
 const FIREBASE_URL = 'https://realtime-database-5bb9f-default-rtdb.europe-west1.firebasedatabase.app';
-const SCRIPT_VERSION = '4.16.3';
+const SCRIPT_VERSION = '4.17.0';
 const INSTANCE_LOCK_PATH = path.join(__dirname, '.olycity-live.lock');
 const LOG_PATH = path.join(__dirname, 'olycity.log');
 const MAX_LOG_BYTES = 5 * 1024 * 1024;
@@ -227,7 +228,7 @@ function req(port, password, endpoint) {
 }
 
 function putFB(path, data) {
-  const body = JSON.stringify(data);
+  const body = JSON.stringify(presenceRecordForPath(path, data));
   const encodedPath = String(path).split('/').map(encodeURIComponent).join('/');
   return new Promise(resolve => {
     let settled = false;
@@ -1602,9 +1603,20 @@ async function start() {
     console.log(`[${ts()}] 👤 OLYCITY Live tourne pour ${identity.memberName}`);
   }
 
-  cleanupStalePresence({ getFB, putFB }).then(removed => {
-    if (removed > 0) console.log(`[${ts()}] 🧹 ${removed} ancienne(s) présence(s) Live supprimée(s)`);
-  }).catch(() => {});
+  let cleanupRunning = false;
+  const runPresenceCleanup = async () => {
+    if (cleanupRunning) return;
+    cleanupRunning = true;
+    try {
+      const removed = await cleanupStalePresence({ getFB, putFB });
+      if (removed > 0) console.log(`[${ts()}] 🧹 ${removed} ancienne(s) présence(s) Live supprimée(s)`);
+    } finally {
+      cleanupRunning = false;
+    }
+  };
+  runPresenceCleanup().catch(() => {});
+  const cleanupTimer = setInterval(() => runPresenceCleanup().catch(() => {}), PRESENCE_CLEANUP_INTERVAL_MS);
+  cleanupTimer.unref?.();
 
   let lolPollRunning = false;
   const pollLolOnce = async () => {

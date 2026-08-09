@@ -7,10 +7,34 @@ export const LIVE_CHANNELS = Object.freeze({
   lolClients: 'live/lolClients',
   lolSessions: 'live/lolSessions',
 });
+export const LIVE_RETENTION_MS = Object.freeze({ active:24 * 60 * 60 * 1000, ended:2 * 60 * 60 * 1000 });
 
 export function liveTimestamp(entry = {}, referenceNow = Date.now()) {
   const value = Number(entry.ts || entry.lastSeen || entry.updatedAt || 0);
   return value > 0 && value < 10_000_000_000 && referenceNow >= 1_000_000_000_000 ? value * 1000 : value;
+}
+
+export function liveRecordLifecycle(channel, record = {}) {
+  if (String(channel).endsWith('Sessions')) return record.active === false ? 'ended' : 'active';
+  const state = String(record.state || '').toLowerCase();
+  if (record.online === false || record.connected === false || state === 'stopped') return 'ended';
+  return 'active';
+}
+
+export function isLiveRecordExpired(channel, record, now = Date.now()) {
+  if (!record || typeof record !== 'object') return false;
+  const timestamp = liveTimestamp(record, now);
+  if (!timestamp) return false;
+  const lifecycle = liveRecordLifecycle(channel, record);
+  return now - timestamp > LIVE_RETENTION_MS[lifecycle];
+}
+
+export function staleLiveRecords(snapshot = {}, now = Date.now()) {
+  return Object.entries(LIVE_CHANNELS).flatMap(([channel, firebasePath]) =>
+    Object.entries(snapshot[channel] || {})
+      .filter(([, record]) => isLiveRecordExpired(channel, record, now))
+      .map(([key, record]) => ({ channel, firebasePath, key, record, path:`${firebasePath}/${key}` }))
+  );
 }
 
 export function mergeRealtimeEvent(current = {}, message = {}) {

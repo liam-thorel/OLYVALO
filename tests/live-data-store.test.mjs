@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import { createLiveDataStore, liveTimestamp, mergeRealtimeEvent } from '../js/live-data-store.mjs';
+import { createLiveDataStore, isLiveRecordExpired, liveTimestamp, mergeRealtimeEvent, staleLiveRecords } from '../js/live-data-store.mjs';
 
 test('realtime events replace, patch and delete nested values', () => {
   let state = mergeRealtimeEvent({}, { path:'/', data:{ p1:{ state:'idle', map:'Breeze' } } });
@@ -20,6 +20,17 @@ test('realtime events replace, patch and delete nested values', () => {
 test('timestamps accept milliseconds and legacy seconds', () => {
   assert.equal(liveTimestamp({ ts:1_700_000_000_000 }), 1_700_000_000_000);
   assert.equal(liveTimestamp({ lastSeen:1_700_000_000 }), 1_700_000_000_000);
+});
+
+test('stale record detection keeps active data longer than ended data', () => {
+  const now = 1_700_000_000_000;
+  assert.equal(isLiveRecordExpired('valorantClients', { online:false, ts:now-3*60*60*1000 }, now), true);
+  assert.equal(isLiveRecordExpired('valorantClients', { online:true, ts:now-3*60*60*1000 }, now), false);
+  const stale = staleLiveRecords({
+    valorantSessions:{ ended:{ active:false, ts:now-3*60*60*1000 }, fresh:{ active:true, ts:now-1000 } },
+    lolClients:{ old:{ connected:false, lastSeen:now-3*60*60*1000 } },
+  }, now);
+  assert.deepEqual(stale.map(entry => entry.path).sort(), ['live/lolClients/old','live/sessions/ended']);
 });
 
 test('one store opens only one EventSource per channel for all subscribers', () => {

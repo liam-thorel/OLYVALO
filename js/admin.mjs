@@ -12,10 +12,10 @@
  * juste un garde-fou contre un visiteur qui tomberait sur l'URL.
  */
 
-import { accountLiveState, accountRiotId, discoveryRows, normalizeGames } from './admin-account-utils.mjs?v=20260810-live-data-store';
-import { buildScriptHealth, scriptDiagnosticText, scriptHealthSummary } from './admin-health-utils.mjs?v=20260810-live-data-store';
+import { accountLiveState, accountRiotId, discoveryRows, normalizeGames } from './admin-account-utils.mjs?v=20260810-firebase-lifecycle';
+import { buildScriptHealth, scriptDiagnosticText, scriptHealthSummary } from './admin-health-utils.mjs?v=20260810-firebase-lifecycle';
 import { fetchJsonWithTimeout } from './request-utils.mjs?v=20260809-route-load-stable';
-import { liveDataStore } from './live-data-store.mjs?v=20260810-live-data-store';
+import { isLiveRecordExpired, liveDataStore, staleLiveRecords } from './live-data-store.mjs?v=20260810-firebase-lifecycle';
 
 const FIREBASE_URL = 'https://realtime-database-5bb9f-default-rtdb.europe-west1.firebasedatabase.app';
 // SHA-256 du mot de passe admin. Pour le changer : recalcule le hash d'un
@@ -212,6 +212,15 @@ function renderHealthInto(root) {
       ? 'reconnexion aux données…'
       : `actualisé à ${new Date().toLocaleTimeString('fr-FR', { hour:'2-digit', minute:'2-digit', second:'2-digit' })}`;
   }
+  renderPurgeControl(root);
+}
+
+function renderPurgeControl(root) {
+  const button = root.querySelector('#admin-purge-stale-btn');
+  if (!button) return;
+  const count = staleLiveRecords(liveDataStore.snapshot()).length;
+  button.textContent = count ? `Purger ${count} entrée${count > 1 ? 's' : ''}` : 'Firebase propre';
+  button.disabled = count === 0;
 }
 
 function renderAccountStatesInto(root) {
@@ -317,7 +326,10 @@ function render() {
             <h3>Centre de santé des scripts</h3>
             <p class="admin-dim">État des installations OLYCITY Live · VAL et LoL réunis</p>
           </div>
-          <span class="admin-dim" id="admin-health-refreshed">actualisé maintenant</span>
+          <div class="admin-health-actions">
+            <span class="admin-dim" id="admin-health-refreshed">actualisé maintenant</span>
+            <button type="button" class="admin-btn admin-btn-small admin-btn-danger" id="admin-purge-stale-btn">Firebase propre</button>
+          </div>
         </div>
         <div id="admin-health-dashboard">${renderHealthDashboardHTML()}</div>
       </section>
@@ -348,6 +360,34 @@ async function reloadAndRender(root) {
 
 function wireEvents(root) {
   root.querySelector('#admin-refresh-btn')?.addEventListener('click', () => reloadAndRender(root));
+
+  root.querySelector('#admin-purge-stale-btn')?.addEventListener('click', async event => {
+    const button = event.currentTarget;
+    const candidates = staleLiveRecords(liveDataStore.snapshot());
+    if (!candidates.length) return;
+    const confirmed = await confirmWithPassword(`Tape le mot de passe admin pour purger ${candidates.length} entrée(s) Firebase expirée(s) :`);
+    if (!confirmed) return;
+    button.disabled = true;
+    button.textContent = 'Vérification…';
+    try {
+      let removed = 0;
+      for (const candidate of candidates) {
+        const current = await fbGet(candidate.path).catch(() => null);
+        if (!isLiveRecordExpired(candidate.channel, current)) continue;
+        await fbDelete(candidate.path);
+        removed += 1;
+      }
+      await liveDataStore.refresh({ timeoutMs:ADMIN_LOAD_TIMEOUT_MS });
+      await loadAll();
+      render();
+      const refreshed = document.querySelector('#admin-health-refreshed');
+      if (refreshed && removed) refreshed.textContent = `${removed} entrée${removed > 1 ? 's' : ''} supprimée${removed > 1 ? 's' : ''}`;
+    } catch (error) {
+      button.disabled = false;
+      button.textContent = 'Réessayer la purge';
+      button.title = error?.message || 'La purge Firebase a échoué';
+    }
+  });
 
   root.querySelector('#admin-health-dashboard')?.addEventListener('click', async event => {
     const button = event.target.closest('button[data-action="copy-health"]');
@@ -562,6 +602,7 @@ const ADMIN_CSS = `
 .admin-section-head{display:flex;align-items:center;justify-content:space-between}
 .admin-health-section{margin-top:14px;padding:20px;border:1px solid var(--border,rgba(255,255,255,.08));background:linear-gradient(145deg,rgba(255,255,255,.035),rgba(255,255,255,.012));border-radius:10px}
 .admin-health-heading h3{margin:0 0 4px;font:700 14px Tomorrow,sans-serif;letter-spacing:1.4px;text-transform:uppercase}.admin-health-heading p{margin:0}
+.admin-health-actions{display:flex;align-items:flex-end;gap:8px;flex-direction:column}.admin-health-actions .admin-btn:disabled{opacity:.45;cursor:default}
 .admin-health-summary{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin:18px 0 14px}.admin-health-summary>div{display:grid;gap:2px;padding:12px 14px;border:1px solid var(--border,rgba(255,255,255,.08));background:rgba(0,0,0,.16);border-radius:7px}.admin-health-summary strong{font:700 22px Tomorrow,sans-serif;color:var(--text)}.admin-health-summary span{font-size:10px;text-transform:uppercase;letter-spacing:1px;color:var(--dim)}.admin-health-summary .attention strong{color:#f5c842}
 .admin-health-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.admin-health-card{position:relative;min-width:0;padding:14px;border:1px solid var(--border,rgba(255,255,255,.08));border-left:3px solid rgba(130,140,155,.45);background:rgba(8,11,16,.52);border-radius:7px}.admin-health-card[data-state="ready"]{border-left-color:#44d17a}.admin-health-card[data-state="in-game"]{border-left-color:#ff4656}.admin-health-card[data-state="agent-select"]{border-left-color:#f5c842}.admin-health-card[data-state="error"]{border-left-color:#ff9f43}
 .admin-health-card-head{display:grid;grid-template-columns:34px minmax(0,1fr) auto;align-items:center;gap:9px}.admin-health-card-head>div{display:grid;gap:2px;min-width:0}.admin-health-card-head strong{font:700 12px Tomorrow,sans-serif;letter-spacing:.8px;text-transform:uppercase;overflow:hidden;text-overflow:ellipsis}.admin-health-card-head small{font-size:10px;color:var(--dim);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.admin-health-avatar{width:34px;height:34px;border-radius:50%;object-fit:cover}.admin-health-avatar-fallback{display:grid;place-items:center;background:rgba(255,255,255,.06);font:700 12px Tomorrow,sans-serif;color:var(--dim)}

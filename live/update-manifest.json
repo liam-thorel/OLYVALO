@@ -1,5 +1,5 @@
 {
-  "version": "4.16.3",
+  "version": "4.17.0",
   "files": [
     "index.js",
     "lol-watcher.js",
@@ -16,6 +16,7 @@
     "ask-identity.js",
     "account-binding.js",
     "maintenance.js",
+    "presence-schema.js",
     "IDENTITE.bat",
     "updater.js",
     "update-manifest.json",

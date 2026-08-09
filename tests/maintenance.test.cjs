@@ -1,5 +1,11 @@
 const assert = require('node:assert/strict');
-const { cleanupStalePresence, stalePresenceKeys, STALE_PRESENCE_MS } = require('../live/maintenance.js');
+const {
+  cleanupStalePresence,
+  ENDED_PRESENCE_MS,
+  stalePresenceKeys,
+  stalePresenceKeysForPath,
+  STALE_PRESENCE_MS,
+} = require('../live/maintenance.js');
 
 const now = 2 * STALE_PRESENCE_MS;
 assert.deepEqual(stalePresenceKeys({
@@ -7,6 +13,11 @@ assert.deepEqual(stalePresenceKeys({
   stale: { ts: now - STALE_PRESENCE_MS - 1 },
   missing: { online: false },
 }, now), ['stale']);
+assert.deepEqual(stalePresenceKeys({ lol:{ lastSeen:now-STALE_PRESENCE_MS-1 } }, now), ['lol']);
+assert.deepEqual(stalePresenceKeysForPath('live/clients', {
+  ended:{ online:false, heartbeatAt:now-ENDED_PRESENCE_MS-1 },
+  recent:{ online:false, heartbeatAt:now-ENDED_PRESENCE_MS+1 },
+}, now), ['ended']);
 
 const deleted = [];
 cleanupStalePresence({

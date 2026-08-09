@@ -13,7 +13,7 @@ import {
   stableServerForSession,
   stableSessionForRender,
 } from './live-sessions.mjs?v=20260809-live-server-local';
-import { freshLiveClients, groupLiveClients, isVersionAtLeast, liveClientSummary } from './live-clients.mjs?v=20260810-live-data-store';
+import { freshLiveClients, groupLiveClients, isVersionAtLeast, liveClientSummary } from './live-clients.mjs?v=20260810-firebase-lifecycle';
 import { buildLiveIdentityIndex, resolveLiveIdentity } from './live-identities.mjs?v=20260809-live-groups';
 import { PLAYERS as LOL_ROSTER_PLAYERS } from './lol-roster.mjs?v=20260809-lol-sync';
 import { serverVisual } from './server-visuals.mjs?v=20260809-live-server-local';
@@ -21,7 +21,7 @@ import { avatarLayersHTML } from './avatars.mjs?v=20260720-avatars';
 import { filterHistoryGames, historyDailyPerformances, historyGameForOwner, historyMode, historyOwnerKey, historyOwnerLabel, historyPlayerName, historyPlayerPerformance, historyPlayerPerformances, historyRankedPlayers, historyReports, isHistorySelf, normalizeHistoryEntries } from './history-utils.mjs?v=20260720-history-multi';
 import { initCurse } from './curse.mjs?v=20260807-curse5';
 import { fetchJsonWithTimeout } from './request-utils.mjs?v=20260809-route-load-stable';
-import { liveDataStore, liveTimestamp } from './live-data-store.mjs?v=20260810-live-data-store';
+import { liveDataStore, liveTimestamp } from './live-data-store.mjs?v=20260810-firebase-lifecycle';
 
 let historyLoadSequence = 0;
 
