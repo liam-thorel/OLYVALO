@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { freshLiveClients, isVersionAtLeast, liveClientSummary } from '../js/live-clients.mjs';
+import { freshLiveClients, groupLiveClients, isVersionAtLeast, liveClientSummary } from '../js/live-clients.mjs';
 
 const now = 100000;
 const clients = {
@@ -28,5 +28,15 @@ assert.equal(isVersionAtLeast('4.13.0', '4.12.0'), true);
 assert.equal(isVersionAtLeast('v4.12.0', '4.12.0'), true);
 assert.equal(isVersionAtLeast('4.11.9', '4.12.0'), false);
 assert.equal(isVersionAtLeast('', '4.12.0'), false);
+
+const grouped = groupLiveClients([
+  { puuid:'rayhan', state:'agent-select', matchId:'pregame-42' },
+  { puuid:'nico', state:'idle', matchId:'' },
+  { puuid:'mathis', state:'agent-select', matchId:'pregame-42' },
+]);
+assert.deepEqual(grouped.map(group => group.clients.map(client => client.puuid)), [
+  ['rayhan', 'mathis'],
+  ['nico'],
+]);
 
 console.log('live-clients: freshness, names and state summary validated');

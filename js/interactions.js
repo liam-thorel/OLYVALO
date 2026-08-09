@@ -12,7 +12,9 @@ import {
   stablePlayersForSession,
   stableSessionForRender,
 } from './live-sessions.mjs?v=20260731-live-144';
-import { freshLiveClients, isVersionAtLeast, liveClientSummary } from './live-clients.mjs?v=20260805-live-stable';
+import { freshLiveClients, groupLiveClients, isVersionAtLeast, liveClientSummary } from './live-clients.mjs?v=20260809-live-groups';
+import { buildLiveIdentityIndex, resolveLiveIdentity } from './live-identities.mjs?v=20260809-live-groups';
+import { PLAYERS as LOL_ROSTER_PLAYERS } from './lol-roster.mjs?v=20260806-lol-roster';
 import { serverVisual } from './server-visuals.mjs?v=20260805-live-stable';
 import { avatarLayersHTML } from './avatars.mjs?v=20260720-avatars';
 import { filterHistoryGames, historyDailyPerformances, historyGameForOwner, historyMode, historyOwnerKey, historyOwnerLabel, historyPlayerName, historyPlayerPerformance, historyPlayerPerformances, historyRankedPlayers, historyReports, isHistorySelf, normalizeHistoryEntries } from './history-utils.mjs?v=20260720-history-multi';
@@ -387,16 +389,12 @@ export function initLivePage() {
   let byMatchCache = {};
   const stableRosterCache = new Map();
   const stablePregameCache = new Map();
-  const _rosterCache = {};
+  let _rosterIdentityIndex = null;
   let _rosterFetched = false;
   let _mapsCache = null;
 
   function rosterProfileForName(name = '') {
-    const key = name.toLowerCase();
-    if (_rosterCache[key]) return _rosterCache[key];
-    const account = key.split('#')[0];
-    const matchingKey = Object.keys(_rosterCache).find(riotId => riotId.split('#')[0] === account);
-    return matchingKey ? _rosterCache[matchingKey] : null;
+    return resolveLiveIdentity({ playerName: name }, _rosterIdentityIndex);
   }
 
   // Depuis la v4.16.0, chaque script publie le membre OLYCITY choisi à
@@ -404,38 +402,29 @@ export function initLivePage() {
   // elle reste juste immédiatement après un changement de pseudo, sans
   // attendre que rosterOverlay/accounts soit relu.
   function profileForEntry(entry = {}) {
-    const declared = entry.member;
-    if (declared) {
-      const known = Object.values(_rosterCache).find(profile => profile.member === declared);
-      return known || { avatar: '', member: declared };
-    }
-    return rosterProfileForName(entry.playerName || '');
+    return resolveLiveIdentity(entry, _rosterIdentityIndex)
+      || (entry.member ? { avatar: '', member: entry.member } : null);
   }
 
   function ensureRosterCache() {
     if (_rosterFetched) return;
     _rosterFetched = true;
-    Promise.all([
-      fetch('./data/roster.json?v=20260720-live-clients').then(response => response.json()),
-      fetch(`${FIREBASE_URL}/rosterOverlay.json`).then(response => response.json()).catch(() => null),
-    ]).then(([roster, overlay]) => {
-      // Les comptes Riot (y compris ceux des 5 du roster) vivent tous dans
-      // rosterOverlay/accounts, assignables/supprimables depuis #admin — pas
-      // de distinction de jeu, un même compte peut jouer Valorant et LoL.
-      const slugify = name => String(name || '')
-        .normalize('NFD').replace(/[̀-ͯ]/g, '')
-        .toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-+|-+$)/g, '');
-      const overlayAccounts = overlay?.accounts || {};
-      Object.entries(overlayAccounts).forEach(([memberId, accounts]) => {
-        const member = roster.find(player => slugify(player.name) === memberId)
-          || Object.entries(overlay?.members || {}).find(([id]) => id === memberId)?.[1];
-        const entry = { avatar: member?.avatar || '', member: member?.name || memberId };
-        Object.values(accounts || {}).forEach(account => {
-          _rosterCache[`${account.name}#${account.tag}`.toLowerCase()] = entry;
-        });
-      });
+    fetch('./data/roster.json?v=20260720-live-clients').then(response => response.json()).then(roster => {
+      // Le roster local suffit immédiatement pour les comptes principaux et
+      // les smurfs connus. Firebase enrichit ensuite l'index avec les comptes
+      // rattachés dans l'admin, sans pouvoir bloquer l'affichage des prénoms.
+      _rosterIdentityIndex = buildLiveIdentityIndex(roster, {}, LOL_ROSTER_PLAYERS);
       renderDiagnostic();
       updateSessionPicker(lastSessions);
+      return fetch(`${FIREBASE_URL}/rosterOverlay.json`)
+        .then(response => response.ok ? response.json() : null)
+        .then(overlay => {
+          if (!overlay) return;
+          _rosterIdentityIndex = buildLiveIdentityIndex(roster, overlay, LOL_ROSTER_PLAYERS);
+          renderDiagnostic();
+          updateSessionPicker(lastSessions);
+        })
+        .catch(() => {});
     }).catch(() => {});
   }
   // Round timer using roundStartTime from Firebase
@@ -502,7 +491,7 @@ export function initLivePage() {
     const versions = [...new Set(clients.map(client => client.version).filter(Boolean))];
     version.textContent = versions.length === 1 ? `v${versions[0]}` : `${versions.length} versions`;
 
-    list.innerHTML = clients.map(client => {
+    const renderClient = (client, compactContext = false) => {
       const profile = profileForEntry(client);
       const displayName = profile?.member || client.playerName?.split('#')[0] || 'Joueur inconnu';
       const safeName = escapeDiagnosticText(displayName);
@@ -511,14 +500,28 @@ export function initLivePage() {
         : `<span class="live-client-initial">${safeName.slice(0, 1).toUpperCase()}</span>`;
       const stateLabel = DIAGNOSTIC_LABELS[client.state] || 'Script connecté';
       const safeState = DIAGNOSTIC_LABELS[client.state] ? client.state : 'online';
-      const context = [client.map, client.server, client.side, client.error].filter(Boolean).join(' · ');
-      return `<div class="live-client-chip${client.puuid === selectedSession ? ' selected' : ''}" data-state="${safeState}">
+      const context = compactContext ? client.error || '' : [client.map, client.server, client.side, client.error].filter(Boolean).join(' · ');
+      const riotId = escapeDiagnosticText(client.playerName || '');
+      return `<div class="live-client-chip${client.puuid === selectedSession ? ' selected' : ''}" data-state="${safeState}"${riotId ? ` title="${riotId}"` : ''}>
         <span class="live-client-avatar">${avatar}</span>
         <span class="live-client-info">
           <strong>${safeName}</strong>
           <small>${stateLabel}${context ? ` · ${escapeDiagnosticText(context)}` : ''}</small>
         </span>
         <span class="live-client-chip-version">${client.version ? `v${escapeDiagnosticText(client.version)}` : '—'}</span>
+      </div>`;
+    };
+
+    list.innerHTML = groupLiveClients(clients).map(group => {
+      if (group.clients.length === 1) return renderClient(group.clients[0]);
+      const reference = group.clients.find(client => client.map || client.server || client.side) || group.clients[0];
+      const context = [reference.map, reference.server, reference.side].filter(Boolean).join(' · ');
+      return `<div class="live-client-group" data-state="${escapeDiagnosticText(reference.state || 'online')}">
+        <div class="live-client-group-heading">
+          <strong>Même partie</strong>
+          <small>${escapeDiagnosticText(context || 'Match partagé')}</small>
+        </div>
+        <div class="live-client-group-members">${group.clients.map(client => renderClient(client, true)).join('')}</div>
       </div>`;
     }).join('');
   }
@@ -1203,7 +1206,7 @@ export function initLivePage() {
 
   function olycityMember(name) {
     if (!name || !name.includes('#')) return null;
-    const hit = _rosterCache[name.toLowerCase()];
+    const hit = rosterProfileForName(name);
     return hit?.member || null;
   }
 

@@ -24,6 +24,7 @@ export function freshLiveClients(clients = {}, sessions = {}, now = Date.now()) 
       return {
         puuid,
         ...client,
+        matchId: client.matchId || session.matchId || '',
         playerName: client.playerName || session.playerName || '',
         age: ts ? Math.max(0, now - ts) : Infinity,
       };
@@ -34,6 +35,23 @@ export function freshLiveClients(clients = {}, sessions = {}, now = Date.now()) 
     // The PUUID is stable for the lifetime of an account, so the visual order
     // now remains deterministic while status and details keep updating.
     .sort((a, b) => a.puuid.localeCompare(b.puuid));
+}
+
+const STATE_PRIORITY = { 'in-game': 0, 'agent-select': 1, idle: 2, online: 2, error: 3, 'riot-offline': 3 };
+
+export function groupLiveClients(clients = []) {
+  const groups = new Map();
+  clients.forEach(client => {
+    const sharedMatch = client.matchId && ['in-game', 'agent-select'].includes(client.state);
+    const key = sharedMatch ? `match:${client.matchId}` : `client:${client.puuid}`;
+    if (!groups.has(key)) groups.set(key, { key, matchId: sharedMatch ? client.matchId : '', clients: [] });
+    groups.get(key).clients.push(client);
+  });
+  return [...groups.values()].sort((left, right) => {
+    const leftPriority = Math.min(...left.clients.map(client => STATE_PRIORITY[client.state] ?? 4));
+    const rightPriority = Math.min(...right.clients.map(client => STATE_PRIORITY[client.state] ?? 4));
+    return leftPriority - rightPriority || left.key.localeCompare(right.key);
+  });
 }
 
 export function liveClientSummary(clients = []) {
