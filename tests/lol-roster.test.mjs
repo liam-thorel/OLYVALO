@@ -8,7 +8,7 @@ test('League roster uses the six requested Riot IDs', () => {
     'Liam:FakePlasticTrees#1706',
     'Noé:NoWaY#alone',
     'Rayhan:RayBaz#OLY',
-    'Mathis:MrScooby#MYSTR',
+    'Mathis:M A I R#LGND',
     'Logan:Stupefiant#NOXUS',
   ]);
 });

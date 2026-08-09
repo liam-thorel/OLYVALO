@@ -7,7 +7,7 @@ const PLAYERS = [
   { name: 'Liam', riotId: 'FakePlasticTrees#1706' },
   { name: 'Noé', riotId: 'NoWaY#alone' },
   { name: 'Rayhan', riotId: 'RayBaz#OLY' },
-  { name: 'Mathis', riotId: 'MrScooby#MYSTR' },
+  { name: 'Mathis', riotId: 'M A I R#LGND' },
   {
     name: 'Logan',
     riotId: 'Stupefiant#NOXUS',

@@ -75,8 +75,8 @@
     ],
     "tag": "DUEL",
     "riot": {
-      "name": "MrScooby",
-      "tag": "MYSTR",
+      "name": "M A I R",
+      "tag": "LGND",
       "region": "eu"
     },
     "avatar": "https://cdn.discordapp.com/avatars/775273322950688780/2b6fdcf90608c24413fb3777bfda41e0.png?size=512",
@@ -88,10 +88,6 @@
       {
         "name": "IlIlllIlIlIllllI",
         "tag": "00000"
-      },
-      {
-        "name": "M A I R",
-        "tag": "LGND"
       }
     ]
   },

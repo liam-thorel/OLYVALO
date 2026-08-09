@@ -1049,7 +1049,7 @@ async function poll() {
 
 
   // Also scan all presences for OLYCITY roster games
-  const OLYCITY_ROSTER = ['Drew A Picasso', 'Wong Chi Ming', 'RayBaz', 'MrScooby', 'baby hayabusa', 'VENOM X RAMEEZ'];
+  const OLYCITY_ROSTER = ['Drew A Picasso', 'Wong Chi Ming', 'RayBaz', 'M A I R', 'baby hayabusa', 'VENOM X RAMEEZ'];
   const rosterGames = [];
   for (const p of presences) {
     if (!p.game_name) continue;

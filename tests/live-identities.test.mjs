@@ -7,7 +7,7 @@ const index = buildLiveIdentityIndex([
     riot: { name: 'RayBaz', tag: 'OLY' },
     smurfs: [{ name: 'rbz', tag: '3030' }],
   },
-  { name: 'Mathis', avatar: 'mathis.png', riot: { name: 'MrScooby', tag: 'MYSTR' } },
+  { name: 'Mathis', avatar: 'mathis.png', riot: { name: 'M A I R', tag: 'LGND' } },
 ], {
   members: { logan: { name: 'Logan', avatar: 'logan.png' } },
   accounts: {
