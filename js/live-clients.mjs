@@ -1,4 +1,4 @@
-import { liveTimestamp } from './live-data-store.mjs?v=20260810-firebase-lifecycle';
+import { liveTimestamp } from './live-data-store.mjs?v=20260810-firebase-connection-fix';
 
 export const LIVE_CLIENT_STALE_MS = 30000;
 

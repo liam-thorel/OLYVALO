@@ -1,4 +1,4 @@
-import { liveTimestamp } from './live-data-store.mjs?v=20260810-firebase-lifecycle';
+import { liveTimestamp } from './live-data-store.mjs?v=20260810-firebase-connection-fix';
 
 export const HEALTH_FRESH_MS = 45_000;
 export const HEALTH_RECENT_MS = 120_000;

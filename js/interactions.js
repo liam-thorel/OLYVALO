@@ -13,7 +13,7 @@ import {
   stableServerForSession,
   stableSessionForRender,
 } from './live-sessions.mjs?v=20260809-live-server-local';
-import { freshLiveClients, groupLiveClients, isVersionAtLeast, liveClientSummary } from './live-clients.mjs?v=20260810-firebase-lifecycle';
+import { freshLiveClients, groupLiveClients, isVersionAtLeast, liveClientSummary } from './live-clients.mjs?v=20260810-firebase-connection-fix';
 import { buildLiveIdentityIndex, resolveLiveIdentity } from './live-identities.mjs?v=20260809-live-groups';
 import { PLAYERS as LOL_ROSTER_PLAYERS } from './lol-roster.mjs?v=20260809-lol-sync';
 import { serverVisual } from './server-visuals.mjs?v=20260809-live-server-local';
@@ -21,9 +21,32 @@ import { avatarLayersHTML } from './avatars.mjs?v=20260720-avatars';
 import { filterHistoryGames, historyDailyPerformances, historyGameForOwner, historyMode, historyOwnerKey, historyOwnerLabel, historyPlayerName, historyPlayerPerformance, historyPlayerPerformances, historyRankedPlayers, historyReports, isHistorySelf, normalizeHistoryEntries } from './history-utils.mjs?v=20260720-history-multi';
 import { initCurse } from './curse.mjs?v=20260807-curse5';
 import { fetchJsonWithTimeout } from './request-utils.mjs?v=20260809-route-load-stable';
-import { liveDataStore, liveTimestamp } from './live-data-store.mjs?v=20260810-firebase-lifecycle';
+import { liveDataStore, liveTimestamp } from './live-data-store.mjs?v=20260810-firebase-connection-fix';
 
 let historyLoadSequence = 0;
+let historyDataCache = null;
+let historyDataCachedAt = 0;
+let historyLoadPromise = null;
+const HISTORY_CACHE_MS = 60_000;
+
+async function loadHistoryData() {
+  if (historyDataCache && Date.now() - historyDataCachedAt < HISTORY_CACHE_MS) return historyDataCache;
+  if (historyLoadPromise) return historyLoadPromise;
+  const url = 'https://realtime-database-5bb9f-default-rtdb.europe-west1.firebasedatabase.app/live/history.json';
+  historyLoadPromise = (async () => {
+    let lastError;
+    for (const timeoutMs of [8_000, 12_000]) {
+      try {
+        const data = await fetchJsonWithTimeout(url, { timeoutMs });
+        historyDataCache = data;
+        historyDataCachedAt = Date.now();
+        return data;
+      } catch (error) { lastError = error; }
+    }
+    throw lastError;
+  })().finally(() => { historyLoadPromise = null; });
+  return historyLoadPromise;
+}
 
 // ─── THEME TOGGLE ─────────────────────────────────
 export function initTheme() {
@@ -1283,7 +1306,6 @@ export function initLivePage() {
 }
 
 export async function initHistoryPage() {
-  const FIREBASE_URL = 'https://realtime-database-5bb9f-default-rtdb.europe-west1.firebasedatabase.app';
   const el = document.getElementById('history-content');
   if (!el) return;
   const loadSequence = ++historyLoadSequence;
@@ -1291,10 +1313,8 @@ export async function initHistoryPage() {
 
   let games = [];
   try {
-    const [data] = await Promise.all([
-      fetchJsonWithTimeout(`${FIREBASE_URL}/live/history.json`),
-      ensureAgentMap(),
-    ]);
+    ensureAgentMap();
+    const data = await loadHistoryData();
     if (loadSequence !== historyLoadSequence) return;
     if (data) games = normalizeHistoryEntries(data);
   } catch {

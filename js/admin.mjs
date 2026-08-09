@@ -12,10 +12,10 @@
  * juste un garde-fou contre un visiteur qui tomberait sur l'URL.
  */
 
-import { accountLiveState, accountRiotId, discoveryRows, normalizeGames } from './admin-account-utils.mjs?v=20260810-firebase-lifecycle';
-import { buildScriptHealth, scriptDiagnosticText, scriptHealthSummary } from './admin-health-utils.mjs?v=20260810-firebase-lifecycle';
+import { accountLiveState, accountRiotId, discoveryRows, normalizeGames } from './admin-account-utils.mjs?v=20260810-firebase-connection-fix';
+import { buildScriptHealth, scriptDiagnosticText, scriptHealthSummary } from './admin-health-utils.mjs?v=20260810-firebase-connection-fix';
 import { fetchJsonWithTimeout } from './request-utils.mjs?v=20260809-route-load-stable';
-import { isLiveRecordExpired, liveDataStore, staleLiveRecords } from './live-data-store.mjs?v=20260810-firebase-lifecycle';
+import { isLiveRecordExpired, liveDataStore, staleLiveRecords } from './live-data-store.mjs?v=20260810-firebase-connection-fix';
 
 const FIREBASE_URL = 'https://realtime-database-5bb9f-default-rtdb.europe-west1.firebasedatabase.app';
 // SHA-256 du mot de passe admin. Pour le changer : recalcule le hash d'un
@@ -125,14 +125,16 @@ async function loadAll(signal) {
     liveDataStore.refresh({ timeoutMs:ADMIN_LOAD_TIMEOUT_MS }).catch(() => liveDataStore.snapshot()),
     fetchJsonWithTimeout(`./live/update-manifest.json?v=${Date.now()}`, { signal, timeoutMs: ADMIN_LOAD_TIMEOUT_MS }).catch(() => null),
   ]);
-  staticRoster = roster || [];
-  overlayMembers = overlay?.members || {};
-  overlayAccounts = overlay?.accounts || {};
-  overlayHiddenMembers = overlay?.hiddenMembers || {};
-  ignoredAccounts = overlay?.ignoredAccounts || {};
-  discovered = discoveredData || {};
+  if (Array.isArray(roster)) staticRoster = roster;
+  if (overlay !== null) {
+    overlayMembers = overlay?.members || {};
+    overlayAccounts = overlay?.accounts || {};
+    overlayHiddenMembers = overlay?.hiddenMembers || {};
+    ignoredAccounts = overlay?.ignoredAccounts || {};
+  }
+  if (discoveredData !== null) discovered = discoveredData || {};
   applyLiveSnapshot(liveSnapshot);
-  latestScriptVersion = updateManifest?.version || '';
+  if (updateManifest?.version) latestScriptVersion = updateManifest.version;
   adminDataLoaded = true;
 }
 

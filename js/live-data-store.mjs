@@ -7,6 +7,9 @@ export const LIVE_CHANNELS = Object.freeze({
   lolClients: 'live/lolClients',
   lolSessions: 'live/lolSessions',
 });
+const LIVE_ROOT_KEYS = Object.freeze(Object.fromEntries(
+  Object.entries(LIVE_CHANNELS).map(([channel, path]) => [path.split('/').at(-1), channel]),
+));
 export const LIVE_RETENTION_MS = Object.freeze({ active:24 * 60 * 60 * 1000, ended:2 * 60 * 60 * 1000 });
 
 export function liveTimestamp(entry = {}, referenceNow = Date.now()) {
@@ -63,6 +66,27 @@ export function mergeRealtimeEvent(current = {}, message = {}) {
   return next;
 }
 
+export function routeLiveRootEvent(message = {}) {
+  const path = String(message.path || '/');
+  const parts = path.split('/').filter(Boolean);
+  if (parts.length) {
+    const channel = LIVE_ROOT_KEYS[parts[0]];
+    if (!channel) return [];
+    return [{ channel, message:{ ...message, path:parts.length > 1 ? `/${parts.slice(1).join('/')}` : '/' } }];
+  }
+
+  const rootData = message.data && typeof message.data === 'object' ? message.data : {};
+  if (message.eventType === 'patch') {
+    return Object.entries(rootData)
+      .filter(([key]) => LIVE_ROOT_KEYS[key])
+      .map(([key, data]) => ({ channel:LIVE_ROOT_KEYS[key], message:{ path:'/', data, eventType:'patch' } }));
+  }
+  return Object.entries(LIVE_ROOT_KEYS).map(([key, channel]) => ({
+    channel,
+    message:{ path:'/', data:rootData[key] ?? null, eventType:'put' },
+  }));
+}
+
 export function createLiveDataStore({
   fetchJson = fetchJsonWithTimeout,
   EventSourceImpl = globalThis.EventSource,
@@ -106,37 +130,41 @@ export function createLiveDataStore({
     if (started) return;
     started = true;
     if (!EventSourceImpl) return;
-    Object.entries(LIVE_CHANNELS).forEach(([channel, path]) => {
-      const source = new EventSourceImpl(`${firebaseUrl}/${path}.json`);
-      const handle = event => {
-        try { apply(channel, { ...JSON.parse(event.data), eventType:event.type }); }
-        catch (error) { console.error(`[OLYCITY] Live data ${channel}`, error); }
-      };
-      source.addEventListener('put', handle);
-      source.addEventListener('patch', handle);
-      source.onopen = () => {
+    const source = new EventSourceImpl(`${firebaseUrl}/live.json`);
+    const handle = event => {
+      try {
+        routeLiveRootEvent({ ...JSON.parse(event.data), eventType:event.type })
+          .forEach(({ channel, message }) => apply(channel, message));
+      } catch (error) { console.error('[OLYCITY] Live data', error); }
+    };
+    source.addEventListener('put', handle);
+    source.addEventListener('patch', handle);
+    source.onopen = () => {
+      Object.keys(channelState).forEach(channel => {
         channelState[channel].connected = true;
         channelState[channel].error = '';
-        emit();
-      };
-      source.onerror = () => {
+      });
+      emit();
+    };
+    source.onerror = () => {
+      Object.keys(channelState).forEach(channel => {
         channelState[channel].connected = false;
         channelState[channel].error = 'reconnecting';
-        emit();
-      };
-      sources.set(channel, source);
-    });
+      });
+      emit();
+    };
+    sources.set('live', source);
   }
 
   async function refresh({ timeoutMs = 4_000 } = {}) {
     start();
     if (refreshPromise) return refreshPromise;
-    refreshPromise = Promise.all(Object.entries(LIVE_CHANNELS).map(async ([channel, path]) => {
-      const revisionAtStart = revisions[channel];
-      try {
-        const incoming = await fetchJson(`${firebaseUrl}/${path}.json`, { timeoutMs });
+    const revisionsAtStart = { ...revisions };
+    refreshPromise = fetchJson(`${firebaseUrl}/live.json`, { timeoutMs }).then(incomingRoot => {
+      Object.entries(LIVE_CHANNELS).forEach(([channel, path]) => {
+        const incoming = incomingRoot?.[path.split('/').at(-1)] || {};
         // Une mise à jour SSE reçue pendant le GET reste prioritaire.
-        data[channel] = revisions[channel] === revisionAtStart
+        data[channel] = revisions[channel] === revisionsAtStart[channel]
           ? { ...(incoming || {}) }
           : { ...(incoming || {}), ...data[channel] };
         channelState[channel] = {
@@ -145,10 +173,12 @@ export function createLiveDataStore({
           error: '',
           updatedAt: Date.now(),
         };
-      } catch (error) {
+      });
+    }).catch(error => {
+      Object.keys(channelState).forEach(channel => {
         channelState[channel].error = error?.message || 'unavailable';
-      }
-    })).then(() => {
+      });
+    }).then(() => {
       emit();
       return snapshot();
     }).finally(() => { refreshPromise = null; });

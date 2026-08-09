@@ -1,6 +1,6 @@
-import { groupLolSessions, lolKda, normalizeLolHistory, summarizeLolDays } from './lol-utils.mjs?v=20260810-firebase-lifecycle';
+import { groupLolSessions, lolKda, normalizeLolHistory, summarizeLolDays } from './lol-utils.mjs?v=20260810-firebase-connection-fix';
 import { fetchJsonWithTimeout } from './request-utils.mjs?v=20260809-route-load-stable';
-import { liveDataStore } from './live-data-store.mjs?v=20260810-firebase-lifecycle';
+import { liveDataStore } from './live-data-store.mjs?v=20260810-firebase-connection-fix';
 
 const FIREBASE_URL = 'https://realtime-database-5bb9f-default-rtdb.europe-west1.firebasedatabase.app';
 let historyLoadSequence = 0;
