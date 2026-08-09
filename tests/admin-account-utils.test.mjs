@@ -29,3 +29,26 @@ test('live state distinguishes game, client and stale account', () => {
   assert.equal(accountLiveState({ name:'A', tag:'B', games:['lol'] }, { lolClients:{ a:{ playerName:'A#B', phase:'Lobby', lastSeen:now } } }, now).state, 'online');
   assert.equal(accountLiveState({ name:'A', tag:'B' }, { valorantClients:{ a:{ playerName:'A#B', ts:now-100_000 } } }, now).state, 'offline');
 });
+
+test('live state recovers a Valorant PUUID stored as the Firebase key', () => {
+  const now = 1_000_000;
+  const state = accountLiveState(
+    { puuid:'p-key', name:'Old name', tag:'OLD' },
+    { valorantClients:{ 'p-key':{ playerName:'New name#NEW', online:true, ts:now } } },
+    now,
+  );
+  assert.equal(state.state, 'online');
+});
+
+test('live state uses the newest matching record', () => {
+  const now = 2_000_000;
+  const state = accountLiveState(
+    { name:'A', tag:'B' },
+    {
+      valorantSessions:{ stale:{ playerName:'A#B', active:true, ts:now-200_000 } },
+      valorantClients:{ fresh:{ playerName:'A#B', online:true, ts:now } },
+    },
+    now,
+  );
+  assert.equal(state.state, 'online');
+});

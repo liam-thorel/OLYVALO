@@ -12,8 +12,8 @@
  * juste un garde-fou contre un visiteur qui tomberait sur l'URL.
  */
 
-import { accountLiveState, accountRiotId, discoveryRows, normalizeGames } from './admin-account-utils.mjs?v=20260806-admin-accounts';
-import { buildScriptHealth, scriptDiagnosticText, scriptHealthSummary } from './admin-health-utils.mjs?v=20260809-admin-health';
+import { accountLiveState, accountRiotId, discoveryRows, normalizeGames } from './admin-account-utils.mjs?v=20260810-admin-live-state';
+import { buildScriptHealth, scriptDiagnosticText, scriptHealthSummary } from './admin-health-utils.mjs?v=20260810-admin-live-state';
 import { fetchJsonWithTimeout } from './request-utils.mjs?v=20260809-route-load-stable';
 
 const FIREBASE_URL = 'https://realtime-database-5bb9f-default-rtdb.europe-west1.firebasedatabase.app';
@@ -21,6 +21,7 @@ const FIREBASE_URL = 'https://realtime-database-5bb9f-default-rtdb.europe-west1.
 // nouveau mot de passe et remplace la valeur ci-dessous.
 const ADMIN_PASSWORD_HASH = '4ec69c8d367347db4dd4357d82c919af0e21fad86cf0432757b8de628c227af7';
 const AUTH_STORAGE_KEY = 'olycity-admin-auth';
+const ADMIN_LOAD_TIMEOUT_MS = 4_000;
 
 let staticRoster = [];
 let overlayMembers = {};
@@ -58,7 +59,7 @@ async function confirmWithPassword(message) {
 }
 
 async function fbGet(path, signal) {
-  return fetchJsonWithTimeout(`${FIREBASE_URL}/${path}.json`, { signal });
+  return fetchJsonWithTimeout(`${FIREBASE_URL}/${path}.json`, { signal, timeoutMs: ADMIN_LOAD_TIMEOUT_MS });
 }
 async function fbPut(path, data) {
   const res = await fetch(`${FIREBASE_URL}/${path}.json`, {
@@ -107,14 +108,14 @@ function accountsForMember(memberId) {
 
 async function loadAll(signal) {
   const [roster, overlay, discoveredData, lolClientData, lolSessionData, valorantClientData, valorantSessionData, updateManifest] = await Promise.all([
-    fetchJsonWithTimeout(`./data/roster.json?v=${Date.now()}`, { signal }),
+    fetchJsonWithTimeout(`./data/roster.json?v=${Date.now()}`, { signal, timeoutMs: ADMIN_LOAD_TIMEOUT_MS }),
     fbGet('rosterOverlay', signal).catch(() => null),
     fbGet('discovered', signal).catch(() => null),
     fbGet('live/lolClients', signal).catch(() => null),
     fbGet('live/lolSessions', signal).catch(() => null),
     fbGet('live/clients', signal).catch(() => null),
     fbGet('live/sessions', signal).catch(() => null),
-    fetchJsonWithTimeout(`./live/update-manifest.json?v=${Date.now()}`, { signal }).catch(() => null),
+    fetchJsonWithTimeout(`./live/update-manifest.json?v=${Date.now()}`, { signal, timeoutMs: ADMIN_LOAD_TIMEOUT_MS }).catch(() => null),
   ]);
   staticRoster = roster || [];
   overlayMembers = overlay?.members || {};
@@ -135,7 +136,7 @@ async function loadHealthData() {
     fbGet('live/lolSessions').catch(() => null),
     fbGet('live/clients').catch(() => null),
     fbGet('live/sessions').catch(() => null),
-    fetchJsonWithTimeout(`./live/update-manifest.json?v=${Date.now()}`).catch(() => null),
+    fetchJsonWithTimeout(`./live/update-manifest.json?v=${Date.now()}`, { timeoutMs: ADMIN_LOAD_TIMEOUT_MS }).catch(() => null),
   ]);
   lolClients = lolClientData || {};
   lolSessions = lolSessionData || {};

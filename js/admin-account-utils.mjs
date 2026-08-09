@@ -43,10 +43,18 @@ export function accountLiveState(account, { lolClients = {}, lolSessions = {}, v
   const pools = normalizeGames(account).includes('lol')
     ? [lolSessions, lolClients, valorantSessions, valorantClients]
     : [valorantSessions, valorantClients, lolSessions, lolClients];
-  const entries = pools.flatMap(pool => Object.values(pool || {}));
-  const match = entries.find(entry => sameRiotAccount(account, entry));
+  const entries = pools.flatMap(pool => Object.entries(pool || {}).map(([key, entry]) => ({
+    ...(entry || {}),
+    // Les clients Valorant sont indexés par PUUID dans Firebase, mais les
+    // anciennes versions du script ne le répétaient pas dans la valeur.
+    puuid: entry?.puuid || key,
+  })));
+  const match = entries
+    .filter(entry => sameRiotAccount(account, entry))
+    .sort((left, right) => Number(right.ts || right.lastSeen || 0) - Number(left.ts || left.lastSeen || 0))[0];
   if (!match) return { label: 'Jamais détecté', state: 'unknown', ts: 0 };
-  const ts = Number(match.ts || match.lastSeen || 0);
+  const rawTs = Number(match.ts || match.lastSeen || 0);
+  const ts = rawTs > 0 && rawTs < 10_000_000_000 && now >= 1_000_000_000_000 ? rawTs * 1000 : rawTs;
   const fresh = ts > 0 && now - ts < 90_000;
   if (match.active && fresh) return { label: 'En partie', state: 'ingame', ts };
   if (fresh) return { label: match.phase === 'ChampSelect' ? 'Champ select' : 'Client connecté', state: 'online', ts };
