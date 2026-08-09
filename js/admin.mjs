@@ -13,6 +13,7 @@
  */
 
 import { accountLiveState, accountRiotId, discoveryRows, normalizeGames } from './admin-account-utils.mjs?v=20260806-admin-accounts';
+import { buildScriptHealth, scriptDiagnosticText, scriptHealthSummary } from './admin-health-utils.mjs?v=20260809-admin-health';
 
 const FIREBASE_URL = 'https://realtime-database-5bb9f-default-rtdb.europe-west1.firebasedatabase.app';
 // SHA-256 du mot de passe admin. Pour le changer : recalcule le hash d'un
@@ -30,6 +31,8 @@ let lolClients = {};
 let lolSessions = {};
 let valorantClients = {};
 let valorantSessions = {};
+let latestScriptVersion = '';
+let healthRefreshTimer = null;
 
 function slugify(name) {
   return String(name || '')
@@ -103,7 +106,7 @@ function accountsForMember(memberId) {
 }
 
 async function loadAll() {
-  const [roster, overlay, discoveredData, lolClientData, lolSessionData, valorantClientData, valorantSessionData] = await Promise.all([
+  const [roster, overlay, discoveredData, lolClientData, lolSessionData, valorantClientData, valorantSessionData, updateManifest] = await Promise.all([
     fetch(`./data/roster.json?v=${Date.now()}`).then(r => r.json()),
     fbGet('rosterOverlay').catch(() => null),
     fbGet('discovered').catch(() => null),
@@ -111,6 +114,7 @@ async function loadAll() {
     fbGet('live/lolSessions').catch(() => null),
     fbGet('live/clients').catch(() => null),
     fbGet('live/sessions').catch(() => null),
+    fetch(`./live/update-manifest.json?v=${Date.now()}`).then(response => response.ok ? response.json() : null).catch(() => null),
   ]);
   staticRoster = roster || [];
   overlayMembers = overlay?.members || {};
@@ -122,14 +126,106 @@ async function loadAll() {
   lolSessions = lolSessionData || {};
   valorantClients = valorantClientData || {};
   valorantSessions = valorantSessionData || {};
+  latestScriptVersion = updateManifest?.version || '';
+}
+
+async function loadHealthData() {
+  const [lolClientData, lolSessionData, valorantClientData, valorantSessionData, updateManifest] = await Promise.all([
+    fbGet('live/lolClients').catch(() => null),
+    fbGet('live/lolSessions').catch(() => null),
+    fbGet('live/clients').catch(() => null),
+    fbGet('live/sessions').catch(() => null),
+    fetch(`./live/update-manifest.json?v=${Date.now()}`).then(response => response.ok ? response.json() : null).catch(() => null),
+  ]);
+  lolClients = lolClientData || {};
+  lolSessions = lolSessionData || {};
+  valorantClients = valorantClientData || {};
+  valorantSessions = valorantSessionData || {};
+  latestScriptVersion = updateManifest?.version || latestScriptVersion;
 }
 
 function timeAgo(ts) {
-  const seconds = Math.floor((Date.now() - (ts || Date.now())) / 1000);
+  if (!Number(ts)) return 'jamais';
+  const seconds = Math.max(0, Math.floor((Date.now() - Number(ts)) / 1000));
   if (seconds < 60) return `${seconds}s`;
   if (seconds < 3600) return `${Math.floor(seconds / 60)}min`;
   if (seconds < 86400) return `${Math.floor(seconds / 3600)}h`;
   return `${Math.floor(seconds / 86400)}j`;
+}
+
+function scriptHealthRows() {
+  const accountLinks = Object.entries(overlayAccounts).flatMap(([memberId, accounts]) =>
+    Object.values(accounts || {}).map(account => ({
+      memberId,
+      playerName: accountRiotId(account),
+      puuid: account.puuid || '',
+    }))
+  );
+  return buildScriptHealth({
+    members: allMembers(), valorantClients, valorantSessions, lolClients, lolSessions,
+    accountLinks, latestVersion: latestScriptVersion,
+  });
+}
+
+function healthStateDetail(row) {
+  if (row.state === 'in-game') return [row.map, row.mode, row.server].filter(Boolean).join(' · ') || 'Partie en cours';
+  if (row.state === 'agent-select') return [row.map, row.server].filter(Boolean).join(' · ') || 'Sélection en cours';
+  if (row.state === 'error') return row.issues[0] || 'Diagnostic nécessaire';
+  if (row.state === 'ready') return row.riotClient === false ? 'Script actif · Riot fermé' : 'Prêt à détecter une partie';
+  return row.heartbeatAt ? `Dernier signal il y a ${timeAgo(row.heartbeatAt)}` : 'Aucune installation détectée';
+}
+
+function renderHealthDashboardHTML() {
+  const rows = scriptHealthRows();
+  const summary = scriptHealthSummary(rows);
+  return `
+    <div class="admin-health-summary">
+      <div><strong>${summary.connected}</strong><span>connectés</span></div>
+      <div><strong>${summary.playing}</strong><span>en activité</span></div>
+      <div class="${summary.issues ? 'attention' : ''}"><strong>${summary.issues}</strong><span>à vérifier</span></div>
+      <div><strong>${summary.offline}</strong><span>hors ligne</span></div>
+    </div>
+    <div class="admin-health-grid" id="admin-health-grid">
+      ${rows.map(row => {
+        const memberName = row.member?.name || row.memberName || row.memberId || 'Installation inconnue';
+        const versionLabel = row.version ? `v${row.version}` : 'Version inconnue';
+        return `
+          <article class="admin-health-card" data-state="${escapeHTML(row.state)}" data-health-id="${escapeHTML(row.id)}">
+            <header class="admin-health-card-head">
+              ${row.member?.avatar ? `<img class="admin-health-avatar" src="${escapeHTML(row.member.avatar)}" alt="">` : `<span class="admin-health-avatar admin-health-avatar-fallback">${escapeHTML(memberName.slice(0, 1).toUpperCase())}</span>`}
+              <div><strong>${escapeHTML(memberName)}</strong><small>${escapeHTML(row.account || 'Aucun compte détecté')}</small></div>
+              <span class="admin-health-state">${escapeHTML(row.stateLabel)}</span>
+            </header>
+            <p class="admin-health-current">${escapeHTML(healthStateDetail(row))}</p>
+            <dl class="admin-health-facts">
+              <div><dt>Signal</dt><dd>${row.heartbeatAt ? `il y a ${timeAgo(row.heartbeatAt)}` : 'jamais'}</dd></div>
+              <div><dt>Version</dt><dd class="${row.outdated ? 'warning' : ''}">${escapeHTML(versionLabel)}${row.outdated ? ' · ancienne' : ''}</dd></div>
+              <div><dt>Démarrage</dt><dd>${row.autoStart === 'managed' ? 'géré automatiquement' : 'non vérifiable'}</dd></div>
+              <div><dt>Riot</dt><dd>${row.riotClient === null ? 'non observé' : row.riotClient ? 'client détecté' : 'client fermé'}</dd></div>
+            </dl>
+            ${row.issues.length ? `<div class="admin-health-issues">${row.issues.map(issue => `<span>${escapeHTML(issue)}</span>`).join('')}</div>` : '<div class="admin-health-ok">Aucun problème détecté</div>'}
+            <button class="admin-btn admin-btn-small admin-health-copy" type="button" data-action="copy-health" data-health-id="${escapeHTML(row.id)}">Copier le diagnostic</button>
+          </article>`;
+      }).join('')}
+    </div>`;
+}
+
+function renderHealthInto(root) {
+  const dashboard = root.querySelector('#admin-health-dashboard');
+  if (dashboard) dashboard.innerHTML = renderHealthDashboardHTML();
+  const refreshed = root.querySelector('#admin-health-refreshed');
+  if (refreshed) refreshed.textContent = `actualisé à ${new Date().toLocaleTimeString('fr-FR', { hour:'2-digit', minute:'2-digit', second:'2-digit' })}`;
+}
+
+function startHealthRefresh(root) {
+  if (healthRefreshTimer) clearInterval(healthRefreshTimer);
+  healthRefreshTimer = setInterval(async () => {
+    if (location.hash !== '#admin' || !root.isConnected) return;
+    try {
+      await loadHealthData();
+      renderHealthInto(root);
+    } catch {}
+  }, 15_000);
 }
 
 function escapeHTML(value) {
@@ -208,6 +304,17 @@ function render() {
         <button class="admin-btn admin-btn-small" id="admin-refresh-btn">↻ Rafraîchir</button>
       </div>
 
+      <section class="admin-section admin-health-section">
+        <div class="admin-section-head admin-health-heading">
+          <div>
+            <h3>Centre de santé des scripts</h3>
+            <p class="admin-dim">État des installations OLYCITY Live · VAL et LoL réunis</p>
+          </div>
+          <span class="admin-dim" id="admin-health-refreshed">actualisé maintenant</span>
+        </div>
+        <div id="admin-health-dashboard">${renderHealthDashboardHTML()}</div>
+      </section>
+
       <section class="admin-section">
         <h3>Comptes détectés non assignés</h3>
         <div id="admin-discovered">${renderDiscoveredHTML()}</div>
@@ -223,6 +330,7 @@ function render() {
       </section>
     </div>`;
   wireEvents(root);
+  startHealthRefresh(root);
 }
 
 async function reloadAndRender(root) {
@@ -233,6 +341,21 @@ async function reloadAndRender(root) {
 
 function wireEvents(root) {
   root.querySelector('#admin-refresh-btn')?.addEventListener('click', () => reloadAndRender(root));
+
+  root.querySelector('#admin-health-dashboard')?.addEventListener('click', async event => {
+    const button = event.target.closest('button[data-action="copy-health"]');
+    if (!button) return;
+    const row = scriptHealthRows().find(candidate => candidate.id === button.dataset.healthId);
+    if (!row) return;
+    try {
+      await navigator.clipboard.writeText(scriptDiagnosticText(row));
+      const original = button.textContent;
+      button.textContent = 'Diagnostic copié';
+      setTimeout(() => { if (button.isConnected) button.textContent = original; }, 1800);
+    } catch {
+      button.textContent = 'Copie impossible';
+    }
+  });
 
   root.querySelector('#admin-discovered')?.addEventListener('click', async event => {
     const button = event.target.closest('button[data-action]');
@@ -412,6 +535,14 @@ const ADMIN_CSS = `
 .admin-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
 .admin-section{margin-top:32px;padding-top:24px;border-top:1px solid rgba(255,255,255,.08)}
 .admin-section-head{display:flex;align-items:center;justify-content:space-between}
+.admin-health-section{margin-top:14px;padding:20px;border:1px solid var(--border,rgba(255,255,255,.08));background:linear-gradient(145deg,rgba(255,255,255,.035),rgba(255,255,255,.012));border-radius:10px}
+.admin-health-heading h3{margin:0 0 4px;font:700 14px Tomorrow,sans-serif;letter-spacing:1.4px;text-transform:uppercase}.admin-health-heading p{margin:0}
+.admin-health-summary{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin:18px 0 14px}.admin-health-summary>div{display:grid;gap:2px;padding:12px 14px;border:1px solid var(--border,rgba(255,255,255,.08));background:rgba(0,0,0,.16);border-radius:7px}.admin-health-summary strong{font:700 22px Tomorrow,sans-serif;color:var(--text)}.admin-health-summary span{font-size:10px;text-transform:uppercase;letter-spacing:1px;color:var(--dim)}.admin-health-summary .attention strong{color:#f5c842}
+.admin-health-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.admin-health-card{position:relative;min-width:0;padding:14px;border:1px solid var(--border,rgba(255,255,255,.08));border-left:3px solid rgba(130,140,155,.45);background:rgba(8,11,16,.52);border-radius:7px}.admin-health-card[data-state="ready"]{border-left-color:#44d17a}.admin-health-card[data-state="in-game"]{border-left-color:#ff4656}.admin-health-card[data-state="agent-select"]{border-left-color:#f5c842}.admin-health-card[data-state="error"]{border-left-color:#ff9f43}
+.admin-health-card-head{display:grid;grid-template-columns:34px minmax(0,1fr) auto;align-items:center;gap:9px}.admin-health-card-head>div{display:grid;gap:2px;min-width:0}.admin-health-card-head strong{font:700 12px Tomorrow,sans-serif;letter-spacing:.8px;text-transform:uppercase;overflow:hidden;text-overflow:ellipsis}.admin-health-card-head small{font-size:10px;color:var(--dim);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.admin-health-avatar{width:34px;height:34px;border-radius:50%;object-fit:cover}.admin-health-avatar-fallback{display:grid;place-items:center;background:rgba(255,255,255,.06);font:700 12px Tomorrow,sans-serif;color:var(--dim)}
+.admin-health-state{padding:4px 7px;border-radius:10px;background:rgba(130,140,155,.1);font:700 9px Tomorrow,sans-serif;letter-spacing:.6px;text-transform:uppercase;white-space:nowrap}.admin-health-card[data-state="ready"] .admin-health-state{color:#59d986;background:rgba(68,209,122,.11)}.admin-health-card[data-state="in-game"] .admin-health-state{color:#ff6877;background:rgba(255,70,86,.12)}.admin-health-card[data-state="agent-select"] .admin-health-state{color:#f5c842;background:rgba(245,200,66,.12)}.admin-health-card[data-state="error"] .admin-health-state{color:#ffad5c;background:rgba(255,159,67,.12)}
+.admin-health-current{margin:12px 0 10px;padding:8px 10px;background:rgba(255,255,255,.025);border-radius:5px;color:rgba(232,232,236,.78);font-size:11px}.admin-health-facts{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:0}.admin-health-facts>div{min-width:0}.admin-health-facts dt{font-size:8px;letter-spacing:1.1px;text-transform:uppercase;color:var(--dim)}.admin-health-facts dd{margin:2px 0 0;font-size:10px;color:rgba(232,232,236,.72);overflow-wrap:anywhere}.admin-health-facts dd.warning{color:#f5c842}
+.admin-health-issues{display:flex;flex-wrap:wrap;gap:5px;margin-top:11px}.admin-health-issues span{padding:4px 6px;border:1px solid rgba(255,159,67,.22);background:rgba(255,159,67,.08);color:#ffbd7d;border-radius:4px;font-size:9px}.admin-health-ok{margin-top:11px;color:rgba(89,217,134,.75);font-size:9px}.admin-health-copy{margin-top:11px;width:100%;color:var(--dim)}
 .admin-dim{color:rgba(232,232,236,.5);font-size:12px}
 .admin-error{color:#ff5f6d}
 .admin-empty{color:rgba(232,232,236,.5);font-size:13px}
@@ -438,5 +569,5 @@ const ADMIN_CSS = `
 .admin-gate{max-width:360px;text-align:center;padding-top:120px}
 .admin-gate input{width:100%;background:#161a22;color:inherit;border:1px solid rgba(255,255,255,.15);border-radius:4px;padding:10px 12px;margin-bottom:10px}
 .admin-gate form{display:flex;flex-direction:column;gap:10px}
-@media(max-width:700px){.admin-wrap{padding-inline:14px}.admin-row .admin-select-member{flex:1}.admin-section-head{align-items:flex-start;gap:10px}.admin-members-grid{grid-template-columns:1fr}}
+@media(max-width:700px){.admin-wrap{padding-inline:14px}.admin-row .admin-select-member{flex:1}.admin-section-head{align-items:flex-start;gap:10px}.admin-members-grid,.admin-health-grid{grid-template-columns:1fr}.admin-health-summary{grid-template-columns:1fr 1fr}.admin-health-section{padding:14px}.admin-health-heading{flex-direction:column}.admin-health-card-head{grid-template-columns:34px minmax(0,1fr)}.admin-health-state{grid-column:1/3;justify-self:start}.admin-health-facts{grid-template-columns:1fr}}
 `;
