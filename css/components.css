@@ -261,9 +261,9 @@
   letter-spacing:2px; text-transform:uppercase; color:var(--muted);
   margin-bottom:14px;
 }
-.player-mains{ display:flex; gap:6px; }
+.player-mains{ display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:6px; }
 .player-main{
-  flex:1; aspect-ratio:1; background:var(--surf3); overflow:hidden;
+  aspect-ratio:1; background:var(--surf3); overflow:hidden;
   border:1px solid var(--border); position:relative;
   transition:transform .2s, border-color .2s; cursor:pointer;
 }

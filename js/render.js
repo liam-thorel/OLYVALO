@@ -427,21 +427,28 @@ export function mapSectionHTML(data, idx) {
 // ─── ROSTER ──────────────────────────────────────
 export function rosterHTML() {
   return state.ROSTER.map((p) => {
-    // Priorité aux vrais top agents de l'acte (depuis sync), fallback sur JSON
     const stats = state.PLAYER_STATS[p.name] || {};
-    // With HenrikDev free tier (10 matches max), topAgents is unreliable.
-    // Use static mains from roster.json — manually curated and always correct.
-    const displayMains = (p.mains || []).filter(Boolean);
+    const syncedAgentStats = Array.isArray(stats.topAgentStats) && stats.topAgentStats.length
+      ? stats.topAgentStats
+      : (stats.topAgents || []).map(name => ({ name, games: null }));
+    // Après une vraie sync paginée, le top 3 de l'acte remplace les agents
+    // manuels. Le JSON reste un fallback utile pour un compte privé/inactif.
+    const displayMains = syncedAgentStats.length
+      ? syncedAgentStats
+      : (p.mains || []).filter(Boolean).map(name => ({ name, games: null }));
 
-    const mains = displayMains.map(name => {
+    const mains = displayMains.slice(0, 3).map(agent => {
+      const name = typeof agent === 'string' ? agent : agent.name;
       const img = valorantApi.agentImg(name);
       const display = displayName(name);
+      const hasGames = agent?.games !== null && agent?.games !== undefined && Number.isFinite(Number(agent.games));
+      const gamesLabel = hasGames ? ` · ${agent.games} parties` : '';
       const imgEl = img
         ? `<img src="${img}" alt="${display}" loading="lazy">`
         : `<div class="portrait-ph" style="font-size:18px">${display[0]}</div>`;
-      return `<div class="player-main" onclick="window.OLYCITY.showAgentPage('${name}')" title="${display}">
+      return `<div class="player-main" onclick="window.OLYCITY.showAgentPage('${name}')" title="${display}${gamesLabel}">
         ${imgEl}
-        <div class="player-main-name">${display}</div>
+        <div class="player-main-name">${display}${hasGames ? ` · ${agent.games}G` : ''}</div>
       </div>`;
     }).join('');
 
@@ -452,8 +459,11 @@ export function rosterHTML() {
         ${stats.rr != null ? `<span class="player-rank-rr">${stats.rr}rr</span>` : ''}
       </div>` : '';
 
-    const hasStats = stats.wr != null || stats.kda != null;
+    const hasStats = stats.wr != null || stats.kd != null || stats.kda != null || stats.acs != null;
     const actLabel = stats.wrGames != null ? `${stats.wrGames}G · acte` : null;
+    const ratio = stats.kd ?? stats.kda;
+    const thirdMetric = stats.acs ?? stats.wrWins;
+    const thirdLabel = stats.acs != null ? 'ACS' : 'Wins acte';
     const liveStatsRow = hasStats ? `
       <div class="player-stats-row">
         <div class="player-stat">
@@ -461,12 +471,12 @@ export function rosterHTML() {
           <span class="player-stat-lbl">WR${actLabel ? ` · ${stats.wrGames}G` : ''}</span>
         </div>
         <div class="player-stat">
-          <span class="player-stat-val ${parseFloat(stats.kda) >= 1 ? 'green' : 'red'}">${stats.kda ?? '—'}</span>
-          <span class="player-stat-lbl">KDA${stats.games > 0 ? ` · ${stats.games}G` : ''}</span>
+          <span class="player-stat-val ${parseFloat(ratio) >= 1 ? 'green' : 'red'}">${ratio ?? '—'}</span>
+          <span class="player-stat-lbl">K/D${stats.games > 0 ? ` · ${stats.games}G` : ''}</span>
         </div>
         <div class="player-stat">
-          <span class="player-stat-val gold">${stats.wrWins ?? '—'}</span>
-          <span class="player-stat-lbl">Wins acte</span>
+          <span class="player-stat-val gold">${thirdMetric ?? '—'}</span>
+          <span class="player-stat-lbl">${thirdLabel}</span>
         </div>
       </div>` : '';
 

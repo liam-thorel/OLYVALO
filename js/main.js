@@ -5,9 +5,9 @@
 
 import { valorantApi } from './api.js';
 
-const SITE_VERSION = '20260809-lol-sync';
-import { syncPlayer as henrikSyncPlayer, syncAllPlayers as henrikSyncAll, persistPlayerStats } from './henrik.js';
-import { rosterHTML, guestCardHTML, mapSectionHTML, stierHTML, agentPageHTML, miniRosterHTML, agentsFiltersHTML, agentsGridHTML, compCompareHTML } from './render.js?v=20260806-lol-roster';
+const SITE_VERSION = '20260809-val-roster-season';
+import { syncPlayer as henrikSyncPlayer, syncAllPlayers as henrikSyncAll, persistPlayerStats } from './henrik.js?v=20260809-val-roster-season';
+import { rosterHTML, guestCardHTML, mapSectionHTML, stierHTML, agentPageHTML, miniRosterHTML, agentsFiltersHTML, agentsGridHTML, compCompareHTML } from './render.js?v=20260809-val-roster-season';
 import { initTheme, initTilt, initParallax, initSearch, initKeyboard, updateFavCount, initHeroParticles, initWheelLogos, initLivePage, initHistoryPage } from './interactions.js?v=20260809-live-viewport';
 import { storage } from './storage.js';
 import { avatarLayersHTML } from './avatars.mjs';
@@ -788,7 +788,6 @@ window.OLYCITY = {
       state.PLAYER_STATS[playerName] = stats;
       persistPlayerStats(playerName, stats);
 
-      // Static mains preserved — HenrikDev only gives 10 matches, not enough for reliable top agents
       document.getElementById('roster-grid').innerHTML = rosterHTML() + guestCardHTML();
   // Guest card Enter key listener (re-attach after render)
   setTimeout(() => {
@@ -817,15 +816,13 @@ window.OLYCITY = {
     const btn = document.getElementById('sync-all-btn');
     if (!btn) return;
     btn.classList.add('syncing');
-    btn.innerHTML = `<span class="sync-spin">↻</span> Sync en cours…`;
-    setSyncStatus('Synchronisation en cours… (1 joueur / 1.5s)', 'info');
+    btn.innerHTML = `<span class="sync-spin">↻</span> Analyse de l'acte…`;
+    setSyncStatus('Synchronisation paginée de l’acte en cours… Plusieurs pages peuvent être nécessaires par joueur.', 'info');
 
     const result = await henrikSyncAll(state.ROSTER, {
       onPlayerSynced(playerName, stats) {
         state.PLAYER_STATS[playerName] = stats;
         persistPlayerStats(playerName, stats);
-        const player = state.ROSTER.find(p => p.name === playerName);
-        // Static mains preserved
         document.getElementById('roster-grid').innerHTML = rosterHTML() + guestCardHTML();
       },
       onPlayerError(playerName, msg) {
@@ -834,14 +831,14 @@ window.OLYCITY = {
     });
 
     btn.classList.remove('syncing');
-    btn.innerHTML = `<span class="sync-spin">↻</span> Sync tout`;
+    btn.innerHTML = `<span class="sync-spin">↻</span> Actualiser tout`;
 
     if (result.halted && result.haltReason === 'AUTH_REQUIRED') {
       setSyncStatus(`Clé API refusée. Régénère-en une sur <a href="https://api.henrikdev.xyz/dashboard" target="_blank">api.henrikdev.xyz</a>.`, 'error');
     } else if (result.halted && result.haltReason === 'RATE_LIMIT') {
       setSyncStatus(`Rate limit atteint après ${result.successCount} joueur(s). Attends 30s.`, 'error');
     } else if (result.successCount === state.ROSTER.filter(p => p.riot).length) {
-      setSyncStatus(`<strong>${result.successCount}</strong> joueurs synchronisés — rank, WR, agents joués.`, 'success');
+      setSyncStatus(`<strong>${result.successCount}</strong> joueurs synchronisés — rank, statistiques de l’acte et vrai top 3 agents.`, 'success');
       setTimeout(() => setSyncStatus(''), 8000);
     } else {
       setSyncStatus(`${result.successCount} synchronisés, ${result.errors.length} erreurs.`, 'info');
