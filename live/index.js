@@ -11,13 +11,14 @@ const { ensureStartupLauncher } = require('./startup.js');
 const { acquireInstanceLock, releaseInstanceLock } = require('./instance-lock.js');
 const { stopLegacyLiveProcesses } = require('./legacy-cleanup.js');
 const { createLolWatcher } = require('./lol-watcher.js');
-const { readIdentity } = require('./identity.js');
+const { readIdentity, writeIdentity } = require('./identity.js');
 const { createAccountBinder } = require('./account-binding.js');
 const { cleanupStalePresence, PRESENCE_CLEANUP_INTERVAL_MS } = require('./maintenance.js');
 const { presenceRecordForPath } = require('./presence-schema.js');
+const { resolveRiotIdentity } = require('./riot-identity.js');
 
 const FIREBASE_URL = 'https://realtime-database-5bb9f-default-rtdb.europe-west1.firebasedatabase.app';
-const SCRIPT_VERSION = '4.17.0';
+const SCRIPT_VERSION = '4.17.1';
 const INSTANCE_LOCK_PATH = path.join(__dirname, '.olycity-live.lock');
 const LOG_PATH = path.join(__dirname, 'olycity.log');
 const MAX_LOG_BYTES = 5 * 1024 * 1024;
@@ -218,7 +219,11 @@ function req(port, password, endpoint) {
       let d = '';
       res.on('data', c => d += c);
       res.on('end', () => {
-        try { resolve({ ok:true, status:res.statusCode, data:JSON.parse(d) }); }
+        try {
+          const status = Number(res.statusCode) || 0;
+          const ok = status >= 200 && status < 300;
+          resolve({ ok, status, data:JSON.parse(d), err:ok ? '' : `HTTP ${status}` });
+        }
         catch { resolve({ ok:false, err:'parse error', raw:d.slice(0,100) }); }
       });
     });
@@ -714,8 +719,8 @@ async function refreshSelfIdentity(lock, force = false) {
   if (!force && selfPuuid && now - lastIdentityCheck < 5000) return false;
   lastIdentityCheck = now;
 
-  const session = await req(lock.port, lock.password, '/chat/v1/session');
-  const detectedPuuid = session.ok ? session.data?.puuid : '';
+  const resolvedIdentity = await resolveRiotIdentity({ request:req, getFB, lock, identity });
+  const detectedPuuid = resolvedIdentity?.puuid || '';
   if (!detectedPuuid || detectedPuuid === selfPuuid) return false;
 
   const previousKey = stableSessionKey || selfPuuid;
@@ -762,13 +767,20 @@ async function refreshSelfIdentity(lock, force = false) {
   missedPolls = 0;
   roundPhase = '';
   roundStartTime = null;
-  diagnosticPlayerName = '';
+  diagnosticPlayerName = resolvedIdentity?.playerName || '';
   currentServer = null;
   matchDataLogged = false;
   gameDataLogged = false;
   lastMap = '';
   lastDiagnosticPush = 0;
   lastDiagnosticSignature = '';
+  if (identity) {
+    identity = writeIdentity({
+      ...identity,
+      lastPuuid: detectedPuuid,
+      lastPlayerName: diagnosticPlayerName || identity.lastPlayerName || '',
+    }, __dirname);
+  }
   await publishDiagnostic('idle', { error: '' }, true);
   return true;
 }
@@ -948,6 +960,7 @@ async function poll() {
   if (!res.ok) {
     tries++;
     if (tries % 10 === 1) console.log(`[${ts()}] ⚠️  Presence: ${res.err}`);
+    await refreshSelfIdentity(lock, !selfPuuid);
     await publishDiagnostic('error', { error: `Presence: ${res.err || 'indisponible'}` });
     return;
   }

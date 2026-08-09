@@ -1,5 +1,5 @@
 {
-  "version": "4.17.0",
+  "version": "4.17.1",
   "files": [
     "index.js",
     "lol-watcher.js",
@@ -17,6 +17,7 @@
     "account-binding.js",
     "maintenance.js",
     "presence-schema.js",
+    "riot-identity.js",
     "IDENTITE.bat",
     "updater.js",
     "update-manifest.json",

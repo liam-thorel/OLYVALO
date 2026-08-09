@@ -1,6 +1,6 @@
 {
   "name": "olycity-live",
-  "version": "4.17.0",
+  "version": "4.17.1",
   "description": "OLYCITY Live — Valorant et League of Legends vers Firebase",
   "main": "index.js",
   "scripts": {

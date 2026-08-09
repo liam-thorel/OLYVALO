@@ -42,7 +42,7 @@ releaseFiles.forEach(file => assert.equal(fs.existsSync(path.join(liveDir, file)
 // elle serait écrasée à chaque mise à jour et il faudrait tout re-répondre.
 const { IDENTITY_FILENAME } = require('../live/identity.js');
 assert.equal(releaseFiles.includes(IDENTITY_FILENAME), false, `${IDENTITY_FILENAME} doit survivre aux mises à jour`);
-['identity.js', 'ask-identity.js', 'account-binding.js', 'maintenance.js', 'presence-schema.js'].forEach(file =>
+['identity.js', 'ask-identity.js', 'account-binding.js', 'maintenance.js', 'presence-schema.js', 'riot-identity.js'].forEach(file =>
   assert.equal(releaseFiles.includes(file), true, `${file} doit être livré aux joueurs`));
 
 console.log('updater: version comparison and manifest validation validated');

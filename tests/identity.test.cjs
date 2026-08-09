@@ -47,11 +47,16 @@ const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'olycity-identity-'));
 try {
   assert.equal(readIdentity(tempDir), null, 'aucune identité au départ');
 
-  writeIdentity({ memberId: 'logan', memberName: 'Logan', isNewMember: true }, tempDir);
+  writeIdentity({
+    memberId: 'logan', memberName: 'Logan', isNewMember: true,
+    lastPuuid: '22222222-2222-5222-8222-222222222222', lastPlayerName: 'Logan#OLY',
+  }, tempDir);
   const stored = readIdentity(tempDir);
   assert.equal(stored.memberId, 'logan');
   assert.equal(stored.memberName, 'Logan');
   assert.equal(stored.isNewMember, true);
+  assert.equal(stored.lastPuuid, '22222222-2222-5222-8222-222222222222');
+  assert.equal(stored.lastPlayerName, 'Logan#OLY');
   assert.ok(stored.chosenAt > 0, 'la date de choix est horodatée');
 
   fs.writeFileSync(path.join(tempDir, IDENTITY_FILENAME), '{ pas du json', 'utf8');

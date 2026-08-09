@@ -39,6 +39,8 @@ function readIdentity(installDir = __dirname) {
       memberName: String(parsed.memberName),
       isNewMember: Boolean(parsed.isNewMember),
       chosenAt: Number(parsed.chosenAt) || 0,
+      lastPuuid: String(parsed.lastPuuid || ''),
+      lastPlayerName: String(parsed.lastPlayerName || ''),
     };
   } catch {
     return null;
@@ -51,6 +53,8 @@ function writeIdentity(identity, installDir = __dirname) {
     memberName: identity.memberName,
     isNewMember: Boolean(identity.isNewMember),
     chosenAt: identity.chosenAt || Date.now(),
+    lastPuuid: String(identity.lastPuuid || ''),
+    lastPlayerName: String(identity.lastPlayerName || ''),
   };
   fs.writeFileSync(identityPath(installDir), `${JSON.stringify(payload, null, 2)}\n`, 'utf8');
   return payload;

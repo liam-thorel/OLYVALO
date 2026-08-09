@@ -64,6 +64,7 @@ assert.match(liveIndex, /lolPollRunning/, 'League polling must be single-flight'
 assert.match(liveIndex, /MAX_LOG_BYTES/, 'the persistent log must be capped');
 assert.match(liveIndex, /cleanupStalePresence/, 'expired Firebase presence records must be cleaned');
 assert.match(liveIndex, /presenceRecordForPath/, 'presence writes must use the shared Firebase lifecycle schema');
+assert.match(liveIndex, /resolveRiotIdentity/, 'Riot identity must survive unavailable local chat endpoints');
 assert.match(liveIndex, /PRESENCE_CLEANUP_INTERVAL_MS/, 'Firebase cleanup must run periodically, not only at startup');
 assert.match(liveIndex, /setInterval\(.*runPresenceCleanup/, 'the periodic Firebase cleanup must remain wired');
 assert.doesNotMatch(read('lol-watcher.js'), /\[lol-eog-raw\]/, 'raw end-of-game payloads must not flood the log');
