@@ -1,9 +1,10 @@
 {
-  "version": "4.16.2",
+  "version": "4.16.3",
   "files": [
     "index.js",
     "lol-watcher.js",
     "lol-profile-utils.js",
+    "opgg-profile.js",
     "rank-utils.js",
     "server-utils.js",
     "pregame-utils.js",

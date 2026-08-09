@@ -108,6 +108,10 @@
 :root[data-game="lol"] .lol-home-ranks { display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:10px; }
 :root[data-game="lol"] .lol-roster-grid { display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:12px;margin-top:18px; }
 .lol-roster-header { padding-bottom:18px;border-bottom:1px solid var(--border); }
+.lol-sync-all-btn:disabled { cursor:wait;opacity:.58; }
+.lol-sync-all-btn.is-syncing .sync-spin { display:inline-block;animation:spin .8s linear infinite; }
+.lol-sync-status { min-height:18px;margin-top:10px;color:var(--muted);font-size:10px;letter-spacing:.5px; }
+.lol-sync-status.is-ok { color:#65d58b; }.lol-sync-status.is-error { color:#dc7379; }.lol-sync-status.is-waiting { color:var(--gold); }
 .lol-home-rank-card,.lol-roster-card { --rank:#6c8090;position:relative;overflow:hidden;border:1px solid var(--border);background:linear-gradient(145deg,color-mix(in srgb,var(--rank) 11%,transparent),transparent 42%),#07131e;box-shadow:0 14px 38px rgba(0,0,0,.18); }
 .lol-home-rank-card::before,.lol-roster-card::before { content:'';position:absolute;inset:0 auto 0 0;width:2px;background:var(--rank);box-shadow:0 0 16px var(--rank); }
 .rank-iron{--rank:#77706d}.rank-bronze{--rank:#a56d47}.rank-silver{--rank:#9fb4bb}.rank-gold{--rank:#c99b3f}.rank-platinum{--rank:#56b8ad}.rank-emerald{--rank:#39b879}.rank-diamond{--rank:#7289e8}.rank-master{--rank:#a46add}.rank-grandmaster{--rank:#d55662}.rank-challenger{--rank:#49b9df}

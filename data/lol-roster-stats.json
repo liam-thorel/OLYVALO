@@ -1,0 +1,67 @@
+{
+  "updatedAt": 1786295364633,
+  "profiles": {
+    "phileas fogg#OLY": {
+      "playerName": "phileas fogg#OLY",
+      "rank": { "tier": "PLATINUM", "division": "III", "lp": 39, "wins": 59, "losses": 46, "games": 105, "winRate": 56 },
+      "soloQueue": { "games": 104, "wins": 58, "losses": 46, "winRate": 56, "mainRole": "support", "mainRoleSource": "season-champions" },
+      "topChampions": [
+        { "championId": 267, "name": "Nami", "image": "https://ddragon.leagueoflegends.com/cdn/16.15.1/img/champion/Nami.png", "games": 38, "wins": 25, "losses": 13, "winRate": 66, "kda": 4.87 },
+        { "championId": 110, "name": "Varus", "image": "https://ddragon.leagueoflegends.com/cdn/16.15.1/img/champion/Varus.png", "games": 6, "wins": 5, "losses": 1, "winRate": 83, "kda": 1.43 },
+        { "championId": 201, "name": "Braum", "image": "https://ddragon.leagueoflegends.com/cdn/16.15.1/img/champion/Braum.png", "games": 6, "wins": 3, "losses": 3, "winRate": 50, "kda": 3.84 }
+      ],
+      "seasonId": 33, "source": "op.gg", "seasonVerified": true, "updatedAt": 1786295359759
+    },
+    "FakePlasticTrees#1706": {
+      "playerName": "FakePlasticTrees#1706",
+      "rank": { "tier": "PLATINUM", "division": "II", "lp": 56, "wins": 37, "losses": 38, "games": 75, "winRate": 49 },
+      "soloQueue": { "games": 74, "wins": 36, "losses": 38, "winRate": 49, "mainRole": "top", "mainRoleSource": "season-champions" },
+      "topChampions": [
+        { "championId": 86, "name": "Garen", "image": "https://ddragon.leagueoflegends.com/cdn/16.15.1/img/champion/Garen.png", "games": 13, "wins": 5, "losses": 8, "winRate": 38, "kda": 2.19 },
+        { "championId": 82, "name": "Mordekaiser", "image": "https://ddragon.leagueoflegends.com/cdn/16.15.1/img/champion/Mordekaiser.png", "games": 9, "wins": 4, "losses": 5, "winRate": 44, "kda": 1.98 },
+        { "championId": 126, "name": "Jayce", "image": "https://ddragon.leagueoflegends.com/cdn/16.15.1/img/champion/Jayce.png", "games": 4, "wins": 2, "losses": 2, "winRate": 50, "kda": 1.88 }
+      ],
+      "seasonId": 33, "source": "op.gg", "seasonVerified": true, "updatedAt": 1786295361492
+    },
+    "NoWaY#alone": {
+      "playerName": "NoWaY#alone",
+      "rank": { "tier": "EMERALD", "division": "IV", "lp": 0, "wins": 67, "losses": 65, "games": 132, "winRate": 51 },
+      "soloQueue": { "games": 132, "wins": 67, "losses": 65, "winRate": 51, "mainRole": "adc", "mainRoleSource": "season-champions" },
+      "topChampions": [
+        { "championId": 145, "name": "Kai'Sa", "image": "https://ddragon.leagueoflegends.com/cdn/16.15.1/img/champion/Kaisa.png", "games": 41, "wins": 24, "losses": 17, "winRate": 59, "kda": 2.29 },
+        { "championId": 222, "name": "Jinx", "image": "https://ddragon.leagueoflegends.com/cdn/16.15.1/img/champion/Jinx.png", "games": 23, "wins": 13, "losses": 10, "winRate": 57, "kda": 1.85 },
+        { "championId": 69, "name": "Cassiopeia", "image": "https://ddragon.leagueoflegends.com/cdn/16.15.1/img/champion/Cassiopeia.png", "games": 13, "wins": 8, "losses": 5, "winRate": 62, "kda": 2.4 }
+      ],
+      "seasonId": 33, "source": "op.gg", "seasonVerified": true, "updatedAt": 1786295362999
+    },
+    "RayBaz#OLY": {
+      "playerName": "RayBaz#OLY",
+      "rank": { "tier": "PLATINUM", "division": "III", "lp": 42, "wins": 61, "losses": 48, "games": 109, "winRate": 56 },
+      "soloQueue": { "games": 104, "wins": 59, "losses": 45, "winRate": 57, "mainRole": "top", "mainRoleSource": "season-champions" },
+      "topChampions": [
+        { "championId": 83, "name": "Yorick", "image": "https://ddragon.leagueoflegends.com/cdn/16.15.1/img/champion/Yorick.png", "games": 65, "wins": 36, "losses": 29, "winRate": 55, "kda": 2.17 },
+        { "championId": 122, "name": "Darius", "image": "https://ddragon.leagueoflegends.com/cdn/16.15.1/img/champion/Darius.png", "games": 17, "wins": 12, "losses": 5, "winRate": 71, "kda": 1.93 },
+        { "championId": 82, "name": "Mordekaiser", "image": "https://ddragon.leagueoflegends.com/cdn/16.15.1/img/champion/Mordekaiser.png", "games": 4, "wins": 3, "losses": 1, "winRate": 75, "kda": 1.72 }
+      ],
+      "seasonId": 33, "source": "op.gg", "seasonVerified": true, "updatedAt": 1786295363677
+    },
+    "M A I R#LGND": {
+      "playerName": "M A I R#LGND",
+      "rank": { "tier": "PLATINUM", "division": "III", "lp": 46, "wins": 12, "losses": 18, "games": 30, "winRate": 40 },
+      "soloQueue": { "games": 30, "wins": 12, "losses": 18, "winRate": 40, "mainRole": "mid", "mainRoleSource": "season-champions" },
+      "topChampions": [
+        { "championId": 55, "name": "Katarina", "image": "https://ddragon.leagueoflegends.com/cdn/16.15.1/img/champion/Katarina.png", "games": 15, "wins": 5, "losses": 10, "winRate": 33, "kda": 1.43 },
+        { "championId": 497, "name": "Rakan", "image": "https://ddragon.leagueoflegends.com/cdn/16.15.1/img/champion/Rakan.png", "games": 3, "wins": 2, "losses": 1, "winRate": 67, "kda": 3 },
+        { "championId": 142, "name": "Zoe", "image": "https://ddragon.leagueoflegends.com/cdn/16.15.1/img/champion/Zoe.png", "games": 3, "wins": 2, "losses": 1, "winRate": 67, "kda": 4.09 }
+      ],
+      "seasonId": 33, "source": "op.gg", "seasonVerified": true, "updatedAt": 1786295364155
+    },
+    "Stupefiant#NOXUS": {
+      "playerName": "Stupefiant#NOXUS",
+      "rank": null,
+      "soloQueue": { "games": 0, "wins": 0, "losses": 0, "winRate": 0 },
+      "topChampions": [],
+      "seasonId": 0, "source": "op.gg", "seasonVerified": true, "updatedAt": 1786295364633
+    }
+  }
+}

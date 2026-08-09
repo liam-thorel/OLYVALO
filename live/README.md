@@ -28,9 +28,10 @@ client est ouvert, même hors partie. Son Riot ID, son PUUID, sa région et son
 état apparaissent alors dans le panel admin OLYCITY afin de pouvoir le rattacher
 à un membre et activer sa surveillance centrale.
 
-La version 4.15.2 synchronise aussi le rang SoloQ, les victoires/défaites de la
-saison, le rôle principal et les trois champions les plus joués. Les portraits
-proviennent directement des assets officiels Riot Data Dragon.
+La version 4.16.3 synchronise aussi le rang SoloQ et les trois champions les
+plus joués sur la saison complète. Le rôle reste calculé à partir des parties
+observées localement par le script. Les portraits proviennent directement des
+assets officiels Riot Data Dragon.
 
 Node.js LTS et la dépendance WebSocket sont inclus dans le dossier. Il n'y a rien à installer sur le PC et aucune commande npm à lancer.
 

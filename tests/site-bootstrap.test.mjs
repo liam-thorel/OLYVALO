@@ -18,5 +18,7 @@ test('shared state does not import the versioned entry module twice', () => {
 test('League home and roster panels are mounted by the site', () => {
   assert.match(page, /id="lol-home-ranks"/);
   assert.match(page, /id="lol-roster-grid"/);
+  assert.match(page, /id="lol-sync-all-btn"/);
+  assert.match(lolRoster, /lolRosterSyncRequest/);
   assert.match(main, /initLolRosterPages\(\)/);
 });

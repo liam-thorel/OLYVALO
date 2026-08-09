@@ -13,5 +13,7 @@ test('LoL watcher registers the connected identity outside matches', () => {
   assert.match(watcher, /markClientOffline/);
   assert.match(watcher, /live\/lolProfiles\/\$\{key\}/);
   assert.match(watcher, /fetchSoloQueueProfile/);
+  assert.match(watcher, /live\/lolRosterSyncRequest/);
+  assert.match(watcher, /ROSTER_ACCOUNTS/);
   assert.match(watcher, /ddragon\.leagueoflegends\.com/);
 });

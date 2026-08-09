@@ -16,7 +16,7 @@ const { createAccountBinder } = require('./account-binding.js');
 const { cleanupStalePresence } = require('./maintenance.js');
 
 const FIREBASE_URL = 'https://realtime-database-5bb9f-default-rtdb.europe-west1.firebasedatabase.app';
-const SCRIPT_VERSION = '4.16.2';
+const SCRIPT_VERSION = '4.16.3';
 const INSTANCE_LOCK_PATH = path.join(__dirname, '.olycity-live.lock');
 const LOG_PATH = path.join(__dirname, 'olycity.log');
 const MAX_LOG_BYTES = 5 * 1024 * 1024;
@@ -58,7 +58,7 @@ function restartForLogRotationIfNeeded() {
 }
 
 const lolWatcher = createLolWatcher({
-  putFB, ts, scriptVersion: SCRIPT_VERSION,
+  putFB, getFB, ts, scriptVersion: SCRIPT_VERSION,
   getIdentity: () => identity,
   bindAccount: options => accountBinder.bind(options),
 });

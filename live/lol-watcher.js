@@ -25,6 +25,7 @@ const fs = require('fs');
 const path = require('path');
 const { execFileSync } = require('child_process');
 const { historyGames, soloRankFromStats, summarizeSoloQueue } = require('./lol-profile-utils');
+const { fetchOpggSoloProfile } = require('./opgg-profile');
 
 const HEARTBEAT_MS = 20000;
 // Phases actives d'une game : GameStart = chargement, InProgress = en jeu, Reconnect = reco après un crash.
@@ -38,8 +39,41 @@ const MAX_MISSED_POLLS = 3;
 const PROFILE_REFRESH_MS = 15 * 60 * 1000;
 const PROFILE_HISTORY_PAGE_SIZE = 100;
 const PROFILE_HISTORY_LIMIT = 500;
+const OPGG_PROFILE_REFRESH_MS = 6 * 60 * 60 * 1000;
 
 const RANKED_QUEUE_TYPES = { 420: 'RANKED_SOLO_5x5', 440: 'RANKED_FLEX_SR' };
+const ROSTER_ACCOUNTS = [
+  { riotId: 'phileas fogg#OLY', mainRole: 'support' },
+  { riotId: 'FakePlasticTrees#1706', mainRole: 'top' },
+  { riotId: 'NoWaY#alone', mainRole: 'adc' },
+  { riotId: 'RayBaz#OLY', mainRole: 'top' },
+  { riotId: 'M A I R#LGND', mainRole: 'mid' },
+  { riotId: 'Stupefiant#NOXUS', mainRole: '' },
+];
+
+async function syncRosterProfiles({ putFB, fetchProfile = fetchOpggSoloProfile, scriptVersion, onError = () => {} }) {
+  let updated = 0;
+  const failures = [];
+  for (const account of ROSTER_ACCOUNTS) {
+    try {
+      const profile = await fetchProfile(account.riotId, 'euw');
+      if (account.mainRole) {
+        profile.soloQueue.mainRole = account.mainRole;
+        profile.soloQueue.mainRoleSource = 'season-champions';
+      }
+      await putFB(`live/lolProfiles/${safeFirebaseKey(account.riotId)}`, {
+        ...profile,
+        updatedAt: Date.now(),
+        scriptVersion,
+      });
+      updated += 1;
+    } catch (error) {
+      failures.push(account.riotId);
+      onError(account.riotId, error);
+    }
+  }
+  return { updated, failures };
+}
 
 // Seules les files classées (Solo/Duo, Flex) sont trackées : pas de notif, de
 // pari ni de stats pour les normales, ARAM, Practice Tool, Co-op vs IA, etc.
@@ -227,7 +261,17 @@ async function fetchRank(lock, queueId) {
   };
 }
 
-async function fetchSoloQueueProfile(lock, summoner) {
+const opggProfileCache = new Map();
+async function cachedOpggProfile(riotId, region) {
+  const key = `${String(region || 'euw').toLowerCase()}:${String(riotId).toLowerCase()}`;
+  const cached = opggProfileCache.get(key);
+  if (cached && Date.now() - cached.fetchedAt < OPGG_PROFILE_REFRESH_MS) return cached.profile;
+  const profile = await fetchOpggSoloProfile(riotId, region || 'euw');
+  opggProfileCache.set(key, { fetchedAt: Date.now(), profile });
+  return profile;
+}
+
+async function fetchSoloQueueProfile(lock, summoner, region = 'euw') {
   const ranked = await lcuGet(lock, '/lol-ranked/v1/current-ranked-stats');
   const rank = ranked.ok ? soloRankFromStats(ranked.data) : null;
   const collected = [];
@@ -243,8 +287,21 @@ async function fetchSoloQueueProfile(lock, summoner) {
     if (batch.length < PROFILE_HISTORY_PAGE_SIZE || oldest < seasonStart) break;
   }
   const champions = await ensureChampionData();
-  const soloQueue = summarizeSoloQueue(collected, summoner, champions, seasonStart);
-  return { rank, soloQueue, topChampions: soloQueue.topChampions };
+  const recent = summarizeSoloQueue(collected, summoner, champions, seasonStart);
+  const riotId = summoner?.gameName && summoner?.tagLine ? `${summoner.gameName}#${summoner.tagLine}` : '';
+  try {
+    const season = await cachedOpggProfile(riotId, region);
+    return {
+      rank: rank || season.rank,
+      soloQueue: { ...season.soloQueue, roles: recent.roles, mainRole: recent.mainRole, mainRoleSource: recent.mainRole ? 'recent-games' : '' },
+      topChampions: season.topChampions,
+      source: season.source,
+      seasonVerified: season.seasonVerified,
+      seasonId: season.seasonId,
+    };
+  } catch {
+    return { rank, soloQueue: recent, topChampions: recent.topChampions, source: 'lcu-recent', seasonVerified: false };
+  }
 }
 
 // Extraction défensive du résumé de fin de game — le format exact de
@@ -291,7 +348,7 @@ function extractEndOfGameStats(data, myPuuid) {
 }
 
 function createLolWatcher({
-  putFB, ts, scriptVersion, log = console.log,
+  putFB, getFB = async () => null, ts, scriptVersion, log = console.log,
   getIdentity = () => null, bindAccount = async () => {},
 }) {
   let wasActive = false;
@@ -318,6 +375,47 @@ function createLolWatcher({
   let profileHeartbeat = 0;
   let profileIdentityKey = '';
   let profileRefreshRunning = false;
+  let rosterSyncCheckAt = 0;
+  let rosterSyncRunning = false;
+  let lastRosterSyncRequest = 0;
+
+  async function handleRosterSyncRequest() {
+    if (rosterSyncRunning) return;
+    rosterSyncRunning = true;
+    try {
+      const request = await getFB('live/lolRosterSyncRequest');
+      const requestedAt = Number(request?.requestedAt || 0);
+      if (!requestedAt || requestedAt <= lastRosterSyncRequest || request?.status !== 'pending') return;
+      const worker = identitySnapshot?.playerName || getIdentity()?.memberName || 'Script OLYCITY';
+      const delay = [...worker].reduce((total, char) => total + char.charCodeAt(0), 0) % 2400;
+      await new Promise(resolve => setTimeout(resolve, delay));
+      const latest = await getFB('live/lolRosterSyncRequest');
+      if (Number(latest?.requestedAt || 0) !== requestedAt || latest?.status !== 'pending') return;
+      await putFB('live/lolRosterSyncRequest', { ...latest, status:'running', worker, startedAt:Date.now() });
+      const claimed = await getFB('live/lolRosterSyncRequest');
+      if (Number(claimed?.requestedAt || 0) !== requestedAt || claimed?.worker !== worker) return;
+      lastRosterSyncRequest = requestedAt;
+      const { updated, failures } = await syncRosterProfiles({
+        putFB,
+        scriptVersion,
+        onError: (riotId, error) => writeDebugLog(`[lol-roster-sync] ${riotId}: ${error.message}`),
+      });
+      await putFB('live/lolRosterSyncRequest', {
+        ...claimed,
+        status: updated ? 'complete' : 'error',
+        worker,
+        updated,
+        failures,
+        completedAt: Date.now(),
+        message: updated ? '' : 'Aucun profil n’a pu être actualisé.',
+      });
+      log(`[${ts()}] 🔵 LoL — roster synchronisé (${updated}/${ROSTER_ACCOUNTS.length})`);
+    } catch (error) {
+      writeDebugLog(`[lol-roster-sync] ${error.message}`);
+    } finally {
+      rosterSyncRunning = false;
+    }
+  }
   let eogLogged = false;
 
   function resetMatchState() {
@@ -418,12 +516,15 @@ function createLolWatcher({
       profileHeartbeat = now;
       profileRefreshRunning = true;
       const snapshot = { ...identitySnapshot };
-      void fetchSoloQueueProfile(cachedLock, summoner)
+      void fetchSoloQueueProfile(cachedLock, summoner, region)
         .then(profile => putFB(`live/lolProfiles/${key}`, {
           ...snapshot,
           rank: profile.rank,
           soloQueue: profile.soloQueue,
           topChampions: profile.topChampions,
+          source: profile.source,
+          seasonVerified: profile.seasonVerified,
+          seasonId: profile.seasonId || null,
           updatedAt: now,
           scriptVersion,
         }))
@@ -499,6 +600,10 @@ function createLolWatcher({
   }
 
   async function poll() {
+    if (Date.now() - rosterSyncCheckAt >= 10_000) {
+      rosterSyncCheckAt = Date.now();
+      void handleRosterSyncRequest();
+    }
     if (!cachedLock) cachedLock = readLockfile();
     if (!cachedLock) {
       missedPolls++;
@@ -617,4 +722,4 @@ function createLolWatcher({
   return { poll, markInactive, markClientOffline: markIdentityOffline };
 }
 
-module.exports = { createLolWatcher, readLockfile, lcuGet, safeFirebaseKey };
+module.exports = { createLolWatcher, readLockfile, lcuGet, safeFirebaseKey, syncRosterProfiles };
