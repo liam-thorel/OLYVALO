@@ -13,9 +13,10 @@ const { stopLegacyLiveProcesses } = require('./legacy-cleanup.js');
 const { createLolWatcher } = require('./lol-watcher.js');
 const { readIdentity } = require('./identity.js');
 const { createAccountBinder } = require('./account-binding.js');
+const { cleanupStalePresence } = require('./maintenance.js');
 
 const FIREBASE_URL = 'https://realtime-database-5bb9f-default-rtdb.europe-west1.firebasedatabase.app';
-const SCRIPT_VERSION = '4.16.1';
+const SCRIPT_VERSION = '4.16.2';
 const INSTANCE_LOCK_PATH = path.join(__dirname, '.olycity-live.lock');
 const LOG_PATH = path.join(__dirname, 'olycity.log');
 const MAX_LOG_BYTES = 5 * 1024 * 1024;
@@ -27,6 +28,33 @@ function releaseOwnedInstanceLock() {
   if (!ownsInstanceLock) return;
   releaseInstanceLock(INSTANCE_LOCK_PATH);
   ownsInstanceLock = false;
+}
+
+function spawnSilentLauncher() {
+  const child = process.platform === 'win32'
+    ? spawn('wscript.exe', [path.join(__dirname, 'silent.vbs')], {
+      cwd: __dirname, detached: true, stdio: 'ignore', windowsHide: true,
+    })
+    : spawn(process.execPath, [__filename], {
+      cwd: __dirname, detached: true, stdio: 'inherit',
+    });
+  child.unref();
+}
+
+function restartForLogRotationIfNeeded() {
+  try {
+    if (!fs.existsSync(LOG_PATH) || fs.statSync(LOG_PATH).size <= MAX_LOG_BYTES) return false;
+    if (process.platform !== 'win32') {
+      fs.truncateSync(LOG_PATH, 0);
+      return false;
+    }
+    releaseOwnedInstanceLock();
+    spawnSilentLauncher();
+    process.exit(0);
+    return true;
+  } catch {
+    return false;
+  }
 }
 
 const lolWatcher = createLolWatcher({
@@ -1510,14 +1538,7 @@ let updateCheckRunning = false;
 function restartWithInstalledUpdate(version) {
   console.log(`[${ts()}] Mise à jour v${version} prête — redémarrage automatique en arrière-plan...`);
   releaseOwnedInstanceLock();
-  const child = spawn(process.execPath, [__filename], {
-    cwd: __dirname,
-    detached: true,
-    stdio: 'inherit',
-    windowsHide: true,
-    env: { ...process.env, OLYCITY_UPDATE_RESTART: '1' },
-  });
-  child.unref();
+  spawnSilentLauncher();
   process.exit(0);
   return true;
 }
@@ -1527,10 +1548,6 @@ async function updateAndRestart() {
   if (pendingUpdateVersion) {
     if (restartDecision(inGame, pendingUpdateVersion) === 'defer') return false;
     return restartWithInstalledUpdate(pendingUpdateVersion);
-  }
-  if (process.env.OLYCITY_UPDATE_RESTART === '1') {
-    delete process.env.OLYCITY_UPDATE_RESTART;
-    return false;
   }
   updateCheckRunning = true;
   try {
@@ -1553,11 +1570,7 @@ async function updateAndRestart() {
 }
 
 async function start() {
-  try {
-    if (fs.existsSync(LOG_PATH) && fs.statSync(LOG_PATH).size > MAX_LOG_BYTES) {
-      fs.truncateSync(LOG_PATH, 0);
-    }
-  } catch {}
+  if (restartForLogRotationIfNeeded()) return;
 
   const stopLegacy = () => {
     const stopped = stopLegacyLiveProcesses();
@@ -1588,6 +1601,10 @@ async function start() {
   if (ensureIdentity()) {
     console.log(`[${ts()}] 👤 OLYCITY Live tourne pour ${identity.memberName}`);
   }
+
+  cleanupStalePresence({ getFB, putFB }).then(removed => {
+    if (removed > 0) console.log(`[${ts()}] 🧹 ${removed} ancienne(s) présence(s) Live supprimée(s)`);
+  }).catch(() => {});
 
   let lolPollRunning = false;
   const pollLolOnce = async () => {

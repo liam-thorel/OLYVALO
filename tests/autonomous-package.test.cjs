@@ -25,6 +25,9 @@ assert.match(installer, /node_modules\\ws\\index\.js/i);
 assert.match(installer, /\/rl LIMITED/i);
 assert.match(installer, /startup\.js" install/i);
 assert.match(silent, /runtime\\node\.exe/i);
+assert.match(silent, /5242880/);
+assert.match(silent, /DeleteFile\s+logPath/i);
+assert.match(silent, /WScript\.Sleep\s+750/i);
 assert.match(launcher, /runtime\\node\.exe/i);
 assert.match(verifier, /manage\.ps1" status/i);
 assert.match(uninstaller, /manage\.ps1" stop/i);
@@ -59,6 +62,7 @@ assert.match(liveIndex, /timeout:\s*5000/, 'Firebase writes must have a bounded 
 assert.match(liveIndex, /split\('\/'\)\.map\(encodeURIComponent\)/, 'Firebase path segments must support Riot IDs containing spaces');
 assert.match(liveIndex, /lolPollRunning/, 'League polling must be single-flight');
 assert.match(liveIndex, /MAX_LOG_BYTES/, 'the persistent log must be capped');
+assert.match(liveIndex, /cleanupStalePresence/, 'expired Firebase presence records must be cleaned');
 assert.doesNotMatch(read('lol-watcher.js'), /\[lol-eog-raw\]/, 'raw end-of-game payloads must not flood the log');
 
 console.log('autonomous-package: launchers use only embedded runtime and scoped process management');
