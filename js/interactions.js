@@ -13,7 +13,7 @@ import {
   stableServerForSession,
   stableSessionForRender,
 } from './live-sessions.mjs?v=20260809-live-server-local';
-import { freshLiveClients, groupLiveClients, isVersionAtLeast, liveClientSummary } from './live-clients.mjs?v=20260809-live-groups';
+import { freshLiveClients, groupLiveClients, isVersionAtLeast, liveClientSummary } from './live-clients.mjs?v=20260810-live-data-store';
 import { buildLiveIdentityIndex, resolveLiveIdentity } from './live-identities.mjs?v=20260809-live-groups';
 import { PLAYERS as LOL_ROSTER_PLAYERS } from './lol-roster.mjs?v=20260809-lol-sync';
 import { serverVisual } from './server-visuals.mjs?v=20260809-live-server-local';
@@ -21,6 +21,7 @@ import { avatarLayersHTML } from './avatars.mjs?v=20260720-avatars';
 import { filterHistoryGames, historyDailyPerformances, historyGameForOwner, historyMode, historyOwnerKey, historyOwnerLabel, historyPlayerName, historyPlayerPerformance, historyPlayerPerformances, historyRankedPlayers, historyReports, isHistorySelf, normalizeHistoryEntries } from './history-utils.mjs?v=20260720-history-multi';
 import { initCurse } from './curse.mjs?v=20260807-curse5';
 import { fetchJsonWithTimeout } from './request-utils.mjs?v=20260809-route-load-stable';
+import { liveDataStore, liveTimestamp } from './live-data-store.mjs?v=20260810-live-data-store';
 
 let historyLoadSequence = 0;
 
@@ -384,12 +385,11 @@ export function initLivePage() {
   const canvas = document.getElementById('live-map-canvas');
   const ctx = canvas?.getContext('2d');
 
-  // Firebase SSE listener
-  const evtSource = new EventSource(`${FIREBASE_URL}/live/sessions.json`);
-  const clientsSource = new EventSource(`${FIREBASE_URL}/live/clients.json`);
   let selectedSession = null;
   let lastSessions = {};
+  let lastStoreSessions = null;
   let lastClients = {};
+  let liveStoreStatus = {};
   let byMatchCache = {};
   const stableRosterCache = new Map();
   const stablePregameCache = new Map();
@@ -476,9 +476,16 @@ export function initLivePage() {
     const summary = liveClientSummary(clients);
 
     if (!summary.total) {
-      panel.dataset.state = 'offline';
-      label.textContent = 'Aucun script connecté';
-      detail.textContent = 'Les membres actifs apparaîtront ici';
+      const channels = [liveStoreStatus.valorantClients, liveStoreStatus.valorantSessions].filter(Boolean);
+      const loading = channels.some(status => !status.loaded);
+      const reconnecting = channels.some(status => status.error);
+      panel.dataset.state = reconnecting ? 'error' : 'offline';
+      label.textContent = loading ? 'Connexion aux données Live'
+        : reconnecting ? 'Reconnexion au Live'
+          : 'Aucun script connecté';
+      detail.textContent = loading ? 'Synchronisation Firebase en cours'
+        : reconnecting ? 'Les dernières données restent affichées'
+          : 'Les membres actifs apparaîtront ici';
       version.textContent = '—';
       list.innerHTML = '';
       return;
@@ -532,31 +539,10 @@ export function initLivePage() {
     }).join('');
   }
 
-  function handleClientsSSE(event) {
-    try {
-      const message = JSON.parse(event.data);
-      const path = message.path || '/';
-      const data = message.data;
-      if (path === '/') {
-        lastClients = data && typeof data === 'object' ? data : {};
-      } else {
-        const clientKey = path.replace(/^\//, '').split('/')[0];
-        const subPath = path.replace(/^\/[^/]+/, '').replace(/^\//, '');
-        if (!clientKey) return;
-        if (!lastClients[clientKey]) lastClients[clientKey] = {};
-        if (subPath) lastClients[clientKey][subPath] = data;
-        else if (data && typeof data === 'object') lastClients[clientKey] = data;
-      }
-      renderDiagnostic();
-    } catch {}
-  }
-
-  clientsSource.addEventListener('put', handleClientsSSE);
-  clientsSource.addEventListener('patch', handleClientsSSE);
   const diagnosticTicker = setInterval(renderDiagnostic, 5000);
 
   const isFreshSession = (session, now = Date.now()) => {
-    const updatedAt = Number(session?.ts);
+    const updatedAt = liveTimestamp(session, now);
     return Number.isFinite(updatedAt) && updatedAt > 0 && now - updatedAt < 30000;
   };
 
@@ -634,24 +620,22 @@ export function initLivePage() {
       }
     } catch(err) { console.error(err); }
   }
-  evtSource.addEventListener('put', handleSSE);
-  evtSource.addEventListener('patch', handleSSE);
-
-  // EventSource can take a few seconds to deliver its first snapshot. Seed both
-  // stores through the REST endpoint so a game already in progress appears
-  // immediately instead of briefly showing the empty state.
-  Promise.all([
-    fetch(`${FIREBASE_URL}/live/sessions.json`).then(response => response.ok ? response.json() : {}),
-    fetch(`${FIREBASE_URL}/live/clients.json`).then(response => response.ok ? response.json() : {}),
-  ]).then(([sessions, clients]) => {
-    lastClients = { ...(clients || {}), ...lastClients };
-    const mergedSessions = { ...(sessions || {}), ...lastSessions };
+  const unsubscribeLiveData = liveDataStore.subscribe(snapshot => {
+    liveStoreStatus = snapshot.status || {};
+    const nextClients = snapshot.valorantClients || {};
+    const nextSessions = snapshot.valorantSessions || {};
+    if (nextClients !== lastClients) {
+      lastClients = nextClients;
+    }
+    if (nextSessions !== lastStoreSessions) {
+      lastStoreSessions = nextSessions;
+      handleSSE({
+        type: 'store',
+        data: JSON.stringify({ path: '/', data: nextSessions }),
+      });
+    }
     renderDiagnostic();
-    handleSSE({
-      type: 'bootstrap',
-      data: JSON.stringify({ path: '/', data: mergedSessions }),
-    });
-  }).catch(() => {});
+  });
 
   // Periodic staleness check — re-evaluate even without new SSE events
   const staleChecker = setInterval(() => {
@@ -1290,8 +1274,7 @@ export function initLivePage() {
   document.addEventListener('olycity:gamechange', handleGameChange);
 
   return () => {
-    evtSource.close();
-    clientsSource.close();
+    unsubscribeLiveData();
     clearInterval(staleChecker);
     clearInterval(diagnosticTicker);
     if (timerInterval) clearInterval(timerInterval);

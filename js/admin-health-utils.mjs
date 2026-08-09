@@ -1,3 +1,5 @@
+import { liveTimestamp } from './live-data-store.mjs?v=20260810-live-data-store';
+
 export const HEALTH_FRESH_MS = 45_000;
 export const HEALTH_RECENT_MS = 120_000;
 
@@ -5,9 +7,7 @@ function normalize(value) {
   return String(value || '').trim().toLocaleLowerCase('fr');
 }
 
-function timestamp(entry = {}) {
-  return Number(entry.ts || entry.lastSeen || 0);
-}
+const timestamp = liveTimestamp;
 
 function versionParts(value) {
   return String(value || '').replace(/^v/i, '').split('.').map(part => Number.parseInt(part, 10) || 0);
@@ -70,13 +70,13 @@ function stateLabel(state) {
 function completeRow(row, latestVersion, now) {
   const clients = [row.valorantClient, ...row.lolClients].filter(Boolean);
   const newestClient = [...clients].sort((left, right) => timestamp(right) - timestamp(left))[0] || {};
-  const heartbeatAt = timestamp(newestClient);
+  const heartbeatAt = timestamp(newestClient, now);
   const age = heartbeatAt ? Math.max(0, now - heartbeatAt) : Infinity;
-  const valorantFresh = Boolean(row.valorantClient?.online && now - timestamp(row.valorantClient) < HEALTH_FRESH_MS);
-  const lolFresh = row.lolClients.some(client => client.connected && now - timestamp(client) < HEALTH_FRESH_MS);
+  const valorantFresh = Boolean(row.valorantClient?.online && now - timestamp(row.valorantClient, now) < HEALTH_FRESH_MS);
+  const lolFresh = row.lolClients.some(client => client.connected && now - timestamp(client, now) < HEALTH_FRESH_MS);
   const connected = valorantFresh || lolFresh;
-  const valorantSessionFresh = Boolean(row.valorantSession?.active && now - timestamp(row.valorantSession) < HEALTH_RECENT_MS);
-  const lolSessionFresh = Boolean(row.lolSession?.active && now - timestamp(row.lolSession) < HEALTH_RECENT_MS);
+  const valorantSessionFresh = Boolean(row.valorantSession?.active && now - timestamp(row.valorantSession, now) < HEALTH_RECENT_MS);
+  const lolSessionFresh = Boolean(row.lolSession?.active && now - timestamp(row.lolSession, now) < HEALTH_RECENT_MS);
   const rawState = row.valorantClient?.state || '';
   const lolPhase = newestClient.phase || '';
   const error = String(row.valorantClient?.error || '').trim();

@@ -7,6 +7,7 @@ const interactions = fs.readFileSync(new URL('../js/interactions.js', import.met
 const render = fs.readFileSync(new URL('../js/render.js', import.meta.url), 'utf8');
 const lolRoster = fs.readFileSync(new URL('../js/lol-roster.mjs', import.meta.url), 'utf8');
 const page = fs.readFileSync(new URL('../index.html', import.meta.url), 'utf8');
+const liveDataStore = fs.readFileSync(new URL('../js/live-data-store.mjs', import.meta.url), 'utf8');
 
 test('shared state does not import the versioned entry module twice', () => {
   assert.match(main, /from '\.\/state\.mjs/);
@@ -34,4 +35,21 @@ test('history and admin requests cannot stay pending forever', () => {
   assert.match(interactions, /fetchJsonWithTimeout\(`\$\{FIREBASE_URL\}\/live\/history\.json`\)/);
   assert.match(lolPages, /fetchJsonWithTimeout\(`\$\{FIREBASE_URL\}\/live\/lolHistory\.json`\)/);
   assert.match(admin, /fetchJsonWithTimeout\(`\$\{FIREBASE_URL\}\/\$\{path\}\.json`/);
+});
+
+test('Live and Admin share one realtime Firebase store', () => {
+  const admin = fs.readFileSync(new URL('../js/admin.mjs', import.meta.url), 'utf8');
+  const lolPages = fs.readFileSync(new URL('../js/lol-pages.mjs', import.meta.url), 'utf8');
+  assert.match(liveDataStore, /valorantClients: 'live\/clients'/);
+  assert.match(interactions, /liveDataStore\.subscribe/);
+  assert.match(lolPages, /liveDataStore\.subscribe/);
+  assert.match(admin, /liveDataStore\.subscribe/);
+  assert.doesNotMatch(interactions, /new EventSource\(`\$\{FIREBASE_URL\}\/live\/sessions/);
+  assert.doesNotMatch(lolPages, /new EventSource\(`\$\{FIREBASE_URL\}\/live\/lolSessions/);
+});
+
+test('browser back initializes a page once and Admin reuses cached data', () => {
+  const admin = fs.readFileSync(new URL('../js/admin.mjs', import.meta.url), 'utf8');
+  assert.equal((main.match(/addEventListener\('popstate'/g) || []).length, 1);
+  assert.match(admin, /if \(adminDataLoaded\) \{[\s\S]*?render\(\);[\s\S]*?await loadAll\(\)/);
 });

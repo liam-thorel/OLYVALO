@@ -1,5 +1,6 @@
-import { groupLolSessions, lolKda, mergeFirebaseEvent, normalizeLolHistory, summarizeLolDays } from './lol-utils.mjs';
+import { groupLolSessions, lolKda, normalizeLolHistory, summarizeLolDays } from './lol-utils.mjs?v=20260810-live-data-store';
 import { fetchJsonWithTimeout } from './request-utils.mjs?v=20260809-route-load-stable';
+import { liveDataStore } from './live-data-store.mjs?v=20260810-live-data-store';
 
 const FIREBASE_URL = 'https://realtime-database-5bb9f-default-rtdb.europe-west1.firebasedatabase.app';
 let historyLoadSequence = 0;
@@ -55,19 +56,16 @@ export function initLolLivePage() {
   let sessions = {};
   let timer = null;
   const render = () => renderLolLive(sessions);
-  fetch(`${FIREBASE_URL}/live/lolSessions.json`)
-    .then(response => response.ok ? response.json() : {})
-    .then(data => { sessions = data || {}; render(); })
-    .catch(() => render());
-  const source = new EventSource(`${FIREBASE_URL}/live/lolSessions.json`);
-  ['put', 'patch'].forEach(type => source.addEventListener(type, event => {
-    try { sessions = mergeFirebaseEvent(sessions, JSON.parse(event.data)); render(); } catch {}
-  }));
-  source.onerror = () => { /* EventSource reconnecte tout seul. */ };
+  const unsubscribeLiveData = liveDataStore.subscribe(snapshot => {
+    const nextSessions = snapshot.lolSessions || {};
+    if (nextSessions === sessions) return;
+    sessions = nextSessions;
+    render();
+  });
   timer = setInterval(render, 10_000);
   const handleGameChange = event => { if (event.detail?.mode === 'lol') render(); };
   document.addEventListener('olycity:gamechange', handleGameChange);
-  return () => { source.close(); clearInterval(timer); document.removeEventListener('olycity:gamechange', handleGameChange); };
+  return () => { unsubscribeLiveData(); clearInterval(timer); document.removeEventListener('olycity:gamechange', handleGameChange); };
 }
 
 function matchRow(match) {

@@ -12,9 +12,10 @@
  * juste un garde-fou contre un visiteur qui tomberait sur l'URL.
  */
 
-import { accountLiveState, accountRiotId, discoveryRows, normalizeGames } from './admin-account-utils.mjs?v=20260810-admin-live-state';
-import { buildScriptHealth, scriptDiagnosticText, scriptHealthSummary } from './admin-health-utils.mjs?v=20260810-admin-live-state';
+import { accountLiveState, accountRiotId, discoveryRows, normalizeGames } from './admin-account-utils.mjs?v=20260810-live-data-store';
+import { buildScriptHealth, scriptDiagnosticText, scriptHealthSummary } from './admin-health-utils.mjs?v=20260810-live-data-store';
 import { fetchJsonWithTimeout } from './request-utils.mjs?v=20260809-route-load-stable';
+import { liveDataStore } from './live-data-store.mjs?v=20260810-live-data-store';
 
 const FIREBASE_URL = 'https://realtime-database-5bb9f-default-rtdb.europe-west1.firebasedatabase.app';
 // SHA-256 du mot de passe admin. Pour le changer : recalcule le hash d'un
@@ -34,8 +35,10 @@ let lolSessions = {};
 let valorantClients = {};
 let valorantSessions = {};
 let latestScriptVersion = '';
-let healthRefreshTimer = null;
+let liveStoreStatus = {};
+let adminLiveCleanup = null;
 let adminLoadSequence = 0;
+let adminDataLoaded = false;
 
 function slugify(name) {
   return String(name || '')
@@ -106,15 +109,20 @@ function accountsForMember(memberId) {
   return Object.entries(extra).map(([key, account]) => ({ ...account, games: normalizeGames(account), key }));
 }
 
+function applyLiveSnapshot(snapshot = {}) {
+  lolClients = snapshot.lolClients || {};
+  lolSessions = snapshot.lolSessions || {};
+  valorantClients = snapshot.valorantClients || {};
+  valorantSessions = snapshot.valorantSessions || {};
+  liveStoreStatus = snapshot.status || {};
+}
+
 async function loadAll(signal) {
-  const [roster, overlay, discoveredData, lolClientData, lolSessionData, valorantClientData, valorantSessionData, updateManifest] = await Promise.all([
+  const [roster, overlay, discoveredData, liveSnapshot, updateManifest] = await Promise.all([
     fetchJsonWithTimeout(`./data/roster.json?v=${Date.now()}`, { signal, timeoutMs: ADMIN_LOAD_TIMEOUT_MS }),
     fbGet('rosterOverlay', signal).catch(() => null),
     fbGet('discovered', signal).catch(() => null),
-    fbGet('live/lolClients', signal).catch(() => null),
-    fbGet('live/lolSessions', signal).catch(() => null),
-    fbGet('live/clients', signal).catch(() => null),
-    fbGet('live/sessions', signal).catch(() => null),
+    liveDataStore.refresh({ timeoutMs:ADMIN_LOAD_TIMEOUT_MS }).catch(() => liveDataStore.snapshot()),
     fetchJsonWithTimeout(`./live/update-manifest.json?v=${Date.now()}`, { signal, timeoutMs: ADMIN_LOAD_TIMEOUT_MS }).catch(() => null),
   ]);
   staticRoster = roster || [];
@@ -123,26 +131,9 @@ async function loadAll(signal) {
   overlayHiddenMembers = overlay?.hiddenMembers || {};
   ignoredAccounts = overlay?.ignoredAccounts || {};
   discovered = discoveredData || {};
-  lolClients = lolClientData || {};
-  lolSessions = lolSessionData || {};
-  valorantClients = valorantClientData || {};
-  valorantSessions = valorantSessionData || {};
+  applyLiveSnapshot(liveSnapshot);
   latestScriptVersion = updateManifest?.version || '';
-}
-
-async function loadHealthData() {
-  const [lolClientData, lolSessionData, valorantClientData, valorantSessionData, updateManifest] = await Promise.all([
-    fbGet('live/lolClients').catch(() => null),
-    fbGet('live/lolSessions').catch(() => null),
-    fbGet('live/clients').catch(() => null),
-    fbGet('live/sessions').catch(() => null),
-    fetchJsonWithTimeout(`./live/update-manifest.json?v=${Date.now()}`, { timeoutMs: ADMIN_LOAD_TIMEOUT_MS }).catch(() => null),
-  ]);
-  lolClients = lolClientData || {};
-  lolSessions = lolSessionData || {};
-  valorantClients = valorantClientData || {};
-  valorantSessions = valorantSessionData || {};
-  latestScriptVersion = updateManifest?.version || latestScriptVersion;
+  adminDataLoaded = true;
 }
 
 function timeAgo(ts) {
@@ -215,18 +206,33 @@ function renderHealthInto(root) {
   const dashboard = root.querySelector('#admin-health-dashboard');
   if (dashboard) dashboard.innerHTML = renderHealthDashboardHTML();
   const refreshed = root.querySelector('#admin-health-refreshed');
-  if (refreshed) refreshed.textContent = `actualisé à ${new Date().toLocaleTimeString('fr-FR', { hour:'2-digit', minute:'2-digit', second:'2-digit' })}`;
+  if (refreshed) {
+    const reconnecting = Object.values(liveStoreStatus).some(status => status?.error);
+    refreshed.textContent = reconnecting
+      ? 'reconnexion aux données…'
+      : `actualisé à ${new Date().toLocaleTimeString('fr-FR', { hour:'2-digit', minute:'2-digit', second:'2-digit' })}`;
+  }
+}
+
+function renderAccountStatesInto(root) {
+  root.querySelectorAll('.admin-account-row').forEach(row => {
+    const account = overlayAccounts?.[row.dataset.member]?.[row.dataset.key];
+    const status = row.querySelector('.admin-status');
+    if (!account || !status) return;
+    const live = accountLiveState(account, { lolClients, lolSessions, valorantClients, valorantSessions });
+    status.className = `admin-status ${live.state}`;
+    status.textContent = live.label;
+  });
 }
 
 function startHealthRefresh(root) {
-  if (healthRefreshTimer) clearInterval(healthRefreshTimer);
-  healthRefreshTimer = setInterval(async () => {
+  adminLiveCleanup?.();
+  adminLiveCleanup = liveDataStore.subscribe(snapshot => {
     if (location.hash !== '#admin' || !root.isConnected) return;
-    try {
-      await loadHealthData();
-      renderHealthInto(root);
-    } catch {}
-  }, 15_000);
+    applyLiveSnapshot(snapshot);
+    renderHealthInto(root);
+    renderAccountStatesInto(root);
+  }, { refreshOnStart:false });
 }
 
 function escapeHTML(value) {
@@ -522,6 +528,20 @@ export async function initAdminPage() {
   }
 
   const loadSequence = ++adminLoadSequence;
+  if (adminDataLoaded) {
+    // Le bouton retour doit rendre instantanément le dernier état connu. Le
+    // store temps réel continue ensuite à rafraîchir les cartes sans écran vide.
+    render();
+    try {
+      await loadAll();
+      if (loadSequence !== adminLoadSequence) return;
+      render();
+    } catch (error) {
+      console.warn('[OLYCITY] Actualisation Admin différée', error);
+    }
+    return;
+  }
+
   root.innerHTML = '<div class="admin-wrap"><p class="admin-dim">Chargement…</p></div>';
   try {
     await loadAll();

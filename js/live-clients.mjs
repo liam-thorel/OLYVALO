@@ -1,3 +1,5 @@
+import { liveTimestamp } from './live-data-store.mjs?v=20260810-live-data-store';
+
 export const LIVE_CLIENT_STALE_MS = 30000;
 
 export function isVersionAtLeast(version, minimum) {
@@ -20,7 +22,7 @@ export function freshLiveClients(clients = {}, sessions = {}, now = Date.now()) 
     .filter(([, client]) => client && typeof client === 'object')
     .map(([puuid, client]) => {
       const session = sessions?.[puuid] || {};
-      const ts = Number(client.ts) || 0;
+      const ts = liveTimestamp(client, now);
       return {
         puuid,
         ...client,

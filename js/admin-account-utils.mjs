@@ -1,3 +1,5 @@
+import { liveTimestamp } from './live-data-store.mjs?v=20260810-live-data-store';
+
 const VALID_GAMES = new Set(['valorant', 'lol']);
 
 export function normalizeGames(account = {}) {
@@ -53,8 +55,7 @@ export function accountLiveState(account, { lolClients = {}, lolSessions = {}, v
     .filter(entry => sameRiotAccount(account, entry))
     .sort((left, right) => Number(right.ts || right.lastSeen || 0) - Number(left.ts || left.lastSeen || 0))[0];
   if (!match) return { label: 'Jamais détecté', state: 'unknown', ts: 0 };
-  const rawTs = Number(match.ts || match.lastSeen || 0);
-  const ts = rawTs > 0 && rawTs < 10_000_000_000 && now >= 1_000_000_000_000 ? rawTs * 1000 : rawTs;
+  const ts = liveTimestamp(match, now);
   const fresh = ts > 0 && now - ts < 90_000;
   if (match.active && fresh) return { label: 'En partie', state: 'ingame', ts };
   if (fresh) return { label: match.phase === 'ChampSelect' ? 'Champ select' : 'Client connecté', state: 'online', ts };

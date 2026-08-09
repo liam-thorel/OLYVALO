@@ -5,16 +5,16 @@
 
 import { valorantApi } from './api.js';
 
-const SITE_VERSION = '20260810-admin-live-state';
+const SITE_VERSION = '20260810-live-data-store';
 import { syncPlayer as henrikSyncPlayer, syncAllPlayers as henrikSyncAll, persistPlayerStats } from './henrik.js?v=20260809-val-roster-season';
 import { rosterHTML, guestCardHTML, mapSectionHTML, stierHTML, agentPageHTML, miniRosterHTML, agentsFiltersHTML, agentsGridHTML, compCompareHTML } from './render.js?v=20260809-val-roster-season';
-import { initTheme, initTilt, initParallax, initSearch, initKeyboard, updateFavCount, initHeroParticles, initWheelLogos, initLivePage, initHistoryPage } from './interactions.js?v=20260809-route-load-stable';
+import { initTheme, initTilt, initParallax, initSearch, initKeyboard, updateFavCount, initHeroParticles, initWheelLogos, initLivePage, initHistoryPage } from './interactions.js?v=20260810-live-data-store';
 import { storage } from './storage.js';
 import { avatarLayersHTML } from './avatars.mjs';
-import { initAdminPage } from './admin.mjs?v=20260810-admin-live-state';
+import { initAdminPage } from './admin.mjs?v=20260810-live-data-store';
 import { initBettingPage } from './betting-page.mjs';
 import { getGameMode, initGameMode } from './game-mode.mjs?v=20260806-lol-mode';
-import { initLolHistoryPage, initLolLivePage } from './lol-pages.mjs?v=20260809-route-load-stable';
+import { initLolHistoryPage, initLolLivePage } from './lol-pages.mjs?v=20260810-live-data-store';
 import { initLolRosterPages } from './lol-roster.mjs?v=20260809-lol-sync';
 import { state } from './state.mjs?v=20260806-lol-roster';
 export { state };
@@ -1012,28 +1012,6 @@ async function boot() {
   });
 
   // Close video modal on Escape
-  document.addEventListener('keydown', e => {
-    if (e.key === 'Escape') window.OLYCITY.closeVideoModal();
-  });
-  // Browser back/forward button support
-  window.addEventListener('popstate', (e) => {
-    const s = e.state;
-    window.OLYCITY.closeVideoModal();
-    const compareWrap = document.getElementById('compare-panel-wrap');
-    if (compareWrap) compareWrap.style.display = 'none';
-    if (s?.page === 'agent' && s.agent) {
-      window.OLYCITY.showAgentPage(s.agent);
-    } else if (s?.page) {
-      window.OLYCITY.nav(s.page, false);
-    } else {
-      const hash = window.location.hash.replace('#', '');
-      if (['maps','roster','agents','live','history','admin','betting'].includes(hash)) {
-        window.OLYCITY.nav(hash, false);
-      } else {
-        window.OLYCITY.nav('home', false);
-      }
-    }
-  });
   document.addEventListener('keydown', e => {
     if (e.key === 'Escape') window.OLYCITY.closeVideoModal();
   });

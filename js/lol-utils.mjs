@@ -1,8 +1,10 @@
+import { liveTimestamp } from './live-data-store.mjs?v=20260810-live-data-store';
+
 export const LOL_FRESH_MS = 55_000;
 
 export function isLolSessionActive(session, now = Date.now()) {
   if (!session || session.active === false) return false;
-  const ts = Number(session.ts || session.updatedAt || 0);
+  const ts = liveTimestamp(session, now);
   return Boolean(session.matchId) && ts > 0 && now - ts <= LOL_FRESH_MS;
 }
 
