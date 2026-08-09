@@ -20,6 +20,9 @@ import { serverVisual } from './server-visuals.mjs?v=20260809-live-server-local'
 import { avatarLayersHTML } from './avatars.mjs?v=20260720-avatars';
 import { filterHistoryGames, historyDailyPerformances, historyGameForOwner, historyMode, historyOwnerKey, historyOwnerLabel, historyPlayerName, historyPlayerPerformance, historyPlayerPerformances, historyRankedPlayers, historyReports, isHistorySelf, normalizeHistoryEntries } from './history-utils.mjs?v=20260720-history-multi';
 import { initCurse } from './curse.mjs?v=20260807-curse5';
+import { fetchJsonWithTimeout } from './request-utils.mjs?v=20260809-route-load-stable';
+
+let historyLoadSequence = 0;
 
 // ─── THEME TOGGLE ─────────────────────────────────
 export function initTheme() {
@@ -1300,15 +1303,27 @@ export async function initHistoryPage() {
   const FIREBASE_URL = 'https://realtime-database-5bb9f-default-rtdb.europe-west1.firebasedatabase.app';
   const el = document.getElementById('history-content');
   if (!el) return;
-  await ensureAgentMap();
+  const loadSequence = ++historyLoadSequence;
   el.innerHTML = '<div style="font-family:Tomorrow,sans-serif;font-size:10px;letter-spacing:3px;color:var(--dim);text-transform:uppercase;padding:32px 0">Chargement</div>';
 
   let games = [];
   try {
-    const r = await fetch(`${FIREBASE_URL}/live/history.json`);
-    const data = await r.json();
+    const [data] = await Promise.all([
+      fetchJsonWithTimeout(`${FIREBASE_URL}/live/history.json`),
+      ensureAgentMap(),
+    ]);
+    if (loadSequence !== historyLoadSequence) return;
     if (data) games = normalizeHistoryEntries(data);
-  } catch {}
+  } catch {
+    if (loadSequence !== historyLoadSequence) return;
+    el.innerHTML = `<div style="border:1px solid var(--border);background:var(--surf);padding:40px 24px;text-align:center">
+      <div style="font-family:Tomorrow,sans-serif;font-size:12px;letter-spacing:2px;text-transform:uppercase;color:var(--muted);margin-bottom:10px">Historique indisponible</div>
+      <div style="font-size:12px;color:var(--dim);margin-bottom:18px">Le chargement a pris trop de temps ou la connexion a été interrompue.</div>
+      <button type="button" data-history-retry class="btn btn-primary">Réessayer</button>
+    </div>`;
+    el.querySelector('[data-history-retry]')?.addEventListener('click', initHistoryPage);
+    return;
+  }
 
   if (!games.length) {
     el.innerHTML = `<div style="border:1px solid var(--border);background:var(--surf);padding:40px 24px;text-align:center">
@@ -1691,8 +1706,7 @@ export async function initHistoryPage() {
 async function ensureAgentMap() {
   if (window._agentNameToUuid) return;
   try {
-    const r = await fetch('https://valorant-api.com/v1/agents?isPlayableCharacter=true');
-    const d = await r.json();
+    const d = await fetchJsonWithTimeout('https://valorant-api.com/v1/agents?isPlayableCharacter=true', { timeoutMs: 5_000 });
     window._agentNameToUuid = {};
     d.data?.forEach(a => { window._agentNameToUuid[a.displayName] = a.uuid; });
   } catch { window._agentNameToUuid = {}; }

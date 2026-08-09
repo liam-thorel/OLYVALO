@@ -5,16 +5,16 @@
 
 import { valorantApi } from './api.js';
 
-const SITE_VERSION = '20260809-admin-health';
+const SITE_VERSION = '20260809-route-load-stable';
 import { syncPlayer as henrikSyncPlayer, syncAllPlayers as henrikSyncAll, persistPlayerStats } from './henrik.js?v=20260809-val-roster-season';
 import { rosterHTML, guestCardHTML, mapSectionHTML, stierHTML, agentPageHTML, miniRosterHTML, agentsFiltersHTML, agentsGridHTML, compCompareHTML } from './render.js?v=20260809-val-roster-season';
-import { initTheme, initTilt, initParallax, initSearch, initKeyboard, updateFavCount, initHeroParticles, initWheelLogos, initLivePage, initHistoryPage } from './interactions.js?v=20260809-live-server-local';
+import { initTheme, initTilt, initParallax, initSearch, initKeyboard, updateFavCount, initHeroParticles, initWheelLogos, initLivePage, initHistoryPage } from './interactions.js?v=20260809-route-load-stable';
 import { storage } from './storage.js';
 import { avatarLayersHTML } from './avatars.mjs';
-import { initAdminPage } from './admin.mjs?v=20260809-admin-health';
+import { initAdminPage } from './admin.mjs?v=20260809-route-load-stable';
 import { initBettingPage } from './betting-page.mjs';
 import { getGameMode, initGameMode } from './game-mode.mjs?v=20260806-lol-mode';
-import { initLolHistoryPage, initLolLivePage } from './lol-pages.mjs?v=20260806-lol-mode';
+import { initLolHistoryPage, initLolLivePage } from './lol-pages.mjs?v=20260809-route-load-stable';
 import { initLolRosterPages } from './lol-roster.mjs?v=20260809-lol-sync';
 import { state } from './state.mjs?v=20260806-lol-roster';
 export { state };
@@ -888,7 +888,6 @@ function renderAll() {
 // ─── BOOT ─────────────────────────────────────────
 async function boot() {
   const savedPage = sessionStorage.getItem('olycity-page');
-  if (savedPage && savedPage !== 'home') setTimeout(() => window.OLYCITY?.nav(savedPage), 200);
   // Auto-clear localStorage if version changed
   const storedVersion = localStorage.getItem('olycity-version');
   if (storedVersion !== SITE_VERSION) {
@@ -1040,7 +1039,10 @@ async function boot() {
   });
   // Push initial history state
   const initHash = window.location.hash.replace('#','');
-  const initPage = ['maps','roster','agents','live','history','admin','betting'].includes(initHash) ? initHash : 'home';
+  const validPages = ['maps','roster','agents','live','history','admin','betting'];
+  const initPage = validPages.includes(initHash)
+    ? initHash
+    : !initHash && validPages.includes(savedPage) ? savedPage : 'home';
   if (initPage !== 'home') window.OLYCITY.nav(initPage, false);
   window.history.replaceState({ page: initPage }, '', window.location.href);
   // Hide loading screen

@@ -1,6 +1,8 @@
 import { groupLolSessions, lolKda, mergeFirebaseEvent, normalizeLolHistory, summarizeLolDays } from './lol-utils.mjs';
+import { fetchJsonWithTimeout } from './request-utils.mjs?v=20260809-route-load-stable';
 
 const FIREBASE_URL = 'https://realtime-database-5bb9f-default-rtdb.europe-west1.firebasedatabase.app';
+let historyLoadSequence = 0;
 const esc = value => String(value ?? '').replace(/[&<>'"]/g, char => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', "'":'&#39;', '"':'&quot;' }[char]));
 const image = value => typeof value === 'object' ? value?.image : value;
 const name = value => typeof value === 'object' ? value?.name : value;
@@ -111,12 +113,16 @@ function renderHistory(matches, player = 'all', period = 'all') {
 export async function initLolHistoryPage() {
   const el = document.getElementById('lol-history-content');
   if (!el) return;
+  const loadSequence = ++historyLoadSequence;
   el.innerHTML = '<div class="lol-empty-state"><span class="lol-empty-rune">L</span><strong>Chargement de l’historique…</strong></div>';
   try {
-    const response = await fetch(`${FIREBASE_URL}/live/lolHistory.json`);
-    const matches = normalizeLolHistory(response.ok ? await response.json() : {});
+    const data = await fetchJsonWithTimeout(`${FIREBASE_URL}/live/lolHistory.json`);
+    if (loadSequence !== historyLoadSequence) return;
+    const matches = normalizeLolHistory(data || {});
     renderHistory(matches);
   } catch {
-    el.innerHTML = '<div class="lol-empty-state"><strong>Historique indisponible</strong><small>La connexion Firebase sera retentée à la prochaine ouverture.</small></div>';
+    if (loadSequence !== historyLoadSequence) return;
+    el.innerHTML = '<div class="lol-empty-state"><strong>Historique indisponible</strong><small>La connexion a pris trop de temps.</small><button type="button" data-lol-history-retry class="btn btn-primary">Réessayer</button></div>';
+    el.querySelector('[data-lol-history-retry]')?.addEventListener('click', initLolHistoryPage);
   }
 }

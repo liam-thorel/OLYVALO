@@ -14,6 +14,7 @@
 
 import { accountLiveState, accountRiotId, discoveryRows, normalizeGames } from './admin-account-utils.mjs?v=20260806-admin-accounts';
 import { buildScriptHealth, scriptDiagnosticText, scriptHealthSummary } from './admin-health-utils.mjs?v=20260809-admin-health';
+import { fetchJsonWithTimeout } from './request-utils.mjs?v=20260809-route-load-stable';
 
 const FIREBASE_URL = 'https://realtime-database-5bb9f-default-rtdb.europe-west1.firebasedatabase.app';
 // SHA-256 du mot de passe admin. Pour le changer : recalcule le hash d'un
@@ -33,6 +34,7 @@ let valorantClients = {};
 let valorantSessions = {};
 let latestScriptVersion = '';
 let healthRefreshTimer = null;
+let adminLoadSequence = 0;
 
 function slugify(name) {
   return String(name || '')
@@ -55,10 +57,8 @@ async function confirmWithPassword(message) {
   return hash === ADMIN_PASSWORD_HASH;
 }
 
-async function fbGet(path) {
-  const res = await fetch(`${FIREBASE_URL}/${path}.json`);
-  if (!res.ok) throw new Error(`Firebase GET ${path} — ${res.status}`);
-  return res.json();
+async function fbGet(path, signal) {
+  return fetchJsonWithTimeout(`${FIREBASE_URL}/${path}.json`, { signal });
 }
 async function fbPut(path, data) {
   const res = await fetch(`${FIREBASE_URL}/${path}.json`, {
@@ -105,16 +105,16 @@ function accountsForMember(memberId) {
   return Object.entries(extra).map(([key, account]) => ({ ...account, games: normalizeGames(account), key }));
 }
 
-async function loadAll() {
+async function loadAll(signal) {
   const [roster, overlay, discoveredData, lolClientData, lolSessionData, valorantClientData, valorantSessionData, updateManifest] = await Promise.all([
-    fetch(`./data/roster.json?v=${Date.now()}`).then(r => r.json()),
-    fbGet('rosterOverlay').catch(() => null),
-    fbGet('discovered').catch(() => null),
-    fbGet('live/lolClients').catch(() => null),
-    fbGet('live/lolSessions').catch(() => null),
-    fbGet('live/clients').catch(() => null),
-    fbGet('live/sessions').catch(() => null),
-    fetch(`./live/update-manifest.json?v=${Date.now()}`).then(response => response.ok ? response.json() : null).catch(() => null),
+    fetchJsonWithTimeout(`./data/roster.json?v=${Date.now()}`, { signal }),
+    fbGet('rosterOverlay', signal).catch(() => null),
+    fbGet('discovered', signal).catch(() => null),
+    fbGet('live/lolClients', signal).catch(() => null),
+    fbGet('live/lolSessions', signal).catch(() => null),
+    fbGet('live/clients', signal).catch(() => null),
+    fbGet('live/sessions', signal).catch(() => null),
+    fetchJsonWithTimeout(`./live/update-manifest.json?v=${Date.now()}`, { signal }).catch(() => null),
   ]);
   staticRoster = roster || [];
   overlayMembers = overlay?.members || {};
@@ -135,7 +135,7 @@ async function loadHealthData() {
     fbGet('live/lolSessions').catch(() => null),
     fbGet('live/clients').catch(() => null),
     fbGet('live/sessions').catch(() => null),
-    fetch(`./live/update-manifest.json?v=${Date.now()}`).then(response => response.ok ? response.json() : null).catch(() => null),
+    fetchJsonWithTimeout(`./live/update-manifest.json?v=${Date.now()}`).catch(() => null),
   ]);
   lolClients = lolClientData || {};
   lolSessions = lolSessionData || {};
@@ -520,12 +520,16 @@ export async function initAdminPage() {
     return;
   }
 
+  const loadSequence = ++adminLoadSequence;
   root.innerHTML = '<div class="admin-wrap"><p class="admin-dim">Chargement…</p></div>';
   try {
     await loadAll();
+    if (loadSequence !== adminLoadSequence) return;
     render();
   } catch (error) {
-    root.innerHTML = `<div class="admin-wrap"><p class="admin-error">Erreur de chargement : ${escapeHTML(error.message)}</p></div>`;
+    if (loadSequence !== adminLoadSequence) return;
+    root.innerHTML = `<div class="admin-wrap admin-load-error"><p class="admin-error">Impossible de charger l’admin : ${escapeHTML(error.message)}</p><button type="button" class="admin-btn admin-btn-primary" data-admin-retry>Réessayer</button></div>`;
+    root.querySelector('[data-admin-retry]')?.addEventListener('click', initAdminPage);
   }
 }
 

@@ -22,3 +22,16 @@ test('League home and roster panels are mounted by the site', () => {
   assert.match(lolRoster, /lolRosterSyncRequest/);
   assert.match(main, /initLolRosterPages\(\)/);
 });
+
+test('saved navigation waits for the application boot to finish', () => {
+  assert.doesNotMatch(main, /setTimeout\(\(\) => window\.OLYCITY\?\.nav\(savedPage\)/);
+  assert.match(main, /!initHash && validPages\.includes\(savedPage\) \? savedPage : 'home'/);
+});
+
+test('history and admin requests cannot stay pending forever', () => {
+  const admin = fs.readFileSync(new URL('../js/admin.mjs', import.meta.url), 'utf8');
+  const lolPages = fs.readFileSync(new URL('../js/lol-pages.mjs', import.meta.url), 'utf8');
+  assert.match(interactions, /fetchJsonWithTimeout\(`\$\{FIREBASE_URL\}\/live\/history\.json`\)/);
+  assert.match(lolPages, /fetchJsonWithTimeout\(`\$\{FIREBASE_URL\}\/live\/lolHistory\.json`\)/);
+  assert.match(admin, /fetchJsonWithTimeout\(`\$\{FIREBASE_URL\}\/\$\{path\}\.json`/);
+});
