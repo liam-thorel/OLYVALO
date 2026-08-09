@@ -8,36 +8,43 @@ const CITY_VISUALS = {
     credit: 'Anthony Delanoix · CC0',
   },
   Francfort: {
+    image: './assets/servers/francfort.jpg',
     file: 'Frankfurt Skyline at night (Unsplash).jpg',
     source: 'https://commons.wikimedia.org/wiki/File:Frankfurt_Skyline_at_night_(Unsplash).jpg',
     credit: 'Mathias Konrath · CC0',
   },
   Londres: {
+    image: './assets/servers/londres.jpg',
     file: 'Cloudy London skyline (Unsplash).jpg',
     source: 'https://commons.wikimedia.org/wiki/File:Cloudy_London_skyline_(Unsplash).jpg',
     credit: 'Rob Bye · CC0',
   },
   Madrid: {
+    image: './assets/servers/madrid.jpg',
     file: 'Madrid - Skyline de Madrid desde el Cerro de San Isidro 1.jpg',
     source: 'https://commons.wikimedia.org/wiki/File:Madrid_-_Skyline_de_Madrid_desde_el_Cerro_de_San_Isidro_1.jpg',
     credit: 'Zarateman · CC0',
   },
   Stockholm: {
+    image: './assets/servers/stockholm.jpg',
     file: 'Stockholm Skyline.jpg',
     source: 'https://commons.wikimedia.org/wiki/File:Stockholm_Skyline.jpg',
     credit: 'Mightanddelight · CC BY-SA 4.0',
   },
   Varsovie: {
+    image: './assets/servers/varsovie.jpg',
     file: 'Skyline Warsaw.jpg',
     source: 'https://commons.wikimedia.org/wiki/File:Skyline_Warsaw.jpg',
     credit: 'Ulfer · Domaine public',
   },
   Istanbul: {
+    image: './assets/servers/istanbul.jpg',
     file: 'The skyline of Istanbul.JPG',
     source: 'https://commons.wikimedia.org/wiki/File:The_skyline_of_Istanbul.JPG',
     credit: 'Thingstodoeverywhere · CC0',
   },
   'Dubaï': {
+    image: './assets/servers/dubai.jpg',
     file: 'Dubai-Skyline-2019.jpg',
     source: 'https://commons.wikimedia.org/wiki/File:Dubai-Skyline-2019.jpg',
     credit: 'CommunistSquared · CC0',

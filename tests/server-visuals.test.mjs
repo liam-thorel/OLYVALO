@@ -7,7 +7,7 @@ assert.ok(serverVisual('gamepod-frankfurt-1'));
 
 for (const city of ['Francfort', 'Londres', 'Madrid', 'Stockholm', 'Varsovie', 'Istanbul', 'Dubaï']) {
   const visual = serverVisual(city);
-  assert.match(visual.image, /^https:\/\/commons\.wikimedia\.org\//);
+  assert.match(visual.image, /^\.\/assets\/servers\//);
   assert.match(visual.source, /^https:\/\/commons\.wikimedia\.org\/wiki\/File:/);
   assert.ok(visual.credit);
 }

@@ -5,10 +5,10 @@
 
 import { valorantApi } from './api.js';
 
-const SITE_VERSION = '20260809-live-server-stable';
+const SITE_VERSION = '20260809-live-server-local';
 import { syncPlayer as henrikSyncPlayer, syncAllPlayers as henrikSyncAll, persistPlayerStats } from './henrik.js?v=20260809-val-roster-season';
 import { rosterHTML, guestCardHTML, mapSectionHTML, stierHTML, agentPageHTML, miniRosterHTML, agentsFiltersHTML, agentsGridHTML, compCompareHTML } from './render.js?v=20260809-val-roster-season';
-import { initTheme, initTilt, initParallax, initSearch, initKeyboard, updateFavCount, initHeroParticles, initWheelLogos, initLivePage, initHistoryPage } from './interactions.js?v=20260809-live-server-stable';
+import { initTheme, initTilt, initParallax, initSearch, initKeyboard, updateFavCount, initHeroParticles, initWheelLogos, initLivePage, initHistoryPage } from './interactions.js?v=20260809-live-server-local';
 import { storage } from './storage.js';
 import { avatarLayersHTML } from './avatars.mjs';
 import { initAdminPage } from './admin.mjs?v=20260806-admin-layout';

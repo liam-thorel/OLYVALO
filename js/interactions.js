@@ -12,11 +12,11 @@ import {
   stablePlayersForSession,
   stableServerForSession,
   stableSessionForRender,
-} from './live-sessions.mjs?v=20260809-live-server-stable';
+} from './live-sessions.mjs?v=20260809-live-server-local';
 import { freshLiveClients, groupLiveClients, isVersionAtLeast, liveClientSummary } from './live-clients.mjs?v=20260809-live-groups';
 import { buildLiveIdentityIndex, resolveLiveIdentity } from './live-identities.mjs?v=20260809-live-groups';
 import { PLAYERS as LOL_ROSTER_PLAYERS } from './lol-roster.mjs?v=20260809-lol-sync';
-import { serverVisual } from './server-visuals.mjs?v=20260809-live-server-stable';
+import { serverVisual } from './server-visuals.mjs?v=20260809-live-server-local';
 import { avatarLayersHTML } from './avatars.mjs?v=20260720-avatars';
 import { filterHistoryGames, historyDailyPerformances, historyGameForOwner, historyMode, historyOwnerKey, historyOwnerLabel, historyPlayerName, historyPlayerPerformance, historyPlayerPerformances, historyRankedPlayers, historyReports, isHistorySelf, normalizeHistoryEntries } from './history-utils.mjs?v=20260720-history-multi';
 import { initCurse } from './curse.mjs?v=20260807-curse5';
