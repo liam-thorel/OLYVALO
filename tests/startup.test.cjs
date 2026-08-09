@@ -39,12 +39,23 @@ try {
   assert.equal(removeStartupLauncher(testAppData), true);
   assert.equal(fs.existsSync(registration.path), false);
 
-  assert.equal(acquireInstanceLock(lockPath, 101, () => false), true);
-  assert.equal(acquireInstanceLock(lockPath, 202, pid => pid === 101), false, 'a running owner blocks duplicates');
+  const thisBoot = 5_000_000;
+  assert.equal(acquireInstanceLock(lockPath, 101, () => false, thisBoot), true);
+  assert.equal(acquireInstanceLock(lockPath, 202, pid => pid === 101, thisBoot), false, 'a running owner blocks duplicates');
   assert.equal(releaseInstanceLock(lockPath, 202), false, 'another process cannot release the lock');
   assert.equal(releaseInstanceLock(lockPath, 101), true);
+
+  fs.writeFileSync(lockPath, JSON.stringify({ pid: 303, bootStartedAt: thisBoot - 3_600_000 }), 'utf8');
+  assert.equal(
+    acquireInstanceLock(lockPath, 404, pid => pid === 303, thisBoot),
+    true,
+    'a PID reused after a Windows reboot must not block autostart',
+  );
+  assert.equal(releaseInstanceLock(lockPath, 404), true);
+
   fs.writeFileSync(lockPath, '303', 'utf8');
-  assert.equal(acquireInstanceLock(lockPath, 404, () => false), true, 'a stale lock is repaired');
+  fs.utimesSync(lockPath, new Date(thisBoot - 3_600_000), new Date(thisBoot - 3_600_000));
+  assert.equal(acquireInstanceLock(lockPath, 404, () => true, thisBoot), true, 'a legacy lock from a previous boot is repaired');
   assert.equal(releaseInstanceLock(lockPath, 404), true);
 } finally {
   fs.rmSync(tempDir, { recursive: true, force: true });

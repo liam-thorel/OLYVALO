@@ -1,4 +1,21 @@
 const fs = require('fs');
+const os = require('os');
+
+const BOOT_TOLERANCE_MS = 2 * 60 * 1000;
+
+function currentBootStartedAt() {
+  return Date.now() - (os.uptime() * 1000);
+}
+
+function parseLock(contents) {
+  const raw = String(contents || '').trim();
+  try {
+    const parsed = JSON.parse(raw);
+    if (parsed && Number.isInteger(parsed.pid)) return parsed;
+  } catch {}
+  const pid = Number.parseInt(raw, 10) || 0;
+  return { pid, bootStartedAt: 0 };
+}
 
 function pidIsRunning(pid) {
   if (!Number.isInteger(pid) || pid <= 0) return false;
@@ -10,20 +27,30 @@ function pidIsRunning(pid) {
   }
 }
 
-function acquireInstanceLock(lockPath, pid = process.pid, isRunning = pidIsRunning) {
+function acquireInstanceLock(
+  lockPath,
+  pid = process.pid,
+  isRunning = pidIsRunning,
+  bootStartedAt = currentBootStartedAt(),
+) {
   for (let attempt = 0; attempt < 3; attempt++) {
     try {
       const descriptor = fs.openSync(lockPath, 'wx');
-      fs.writeFileSync(descriptor, String(pid), 'utf8');
+      fs.writeFileSync(descriptor, JSON.stringify({ pid, bootStartedAt: Math.round(bootStartedAt) }), 'utf8');
       fs.closeSync(descriptor);
       return true;
     } catch (error) {
       if (error?.code !== 'EEXIST') throw error;
-      let existingPid = 0;
+      let existing = { pid: 0, bootStartedAt: 0 };
+      let modifiedAt = 0;
       try {
-        existingPid = Number.parseInt(fs.readFileSync(lockPath, 'utf8').trim(), 10) || 0;
+        existing = parseLock(fs.readFileSync(lockPath, 'utf8'));
+        modifiedAt = fs.statSync(lockPath).mtimeMs;
       } catch {}
-      if (existingPid && isRunning(existingPid)) return false;
+      const sameBoot = existing.bootStartedAt
+        ? Math.abs(existing.bootStartedAt - bootStartedAt) <= BOOT_TOLERANCE_MS
+        : modifiedAt >= bootStartedAt - BOOT_TOLERANCE_MS;
+      if (sameBoot && existing.pid && isRunning(existing.pid)) return false;
       try {
         fs.unlinkSync(lockPath);
       } catch {}
@@ -34,7 +61,7 @@ function acquireInstanceLock(lockPath, pid = process.pid, isRunning = pidIsRunni
 
 function releaseInstanceLock(lockPath, pid = process.pid) {
   try {
-    const ownerPid = Number.parseInt(fs.readFileSync(lockPath, 'utf8').trim(), 10) || 0;
+    const ownerPid = parseLock(fs.readFileSync(lockPath, 'utf8')).pid;
     if (ownerPid !== pid) return false;
     fs.unlinkSync(lockPath);
     return true;
@@ -43,4 +70,4 @@ function releaseInstanceLock(lockPath, pid = process.pid) {
   }
 }
 
-module.exports = { acquireInstanceLock, pidIsRunning, releaseInstanceLock };
+module.exports = { acquireInstanceLock, currentBootStartedAt, parseLock, pidIsRunning, releaseInstanceLock };
