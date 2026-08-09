@@ -62,7 +62,7 @@
   .live-server { order: 5; width: 100%; max-width: none; }
   .live-body { grid-template-columns: minmax(0, 1fr); }
   .live-minimap-wrap { width: 100%; max-width: 100%; }
-  .live-players { min-width: 0; }
+  .live-players { grid-template-columns: 1fr; min-width: 0; }
   .live-diagnostic { flex-wrap: wrap; }
   .live-diagnostic-version { margin-left: auto; }
   .live-client-list { grid-template-columns: 1fr; }

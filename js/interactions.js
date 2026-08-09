@@ -1071,10 +1071,14 @@ export function initLivePage() {
            </div>`
         : isDM
         ? all.map(p => playerRow(p, myName)).join('')
-        : `<div style="font-family:Tomorrow,sans-serif;font-size:9px;letter-spacing:2px;color:var(--dim);text-transform:uppercase;padding:4px 0 8px">Alliés</div>
-           ${allies.map(p => playerRow(p, myName)).join('')}
-           <div style="font-family:Tomorrow,sans-serif;font-size:9px;letter-spacing:2px;color:var(--dim);text-transform:uppercase;padding:12px 0 8px">Ennemis</div>
-           ${enemies.map(p => playerRow(p, myName)).join('')}`;
+        : `<section class="live-team live-team-allies">
+             <div class="live-team-title">Alliés</div>
+             ${allies.map(p => playerRow(p, myName)).join('')}
+           </section>
+           <section class="live-team live-team-enemies">
+             <div class="live-team-title">Ennemis</div>
+             ${enemies.map(p => playerRow(p, myName)).join('')}
+           </section>`;
     }
 
 
