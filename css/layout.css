@@ -28,6 +28,11 @@
   clip-path:polygon(15% 0, 100% 0, 85% 100%, 0 100%);
   box-shadow:0 0 20px var(--red-glow);
 }
+.brand-mark-wheel{
+  clip-path:none;
+  box-shadow:none;
+  overflow:visible;
+}
 .brand-text{ display:flex; flex-direction:column; line-height:1; }
 .brand-title{
   font-family:'Tomorrow',sans-serif; font-size:20px; font-weight:700;
