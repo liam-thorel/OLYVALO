@@ -44,8 +44,33 @@ const CITY_VISUALS = {
   },
 };
 
+const CITY_ALIASES = [
+  ['paris', 'Paris'],
+  ['frankfurt', 'Francfort'],
+  ['francfort', 'Francfort'],
+  ['london', 'Londres'],
+  ['londres', 'Londres'],
+  ['madrid', 'Madrid'],
+  ['stockholm', 'Stockholm'],
+  ['warsaw', 'Varsovie'],
+  ['varsovie', 'Varsovie'],
+  ['istanbul', 'Istanbul'],
+  ['dubai', 'Dubaï'],
+  ['dubaï', 'Dubaï'],
+];
+
+function cityName(serverName) {
+  const normalized = String(serverName || '')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase();
+  return CITY_ALIASES.find(([alias]) => normalized.includes(
+    alias.normalize('NFD').replace(/[\u0300-\u036f]/g, ''),
+  ))?.[1] || null;
+}
+
 export function serverVisual(serverName) {
-  const visual = CITY_VISUALS[serverName];
+  const visual = CITY_VISUALS[cityName(serverName) || serverName];
   if (!visual) return null;
   return {
     image: visual.image || `${COMMONS_FILE}${encodeURIComponent(visual.file)}?width=640`,

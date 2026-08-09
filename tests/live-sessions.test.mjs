@@ -3,6 +3,7 @@ import {
   groupLiveSessions,
   mergeSelectedSessionData,
   stablePlayersForSession,
+  stableServerForSession,
   stableSessionForRender,
 } from '../js/live-sessions.mjs';
 
@@ -43,6 +44,28 @@ const groupedObservers = groupLiveSessions([...active.slice(1), sameMatchObserve
 assert.equal(Object.keys(groupedObservers).length, 3, 'two clients in the same match create one choice');
 const mergedObserver = mergeSelectedSessionData(sameMatchEmpty[1], sameMatchEmpty[0], groupedObservers);
 assert.equal(mergedObserver.players.length, 10, 'roster sharing is allowed inside the same match');
+assert.equal(
+  mergeSelectedSessionData(
+    { ...sameMatchEmpty[1], server: '' },
+    sameMatchEmpty[0],
+    groupLiveSessions([sameMatchEmpty, ['server-writer', { ...sameMatchObserver[1], server: 'Paris' }]]),
+  ).server,
+  'Paris',
+  'an observer missing the server inherits it only from the same match',
+);
+
+const serverCache = new Map();
+assert.equal(stableServerForSession({ matchId: 'match-running', server: 'Paris' }, 'nico', serverCache), 'Paris');
+assert.equal(
+  stableServerForSession({ matchId: 'match-running', server: '' }, 'nico', serverCache),
+  'Paris',
+  'a transient empty server keeps the last server for the same match',
+);
+assert.equal(
+  stableServerForSession({ matchId: 'match-new', server: '' }, 'nico', serverCache),
+  '',
+  'a new match never inherits the previous match server',
+);
 
 const rosterCache = new Map();
 const runningSession = { active: true, matchId: 'match-running', mode: 'competitive', players: roster };

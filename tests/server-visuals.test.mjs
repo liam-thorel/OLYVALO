@@ -2,6 +2,8 @@ import assert from 'node:assert/strict';
 import { serverVisual } from '../js/server-visuals.mjs';
 
 assert.equal(serverVisual('Paris').image, './assets/servers/paris.jpg');
+assert.equal(serverVisual('Paris · EU').image, './assets/servers/paris.jpg');
+assert.ok(serverVisual('gamepod-frankfurt-1'));
 
 for (const city of ['Francfort', 'Londres', 'Madrid', 'Stockholm', 'Varsovie', 'Istanbul', 'Dubaï']) {
   const visual = serverVisual(city);

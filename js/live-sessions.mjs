@@ -48,7 +48,22 @@ export function mergeSelectedSessionData(liveData, selectedSession, groups) {
     mapClean: sibling.mapClean || liveData.mapClean,
     mapInternal: sibling.mapInternal || liveData.mapInternal,
     mode: sibling.mode || liveData.mode,
+    server: liveData.server || sibling.server,
+    gamePodId: liveData.gamePodId || sibling.gamePodId,
   };
+}
+
+export function stableServerForSession(session, sessionKey, serverCache, clientServer = '') {
+  if (!session || !sessionKey || !serverCache) return session?.server || clientServer || '';
+  const matchId = String(session.matchId || '').trim();
+  const map = String(session.mapClean || session.map || '').trim();
+  const cacheKey = matchId ? `match:${matchId}` : `session:${sessionKey}|${map}`;
+  const incoming = String(session.server || clientServer || '').trim();
+  if (incoming) {
+    serverCache.set(cacheKey, incoming);
+    return incoming;
+  }
+  return serverCache.get(cacheKey) || '';
 }
 
 export function stablePlayersForSession(session, rosterCache) {

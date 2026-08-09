@@ -10,12 +10,13 @@ import {
   groupLiveSessions,
   mergeSelectedSessionData,
   stablePlayersForSession,
+  stableServerForSession,
   stableSessionForRender,
-} from './live-sessions.mjs?v=20260731-live-144';
+} from './live-sessions.mjs?v=20260809-live-server-stable';
 import { freshLiveClients, groupLiveClients, isVersionAtLeast, liveClientSummary } from './live-clients.mjs?v=20260809-live-groups';
 import { buildLiveIdentityIndex, resolveLiveIdentity } from './live-identities.mjs?v=20260809-live-groups';
 import { PLAYERS as LOL_ROSTER_PLAYERS } from './lol-roster.mjs?v=20260809-lol-sync';
-import { serverVisual } from './server-visuals.mjs?v=20260805-live-stable';
+import { serverVisual } from './server-visuals.mjs?v=20260809-live-server-stable';
 import { avatarLayersHTML } from './avatars.mjs?v=20260720-avatars';
 import { filterHistoryGames, historyDailyPerformances, historyGameForOwner, historyMode, historyOwnerKey, historyOwnerLabel, historyPlayerName, historyPlayerPerformance, historyPlayerPerformances, historyRankedPlayers, historyReports, isHistorySelf, normalizeHistoryEntries } from './history-utils.mjs?v=20260720-history-multi';
 import { initCurse } from './curse.mjs?v=20260807-curse5';
@@ -389,6 +390,8 @@ export function initLivePage() {
   let byMatchCache = {};
   const stableRosterCache = new Map();
   const stablePregameCache = new Map();
+  const stableServerCache = new Map();
+  const serverImageFailures = new Map();
   let _rosterIdentityIndex = null;
   let _rosterFetched = false;
   let _mapsCache = null;
@@ -809,21 +812,51 @@ export function initLivePage() {
     if (mapLabel && mapLabel.textContent !== mapName) mapLabel.textContent = mapName;
     if (modeLabel && modeLabel.textContent !== (data.mode||'')) modeLabel.textContent = data.mode || '';
     if (serverEl) {
-      const serverName = data.server || selectedClient.server || '';
+      const serverName = stableServerForSession(
+        data,
+        selectedSession,
+        stableServerCache,
+        selectedClient.server,
+      );
       serverEl.style.display = serverName ? '' : 'none';
       const visual = serverVisual(serverName);
       const serverKey = `${serverName}|${visual?.image || ''}`;
-      if (serverName && serverEl.dataset.key !== serverKey) {
+      const imageMissing = !!visual && !serverEl.querySelector('.live-server-image');
+      const imageFailed = serverEl.dataset.key === `${serverKey}|failed`;
+      if (serverName && (serverEl.dataset.key !== serverKey || (imageMissing && !imageFailed))) {
         serverEl.dataset.key = serverKey;
         serverEl.classList.toggle('has-visual', !!visual);
         serverEl.innerHTML = `
-          ${visual ? `<img class="live-server-image" src="${visual.image}" alt="" loading="lazy" onerror="this.remove()">` : ''}
+          ${visual ? `<img class="live-server-image" src="${visual.image}" alt="" loading="eager" decoding="async">` : ''}
           <span class="live-server-copy">
             <small>Serveur Riot</small>
             <strong>${escapeDiagnosticText(serverName)}</strong>
           </span>
           ${visual ? `<a class="live-server-credit" href="${visual.source}" target="_blank" rel="noopener" title="Photo : ${escapeDiagnosticText(visual.credit)}">PHOTO ↗</a>` : ''}
         `;
+        const image = serverEl.querySelector('.live-server-image');
+        if (image) {
+          image.addEventListener('load', () => {
+            serverImageFailures.delete(visual.image);
+            serverEl.classList.add('has-visual');
+          }, { once: true });
+          image.addEventListener('error', () => {
+            const failures = (serverImageFailures.get(visual.image) || 0) + 1;
+            serverImageFailures.set(visual.image, failures);
+            image.remove();
+            serverEl.classList.remove('has-visual');
+            serverEl.dataset.key = `${serverKey}|failed`;
+            // Un seul nouvel essai automatique : assez pour une coupure réseau
+            // passagère, sans créer une boucle sur une source vraiment absente.
+            if (failures === 1) {
+              setTimeout(() => {
+                if (!currentLiveData || !document.contains(serverEl)) return;
+                serverEl.dataset.key = '';
+                updateUI(currentLiveData);
+              }, 8000);
+            }
+          }, { once: true });
+        }
       } else if (!serverName) {
         serverEl.dataset.key = '';
         serverEl.replaceChildren();
@@ -971,44 +1004,10 @@ export function initLivePage() {
       compsEl.remove();
     }
 
-    // Win % based on agent meta scores (client-side only, no Firebase)
-    const META_SCORES = {
-      // S-tier
-      'Jett':9,'Neon':8,'Raze':8,'Viper':9,'Omen':8,'Astra':8,'Killjoy':9,'Cypher':8,
-      'Sova':9,'Breach':8,'Fade':8,'Gekko':8,'Chamber':7,'Skye':8,'Clove':8,
-      // A-tier
-      'Reyna':7,'Iso':7,'Sage':7,'Brimstone':7,'Harbor':7,'KAY/O':7,'Tejo':8,
-      'Deadlock':7,'Vyse':7,'Veto':8,'Phoenix':6,'Yoru':7,'Waylay':7,'Miks':7,
-      // Default
-    };
-    const getScore = (p) => META_SCORES[p.agent] || 6;
-    const allyTeam = players.filter(p => p.team === 'ORDER');
-    const enemyTeam = players.filter(p => p.team === 'CHAOS');
-    if (allyTeam.length >= 5 && enemyTeam.length >= 5) {
-      const allyScore   = allyTeam.reduce((s,p)=>s+getScore(p),0) / allyTeam.length;
-      const enemyScore  = enemyTeam.reduce((s,p)=>s+getScore(p),0) / enemyTeam.length;
-      const winPct      = Math.round((allyScore / (allyScore + enemyScore)) * 100);
-      const color       = winPct >= 55 ? '#3fcf6b' : winPct <= 45 ? '#ff4656' : '#f5c842';
-      let winEl = document.getElementById('live-winpct');
-      if (!winEl) {
-        winEl = document.createElement('div');
-        winEl.id = 'live-winpct';
-        winEl.style.cssText = 'display:flex;align-items:center;gap:6px;padding:6px 2px 0;margin-top:4px';
-        const minimapWrap = document.querySelector('.live-minimap-wrap');
-        if (minimapWrap) minimapWrap.after(winEl);
-      }
-      const bar = Math.round(winPct * 1.4); // 0→140px
-      winEl.innerHTML = `
-        <div style="font-family:Tomorrow,sans-serif;font-size:8px;letter-spacing:2px;color:var(--dim);text-transform:uppercase;flex-shrink:0">Compo</div>
-        <div style="flex:1;height:3px;background:var(--border);position:relative">
-          <div style="position:absolute;left:0;top:0;height:100%;width:${winPct}%;background:${color};transition:width .5s"></div>
-          <div style="position:absolute;left:50%;top:-4px;height:11px;width:1px;background:var(--border2)"></div>
-        </div>
-        <div style="font-family:Tomorrow,sans-serif;font-size:10px;font-weight:700;color:${color};flex-shrink:0">${winPct}%</div>`;
-    } else {
-      const winEl = document.getElementById('live-winpct');
-      if (winEl) winEl.remove();
-    }
+    // L'ancienne barre « Compo » transformait des notes d'agents arbitraires
+    // en faux pourcentage de victoire. Aucun chiffre n'est préférable à une
+    // estimation trompeuse tant que l'historique commun n'est pas suffisant.
+    document.getElementById('live-winpct')?.remove();
 
     // Kill feed
     const lastKill = data.lastKill;
