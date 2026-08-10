@@ -22,31 +22,16 @@ import { filterHistoryGames, historyDailyPerformances, historyGameForOwner, hist
 import { initCurse } from './curse.mjs?v=20260807-curse5';
 import { fetchJsonWithTimeout } from './request-utils.mjs?v=20260809-route-load-stable';
 import { liveDataStore, liveTimestamp } from './live-data-store.mjs?v=20260810-firebase-connection-fix';
+import { createHistoryPager } from './history-pager.mjs?v=20260810-history-progressive';
 
 let historyLoadSequence = 0;
-let historyDataCache = null;
-let historyDataCachedAt = 0;
-let historyLoadPromise = null;
-const HISTORY_CACHE_MS = 60_000;
-
-async function loadHistoryData() {
-  if (historyDataCache && Date.now() - historyDataCachedAt < HISTORY_CACHE_MS) return historyDataCache;
-  if (historyLoadPromise) return historyLoadPromise;
-  const url = 'https://realtime-database-5bb9f-default-rtdb.europe-west1.firebasedatabase.app/live/history.json';
-  historyLoadPromise = (async () => {
-    let lastError;
-    for (const timeoutMs of [8_000, 12_000]) {
-      try {
-        const data = await fetchJsonWithTimeout(url, { timeoutMs });
-        historyDataCache = data;
-        historyDataCachedAt = Date.now();
-        return data;
-      } catch (error) { lastError = error; }
-    }
-    throw lastError;
-  })().finally(() => { historyLoadPromise = null; });
-  return historyLoadPromise;
-}
+const valorantHistoryPager = createHistoryPager({
+  firebaseUrl:'https://realtime-database-5bb9f-default-rtdb.europe-west1.firebasedatabase.app',
+  indexPath:'historyIndex/valorant',
+  dataPath:'live/history',
+  pageSize:30,
+});
+const historyEscape = value => String(value ?? '').replace(/[&<>"']/g, char => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[char]));
 
 // ─── THEME TOGGLE ─────────────────────────────────
 export function initTheme() {
@@ -1312,11 +1297,12 @@ export async function initHistoryPage() {
   el.innerHTML = '<div style="font-family:Tomorrow,sans-serif;font-size:10px;letter-spacing:3px;color:var(--dim);text-transform:uppercase;padding:32px 0">Chargement</div>';
 
   let games = [];
+  let pagerState = valorantHistoryPager.snapshot();
   try {
     ensureAgentMap();
-    const data = await loadHistoryData();
+    pagerState = await valorantHistoryPager.loadNext();
     if (loadSequence !== historyLoadSequence) return;
-    if (data) games = normalizeHistoryEntries(data);
+    games = normalizeHistoryEntries(pagerState.data);
   } catch {
     if (loadSequence !== historyLoadSequence) return;
     el.innerHTML = `<div style="border:1px solid var(--border);background:var(--surf);padding:40px 24px;text-align:center">
@@ -1338,11 +1324,15 @@ export async function initHistoryPage() {
 
   games.sort((a,b) => (b.ts||0) - (a.ts||0));
 
-  const allGames = games;
-  const ownerOptions = [...new Map(allGames.flatMap(game => historyReports(game).map(report => {
-    const key = historyOwnerKey(report);
-    return [key, { key, label: historyOwnerLabel(report, state.ROSTER) }];
-  }))).values()].sort((a,b) => a.label.localeCompare(b.label, 'fr'));
+  let allGames = games;
+  let ownerOptions = [];
+  const updateOwnerOptions = () => {
+    ownerOptions = [...new Map(allGames.flatMap(game => historyReports(game).map(report => {
+      const key = historyOwnerKey(report);
+      return [key, { key, label: historyOwnerLabel(report, state.ROSTER) }];
+    }))).values()].sort((a,b) => a.label.localeCompare(b.label, 'fr'));
+  };
+  updateOwnerOptions();
   const historyUI = { view:'summary', owner:'all', period:'all', mode:'all' };
   const visibleGames = () => filterHistoryGames(allGames, historyUI)
     .map(game => historyUI.owner === 'all' ? game : historyGameForOwner(game, historyUI.owner));
@@ -1521,7 +1511,10 @@ export async function initHistoryPage() {
     const score = kind === 'deathmatch'
       ? self?.stats ? `${self.stats.kills||0}/${self.stats.deaths||0}` : ''
       : game.score ? `${game.score.blue}–${game.score.red}` : '';
-    return `<details class="history-game ${kind}" style="--result-color:${resultColor}">
+    const detail = game.__summary
+      ? '<div class="history-detail-loading">Ouvrez la partie pour charger les détails</div>'
+      : gameDetail(game);
+    return `<details class="history-game ${kind}" data-history-id="${historyEscape(game.historyId || '')}" style="--result-color:${resultColor}">
       <summary class="history-game-summary">
         <span class="history-result">${resultLabel}</span>
         <span class="history-game-main">
@@ -1532,7 +1525,7 @@ export async function initHistoryPage() {
         <span class="history-duration">${durationLabel(game.durationMs || ((game.endTs||0)-(game.ts||0)))}</span>
         <span class="history-expand">⌄</span>
       </summary>
-      <div class="history-game-detail">${gameDetail(game)}</div>
+      <div class="history-game-detail" data-history-detail>${detail}</div>
     </details>`;
   };
   const gameSection = (title, sectionGames, className) => sectionGames.length ? `
@@ -1683,7 +1676,10 @@ export async function initHistoryPage() {
       ${gameSection('Autres modes', otherGames, 'other')}
       ${games.length ? '' : '<div class="history-empty-filter">Aucune partie ne correspond à ces filtres.</div>'}
     </div>
-    </section>`;
+    </section>
+    <div class="history-load-more-wrap">
+      ${pagerState.hasMore ? `<button type="button" class="btn btn-primary" data-history-load-more>Charger les anciennes · ${pagerState.loaded}/${pagerState.total}</button>` : `<span>${pagerState.loaded} partie${pagerState.loaded > 1 ? 's' : ''} chargée${pagerState.loaded > 1 ? 's' : ''}</span>`}
+    </div>`;
 
     el.querySelectorAll('[data-history-view]').forEach(button => button.addEventListener('click', () => {
       historyUI.view = button.dataset.historyView;
@@ -1700,6 +1696,36 @@ export async function initHistoryPage() {
     el.querySelectorAll('[data-history-mode]').forEach(button => button.addEventListener('click', () => {
       historyUI.mode = button.dataset.historyMode;
       refreshHistory();
+    }));
+    el.querySelector('[data-history-load-more]')?.addEventListener('click', async event => {
+      const button = event.currentTarget;
+      button.disabled = true;
+      button.textContent = 'Chargement…';
+      try {
+        pagerState = await valorantHistoryPager.loadNext();
+        allGames = normalizeHistoryEntries(pagerState.data).sort((a,b) => (b.ts||0) - (a.ts||0));
+        updateOwnerOptions();
+        refreshHistory();
+      } catch {
+        button.disabled = false;
+        button.textContent = 'Réessayer de charger les anciennes';
+      }
+    });
+    el.querySelectorAll('details[data-history-id]').forEach(details => details.addEventListener('toggle', async () => {
+      if (!details.open || details.dataset.detailLoaded === '1') return;
+      const target = details.querySelector('[data-history-detail]');
+      const game = allGames.find(candidate => candidate.historyId === details.dataset.historyId);
+      if (!target || !game?.__summary) { details.dataset.detailLoaded = '1'; return; }
+      target.innerHTML = '<div class="history-detail-loading">Chargement des détails…</div>';
+      try {
+        const raw = await valorantHistoryPager.loadDetail(details.dataset.historyId);
+        const full = normalizeHistoryEntries({ [details.dataset.historyId]:raw })[0];
+        if (!full) throw new Error('Détail indisponible');
+        target.innerHTML = gameDetail(full);
+        details.dataset.detailLoaded = '1';
+      } catch {
+        target.innerHTML = '<div class="history-detail-loading error">Détails indisponibles · refermez puis réessayez</div>';
+      }
     }));
   };
 

@@ -16,9 +16,10 @@ const { createAccountBinder } = require('./account-binding.js');
 const { cleanupStalePresence, PRESENCE_CLEANUP_INTERVAL_MS } = require('./maintenance.js');
 const { presenceRecordForPath } = require('./presence-schema.js');
 const { resolveRiotIdentity } = require('./riot-identity.js');
+const { valorantHistorySummary } = require('./history-index.js');
 
 const FIREBASE_URL = 'https://realtime-database-5bb9f-default-rtdb.europe-west1.firebasedatabase.app';
-const SCRIPT_VERSION = '4.17.1';
+const SCRIPT_VERSION = '4.17.2';
 const INSTANCE_LOCK_PATH = path.join(__dirname, '.olycity-live.lock');
 const LOG_PATH = path.join(__dirname, 'olycity.log');
 const MAX_LOG_BYTES = 5 * 1024 * 1024;
@@ -1222,7 +1223,10 @@ async function poll() {
 
         const histKey = lastGameInfo.matchId.replace(/[.#$\[\]\/]/g, '-');
         const reporterKey = String(lastGameInfo.playerPuuid || stableSessionKey || 'unknown').replace(/[.#$\[\]\/]/g, '-');
+        const historySummary = valorantHistorySummary(lastGameInfo);
         await putFB(`live/history/${histKey}/reports/${reporterKey}`, lastGameInfo);
+        await putFB(`historyIndex/valorant/${histKey}/reports/${reporterKey}`, historySummary);
+        await putFB(`historyIndex/valorant/${histKey}/ts`, historySummary.ts);
         console.log(`[${ts()}] 📜 Game enregistrée — ${lastGameInfo.map} (${lastGameInfo.result})${details ? ' · détails OK' : ' · résumé local'}`);
 
         // Résumé de fin de game pour le bot Discord (paris + notif de résultat)

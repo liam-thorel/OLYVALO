@@ -8,6 +8,7 @@ const render = fs.readFileSync(new URL('../js/render.js', import.meta.url), 'utf
 const lolRoster = fs.readFileSync(new URL('../js/lol-roster.mjs', import.meta.url), 'utf8');
 const page = fs.readFileSync(new URL('../index.html', import.meta.url), 'utf8');
 const liveDataStore = fs.readFileSync(new URL('../js/live-data-store.mjs', import.meta.url), 'utf8');
+const historyPager = fs.readFileSync(new URL('../js/history-pager.mjs', import.meta.url), 'utf8');
 
 test('shared state does not import the versioned entry module twice', () => {
   assert.match(main, /from '\.\/state\.mjs/);
@@ -32,9 +33,11 @@ test('saved navigation waits for the application boot to finish', () => {
 test('history and admin requests cannot stay pending forever', () => {
   const admin = fs.readFileSync(new URL('../js/admin.mjs', import.meta.url), 'utf8');
   const lolPages = fs.readFileSync(new URL('../js/lol-pages.mjs', import.meta.url), 'utf8');
-  assert.match(interactions, /for \(const timeoutMs of \[8_000, 12_000\]\)/);
-  assert.match(interactions, /historyDataCache/);
-  assert.match(lolPages, /fetchJsonWithTimeout\(`\$\{FIREBASE_URL\}\/live\/lolHistory\.json`\)/);
+  assert.match(interactions, /valorantHistoryPager\.loadNext/);
+  assert.match(interactions, /data-history-load-more/);
+  assert.match(lolPages, /lolHistoryPager\.loadNext/);
+  assert.match(historyPager, /timeoutMs:8_000/);
+  assert.match(historyPager, /timeoutMs:12_000/);
   assert.match(admin, /fetchJsonWithTimeout\(`\$\{FIREBASE_URL\}\/\$\{path\}\.json`/);
 });
 

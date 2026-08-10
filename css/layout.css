@@ -841,6 +841,9 @@ body.agent-mode .footer{ display:none; }
 .history-expand { color: var(--dim); font-size: 16px; transition: transform .2s; }
 .history-game[open] .history-expand { transform: rotate(180deg); }
 .history-game-detail { padding: 14px; border-top: 1px solid var(--border); }
+.history-detail-loading { padding: 28px 16px; text-align: center; color: var(--muted); font-size: 12px; }
+.history-detail-loading.error { color: var(--red); }
+.history-load-more-wrap { display: flex; justify-content: center; align-items: center; padding: 22px 0 4px; color: var(--dim); font-size: 11px; }
 .history-detail-layout { display: grid; grid-template-columns: minmax(200px, .3fr) 1fr; gap: 14px; align-items: stretch; }
 .history-map-visual {
   position: relative; overflow: hidden; display: flex; flex-direction: column; justify-content: flex-end;

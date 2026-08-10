@@ -26,6 +26,7 @@ const path = require('path');
 const { execFileSync } = require('child_process');
 const { historyGames, soloRankFromStats, summarizeSoloQueue } = require('./lol-profile-utils');
 const { fetchOpggSoloProfile } = require('./opgg-profile');
+const { lolHistorySummary } = require('./history-index');
 
 const HEARTBEAT_MS = 20000;
 // Phases actives d'une game : GameStart = chargement, InProgress = en jeu, Reconnect = reco après un crash.
@@ -468,6 +469,7 @@ function createLolWatcher({
     // winrates perso pour le moteur de cotes des paris.
     if (history) {
       await putFB(`live/lolHistory/${history.key}`, history.value);
+      await putFB(`historyIndex/lol/${history.key}`, lolHistorySummary(history.value));
     }
   }
 
