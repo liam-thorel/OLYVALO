@@ -24,6 +24,7 @@ const { startLeaderboardScheduler } = require('./leaderboard-rank.js');
 const { rewardForGamePlayed } = require('./wallet.js');
 const { recordRankGain, lolRankPoints } = require('./rank-tracking.js');
 const { recordAward } = require('./valorant-awards.js');
+const { buildRankProgressLine } = require('./valorant-rank.js');
 
 const SITE_URL = 'https://liam-thorel.github.io/OLYVALO';
 
@@ -279,26 +280,6 @@ function formatDuration(totalSeconds) {
 
 const RESULT_COLORS = { win: 0x3fcf6f, loss: 0xff5f6d };
 
-// Index = tier numérique Riot (0-2 non classé, 3-26 Fer→Immortel par
-// divisions de 3, 27 Radiant) — même échelle que côté site (js/interactions.js).
-const VALORANT_TIER_NAMES = [
-  'Non classé', 'Non classé', 'Non classé',
-  'Fer 1', 'Fer 2', 'Fer 3',
-  'Bronze 1', 'Bronze 2', 'Bronze 3',
-  'Argent 1', 'Argent 2', 'Argent 3',
-  'Or 1', 'Or 2', 'Or 3',
-  'Platine 1', 'Platine 2', 'Platine 3',
-  'Diamant 1', 'Diamant 2', 'Diamant 3',
-  'Ascendant 1', 'Ascendant 2', 'Ascendant 3',
-  'Immortel 1', 'Immortel 2', 'Immortel 3',
-  'Radiant',
-];
-
-function formatValorantTier(tier) {
-  if (tier == null) return null;
-  return VALORANT_TIER_NAMES[tier] || null;
-}
-
 // Regroupe les boutons-liens en rangées de 5 (limite Discord par ActionRow).
 function chunkButtonRows(buttons, size = 5) {
   const rows = [];
@@ -407,18 +388,10 @@ async function notifyValorantGameEnd(sessions) {
       const resultIcon = result.result === 'win' ? '🏆' : result.result === 'loss' ? '💀' : '🎮';
       const rrLine = result.rr?.delta != null ? `${result.rr.delta >= 0 ? '+' : ''}${result.rr.delta} RR` : null;
 
-      const tierBeforeNum = result.rr?.tierBefore;
-      const tierAfterNum = result.rr?.tier;
-      const tierBeforeLabel = formatValorantTier(tierBeforeNum);
-      const tierAfterLabel = formatValorantTier(tierAfterNum);
-      let rankLine = null;
-      if (tierBeforeLabel && tierAfterLabel) {
-        rankLine = tierBeforeNum === tierAfterNum
-          ? `📊 ${tierAfterLabel}`
-          : `📊 ${tierBeforeLabel} → **${tierAfterLabel}** — Rank ${tierAfterNum > tierBeforeNum ? 'up ⬆️' : 'down ⬇️'} !`;
-      } else if (tierAfterLabel) {
-        rankLine = `📊 ${tierAfterLabel}`;
-      }
+      // Ex. « 📊 Ascendant 2 33 RR → **Ascendant 2 59 RR** ». Riot renvoie le
+      // RR avant/après dans competitiveupdates ; il retombe sur le palier seul
+      // quand il n'est pas disponible.
+      const rankLine = buildRankProgressLine(result.rr);
 
       const summaryLine = [
         resultIcon,
