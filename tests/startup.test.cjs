@@ -40,10 +40,36 @@ try {
   assert.equal(fs.existsSync(registration.path), false);
 
   const thisBoot = 5_000_000;
-  assert.equal(acquireInstanceLock(lockPath, 101, () => false, thisBoot), true);
-  assert.equal(acquireInstanceLock(lockPath, 202, pid => pid === 101, thisBoot), false, 'a running owner blocks duplicates');
+  const firstStartedAt = 10_000_000;
+  assert.equal(acquireInstanceLock(lockPath, 101, () => false, thisBoot, () => 0, firstStartedAt), true);
+  assert.equal(
+    acquireInstanceLock(lockPath, 202, pid => pid === 101, thisBoot, () => firstStartedAt, firstStartedAt + 1000),
+    false,
+    'a running owner blocks duplicates',
+  );
   assert.equal(releaseInstanceLock(lockPath, 202), false, 'another process cannot release the lock');
   assert.equal(releaseInstanceLock(lockPath, 101), true);
+
+  fs.writeFileSync(lockPath, JSON.stringify({
+    pid: 303,
+    bootStartedAt: thisBoot,
+    startedAt: firstStartedAt,
+  }), 'utf8');
+  assert.equal(
+    acquireInstanceLock(lockPath, 404, pid => pid === 303, thisBoot, () => firstStartedAt + 3_600_000),
+    true,
+    'a recycled PID on the same Fast Startup boot must not block autostart',
+  );
+  assert.equal(releaseInstanceLock(lockPath, 404), true);
+
+  fs.writeFileSync(lockPath, JSON.stringify({ pid: 303, bootStartedAt: thisBoot }), 'utf8');
+  fs.utimesSync(lockPath, new Date(firstStartedAt), new Date(firstStartedAt));
+  assert.equal(
+    acquireInstanceLock(lockPath, 404, pid => pid === 303, thisBoot, () => firstStartedAt + 3_600_000),
+    true,
+    'a legacy lock also detects a recycled PID from its modification time',
+  );
+  assert.equal(releaseInstanceLock(lockPath, 404), true);
 
   fs.writeFileSync(lockPath, JSON.stringify({ pid: 303, bootStartedAt: thisBoot - 3_600_000 }), 'utf8');
   assert.equal(
