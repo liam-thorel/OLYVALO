@@ -60,6 +60,23 @@ test('multiple fresh installations for the same member are reported', () => {
   assert.ok(rows.every(row => row.issues.some(issue => issue.includes('2 scripts'))));
 });
 
+test('a fresh installation replaces a stale account presence for the same member', () => {
+  const now = 2_500_000;
+  const rows = buildScriptHealth({
+    members:[{ id:'nico', name:'Nico' }],
+    valorantClients:{
+      old:{ memberId:'nico', playerName:'phileas fogg#OLY', online:true, state:'error', error:'Presence: HTTP 404', version:'4.17.2', ts:now-60_000 },
+      current:{ memberId:'nico', playerName:'Drew A Picasso#XOOO', online:true, state:'idle', version:'4.17.3', ts:now },
+    },
+    latestVersion:'4.17.3', now,
+  });
+  assert.equal(rows.length, 1);
+  assert.equal(rows[0].account, 'Drew A Picasso#XOOO');
+  assert.equal(rows[0].version, '4.17.3');
+  assert.equal(rows[0].state, 'ready');
+  assert.deepEqual(rows[0].issues, []);
+});
+
 test('legacy LoL presence is linked through an account assigned in admin', () => {
   const now = 3_000_000;
   const rows = buildScriptHealth({

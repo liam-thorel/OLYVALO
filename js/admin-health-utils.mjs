@@ -190,18 +190,39 @@ export function buildScriptHealth({
   });
 
   const completed = rows.map(row => completeRow(row, latestVersion, now));
-  const connectedByMember = completed.reduce((counts, row) => {
+  const rowsByMember = new Map();
+  completed.forEach(row => {
+    if (!row.memberId) return;
+    if (!rowsByMember.has(row.memberId)) rowsByMember.set(row.memberId, []);
+    rowsByMember.get(row.memberId).push(row);
+  });
+
+  // Un changement de compte ou un arrêt Windows brutal peut laisser une
+  // ancienne présence pendant quelques heures. Dès qu'une installation du
+  // même membre émet de nouveau, cette fiche périmée ne doit plus passer avant
+  // la fiche actuelle. En revanche, plusieurs installations réellement
+  // connectées restent visibles afin de signaler un vrai doublon.
+  const visibleRows = completed.filter(row => {
+    if (!row.memberId) return true;
+    const siblings = rowsByMember.get(row.memberId) || [];
+    const connected = siblings.filter(candidate => candidate.connected);
+    if (connected.length) return row.connected;
+    const newest = [...siblings].sort((left, right) => right.heartbeatAt - left.heartbeatAt)[0];
+    return row === newest;
+  });
+
+  const connectedByMember = visibleRows.reduce((counts, row) => {
     if (row.connected && row.memberId) counts[row.memberId] = (counts[row.memberId] || 0) + 1;
     return counts;
   }, {});
-  completed.forEach(row => {
+  visibleRows.forEach(row => {
     row.duplicateCount = row.memberId ? connectedByMember[row.memberId] || 0 : 0;
     if (row.duplicateCount > 1) row.issues.push(`${row.duplicateCount} scripts actifs pour ce membre`);
   });
 
   const memberOrder = new Map(members.map((member, index) => [member.id, index]));
   const priority = { error: 0, 'in-game': 1, 'agent-select': 2, ready: 3, offline: 4 };
-  return completed.sort((left, right) =>
+  return visibleRows.sort((left, right) =>
     (priority[left.state] ?? 5) - (priority[right.state] ?? 5)
     || (memberOrder.get(left.memberId) ?? 999) - (memberOrder.get(right.memberId) ?? 999)
     || left.id.localeCompare(right.id)
