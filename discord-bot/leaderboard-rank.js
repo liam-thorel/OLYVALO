@@ -12,24 +12,13 @@ const { fbGet, fbPut } = require('./firebase.js');
 const { ensureRoster } = require('./roster.js');
 const { historyFor, rankedOnly } = require('./stats.js');
 const { lolRankPoints } = require('./rank-tracking.js');
+const { VALORANT_TIER_NAMES } = require('./valorant-rank.js');
 
 const CHANNEL_PATH = 'discordConfig/leaderboardChannelId';
 const MESSAGE_IDS_PATH = 'discordConfig/leaderboardMessageIds'; // { valorant, lolSolo }
 const REFRESH_INTERVAL_MS = 20 * 60 * 1000; // 20 min
 
 // Index = tier numérique Riot — même échelle que le reste du bot (index.js).
-const VALORANT_TIER_NAMES = [
-  'Non classé', 'Non classé', 'Non classé',
-  'Fer 1', 'Fer 2', 'Fer 3',
-  'Bronze 1', 'Bronze 2', 'Bronze 3',
-  'Argent 1', 'Argent 2', 'Argent 3',
-  'Or 1', 'Or 2', 'Or 3',
-  'Platine 1', 'Platine 2', 'Platine 3',
-  'Diamant 1', 'Diamant 2', 'Diamant 3',
-  'Ascendant 1', 'Ascendant 2', 'Ascendant 3',
-  'Immortel 1', 'Immortel 2', 'Immortel 3',
-  'Radiant',
-];
 function formatValorantTier(tier) {
   return tier == null ? null : (VALORANT_TIER_NAMES[tier] || null);
 }
