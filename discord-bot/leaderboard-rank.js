@@ -13,6 +13,7 @@ const { ensureRoster } = require('./roster.js');
 const { historyFor, rankedOnly } = require('./stats.js');
 const { lolRankPoints } = require('./rank-tracking.js');
 const { VALORANT_TIER_NAMES } = require('./valorant-rank.js');
+const { formatLolRank } = require('./lol-rank.js');
 
 const CHANNEL_PATH = 'discordConfig/leaderboardChannelId';
 const MESSAGE_IDS_PATH = 'discordConfig/leaderboardMessageIds'; // { valorant, lolSolo }
@@ -23,18 +24,6 @@ function formatValorantTier(tier) {
   return tier == null ? null : (VALORANT_TIER_NAMES[tier] || null);
 }
 
-const LOL_TIER_LABELS_FR = {
-  IRON: 'Fer', BRONZE: 'Bronze', SILVER: 'Argent', GOLD: 'Or', PLATINUM: 'Platine',
-  EMERALD: 'Émeraude', DIAMOND: 'Diamant', MASTER: 'Maître', GRANDMASTER: 'Grand Maître', CHALLENGER: 'Challenger',
-};
-const LOL_DIVISION_LABELS = { I: '1', II: '2', III: '3', IV: '4' };
-function formatLolRank(rank) {
-  if (!rank?.tier) return null;
-  const tier = LOL_TIER_LABELS_FR[rank.tier] || rank.tier;
-  const division = LOL_DIVISION_LABELS[rank.division] || rank.division || '';
-  const lp = rank.lp != null ? `${rank.lp} LP` : '';
-  return [tier, division, lp].filter(Boolean).join(' ');
-}
 
 const MEDALS = ['🥇', '🥈', '🥉'];
 

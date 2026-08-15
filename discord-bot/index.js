@@ -25,6 +25,7 @@ const { rewardForGamePlayed } = require('./wallet.js');
 const { recordRankGain, lolRankPoints } = require('./rank-tracking.js');
 const { recordAward } = require('./valorant-awards.js');
 const { buildRankProgressLine } = require('./valorant-rank.js');
+const { formatLolRank, POSITION_ICONS } = require('./lol-rank.js');
 
 const SITE_URL = 'https://liam-thorel.github.io/OLYVALO';
 
@@ -434,19 +435,6 @@ async function notifyValorantGameEnd(sessions) {
   }));
 }
 
-const LOL_TIER_LABELS_FR = {
-  IRON: 'Fer', BRONZE: 'Bronze', SILVER: 'Argent', GOLD: 'Or', PLATINUM: 'Platine',
-  EMERALD: 'Émeraude', DIAMOND: 'Diamant', MASTER: 'Maître', GRANDMASTER: 'Grand Maître', CHALLENGER: 'Challenger',
-};
-const LOL_DIVISION_LABELS = { I: '1', II: '2', III: '3', IV: '4' };
-
-function formatLolRank(rank) {
-  if (!rank?.tier) return null;
-  const tier = LOL_TIER_LABELS_FR[rank.tier] || rank.tier;
-  const division = LOL_DIVISION_LABELS[rank.division] || rank.division || '';
-  const lp = rank.lp != null ? `${rank.lp} LP` : '';
-  return [tier, division, lp].filter(Boolean).join(' ');
-}
 
 // sessions : tableau de sessions terminées (1 par joueur OLYCITY) — voir le
 // commentaire équivalent sur notifyValorantGameEnd pour le regroupement.
@@ -617,8 +605,6 @@ async function notifyLolGameEnd(sessions) {
   }));
 }
 
-// Valeurs telles que renvoyées par le LCU (assignedPosition)
-const POSITION_ICONS = { top: '⚔️', jungle: '🌲', middle: '🔮', bottom: '🏹', utility: '🛡️' };
 
 function buildLolPlayerEmbed(member, session) {
   const championName = session.champion?.name || 'Champion inconnu';
