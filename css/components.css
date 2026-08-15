@@ -1776,3 +1776,23 @@ button.comp-tab.pro-tab {
   text-shadow: 0 0 6px rgba(245,200,66,.6);
   line-height: 1;
 }
+
+/* Saisie de la clé HenrikDev depuis la bannière de synchronisation */
+.sync-key-btn {
+  font-family: 'Tomorrow', sans-serif; font-size: 10px; font-weight: 600;
+  letter-spacing: 1px; text-transform: uppercase; cursor: pointer;
+  margin-left: 8px; padding: 3px 10px;
+  background: var(--surf2); color: var(--text); border: 1px solid var(--border2);
+}
+.sync-key-btn:hover { border-color: var(--red); color: var(--red); }
+
+/* Bouton permanent de saisie de la clé HenrikDev (page Roster) */
+.henrik-key-btn {
+  font-family: 'Tomorrow', sans-serif; font-size: 10px; font-weight: 600;
+  letter-spacing: 1px; text-transform: uppercase; cursor: pointer;
+  margin-left: 8px; padding: 6px 12px;
+  background: var(--surf2); color: var(--muted);
+  border: 1px solid var(--border2); transition: border-color .15s, color .15s;
+}
+.henrik-key-btn:hover { border-color: var(--gold); color: var(--text); }
+.henrik-key-btn.is-set { color: #3fcf6b; border-color: rgba(63,207,107,.4); }

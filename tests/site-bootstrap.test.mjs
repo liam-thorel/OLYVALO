@@ -25,6 +25,23 @@ test('League home and roster panels are mounted by the site', () => {
   assert.match(main, /initLolRosterPages\(\)/);
 });
 
+test('le bandeau live expose les identifiants interrogés par le JS', () => {
+  // Régression : le score de la game n'a jamais été affiché. Le JS le créait à
+  // la volée via getElementById('live-header'), mais le bandeau ne portait
+  // qu'une CLASSE `live-header` — la condition était donc toujours fausse.
+  assert.match(page, /id="live-header"/);
+  assert.match(page, /id="live-score"/);
+  assert.match(page, /id="live-score-mine"/);
+  assert.match(page, /id="live-score-theirs"/);
+
+  // L'élément est désormais déclaré dans le HTML, plus fabriqué en JS.
+  assert.doesNotMatch(interactions, /scoreEl\.id = 'live-score'/);
+
+  // Le score de Riot est absolu (Blue/Red) : il doit être réorienté du point de
+  // vue de l'observateur, comme le fait la page Historique.
+  assert.match(interactions, /selfTeam === 'CHAOS'/);
+});
+
 test('saved navigation waits for the application boot to finish', () => {
   assert.doesNotMatch(main, /setTimeout\(\(\) => window\.OLYCITY\?\.nav\(savedPage\)/);
   assert.match(main, /!initHash && validPages\.includes\(savedPage\) \? savedPage : 'home'/);

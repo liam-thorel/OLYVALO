@@ -106,3 +106,24 @@ hebdomadaire). Détails d'installation et de déploiement dans
 - Comps : VLR.gg · EWC Americas Qualifier 2026 · VCT Stage 1 2026
 - Agents : valorant-api.com
 - Stats joueurs : HenrikDev API
+
+---
+
+## Configuration
+
+**Clé API HenrikDev.** Elle n'est plus dans le dépôt. Deux sources, dans cet
+ordre de priorité :
+
+1. **La clé personnelle** du visiteur, saisie depuis la page Roster (bouton
+   🔑) et conservée dans son navigateur. Elle a son propre quota.
+2. **La clé partagée**, injectée au déploiement depuis le secret GitHub
+   `HENRIK_API_KEY` (voir `.github/workflows/pages.yml`). Elle sert de valeur
+   par défaut pour qui n'a rien saisi.
+
+⚠️ Le site est statique : la clé partagée est **téléchargée par le navigateur**
+et donc lisible par tout visiteur. Le secret GitHub la sort du dépôt et de son
+historique, et permet de la changer en un seul endroit — il ne la rend pas
+confidentielle. La clé doit rester gratuite, rate-limitée et révocable.
+
+Sans secret configuré, le site fonctionne : chacun renseigne simplement la
+sienne.

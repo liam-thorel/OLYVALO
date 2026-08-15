@@ -928,18 +928,23 @@ export function initLivePage() {
       if (playerEl.textContent !== data.playerName) playerEl.textContent = data.playerName;
     }
 
-    // Score
+    // Score — l'élément est déclaré dans index.html (il était auparavant créé
+    // ici à la volée, mais accroché à getElementById('live-header') alors que
+    // le bandeau ne portait qu'une CLASSE : le score n'a donc jamais été rendu.
     const score = data.score || {};
-    let scoreEl = document.getElementById('live-score');
-    if (!scoreEl && document.getElementById('live-header')) {
-      scoreEl = document.createElement('div');
-      scoreEl.id = 'live-score';
-      scoreEl.style.cssText = 'font-family:Tomorrow,sans-serif;font-size:20px;font-weight:700;letter-spacing:4px;color:var(--text)';
-      document.getElementById('live-header').insertBefore(scoreEl, document.getElementById('live-timer'));
-    }
+    const scoreEl = document.getElementById('live-score');
     if (scoreEl) {
-      const s = `${score.blue||0} — ${score.red||0}`;
-      if (scoreEl.textContent !== s) scoreEl.textContent = s;
+      const hasScore = Number.isFinite(Number(score.blue)) || Number.isFinite(Number(score.red));
+      // Le score de Riot est absolu (Blue/Red) : on le réoriente du point de
+      // vue de l'observateur, comme le fait déjà la page Historique.
+      const selfTeam = players.find(p => p.name && p.name === data.playerName)?.team;
+      const mine   = selfTeam === 'CHAOS' ? (score.red  || 0) : (score.blue || 0);
+      const theirs = selfTeam === 'CHAOS' ? (score.blue || 0) : (score.red  || 0);
+      scoreEl.style.display = hasScore && !isPregame ? '' : 'none';
+      const mineEl = document.getElementById('live-score-mine');
+      const theirsEl = document.getElementById('live-score-theirs');
+      if (mineEl && mineEl.textContent !== String(mine)) mineEl.textContent = mine;
+      if (theirsEl && theirsEl.textContent !== String(theirs)) theirsEl.textContent = theirs;
     }
 
     // Pregame — show map comps during agent select

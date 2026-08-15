@@ -1,0 +1,76 @@
+name: Déploiement du site
+
+# Le site n'est redéployé que quand son contenu change : une modification du
+# bot ou des tests n'a rien à publier.
+on:
+  push:
+    branches: [main]
+    paths-ignore:
+      - 'discord-bot/**'
+      - 'tests/**'
+      - 'scripts/**'
+      - '.github/workflows/deploy-bot.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  # Un site cassé ne doit pas partir en ligne.
+  tests:
+    uses: ./.github/workflows/tests.yml
+
+  build:
+    needs: tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # Copie explicite plutôt qu'exclusions : ce qui n'est pas listé n'est pas
+      # publié. tests/database-site-assets vérifie que cette liste couvre bien
+      # tout ce que le site charge réellement.
+      - name: Assembler le site
+        run: |
+          mkdir -p _site
+          cp index.html .nojekyll _site/
+          cp -r assets css js data _site/
+          # Le panneau admin lit ce manifeste pour afficher la version du
+          # script attendue. Le reste de live/ (dont le ZIP de 34 Mo) n'a rien
+          # à faire sur Pages : il est distribué par les Releases GitHub.
+          mkdir -p _site/live
+          cp live/update-manifest.json _site/live/
+          du -sh _site
+
+      - name: Injecter la clé HenrikDev partagée
+        env:
+          HENRIK_API_KEY: ${{ secrets.HENRIK_API_KEY }}
+        run: |
+          if [ -n "$HENRIK_API_KEY" ]; then
+            # Encodage via JSON.stringify : une clé contenant un guillemet
+            # casserait sinon le module et, avec lui, le chargement du site.
+            printf 'export const CONFIG = {\n  HENRIK_API_KEY: %s,\n};\n' \
+              "$(node -p 'JSON.stringify(process.env.HENRIK_API_KEY)')" > _site/config.js
+            echo "Clé partagée injectée dans config.js"
+          else
+            echo "::notice::Aucun secret HENRIK_API_KEY — chaque visiteur renseignera sa clé depuis la page Roster."
+          fi
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4
