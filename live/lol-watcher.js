@@ -92,8 +92,17 @@ const LOCKFILE_PATHS = [
 // pourquoi le client League n'est pas détecté sur un poste donné, sans avoir
 // besoin d'une console visible (le launcher démarre le process minimisé).
 const DEBUG_LOG_PATH = path.join(__dirname, 'olycity-live.log');
+// Contrairement à olycity.log (tronqué au démarrage par index.js), ce journal
+// n'avait aucune limite : sur un poste sans League, il grossissait sans fin.
+const MAX_DEBUG_LOG_BYTES = 1024 * 1024;
+
 function writeDebugLog(message) {
-  try { fs.appendFileSync(DEBUG_LOG_PATH, `[${new Date().toLocaleTimeString('fr-FR')}] ${message}\n`); } catch {}
+  try {
+    if (fs.existsSync(DEBUG_LOG_PATH) && fs.statSync(DEBUG_LOG_PATH).size > MAX_DEBUG_LOG_BYTES) {
+      fs.truncateSync(DEBUG_LOG_PATH, 0);
+    }
+    fs.appendFileSync(DEBUG_LOG_PATH, `[${new Date().toLocaleTimeString('fr-FR')}] ${message}\n`);
+  } catch {}
 }
 
 function readLockfileFromDisk() {
@@ -107,6 +116,25 @@ function readLockfileFromDisk() {
   return null;
 }
 
+// Espacement des sondes PowerShell après échecs consécutifs. La lecture disque
+// reste tentée à chaque poll (elle ne coûte qu'un existsSync), mais le repli
+// par process lance un powershell.exe : à 3 s de poll, un poste sans League en
+// démarrait ~28 800 par jour, en tâche de fond, sur une machine de jeu. La
+// première sonde reste immédiate — un League déjà lancé est détecté aussitôt.
+const PROCESS_PROBE_BACKOFF_MS = [0, 15_000, 30_000, 60_000, 120_000, 300_000];
+
+function nextProbeDelay(misses) {
+  const index = Math.min(Math.max(0, misses), PROCESS_PROBE_BACKOFF_MS.length - 1);
+  return PROCESS_PROBE_BACKOFF_MS[index];
+}
+
+/** La sonde process vaut-elle son coût maintenant ? */
+function shouldProbeProcess(state = {}, now = Date.now()) {
+  const { misses = 0, lastProbeAt = 0 } = state;
+  if (!lastProbeAt) return true;
+  return now - lastProbeAt >= nextProbeDelay(misses);
+}
+
 // Filet de secours si League est installé ailleurs que les emplacements par défaut :
 // on retrouve port + token dans la ligne de commande du process LeagueClientUx.exe.
 // Timeout généreux (6s) : une requête WMI peut être lente sur un poste chargé
@@ -118,10 +146,10 @@ function readLockfileFromProcess() {
       '-NoProfile', '-Command',
       "(Get-CimInstance Win32_Process -Filter \"Name='LeagueClientUx.exe'\").CommandLine",
     ], { timeout: 6000, windowsHide: true, stdio: ['ignore', 'pipe', 'ignore'], encoding: 'utf8' });
-    if (!output || !output.trim()) {
-      writeDebugLog('[lockfile] LeagueClientUx.exe introuvable via PowerShell (process absent ou requête vide)');
-      return null;
-    }
+    // Pas de log ici : l'absence de League est le cas NORMAL, et cette ligne
+    // n'était pas soumise à l'étranglement de readLockfile() plus bas — elle
+    // écrivait donc une ligne par poll. Le compteur de tentatives suffit.
+    if (!output || !output.trim()) return null;
     const portMatch = output.match(/--app-port=(\d+)/);
     const tokenMatch = output.match(/--remoting-auth-token=([\w-]+)/);
     if (portMatch && tokenMatch) return { port: Number(portMatch[1]), password: tokenMatch[1], protocol: 'https' };
@@ -133,12 +161,31 @@ function readLockfileFromProcess() {
 }
 
 let lockfileMissCount = 0;
-function readLockfile() {
-  const found = readLockfileFromDisk() || readLockfileFromProcess();
-  if (found) {
+const processProbe = { misses: 0, lastProbeAt: 0 };
+
+function readLockfile(now = Date.now()) {
+  // Toujours tenté : un existsSync par poll est négligeable.
+  const fromDisk = readLockfileFromDisk();
+  if (fromDisk) {
     lockfileMissCount = 0;
-    return found;
+    processProbe.misses = 0;
+    processProbe.lastProbeAt = 0;
+    return fromDisk;
   }
+
+  // Le repli process, lui, est espacé progressivement.
+  if (shouldProbeProcess(processProbe, now)) {
+    processProbe.lastProbeAt = now;
+    const fromProcess = readLockfileFromProcess();
+    if (fromProcess) {
+      lockfileMissCount = 0;
+      processProbe.misses = 0;
+      processProbe.lastProbeAt = 0;
+      return fromProcess;
+    }
+    processProbe.misses += 1;
+  }
+
   lockfileMissCount++;
   // Log seulement de temps en temps (1er échec, puis ~toutes les minutes à 3s/poll) pour ne pas noyer le fichier.
   if (lockfileMissCount === 1 || lockfileMissCount % 20 === 0) {
@@ -724,4 +771,8 @@ function createLolWatcher({
   return { poll, markInactive, markClientOffline: markIdentityOffline };
 }
 
-module.exports = { createLolWatcher, readLockfile, lcuGet, safeFirebaseKey, syncRosterProfiles };
+module.exports = {
+  createLolWatcher, readLockfile, lcuGet, safeFirebaseKey, syncRosterProfiles,
+  // exposés pour les tests
+  shouldProbeProcess, nextProbeDelay, PROCESS_PROBE_BACKOFF_MS, MAX_DEBUG_LOG_BYTES,
+};
