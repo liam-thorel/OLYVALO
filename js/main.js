@@ -782,6 +782,19 @@ window.OLYCITY = {
 
   // Le site est public : aucune clé ne peut y être cachée. Chacun renseigne
   // donc la sienne (gratuite), conservée dans son navigateur.
+  // Reflète l'état de la clé sur le bouton, pour qu'on sache d'un coup d'œil
+  // si le compte est configuré sans avoir à déclencher une synchro qui échoue.
+  _refreshHenrikKeyBtn() {
+    const btn = document.getElementById('henrik-key-btn');
+    if (!btn) return;
+    const has = Boolean(storedKey());
+    btn.classList.toggle('is-set', has);
+    btn.textContent = has ? '🔑 Clé enregistrée' : '🔑 Ma clé API';
+    btn.title = has
+      ? 'Clé API HenrikDev enregistrée dans ce navigateur — cliquer pour la changer'
+      : 'Aucune clé API HenrikDev — cliquer pour en renseigner une';
+  },
+
   promptHenrikKey() {
     const value = prompt(
       'Colle ta clé API HenrikDev (gratuite sur api.henrikdev.xyz/dashboard).\n'
@@ -791,6 +804,7 @@ window.OLYCITY = {
     if (value === null) return;
     setStoredKey(value);
     forgetCachedKey();
+    window.OLYCITY._refreshHenrikKeyBtn();
     setSyncStatus(
       value.trim() ? 'Clé enregistrée — relance la synchronisation.' : 'Clé supprimée.',
       value.trim() ? 'success' : 'info',
@@ -1069,6 +1083,7 @@ async function boot() {
   } else {
     window.OLYCITY._showProfilePicker();
   }
+  window.OLYCITY._refreshHenrikKeyBtn();
   window.OLYCITY.showMap(0, null);
   console.log('[OLYCITY] Ready ✓');
 }

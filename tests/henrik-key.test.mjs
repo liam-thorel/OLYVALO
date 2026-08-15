@@ -35,3 +35,16 @@ test('une absence de clé est signalée comme telle, pas comme une clé invalide
   assert.match(main, /NO_API_KEY: 'Pas de clé API'/);
   assert.match(main, /promptHenrikKey/);
 });
+
+test('la clé se renseigne sans avoir à provoquer une erreur', () => {
+  // Régression d'ergonomie : le bouton n'apparaissait qu'après l'échec d'une
+  // synchro, donc personne ne trouvait où mettre sa clé.
+  const page = read('index.html');
+  assert.match(page, /id="henrik-key-btn"/);
+  assert.match(page, /onclick="window\.OLYCITY\.promptHenrikKey\(\)"/);
+
+  const main = read('js/main.js');
+  assert.match(main, /_refreshHenrikKeyBtn/);
+  // L'état doit être appliqué au démarrage, pas seulement après un clic.
+  assert.match(main, /window\.OLYCITY\._refreshHenrikKeyBtn\(\);\n  window\.OLYCITY\.showMap/);
+});
