@@ -2,15 +2,21 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
 
-const rules = JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'database.rules.json'), 'utf8')).rules;
+const root = path.join(__dirname, '..');
+const rules = JSON.parse(fs.readFileSync(path.join(root, 'database.rules.json'), 'utf8')).rules;
+
+// Le niveau 1 est publié tel quel par l'administrateur Firebase depuis
+// FIREBASE-SETUP.md, sans passer par le dépôt : on le vérifie donc à la source.
+const setupDoc = fs.readFileSync(path.join(root, 'FIREBASE-SETUP.md'), 'utf8');
+const level1 = JSON.parse(/```json\n(\{\n  "rules"[\s\S]*?\n\})\n```/.exec(setupDoc)[1]).rules;
 
 /**
  * Évaluateur du sous-ensemble de règles utilisé ici : `.write` en cascade
  * (accordé sur un ancêtre ⇒ accordé en dessous) et priorité d'une clé nommée
  * sur un joker $variable — c'est la sémantique de Firebase RTDB.
  */
-function effectiveWrite(fullPath) {
-  let node = rules;
+function effectiveWrite(fullPath, tree = rules) {
+  let node = tree;
   let granted = node['.write'];
   for (const segment of fullPath.split('/').filter(Boolean)) {
     if (!node || typeof node !== 'object') break;
@@ -24,8 +30,9 @@ function effectiveWrite(fullPath) {
   return granted;
 }
 
-const allowed = p => effectiveWrite(p) === true;
+const allowed = (p, tree) => effectiveWrite(p, tree) === true;
 const needsAuth = p => effectiveWrite(p) === 'auth !== null';
+const deniedIn = (p, tree) => { const w = effectiveWrite(p, tree); return w === false || w === undefined; };
 const denied = p => effectiveWrite(p) === false || effectiveWrite(p) === undefined;
 
 // ─── Écritures des scripts des joueurs (distribués : doivent rester ouvertes) ──
@@ -94,4 +101,25 @@ assert.ok(!allowed('betting/wallets/1234'), 'un solde ne doit pas être modifiab
 // La lecture reste publique : le site n'a aucune authentification.
 assert.equal(rules['.read'], true, 'le site lit tout sans authentification');
 
-console.log('database-rules: écritures légitimes préservées, effacements de masse bloqués');
+// ─── Le niveau 1 du document de passation ────────────────────────────────────
+// Il ne verrouille pas encore l'économie de points (pas de secret côté bot),
+// mais il DOIT déjà rendre tout effacement de masse impossible, et ne casser
+// aucune écriture existante — y compris celles du bot, non authentifié à ce stade.
+['', 'live', 'live/sessions', 'sessions', 'drawings', 'rosterOverlay', 'historyIndex', 'discovered']
+  .forEach(p => assert.ok(deniedIn(p, level1), `niveau 1 : ${p || '/'} doit rester non écrasable`));
+
+[
+  'live/sessions/abc-123', 'live/sessions/abc-123/result', 'live/clients/abc',
+  'live/curse', 'live/lolSessions/x', 'historyIndex/valorant/m1/ts',
+  'rosterOverlay/accounts/nico/puuid-1', 'rosterOverlay/members/logan',
+  'sessions/Nico/ab12', 'active/Nico/ab12', 'drawings/Ascent', 'discovered/x',
+  // le bot n'est pas encore authentifié au niveau 1 : ses écritures doivent passer
+  'betting/wallets/1234', 'betting/rounds/r1/bets/1', 'discordConfig/trackers',
+  'rankTracking/weekly/valorant/nico', 'valorantAwards/thirtyBomb/1',
+].forEach(p => assert.ok(allowed(p, level1), `niveau 1 : ${p} doit rester écrivable`));
+
+// Et le niveau 2 doit être exactement le niveau 1, aux quatre chemins près.
+const lockedInLevel2 = Object.keys(rules).filter(k => rules[k]?.['.write'] === 'auth !== null');
+assert.deepEqual(lockedInLevel2.sort(), ['betting', 'discordConfig', 'rankTracking', 'valorantAwards']);
+
+console.log('database-rules: niveaux 1 et 2 vérifiés — écritures préservées, effacements de masse bloqués');

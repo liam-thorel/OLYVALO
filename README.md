@@ -120,5 +120,5 @@ la page Roster, bouton « Renseigner ma clé ». Elle reste dans le navigateur.
 déploiement privé ; ce fichier est ignoré par git.
 
 **Règles Firebase.** `database.rules.json` empêche l'effacement de la base et
-réserve l'économie de points au bot. Application et ordre de déploiement :
-[`discord-bot/README.md`](discord-bot/README.md#sécurité-de-la-base-firebase).
+réserve l'économie de points au bot. Procédure à transmettre à l'administrateur
+du projet Firebase : [`FIREBASE-SETUP.md`](FIREBASE-SETUP.md).

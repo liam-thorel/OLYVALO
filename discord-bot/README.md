@@ -135,6 +135,14 @@ confié. En revanche `betting/`, `discordConfig/`, `rankTracking/` et
 `valorantAwards/` ne sont écrits que par ce bot, qui tourne sur une machine
 privée — ils exigent donc une authentification.
 
+### Qui applique quoi
+
+Les règles ne peuvent être publiées que par l'administrateur du projet Firebase.
+Le document [`FIREBASE-SETUP.md`](../FIREBASE-SETUP.md) est écrit pour lui —
+autonome, sans prérequis de connaissance du code — et découpe l'opération en
+deux niveaux : le **niveau 1** (empêcher la destruction) ne demande aucune
+coordination, le **niveau 2** (protéger les points) en demande une.
+
 ### ⚠️ Ordre d'application
 
 Inverser ces deux étapes coupe les paris, les soldes et les récaps.
