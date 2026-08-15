@@ -10,9 +10,10 @@
  * utilisateur renseigne la sienne depuis la page Roster (bouton « Renseigner
  * ma clé »), et elle reste dans son navigateur.
  *
- * Ce fichier ne sert donc qu'à un déploiement PRIVÉ (réseau local, accès
- * restreint) où l'on accepte que la clé soit partagée par tous les visiteurs.
- * Il est ignoré par git.
+ * En production, ce fichier est GÉNÉRÉ au déploiement par
+ * .github/workflows/pages.yml à partir du secret GitHub HENRIK_API_KEY. Il
+ * n'est jamais commité (ignoré par git) — ce gabarit ne sert qu'au
+ * développement local.
  *
  * Clé gratuite : https://api.henrikdev.xyz/dashboard
  */

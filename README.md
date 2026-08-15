@@ -111,10 +111,19 @@ hebdomadaire). Détails d'installation et de déploiement dans
 
 ## Configuration
 
-**Clé API HenrikDev.** Le site est statique et public : aucune clé ne peut y
-être cachée. Le dépôt n'en embarque donc aucune — chacun renseigne la sienne
-(gratuite sur [api.henrikdev.xyz](https://api.henrikdev.xyz/dashboard)) depuis
-la page Roster, bouton « Renseigner ma clé ». Elle reste dans le navigateur.
+**Clé API HenrikDev.** Elle n'est plus dans le dépôt. Deux sources, dans cet
+ordre de priorité :
 
-`config.example.js` documente le point d'extension `config.js` pour un
-déploiement privé ; ce fichier est ignoré par git.
+1. **La clé personnelle** du visiteur, saisie depuis la page Roster (bouton
+   🔑) et conservée dans son navigateur. Elle a son propre quota.
+2. **La clé partagée**, injectée au déploiement depuis le secret GitHub
+   `HENRIK_API_KEY` (voir `.github/workflows/pages.yml`). Elle sert de valeur
+   par défaut pour qui n'a rien saisi.
+
+⚠️ Le site est statique : la clé partagée est **téléchargée par le navigateur**
+et donc lisible par tout visiteur. Le secret GitHub la sort du dépôt et de son
+historique, et permet de la changer en un seul endroit — il ne la rend pas
+confidentielle. La clé doit rester gratuite, rate-limitée et révocable.
+
+Sans secret configuré, le site fonctionne : chacun renseigne simplement la
+sienne.
