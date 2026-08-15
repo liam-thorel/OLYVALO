@@ -7,6 +7,7 @@ import { valorantApi } from './api.js';
 
 const SITE_VERSION = '20260814-admin-current-script';
 import { syncPlayer as henrikSyncPlayer, syncAllPlayers as henrikSyncAll, persistPlayerStats } from './henrik.js?v=20260809-val-roster-season';
+import { setStoredKey, storedKey, forgetCachedKey } from './henrik-key.mjs';
 import { rosterHTML, guestCardHTML, mapSectionHTML, stierHTML, agentPageHTML, miniRosterHTML, agentsFiltersHTML, agentsGridHTML, compCompareHTML } from './render.js?v=20260809-val-roster-season';
 import { initTheme, initTilt, initParallax, initSearch, initKeyboard, updateFavCount, initHeroParticles, initWheelLogos, initLivePage, initHistoryPage } from './interactions.js?v=20260810-history-progressive';
 import { storage } from './storage.js';
@@ -779,6 +780,23 @@ window.OLYCITY = {
     setTimeout(() => initTilt(), 50);
   },
 
+  // Le site est public : aucune clé ne peut y être cachée. Chacun renseigne
+  // donc la sienne (gratuite), conservée dans son navigateur.
+  promptHenrikKey() {
+    const value = prompt(
+      'Colle ta clé API HenrikDev (gratuite sur api.henrikdev.xyz/dashboard).\n'
+      + "Elle reste dans ton navigateur et n'est envoyée qu'à HenrikDev.",
+      storedKey(),
+    );
+    if (value === null) return;
+    setStoredKey(value);
+    forgetCachedKey();
+    setSyncStatus(
+      value.trim() ? 'Clé enregistrée — relance la synchronisation.' : 'Clé supprimée.',
+      value.trim() ? 'success' : 'info',
+    );
+  },
+
   async syncPlayer(playerName) {
     const player = state.ROSTER.find(p => p.name === playerName);
     if (!player) return;
@@ -800,6 +818,7 @@ window.OLYCITY = {
       setBtnState(playerName, 'synced', 'Synced ✓');
     } catch (e) {
       const msgs = {
+        NO_API_KEY: 'Pas de clé API',
         AUTH_REQUIRED: 'Clé invalide',
         COMPTE_PRIVE: 'Compte privé Riot',
         RATE_LIMIT: 'Rate limit — attends 1min',
@@ -808,6 +827,9 @@ window.OLYCITY = {
         NO_RIOT_ID: 'Pas de Riot ID',
       };
       setBtnState(playerName, 'error', msgs[e.message] || ('Err: ' + e.message));
+      if (e.message === 'NO_API_KEY') {
+        setSyncStatus('Aucune clé API HenrikDev. <button class="sync-key-btn" onclick="window.OLYCITY.promptHenrikKey()">Renseigner ma clé</button>', 'error');
+      }
       console.error('[OLYCITY] Sync error for', playerName, e.message);
     }
   },
@@ -833,7 +855,9 @@ window.OLYCITY = {
     btn.classList.remove('syncing');
     btn.innerHTML = `<span class="sync-spin">↻</span> Actualiser tout`;
 
-    if (result.halted && result.haltReason === 'AUTH_REQUIRED') {
+    if (result.halted && result.haltReason === 'NO_API_KEY') {
+      setSyncStatus('Aucune clé API HenrikDev. <button class="sync-key-btn" onclick="window.OLYCITY.promptHenrikKey()">Renseigner ma clé</button>', 'error');
+    } else if (result.halted && result.haltReason === 'AUTH_REQUIRED') {
       setSyncStatus(`Clé API refusée. Régénère-en une sur <a href="https://api.henrikdev.xyz/dashboard" target="_blank">api.henrikdev.xyz</a>.`, 'error');
     } else if (result.halted && result.haltReason === 'RATE_LIMIT') {
       setSyncStatus(`Rate limit atteint après ${result.successCount} joueur(s). Attends 30s.`, 'error');

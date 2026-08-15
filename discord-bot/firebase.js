@@ -1,14 +1,27 @@
 const EventSource = require('eventsource');
-const { FIREBASE_URL } = require('./config.js');
+const { FIREBASE_URL, FIREBASE_AUTH_SECRET } = require('./config.js');
+
+// Les règles de la base réservent betting/, discordConfig/, rankTracking/ et
+// valorantAwards/ aux requêtes authentifiées : ce sont les données de valeur
+// (soldes, paris, configuration), et le bot est le seul à les écrire depuis
+// une machine privée. Le script live, lui, est distribué publiquement — aucun
+// secret ne peut lui être confié, d'où des règles ouvertes de son côté.
+//
+// Sans secret configuré, on n'ajoute rien : le bot continue de fonctionner
+// exactement comme avant tant que les règles n'ont pas été appliquées.
+function withAuth(path) {
+  const url = `${FIREBASE_URL}/${path}.json`;
+  return FIREBASE_AUTH_SECRET ? `${url}?auth=${encodeURIComponent(FIREBASE_AUTH_SECRET)}` : url;
+}
 
 async function fbGet(path) {
-  const res = await fetch(`${FIREBASE_URL}/${path}.json`);
+  const res = await fetch(withAuth(path));
   if (!res.ok) throw new Error(`Firebase GET ${path} — HTTP ${res.status}`);
   return res.json();
 }
 
 async function fbPut(path, data) {
-  const res = await fetch(`${FIREBASE_URL}/${path}.json`, {
+  const res = await fetch(withAuth(path), {
     method: 'PUT',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(data),
@@ -18,7 +31,7 @@ async function fbPut(path, data) {
 }
 
 async function fbPost(path, data) {
-  const res = await fetch(`${FIREBASE_URL}/${path}.json`, {
+  const res = await fetch(withAuth(path), {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(data),
@@ -28,7 +41,7 @@ async function fbPost(path, data) {
 }
 
 async function fbDelete(path) {
-  const res = await fetch(`${FIREBASE_URL}/${path}.json`, { method: 'DELETE' });
+  const res = await fetch(withAuth(path), { method: 'DELETE' });
   if (!res.ok) throw new Error(`Firebase DELETE ${path} — HTTP ${res.status}`);
 }
 
@@ -58,7 +71,7 @@ function applyAtPath(root, subPath, data) {
  * profondeur pour ne jamais écraser les clés soeurs au même niveau.
  */
 function watchNode(path, onUpdate, onError = () => {}) {
-  const es = new EventSource(`${FIREBASE_URL}/${path}.json`);
+  const es = new EventSource(withAuth(path));
   let snapshot = {};
 
   es.addEventListener('put', event => {

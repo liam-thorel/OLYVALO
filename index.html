@@ -362,10 +362,15 @@
       </div>
       <div class="live-content" id="live-content" style="display:none">
         <!-- Map + players -->
-        <div class="live-header">
+        <div class="live-header" id="live-header">
           <div class="live-map-name" id="live-map-name">—</div>
           <div class="live-server" id="live-server" style="display:none">—</div>
           <div class="live-phase" id="live-phase">—</div>
+          <div class="live-score" id="live-score" style="display:none">
+            <span class="live-score-side" id="live-score-mine">0</span>
+            <span class="live-score-sep">—</span>
+            <span class="live-score-side enemy" id="live-score-theirs">0</span>
+          </div>
           <div class="curse-controls">
             <button class="curse-mute" id="curse-mute-btn" type="button" title="Couper le son de la curse">🔊</button>
             <button class="curse-toggle" id="curse-btn" type="button" aria-pressed="false">

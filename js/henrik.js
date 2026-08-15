@@ -3,7 +3,7 @@
  * Rank Riot + statistiques et top agents de l'acte via la pagination v4.
  */
 
-import { CONFIG } from '../config.js';
+import { resolveApiKey } from './henrik-key.mjs';
 import { storage } from './storage.js';
 import {
   aggregateCompetitiveMatches,
@@ -21,12 +21,16 @@ const MAX_RATE_LIMIT_RETRIES = 3;
 const wait = milliseconds => new Promise(resolve => setTimeout(resolve, milliseconds));
 
 async function fetchHenrik(path) {
+  const apiKey = await resolveApiKey();
+  // Sans clé, inutile d'appeler l'API : elle répondrait 401 et on afficherait
+  // « clé invalide » alors qu'il n'y en a simplement aucune.
+  if (!apiKey) throw new Error('NO_API_KEY');
   for (let attempt = 0; attempt <= MAX_RATE_LIMIT_RETRIES; attempt += 1) {
     let response;
     try {
       response = await fetch(`${BASE}${path}`, {
         method: 'GET',
-        headers: { Authorization: CONFIG.HENRIK_API_KEY },
+        headers: { Authorization: apiKey },
       });
     } catch (error) {
       console.error('[HenrikDev] Network error', error);
@@ -176,7 +180,7 @@ export async function syncAllPlayers(players, {
     } catch (error) {
       onPlayerError(player.name, error.message);
       errors.push({ player: player.name, error: error.message });
-      if (error.message === 'AUTH_REQUIRED' || error.message === 'RATE_LIMIT') {
+      if (['AUTH_REQUIRED', 'RATE_LIMIT', 'NO_API_KEY'].includes(error.message)) {
         return { successCount, errors, halted: true, haltReason: error.message };
       }
     }

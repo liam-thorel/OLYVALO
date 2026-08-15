@@ -114,6 +114,56 @@ pm2 save
 pm2 startup   # pour redémarrer automatiquement avec le serveur
 ```
 
+## Sécurité de la base Firebase
+
+`database.rules.json` (racine du dépôt) durcit la base. **Il n'est pas appliqué
+automatiquement** — il faut le coller dans la console Firebase.
+
+### Ce que ça change
+
+| | Avant | Après |
+|---|---|---|
+| `DELETE /` (effacer toute la base) | possible | **refusé** |
+| Écraser `live/sessions`, `drawings`, `rosterOverlay`… en bloc | possible | **refusé** |
+| Modifier un solde de points anonymement | possible | **refusé** |
+| Écrire une session / un dessin / une présence | possible | possible (inchangé) |
+| Lire | public | public (inchangé) |
+
+Les scripts des joueurs et les navigateurs gardent l'écriture sur leurs
+sous-clés : le script est distribué publiquement, aucun secret ne peut lui être
+confié. En revanche `betting/`, `discordConfig/`, `rankTracking/` et
+`valorantAwards/` ne sont écrits que par ce bot, qui tourne sur une machine
+privée — ils exigent donc une authentification.
+
+### ⚠️ Ordre d'application
+
+Inverser ces deux étapes coupe les paris, les soldes et les récaps.
+
+**1. D'abord le secret côté bot.** Console Firebase → *Paramètres du projet* →
+*Comptes de service* → *Secrets de base de données (hérités)* → copier le secret.
+L'ajouter au `.env` de la VM :
+
+```
+FIREBASE_AUTH_SECRET=le-secret
+```
+
+puis `pm2 restart olycity-bot`. Tant que les règles ne sont pas appliquées, ce
+secret est simplement ignoré par Firebase : rien ne change, le bot fonctionne
+comme avant. C'est ce qui rend l'ordre sûr.
+
+**2. Ensuite les règles.** Console Firebase → *Realtime Database* → onglet
+*Règles* → coller le contenu de `database.rules.json` → *Publier*.
+
+Vérifier ensuite qu'un pari et un `/balance` fonctionnent toujours. En cas de
+souci, republier `{"rules":{".read":true,".write":true}}` restaure l'état
+précédent immédiatement.
+
+### Ce que ça ne protège pas
+
+Un visiteur peut toujours écrire de fausses sessions ou de faux dessins : ces
+chemins sont nécessairement ouverts. La protection porte sur l'irréversible
+(effacement de masse) et sur ce qui a de la valeur (l'économie de points).
+
 ## Déploiement automatique (GitHub Actions)
 
 Tout merge sur `main` qui touche `discord-bot/**` déclenche

@@ -106,3 +106,19 @@ hebdomadaire). Détails d'installation et de déploiement dans
 - Comps : VLR.gg · EWC Americas Qualifier 2026 · VCT Stage 1 2026
 - Agents : valorant-api.com
 - Stats joueurs : HenrikDev API
+
+---
+
+## Configuration
+
+**Clé API HenrikDev.** Le site est statique et public : aucune clé ne peut y
+être cachée. Le dépôt n'en embarque donc aucune — chacun renseigne la sienne
+(gratuite sur [api.henrikdev.xyz](https://api.henrikdev.xyz/dashboard)) depuis
+la page Roster, bouton « Renseigner ma clé ». Elle reste dans le navigateur.
+
+`config.example.js` documente le point d'extension `config.js` pour un
+déploiement privé ; ce fichier est ignoré par git.
+
+**Règles Firebase.** `database.rules.json` empêche l'effacement de la base et
+réserve l'économie de points au bot. Application et ordre de déploiement :
+[`discord-bot/README.md`](discord-bot/README.md#sécurité-de-la-base-firebase).
