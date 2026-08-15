@@ -114,6 +114,56 @@ pm2 save
 pm2 startup   # pour redémarrer automatiquement avec le serveur
 ```
 
+## Déploiement automatique (GitHub Actions)
+
+Tout merge sur `main` qui touche `discord-bot/**` déclenche
+`.github/workflows/deploy-bot.yml` : la suite de tests tourne, puis — et
+seulement si elle passe — la VM est synchronisée et le bot redémarré. Plus
+aucun SSH manuel.
+
+### Secrets à créer une fois
+
+`Settings → Secrets and variables → Actions → New repository secret` :
+
+| Secret | Valeur |
+|---|---|
+| `ORACLE_HOST` | IP publique de la VM |
+| `ORACLE_USER` | `ubuntu` (ou `opc` sur Oracle Linux) |
+| `ORACLE_SSH_KEY` | contenu **complet** de la clé privée, en-têtes `-----BEGIN…` / `-----END…` compris |
+
+La clé n'est jamais écrite dans le dépôt : le workflow la lit depuis le secret,
+l'utilise, puis l'efface (`shred`).
+
+### Ce que fait le déploiement
+
+1. Télécharge l'archive de `main` **depuis la VM**.
+2. Fusionne `discord-bot/` par-dessus `~/discord-bot/`. `.env` et
+   `node_modules/` ne sont pas dans le dépôt : ils sont préservés.
+3. `npm install --omit=dev`, puis `pm2 restart olycity-bot`.
+4. Vérifie que le process est bien `online` 8 s plus tard. Sinon, il affiche le
+   log d'erreur et **fait échouer le workflow** — le bot faisant `process.exit(1)`
+   sur toute exception non capturée, un déploiement cassé passerait sinon pour
+   un succès.
+
+La synchronisation ne supprime jamais de fichier. Un fichier retiré du dépôt
+subsiste donc sur la VM, sans conséquence : `index.js` charge ses commandes via
+une liste explicite de `require()`, pas un scan de dossier — un fichier orphelin
+n'est jamais chargé. À nettoyer à la main si besoin.
+
+### Prérequis réseau
+
+Le runner GitHub doit pouvoir joindre le port 22 de la VM. Sur Oracle Cloud il
+faut donc que la **security list** (et `iptables` sur l'instance) autorise le
+SSH entrant depuis Internet, et pas seulement depuis ton IP personnelle. C'est
+la cause d'échec la plus probable au premier essai.
+
+### Durcissement possible
+
+Le workflow utilise `StrictHostKeyChecking=accept-new` : il fait confiance à la
+clé d'hôte à la première connexion. Pour supprimer cette fenêtre, ajouter la
+sortie de `ssh-keyscan <ip>` dans un secret et l'écrire dans `~/.ssh/known_hosts`
+avant la connexion.
+
 ## Commandes
 
 **Suivi**

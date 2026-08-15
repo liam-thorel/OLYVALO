@@ -17,7 +17,11 @@ function startupLauncherPath(appData = process.env.APPDATA) {
 }
 
 function startupLauncherContents(installDir) {
-  const silentPath = path.join(installDir, 'silent.vbs').replace(/"/g, '""');
+  // path.win32 et non path : ce chemin est destiné à un script VBS exécuté par
+  // Windows, il doit donc toujours utiliser des séparateurs Windows — y compris
+  // quand les tests tournent sur un runner Linux. Sous Windows, path.win32.join
+  // est strictement identique à path.join : aucun changement de comportement.
+  const silentPath = path.win32.join(installDir, 'silent.vbs').replace(/"/g, '""');
   return [
     'Dim WshShell',
     'Set WshShell = CreateObject("WScript.Shell")',
@@ -26,8 +30,8 @@ function startupLauncherContents(installDir) {
   ].join('\r\n');
 }
 
-function ensureStartupLauncher(installDir = __dirname, appData = process.env.APPDATA) {
-  if (process.platform !== 'win32' || !appData) return { installed: false, changed: false, path: '' };
+function ensureStartupLauncher(installDir = __dirname, appData = process.env.APPDATA, platform = process.platform) {
+  if (platform !== 'win32' || !appData) return { installed: false, changed: false, path: '' };
   const launcherPath = startupLauncherPath(appData);
   const contents = startupLauncherContents(path.resolve(installDir));
   fs.mkdirSync(path.dirname(launcherPath), { recursive: true });

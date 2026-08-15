@@ -1,0 +1,90 @@
+name: Déploiement du bot Discord
+
+# Ne se déclenche que quand le bot change : une modification du site ou du
+# script live ne redémarre pas inutilement le bot en production.
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'discord-bot/**'
+      - '.github/workflows/deploy-bot.yml'
+  workflow_dispatch:    # déclenchement manuel depuis l'onglet Actions
+
+# Deux merges rapprochés ne doivent pas déployer en parallèle sur la même VM.
+concurrency:
+  group: deploy-bot
+  cancel-in-progress: false
+
+jobs:
+  # Garde-fou : un merge qui casse les tests ne part jamais en production.
+  tests:
+    uses: ./.github/workflows/tests.yml
+
+  deploy:
+    needs: tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Préparer la clé SSH
+        env:
+          SSH_KEY: ${{ secrets.ORACLE_SSH_KEY }}
+        run: |
+          test -n "$SSH_KEY" || { echo "::error::Secret ORACLE_SSH_KEY absent."; exit 1; }
+          install -m 700 -d ~/.ssh
+          printf '%s\n' "$SSH_KEY" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+
+      - name: Déployer et redémarrer
+        env:
+          HOST: ${{ secrets.ORACLE_HOST }}
+          USER: ${{ secrets.ORACLE_USER }}
+        run: |
+          test -n "$HOST" && test -n "$USER" || { echo "::error::Secrets ORACLE_HOST / ORACLE_USER absents."; exit 1; }
+          ssh -i ~/.ssh/deploy_key \
+              -o StrictHostKeyChecking=accept-new \
+              -o ConnectTimeout=20 \
+              "$USER@$HOST" 'bash -s' <<'REMOTE'
+          set -euo pipefail
+
+          APP_DIR="$HOME/discord-bot"
+          PM2_NAME="olycity-bot"
+          TMP="$(mktemp -d)"
+          trap 'rm -rf "$TMP"' EXIT
+
+          echo "→ Téléchargement de main"
+          curl -fsSL https://github.com/liam-thorel/OLYVALO/archive/refs/heads/main.tar.gz -o "$TMP/oly.tar.gz"
+          tar -xzf "$TMP/oly.tar.gz" -C "$TMP"
+
+          # Fusion sans suppression : .env et node_modules/ ne sont pas dans le
+          # dépôt, ils sont donc préservés tels quels.
+          echo "→ Synchronisation de discord-bot/"
+          cp -r "$TMP/OLYVALO-main/discord-bot/." "$APP_DIR/"
+
+          cd "$APP_DIR"
+          npm install --omit=dev --no-audit --no-fund
+
+          echo "→ Redémarrage de $PM2_NAME"
+          pm2 restart "$PM2_NAME" --update-env
+          pm2 save
+
+          # Le bot fait process.exit(1) sur toute exception non capturée : sans
+          # cette vérification, un déploiement cassé passerait pour un succès.
+          sleep 8
+          # Parsé avec node (déjà présent, il fait tourner le bot) plutôt qu'au
+          # grep : l'ordre des champs de `pm2 jlist` n'est pas garanti.
+          if pm2 jlist | node -e '
+            const list = JSON.parse(require("fs").readFileSync(0, "utf8"));
+            const proc = list.find(p => p.name === process.argv[1]);
+            process.exit(proc && proc.pm2_env.status === "online" ? 0 : 1);
+          ' "$PM2_NAME"; then
+            echo "✅ $PM2_NAME est en ligne"
+          else
+            echo "::error::$PM2_NAME n'est pas en ligne après le déploiement"
+            pm2 logs "$PM2_NAME" --err --lines 40 --nostream || true
+            exit 1
+          fi
+          REMOTE
+
+      - name: Effacer la clé
+        if: always()
+        run: shred -u ~/.ssh/deploy_key 2>/dev/null || rm -f ~/.ssh/deploy_key

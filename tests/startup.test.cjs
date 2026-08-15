@@ -31,13 +31,19 @@ const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'olycity-lock-'));
 const lockPath = path.join(tempDir, '.instance.lock');
 try {
   const testAppData = path.join(tempDir, 'AppData', 'Roaming');
-  const registration = ensureStartupLauncher(path.join('C:', 'Games', 'OLYCITY Live'), testAppData);
+  const registration = ensureStartupLauncher(path.join('C:', 'Games', 'OLYCITY Live'), testAppData, 'win32');
   assert.equal(registration.installed, true);
   assert.equal(registration.changed, true);
   assert.equal(fs.existsSync(registration.path), true);
-  assert.equal(ensureStartupLauncher(path.join('C:', 'Games', 'OLYCITY Live'), testAppData).changed, false);
+  assert.equal(ensureStartupLauncher(path.join('C:', 'Games', 'OLYCITY Live'), testAppData, 'win32').changed, false);
   assert.equal(removeStartupLauncher(testAppData), true);
   assert.equal(fs.existsSync(registration.path), false);
+
+  assert.deepEqual(
+    ensureStartupLauncher(path.join('C:', 'Games', 'OLYCITY Live'), testAppData, 'linux'),
+    { installed: false, changed: false, path: '' },
+    'aucune entrée de démarrage ne doit être écrite hors Windows',
+  );
 
   const thisBoot = 5_000_000;
   const firstStartedAt = 10_000_000;
