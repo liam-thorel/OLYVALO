@@ -41,6 +41,7 @@ async function valorantHistoryFor(riotIds) {
         deaths: self.stats?.deaths ?? null,
         assists: self.stats?.assists ?? null,
         hsPercent: self.stats?.hsPercent ?? null,
+        acs: self.stats?.acs ?? null,
         map: report.map || '',
         mode: report.mode || '',
         tier: isReporter ? (report.rr?.tier ?? null) : null,
@@ -105,6 +106,14 @@ function aggregateKDA(entries) {
 }
 
 // % de headshots moyen sur les games où la donnée est disponible.
+// L'ACS moyen : meilleur indicateur d'impact qu'un KDA seul, et déjà présent
+// dans chaque rapport de fin de game.
+function averageAcs(entries) {
+  const withAcs = entries.filter(entry => Number.isFinite(entry.acs));
+  if (!withAcs.length) return null;
+  return withAcs.reduce((sum, entry) => sum + entry.acs, 0) / withAcs.length;
+}
+
 function averageHsPercent(entries) {
   const withHs = entries.filter(e => typeof e.hsPercent === 'number');
   if (!withHs.length) return null;
@@ -128,6 +137,6 @@ function rankedOnly(game, entries) {
 }
 
 module.exports = {
-  historyFor, winrateFor, mostPlayed, recentForm, killDeathRatio, aggregateKDA, averageHsPercent, averageCs, HISTORY_SAMPLE_SIZE,
+  historyFor, winrateFor, mostPlayed, recentForm, killDeathRatio, aggregateKDA, averageHsPercent, averageAcs, averageCs, HISTORY_SAMPLE_SIZE,
   rankedOnly, RANKED_VALORANT_MODE,
 };
