@@ -1,8 +1,39 @@
-const { fbGet, fbPut } = require('./firebase.js');
+const { fbGet, fbPut, fbDelete } = require('./firebase.js');
 const { estimateOdds } = require('./odds.js');
 const { debit, credit, recordBetOutcome } = require('./wallet.js');
 
 const BETTING_WINDOW_MS = 5 * 60 * 1000;
+
+// Les rounds résolus ne servent plus qu'à /mybets. Passé ce délai ils sont
+// supprimés : sans purge, betting/rounds grossit d'une entrée par game et
+// pour toujours — et comme Firebase REST n'indexe rien ici, les trois lectures
+// ci-dessous rapatrient le nœud ENTIER à chaque fois. Le coût de chaque fin de
+// game augmentait donc avec le nombre de games déjà jouées.
+const ROUND_RETENTION_MS = 14 * 24 * 60 * 60 * 1000; // 14 jours
+const PURGE_INTERVAL_MS = 6 * 60 * 60 * 1000;
+let lastPurgeAt = 0;
+
+function isExpired(round, now) {
+  if (!round || round.status === 'open') return false;
+  const settledAt = round.resolvedAt || round.closesAt || round.openedAt || 0;
+  return settledAt > 0 && now - settledAt > ROUND_RETENTION_MS;
+}
+
+/**
+ * Purge opportuniste : déclenchée au fil des lectures déjà faites, sans
+ * minuterie ni tâche de fond à superviser. Le snapshot est déjà en main, donc
+ * elle ne coûte aucune lecture supplémentaire.
+ */
+function purgeExpiredRounds(rounds, now = Date.now()) {
+  if (now - lastPurgeAt < PURGE_INTERVAL_MS) return [];
+  lastPurgeAt = now;
+  const expired = Object.entries(rounds || {}).filter(([, round]) => isExpired(round, now)).map(([key]) => key);
+  expired.forEach(key => {
+    fbDelete(`betting/rounds/${key}`).catch(error => console.error('[betting:purge]', error.message));
+  });
+  if (expired.length) console.log(`[betting] ${expired.length} round(s) expiré(s) purgé(s)`);
+  return expired;
+}
 
 // Un round par salon qui suit la game (et non un seul round global) : la même
 // game peut être trackée dans plusieurs salons/serveurs à la fois, et chacun
@@ -14,12 +45,14 @@ function roundKey(game, matchId, channelId) {
 // Tous les rounds (tous salons confondus) ouverts pour une game donnée.
 async function roundsForMatch(game, matchId) {
   const rounds = await fbGet('betting/rounds').catch(() => null);
+  purgeExpiredRounds(rounds);
   return Object.entries(rounds || {}).filter(([, round]) => round.game === game && round.matchId === matchId);
 }
 
 // Tous les paris d'un utilisateur, tous rounds confondus (pour /mybets).
 async function betsForUser(userId) {
   const rounds = await fbGet('betting/rounds').catch(() => null);
+  purgeExpiredRounds(rounds);
   return Object.entries(rounds || {})
     .filter(([, round]) => round.bets?.[userId])
     .map(([key, round]) => ({ key, round, bet: round.bets[userId] }))
@@ -127,4 +160,6 @@ async function cancelRound(key) {
 module.exports = {
   roundKey, roundsForMatch, openRound, closeRound, placeBet, resolveRound, cancelRound,
   findOpenRoundForChannel, attachMessage, betsForUser, BETTING_WINDOW_MS,
+  // exposés pour les tests
+  __test: { purgeExpiredRounds, isExpired, ROUND_RETENTION_MS, resetPurgeClock: () => { lastPurgeAt = 0; } },
 };

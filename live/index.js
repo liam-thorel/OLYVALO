@@ -19,7 +19,7 @@ const { resolveRiotIdentity } = require('./riot-identity.js');
 const { valorantHistorySummary } = require('./history-index.js');
 
 const FIREBASE_URL = 'https://realtime-database-5bb9f-default-rtdb.europe-west1.firebasedatabase.app';
-const SCRIPT_VERSION = '4.17.3';
+const SCRIPT_VERSION = '4.17.4';
 const INSTANCE_LOCK_PATH = path.join(__dirname, '.olycity-live.lock');
 const LOG_PATH = path.join(__dirname, 'olycity.log');
 const MAX_LOG_BYTES = 5 * 1024 * 1024;

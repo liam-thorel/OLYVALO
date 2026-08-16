@@ -708,21 +708,27 @@ export function initLivePage() {
           : '';
 
         const names = sessions.map(s => s.playerName?.split('#')[0]).join(' & ');
-        return `<button onclick="window._selectLiveSession('${sessions[0].puuid}')" style="
+        // Le puuid atterrit dans un attribut onclick : une apostrophe suffirait
+        // à en sortir. encodeURIComponent le neutralise sans rien changer pour
+        // un identifiant Riot légitime.
+        return `<button onclick="window._selectLiveSession('${encodeURIComponent(sessions[0].puuid)}')" style="
           font-family:Tomorrow,sans-serif;cursor:pointer;text-align:left;
           padding:10px 14px;border:1px solid ${isSelected ? 'var(--red)' : 'var(--border)'};
           background:${isSelected ? 'var(--red-low)' : 'var(--surf)'};
           transition:border-color .15s,background .15s;min-width:160px">
           ${avatarsHtml}
-          <div style="font-size:11px;font-weight:700;letter-spacing:3px;color:${isSelected ? 'var(--red)' : 'var(--text)'};margin-bottom:3px">${map.toUpperCase()}</div>
-          <div style="font-size:9px;letter-spacing:1px;color:var(--muted)">${names}</div>
-          <div style="font-size:8px;letter-spacing:1px;color:var(--dim);margin-top:2px;text-transform:uppercase">${[mode, server].filter(Boolean).join(' · ')}</div>
+          <div style="font-size:11px;font-weight:700;letter-spacing:3px;color:${isSelected ? 'var(--red)' : 'var(--text)'};margin-bottom:3px">${escapeDiagnosticText(map.toUpperCase())}</div>
+          <div style="font-size:9px;letter-spacing:1px;color:var(--muted)">${escapeDiagnosticText(names)}</div>
+          <div style="font-size:8px;letter-spacing:1px;color:var(--dim);margin-top:2px;text-transform:uppercase">${escapeDiagnosticText([mode, server].filter(Boolean).join(' · '))}</div>
         </button>`;
       }).join('')}
       </div>`;
   }
 
-  window._selectLiveSession = (puuid) => {
+  window._selectLiveSession = (encodedPuuid) => {
+    // Contrepartie de l'encodage fait au rendu du bouton ci-dessus.
+    let puuid = encodedPuuid;
+    try { puuid = decodeURIComponent(encodedPuuid); } catch { /* déjà en clair */ }
     selectedSession = puuid;
     updateSessionPicker(lastSessions); // re-render picker immediately with new selection
     renderDiagnostic();
@@ -1022,7 +1028,9 @@ export function initLivePage() {
       }
       const item = document.createElement('div');
       item.style.cssText = 'font-family:Tomorrow,sans-serif;font-size:10px;letter-spacing:1px;background:rgba(6,8,12,.9);border:1px solid var(--border);padding:5px 10px;color:var(--text);animation:fadeInOut 3s forwards';
-      item.innerHTML = `<span style="color:var(--red)">${lastKill.killer}</span> <span style="opacity:.5">→</span> ${lastKill.victim}`;
+      // Ces noms viennent de Firebase, qui accepte les écritures anonymes :
+      // les injecter bruts dans innerHTML est une XSS stockée.
+      item.innerHTML = `<span style="color:var(--red)">${escapeDiagnosticText(lastKill.killer)}</span> <span style="opacity:.5">→</span> ${escapeDiagnosticText(lastKill.victim)}`;
       feedEl.appendChild(item);
       setTimeout(() => item.remove(), 3000);
     }
@@ -1225,8 +1233,8 @@ export function initLivePage() {
       <div style="flex:1;min-width:0">
         <div class="live-player-name" style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">
           ${p.incognito
-            ? `<span style="opacity:.5;font-style:italic">${fixedAgent||'?'}</span> <span style="font-size:8px;letter-spacing:1px;color:#888;border:1px solid #333;padding:1px 4px">ANONYME</span>`
-            : `${p.name || '—'} <span style="opacity:.4;font-size:9px;font-weight:400">${fixedAgent||''}</span>${olycityMember(p.name) ? ` <span style="font-size:8px;letter-spacing:1px;color:#ff4656;border:1px solid rgba(255,70,86,.5);padding:1px 5px;font-weight:700;vertical-align:middle">OLY · ${olycityMember(p.name)}</span>` : ''}`
+            ? `<span style="opacity:.5;font-style:italic">${escapeDiagnosticText(fixedAgent||'?')}</span> <span style="font-size:8px;letter-spacing:1px;color:#888;border:1px solid #333;padding:1px 4px">ANONYME</span>`
+            : `${escapeDiagnosticText(p.name || '—')} <span style="opacity:.4;font-size:9px;font-weight:400">${escapeDiagnosticText(fixedAgent||'')}</span>${olycityMember(p.name) ? ` <span style="font-size:8px;letter-spacing:1px;color:#ff4656;border:1px solid rgba(255,70,86,.5);padding:1px 5px;font-weight:700;vertical-align:middle">OLY · ${escapeDiagnosticText(olycityMember(p.name))}</span>` : ''}`
           }
         </div>
         <div style="margin-top:3px;display:flex;align-items:center;gap:6px">

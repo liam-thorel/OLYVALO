@@ -25,6 +25,7 @@ const { rewardForGamePlayed } = require('./wallet.js');
 const { recordRankGain, lolRankPoints } = require('./rank-tracking.js');
 const { recordAward } = require('./valorant-awards.js');
 const { buildRankProgressLine } = require('./valorant-rank.js');
+const { createBoundedSet, createExpiringMap } = require('./bounded-memory.js');
 const { formatLolRank, POSITION_ICONS } = require('./lol-rank.js');
 
 const SITE_URL = 'https://liam-thorel.github.io/OLYVALO';
@@ -194,7 +195,9 @@ function buildValorantGroupEmbed(rosterPlayers) {
     );
 }
 
-const notifiedValorantMatches = new Set();
+// Borné : le bot tourne des mois, un Set non purgé grossirait d'une entrée
+// par game jusqu'à saturer la mémoire.
+const notifiedValorantMatches = createBoundedSet();
 
 // Filet de sécurité en plus du matchId : pendant la sélection d'agents (LoL :
 // champ select), le matchId communiqué par le script local peut ne pas encore
@@ -207,13 +210,10 @@ const notifiedValorantMatches = new Set();
 // d'agents + un flottement réseau, mais bien plus court que le temps entre
 // deux games distinctes).
 const START_DEDUPE_WINDOW_MS = 20 * 60 * 1000;
-const recentValorantStarts = new Map(); // "noms triés" -> timestamp
+const recentValorantStarts = createExpiringMap(START_DEDUPE_WINDOW_MS); // "noms triés" -> timestamp
 
-function alreadyNotifiedRecently(map, key) {
-  const last = map.get(key);
-  if (last && Date.now() - last < START_DEDUPE_WINDOW_MS) return true;
-  map.set(key, Date.now());
-  return false;
+function alreadyNotifiedRecently(recentStarts, key) {
+  return recentStarts.seenRecently(key);
 }
 
 // Même logique que LoL : regroupe les sessions actives partageant le même
@@ -629,8 +629,8 @@ function buildLolPlayerEmbed(member, session) {
   return embed;
 }
 
-const notifiedLolMatches = new Set();
-const recentLolStarts = new Map(); // "noms triés" -> timestamp (même filet de sécurité que Valorant)
+const notifiedLolMatches = createBoundedSet();
+const recentLolStarts = createExpiringMap(START_DEDUPE_WINDOW_MS); // idem Valorant
 
 // Une game LoL peut réunir plusieurs joueurs du roster OLYCITY : on regroupe
 // toutes les sessions actives partageant le même matchId (gameId Riot) en un
