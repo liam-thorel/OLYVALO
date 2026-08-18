@@ -58,4 +58,33 @@ assert.equal(
   'Logan',
 );
 
+// ─── Le Riot ID déclaré dans roster.json doit suffire ───────────────────────
+// Régression réelle : Mathis avait été renommé et data/roster.json corrigé,
+// mais le bot ne lisait que rosterOverlay/accounts — il ne le voyait plus.
+indexRoster(
+  [
+    { name: 'Mathis', riot: { name: 'M A I R', tag: 'LGND' },
+      smurfs: [{ name: 'Motivex500', tag: 'EUW' }] },
+    { name: 'Sans Compte' },
+  ],
+  { accounts: {} }, // overlay vide : roster.json doit suffire à lui seul
+);
+assert.equal(roster.memberByRiotId('M A I R#LGND')?.name, 'Mathis',
+  'le Riot ID principal de roster.json doit être indexé');
+assert.equal(roster.memberByRiotId('motivex500#euw')?.name, 'Mathis',
+  'les smurfs de roster.json aussi, comme le fait déjà le site');
+assert.equal(roster.memberByIdentity({ playerName: 'M A I R#LGND' })?.name, 'Mathis');
+assert.equal(roster.memberByRiotId('Inconnu#000'), null);
+// Un membre sans aucun compte déclaré ne doit pas planter l'indexation.
+assert.equal(roster.memberById('sans-compte')?.name, 'Sans Compte');
+
+// ─── Pas de doublon quand les deux sources déclarent le même compte ─────────
+indexRoster(
+  [{ name: 'Mathis', riot: { name: 'M A I R', tag: 'LGND' } }],
+  { accounts: { mathis: { k1: { name: 'M A I R', tag: 'LGND', puuid: 'p1' } } } },
+);
+const mathis = roster.memberById('mathis');
+assert.deepEqual(mathis.riotIds, ['M A I R#LGND'], 'le compte ne doit être listé qu’une fois');
+assert.deepEqual(mathis.puuids, ['p1'], 'le puuid de l’overlay est conservé');
+
 console.log('roster-identity: résolution memberId → puuid → Riot ID validée');
