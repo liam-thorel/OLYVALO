@@ -17,3 +17,6 @@ live/runtime/
 
 # Clé API HenrikDev — chaque déploiement fournit la sienne (voir config.example.js)
 config.js
+
+# Secrets locaux du Worker de catalogue IGDB
+workers/game-catalog/.dev.vars

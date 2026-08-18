@@ -1,0 +1,6 @@
+name = "olycity-game-catalog"
+main = "worker.mjs"
+compatibility_date = "2026-08-18"
+
+[vars]
+SITE_ORIGIN = "https://liam-thorel.github.io"

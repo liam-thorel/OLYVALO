@@ -1,4 +1,5 @@
 import {
+  catalogFields,
   extractSteamAppId,
   filterCoopGames,
   nextCoopStatus,
@@ -6,6 +7,7 @@ import {
   profileKey,
   steamCover,
 } from './coop-games-utils.mjs';
+import { searchGameCatalog } from './coop-game-catalog.mjs';
 
 const FIREBASE_ROOT = 'https://realtime-database-5bb9f-default-rtdb.europe-west1.firebasedatabase.app';
 const SESSION_LABELS = { short: 'Soirée', medium: 'Quelques sessions', long: 'Longue aventure' };
@@ -16,6 +18,8 @@ let roster = [];
 let initialized = false;
 let stream = null;
 let reloadTimer = null;
+let catalogSearchTimer = null;
+let selectedCatalogGame = null;
 const filters = { search: '', players: 0, status: 'open', sort: 'popular' };
 
 const escapeHTML = value => String(value ?? '')
@@ -72,6 +76,8 @@ function gameCard(game) {
   const interested = profile && game.interests?.[profileKey(profile.name)];
   const cover = safeHttpsUrl(game.coverUrl || steamCover(game.steamAppId));
   const steamUrl = safeHttpsUrl(game.steamUrl, ['steampowered.com']);
+  const sourceUrl = steamUrl || safeHttpsUrl(game.sourceUrl, ['igdb.com']);
+  const sourceLabel = steamUrl ? 'Steam ↗' : sourceUrl ? 'IGDB ↗' : '';
   const tags = game.tags.map(tag => `<span>${escapeHTML(tag)}</span>`).join('');
   return `<article class="coop-game-card" data-game-id="${escapeHTML(game.id)}">
     <div class="coop-cover">
@@ -95,7 +101,7 @@ function gameCard(game) {
           ${interested ? '✓ Je suis chaud' : '+ Je suis chaud'}
         </button>
         ${game.status === 'played' ? '<button type="button" class="coop-replay-btn" data-action="replay">↻ MàJ / Rejouer</button>' : ''}
-        ${steamUrl ? `<a href="${escapeHTML(steamUrl)}" target="_blank" rel="noopener">Steam ↗</a>` : ''}
+        ${sourceUrl ? `<a href="${escapeHTML(sourceUrl)}" target="_blank" rel="noopener">${sourceLabel}</a>` : ''}
       </div>
     </div>
   </article>`;
@@ -145,11 +151,118 @@ function openForm() {
     return;
   }
   document.getElementById('coop-game-modal')?.classList.add('open');
-  document.getElementById('coop-title')?.focus();
+  document.getElementById('coop-catalog-query')?.focus();
 }
 
 function closeForm() {
   document.getElementById('coop-game-modal')?.classList.remove('open');
+}
+
+function setSelectValue(id, value) {
+  const select = document.getElementById(id);
+  if (!select) return;
+  const text = String(value);
+  if (![...select.options].some(option => option.value === text)) {
+    select.add(new Option(text, text));
+  }
+  select.value = text;
+}
+
+function catalogMeta(game) {
+  const players = game.minPlayers === game.maxPlayers
+    ? `${game.minPlayers} joueur${game.minPlayers > 1 ? 's' : ''}`
+    : `${game.minPlayers}–${game.maxPlayers} joueurs`;
+  const parts = [players, ...(game.tags || []).slice(0, 2)];
+  if (game.releaseDate) parts.push(new Date(`${game.releaseDate}T12:00:00Z`).toLocaleDateString('fr-FR', { year: 'numeric' }));
+  return parts.join(' · ');
+}
+
+function renderCatalogResults(results = []) {
+  const root = document.getElementById('coop-catalog-results');
+  if (!root) return;
+  root.innerHTML = results.map((result, index) => {
+    const game = catalogFields(result);
+    const cover = safeHttpsUrl(game.coverUrl);
+    return `<button class="coop-catalog-result" type="button" role="option" data-catalog-index="${index}">
+      ${cover ? `<img src="${escapeHTML(cover)}" alt="" loading="lazy">` : '<span class="coop-catalog-result-cover"></span>'}
+      <span class="coop-catalog-result-copy"><strong>${escapeHTML(game.title)}</strong><span>${escapeHTML(catalogMeta(game))}</span></span>
+      <span class="coop-catalog-result-source">${escapeHTML(result.source === 'igdb' ? 'IGDB' : result.source === 'steam' ? 'Steam' : 'Steam · IGDB')}</span>
+    </button>`;
+  }).join('');
+  root.querySelectorAll('[data-catalog-index]').forEach(button => {
+    button.addEventListener('click', () => selectCatalogGame(results[Number(button.dataset.catalogIndex)]));
+  });
+}
+
+function selectCatalogGame(result) {
+  selectedCatalogGame = catalogFields(result);
+  document.getElementById('coop-title').value = selectedCatalogGame.title;
+  document.getElementById('coop-steam').value = selectedCatalogGame.steamUrl;
+  document.getElementById('coop-tags').value = selectedCatalogGame.tags.join(', ');
+  setSelectValue('coop-min-players', selectedCatalogGame.minPlayers);
+  setSelectValue('coop-max-players', selectedCatalogGame.maxPlayers);
+  setSelectValue('coop-session', selectedCatalogGame.session);
+  const selected = document.getElementById('coop-catalog-selected');
+  const cover = safeHttpsUrl(selectedCatalogGame.coverUrl);
+  if (selected) {
+    selected.hidden = false;
+    selected.innerHTML = `${cover ? `<img src="${escapeHTML(cover)}" alt="">` : '<span class="coop-catalog-selected-cover"></span>'}
+      <span><strong>${escapeHTML(selectedCatalogGame.title)}</strong><span>${escapeHTML(catalogMeta(selectedCatalogGame))}</span></span>
+      <button type="button" id="coop-catalog-change">Changer</button>`;
+    selected.querySelector('#coop-catalog-change')?.addEventListener('click', clearCatalogSelection);
+  }
+  document.getElementById('coop-catalog-results')?.replaceChildren();
+  const status = document.getElementById('coop-catalog-status');
+  if (status) status.textContent = 'Fiche sélectionnée — tu peux corriger les joueurs ou les genres si besoin.';
+}
+
+function clearCatalogSelection() {
+  selectedCatalogGame = null;
+  const selected = document.getElementById('coop-catalog-selected');
+  if (selected) { selected.hidden = true; selected.replaceChildren(); }
+  const query = document.getElementById('coop-catalog-query');
+  if (query) { query.value = ''; query.focus(); }
+  document.getElementById('coop-title').value = '';
+  document.getElementById('coop-steam').value = '';
+  document.getElementById('coop-tags').value = '';
+}
+
+async function runCatalogSearch() {
+  const input = document.getElementById('coop-catalog-query');
+  const status = document.getElementById('coop-catalog-status');
+  const button = document.getElementById('coop-catalog-search-btn');
+  const query = input?.value.trim() || '';
+  if (query.length < 2) {
+    if (status) status.textContent = 'Écris au moins deux caractères.';
+    return;
+  }
+  if (status) { status.classList.remove('error'); status.textContent = 'Recherche…'; }
+  if (button) button.disabled = true;
+  try {
+    const results = await searchGameCatalog(query);
+    renderCatalogResults(results);
+    if (status) status.textContent = results.length ? `${results.length} résultat${results.length > 1 ? 's' : ''}` : 'Aucun jeu trouvé — utilise la saisie manuelle.';
+  } catch (error) {
+    renderCatalogResults([]);
+    if (status) {
+      status.classList.add('error');
+      status.textContent = `${error.message} La saisie manuelle reste disponible.`;
+    }
+  } finally {
+    if (button) button.disabled = false;
+  }
+}
+
+function resetGameForm(form) {
+  form.reset();
+  selectedCatalogGame = null;
+  document.getElementById('coop-catalog-results')?.replaceChildren();
+  const selected = document.getElementById('coop-catalog-selected');
+  if (selected) { selected.hidden = true; selected.replaceChildren(); }
+  const status = document.getElementById('coop-catalog-status');
+  if (status) { status.classList.remove('error'); status.textContent = ''; }
+  const manual = document.getElementById('coop-manual-fields');
+  if (manual) manual.open = false;
 }
 
 async function submitGame(event) {
@@ -164,15 +277,23 @@ async function submitGame(event) {
   const submit = document.getElementById('coop-submit');
   const error = document.getElementById('coop-form-error');
   error.textContent = '';
-  if (!title || !steamAppId) {
-    error.textContent = 'Ajoute un titre et un lien Steam valide.';
+  if (!title) {
+    error.textContent = 'Sélectionne un jeu ou saisis son titre.';
+    return;
+  }
+  if (steamValue && !steamAppId) {
+    error.textContent = 'Le lien Steam saisi n’est pas valide.';
     return;
   }
   if (maxPlayers < minPlayers) {
     error.textContent = 'Le maximum de joueurs doit être supérieur au minimum.';
     return;
   }
-  if (games.some(game => game.steamAppId === steamAppId && game.status !== 'played')) {
+  const duplicate = games.some(game => game.status !== 'played' && (
+    (steamAppId && game.steamAppId === steamAppId)
+    || (selectedCatalogGame?.igdbId && game.igdbId === selectedCatalogGame.igdbId)
+  ));
+  if (duplicate) {
     error.textContent = 'Ce jeu est déjà dans la liste.';
     return;
   }
@@ -180,12 +301,16 @@ async function submitGame(event) {
   const game = {
     title,
     steamAppId,
-    steamUrl: `https://store.steampowered.com/app/${steamAppId}/`,
-    coverUrl: steamCover(steamAppId),
+    steamUrl: steamAppId ? `https://store.steampowered.com/app/${steamAppId}/` : '',
+    igdbId: selectedCatalogGame?.igdbId || '',
+    sourceUrl: selectedCatalogGame?.sourceUrl || (steamAppId ? `https://store.steampowered.com/app/${steamAppId}/` : ''),
+    catalogSource: selectedCatalogGame?.catalogSource || (steamAppId ? 'steam' : 'manual'),
+    coverUrl: selectedCatalogGame?.coverUrl || steamCover(steamAppId),
     minPlayers,
     maxPlayers,
     session: document.getElementById('coop-session').value,
     tags,
+    releaseDate: selectedCatalogGame?.releaseDate || '',
     note: document.getElementById('coop-note').value.trim().slice(0, 280),
     submittedBy: profile.name,
     submittedAt: Date.now(),
@@ -198,7 +323,7 @@ async function submitGame(event) {
   submit.textContent = 'Ajout…';
   try {
     await firebaseRequest('coopGames', { method: 'POST', body: JSON.stringify(game) });
-    event.currentTarget.reset();
+    resetGameForm(event.currentTarget);
     closeForm();
     await loadGames({ quiet: true });
   } catch (requestError) {
@@ -256,6 +381,17 @@ function bindControls() {
     if (event.target.id === 'coop-game-modal') closeForm();
   });
   document.getElementById('coop-game-form')?.addEventListener('submit', submitGame);
+  document.getElementById('coop-catalog-search-btn')?.addEventListener('click', runCatalogSearch);
+  document.getElementById('coop-catalog-query')?.addEventListener('input', () => {
+    clearTimeout(catalogSearchTimer);
+    catalogSearchTimer = setTimeout(() => {
+      const value = document.getElementById('coop-catalog-query')?.value.trim() || '';
+      if (value.length >= 3) runCatalogSearch();
+    }, 420);
+  });
+  document.getElementById('coop-catalog-query')?.addEventListener('keydown', event => {
+    if (event.key === 'Enter') { event.preventDefault(); runCatalogSearch(); }
+  });
   document.getElementById('coop-games-grid')?.addEventListener('click', handleCardAction);
   document.getElementById('coop-search')?.addEventListener('input', event => { filters.search = event.target.value; render(); });
   document.getElementById('coop-players')?.addEventListener('change', event => { filters.players = Number(event.target.value); render(); });

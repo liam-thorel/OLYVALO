@@ -47,18 +47,21 @@ jobs:
           cp live/update-manifest.json _site/live/
           du -sh _site
 
-      - name: Injecter la clé HenrikDev partagée
+      - name: Injecter la configuration publique
         env:
           HENRIK_API_KEY: ${{ secrets.HENRIK_API_KEY }}
+          GAME_CATALOG_ENDPOINT: ${{ vars.GAME_CATALOG_ENDPOINT }}
         run: |
-          if [ -n "$HENRIK_API_KEY" ]; then
-            # Encodage via JSON.stringify : une clé contenant un guillemet
-            # casserait sinon le module et, avec lui, le chargement du site.
-            printf 'export const CONFIG = {\n  HENRIK_API_KEY: %s,\n};\n' \
-              "$(node -p 'JSON.stringify(process.env.HENRIK_API_KEY)')" > _site/config.js
-            echo "Clé partagée injectée dans config.js"
-          else
+          # Encodage via JSON.stringify : aucune valeur de configuration ne
+          # peut casser le module si elle contient un caractère spécial.
+          printf 'export const CONFIG = {\n  HENRIK_API_KEY: %s,\n  GAME_CATALOG_ENDPOINT: %s,\n};\n' \
+            "$(node -p 'JSON.stringify(process.env.HENRIK_API_KEY || "")')" \
+            "$(node -p 'JSON.stringify(process.env.GAME_CATALOG_ENDPOINT || "")')" > _site/config.js
+          if [ -z "$HENRIK_API_KEY" ]; then
             echo "::notice::Aucun secret HENRIK_API_KEY — chaque visiteur renseignera sa clé depuis la page Roster."
+          fi
+          if [ -z "$GAME_CATALOG_ENDPOINT" ]; then
+            echo "::notice::Aucune variable GAME_CATALOG_ENDPOINT — la saisie manuelle des jeux restera disponible."
           fi
 
       - uses: actions/upload-pages-artifact@v3

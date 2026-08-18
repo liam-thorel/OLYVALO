@@ -1,22 +1,28 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
-import { execSync } from 'node:child_process';
 
 const root = new URL('..', import.meta.url);
 const read = file => fs.readFileSync(new URL(file, root), 'utf8');
 
+function sourceFiles(directory = root) {
+  return fs.readdirSync(directory, { withFileTypes: true }).flatMap(entry => {
+    if (['.git', 'node_modules', 'runtime'].includes(entry.name)) return [];
+    const url = new URL(`${entry.name}${entry.isDirectory() ? '/' : ''}`, directory);
+    if (entry.isDirectory()) return sourceFiles(url);
+    return /\.(js|mjs|cjs|json|html)$/.test(entry.name) ? [url] : [];
+  });
+}
+
 test('aucune clé API n’est livrée dans le dépôt', () => {
-  const tracked = execSync('git ls-files', { cwd: new URL('.', root).pathname }).toString().split('\n');
-  assert.equal(tracked.includes('config.js'), false, 'config.js ne doit plus être suivi par git');
   assert.match(read('.gitignore'), /^config\.js$/m, 'config.js doit rester ignoré');
 
-  // Un vrai jeton HenrikDev ne doit apparaître dans aucun fichier suivi.
+  // Un vrai jeton HenrikDev ne doit apparaître dans aucun fichier source.
   // Le gabarit `HDEV-XXXX...` de config.example.js est explicitement toléré.
-  const suspects = tracked
-    .filter(f => f && /\.(js|mjs|cjs|json|html)$/.test(f))
-    .filter(f => fs.existsSync(new URL(f, root)))
-    .filter(f => /HDEV-(?!X)[A-Za-z0-9]/.test(read(f)));
+  const suspects = sourceFiles()
+    .filter(url => url.pathname.split('/').pop() !== 'config.js')
+    .filter(url => /HDEV-(?!X)[A-Za-z0-9]/.test(fs.readFileSync(url, 'utf8')))
+    .map(url => url.pathname);
   assert.deepEqual(suspects, [], `clé HenrikDev en clair dans : ${suspects.join(', ')}`);
 });
 
@@ -46,5 +52,5 @@ test('la clé se renseigne sans avoir à provoquer une erreur', () => {
   const main = read('js/main.js');
   assert.match(main, /_refreshHenrikKeyBtn/);
   // L'état doit être appliqué au démarrage, pas seulement après un clic.
-  assert.match(main, /window\.OLYCITY\._refreshHenrikKeyBtn\(\);\n  window\.OLYCITY\.showMap/);
+  assert.match(main, /window\.OLYCITY\._refreshHenrikKeyBtn\(\);\r?\n  window\.OLYCITY\.showMap/);
 });

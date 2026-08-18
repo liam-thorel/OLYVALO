@@ -42,7 +42,7 @@ assert.ok(
 
 // ─── Ce qui ne doit surtout PAS être publié ─────────────────────────────────
 assert.ok(!published.has('live'), 'tout live/ ne doit pas être publié (ZIP de 34 Mo)');
-['discord-bot', 'tests', 'scripts'].forEach(dir =>
+['discord-bot', 'tests', 'scripts', 'workers'].forEach(dir =>
   assert.ok(!published.has(dir), `${dir}/ n'a rien à faire sur le site public`));
 
 // ─── La clé partagée est injectée, jamais commitée ──────────────────────────

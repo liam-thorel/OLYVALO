@@ -38,6 +38,14 @@ Site privé pour le five stack OLYCITY. Comps meta, stats live, roster et outils
 - Page publique (`#betting`) affichant le classement des points du bot Discord
   — voir `discord-bot/`
 
+**Jeux du Discord**
+- Suggestions et votes associés aux profils OLYCITY
+- Recherche automatique IGDB/Steam : titre, jaquette, genres, sortie et plage
+  de joueurs préremplis, avec correction manuelle possible
+- Statuts À faire / Prévu / Joué / Mise à jour à refaire
+- Service de catalogue indépendant dans `workers/game-catalog/` : aucune
+  dépendance au bot Discord
+
 ---
 
 ## OLYCITY Live

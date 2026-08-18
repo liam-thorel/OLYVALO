@@ -18,7 +18,7 @@
   <link rel="stylesheet" href="./css/responsive.css?v=20260818-coop-nav">
   <link rel="stylesheet" href="./css/lol-mode.css?v=20260809-lol-sync">
   <link rel="stylesheet" href="./css/curse.css?v=20260818-curse-lifecycle">
-  <link rel="stylesheet" href="./css/coop-games.css?v=20260818-coop-games">
+  <link rel="stylesheet" href="./css/coop-games.css?v=20260818-game-catalog">
 </head>
 <body>
 
@@ -381,12 +381,27 @@
   <div class="coop-modal" id="coop-game-modal" role="dialog" aria-modal="true" aria-labelledby="coop-form-title">
     <form class="coop-form" id="coop-game-form">
       <div class="coop-form-head">
-        <div><h3 id="coop-form-title">Proposer un jeu</h3><p>Le lien Steam permet de récupérer automatiquement sa jaquette.</p></div>
+        <div><h3 id="coop-form-title">Proposer un jeu</h3><p>Cherche le jeu : sa fiche, ses genres et son nombre de joueurs seront préremplis.</p></div>
         <button class="coop-modal-close" id="coop-modal-close" type="button" aria-label="Fermer">×</button>
       </div>
       <div class="coop-fields">
-        <div class="coop-field"><label for="coop-title">Nom du jeu</label><input id="coop-title" required maxlength="80" placeholder="Lethal Company"></div>
-        <div class="coop-field"><label for="coop-steam">Lien Steam</label><input id="coop-steam" required placeholder="https://store.steampowered.com/app/…"></div>
+        <div class="coop-field coop-field-wide coop-catalog-picker">
+          <label for="coop-catalog-query">Rechercher dans le catalogue</label>
+          <div class="coop-catalog-search">
+            <input id="coop-catalog-query" autocomplete="off" placeholder="Lethal Company ou lien Steam…">
+            <button id="coop-catalog-search-btn" type="button">Rechercher</button>
+          </div>
+          <div class="coop-catalog-status" id="coop-catalog-status" aria-live="polite"></div>
+          <div class="coop-catalog-results" id="coop-catalog-results" role="listbox" aria-label="Résultats de jeux"></div>
+          <div class="coop-catalog-selected" id="coop-catalog-selected" hidden></div>
+        </div>
+        <details class="coop-manual coop-field-wide" id="coop-manual-fields">
+          <summary>Jeu introuvable ? Saisie manuelle</summary>
+          <div class="coop-manual-grid">
+            <div class="coop-field"><label for="coop-title">Nom du jeu</label><input id="coop-title" required maxlength="80" placeholder="Lethal Company"></div>
+            <div class="coop-field"><label for="coop-steam">Lien Steam (facultatif)</label><input id="coop-steam" placeholder="https://store.steampowered.com/app/…"></div>
+          </div>
+        </details>
         <div class="coop-field"><label for="coop-min-players">Joueurs minimum</label><select id="coop-min-players"><option>1</option><option selected>2</option><option>3</option><option>4</option><option>5</option><option>6</option></select></div>
         <div class="coop-field"><label for="coop-max-players">Joueurs maximum</label><select id="coop-max-players"><option>2</option><option>3</option><option selected>4</option><option>5</option><option>6</option><option>8</option><option>10</option><option>16</option></select></div>
         <div class="coop-field"><label for="coop-session">Format</label><select id="coop-session"><option value="short">Une soirée</option><option value="medium" selected>Quelques sessions</option><option value="long">Longue aventure</option></select></div>
@@ -488,6 +503,6 @@
   <script type="module" src="./js/firebase-draw.js?v=20260720-avatars"></script>
   <!-- Présence Firebase -->
   <script src="./js/presence.js?v=20260720-avatars"></script>
-  <script type="module" src="./js/main.js?v=20260818-curse-lifecycle"></script>
+  <script type="module" src="./js/main.js?v=20260818-game-catalog"></script>
 </body>
 </html>

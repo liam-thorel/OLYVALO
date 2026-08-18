@@ -20,6 +20,28 @@ export function steamCover(appId = '') {
     : '';
 }
 
+export function catalogFields(result = {}) {
+  const steamAppId = String(result.steamAppId || '');
+  const genres = Array.isArray(result.genres) ? result.genres.map(String).filter(Boolean).slice(0, 4) : [];
+  const minPlayers = Math.max(1, Number(result.minPlayers) || 1);
+  const maxPlayers = Math.max(minPlayers, Number(result.maxPlayers) || minPlayers);
+  const durationHours = Math.max(0, Number(result.durationHours) || 0);
+  return {
+    title: String(result.title || '').trim().slice(0, 80),
+    steamAppId,
+    steamUrl: steamAppId ? `https://store.steampowered.com/app/${steamAppId}/` : '',
+    igdbId: String(result.igdbId || ''),
+    sourceUrl: String(result.sourceUrl || ''),
+    catalogSource: String(result.source || ''),
+    coverUrl: String(result.coverUrl || steamCover(steamAppId)),
+    minPlayers,
+    maxPlayers,
+    session: durationHours && durationHours <= 4 ? 'short' : durationHours > 15 ? 'long' : 'medium',
+    tags: genres,
+    releaseDate: String(result.releaseDate || ''),
+  };
+}
+
 export function normalizeCoopGame(id, value = {}) {
   const minPlayers = Math.max(1, Number(value.minPlayers) || 1);
   const maxPlayers = Math.max(minPlayers, Number(value.maxPlayers) || minPlayers);
@@ -29,11 +51,15 @@ export function normalizeCoopGame(id, value = {}) {
     title: String(value.title || 'Jeu sans titre').trim(),
     steamAppId: String(value.steamAppId || ''),
     steamUrl: String(value.steamUrl || ''),
+    igdbId: String(value.igdbId || ''),
+    sourceUrl: String(value.sourceUrl || ''),
+    catalogSource: String(value.catalogSource || ''),
     coverUrl: String(value.coverUrl || steamCover(value.steamAppId)),
     minPlayers,
     maxPlayers,
     session: ['short', 'medium', 'long'].includes(value.session) ? value.session : 'medium',
     tags: Array.isArray(value.tags) ? value.tags.map(String).filter(Boolean).slice(0, 4) : [],
+    releaseDate: String(value.releaseDate || ''),
     note: String(value.note || '').trim(),
     submittedBy: String(value.submittedBy || 'OLYCITY'),
     submittedAt: Number(value.submittedAt) || 0,
