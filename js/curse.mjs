@@ -455,7 +455,7 @@ export function initCurse(){
       if (!wasCursed) curseStartTime = state.startedAt || Date.now();
       btn.classList.add('on', 'locked');
       btn.setAttribute('aria-pressed', 'true');
-      btnLabel.textContent = 'Game maudite';
+      btnLabel.textContent = 'Annuler la curse';
       if (muteBtn) muteBtn.classList.add('visible');
       refreshLocalEffects();
     } else {
