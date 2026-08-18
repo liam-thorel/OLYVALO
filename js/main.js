@@ -5,7 +5,7 @@
 
 import { valorantApi } from './api.js';
 
-const SITE_VERSION = '20260818-coop-games';
+const SITE_VERSION = '20260818-curse-lifecycle';
 import { syncPlayer as henrikSyncPlayer, syncAllPlayers as henrikSyncAll, persistPlayerStats } from './henrik.js?v=20260809-val-roster-season';
 import { setStoredKey, storedKey, forgetCachedKey } from './henrik-key.mjs';
 import { rosterHTML, guestCardHTML, mapSectionHTML, stierHTML, agentPageHTML, miniRosterHTML, agentsFiltersHTML, agentsGridHTML, compCompareHTML } from './render.js?v=20260809-val-roster-season';
@@ -142,6 +142,7 @@ window.OLYCITY = {
 
     window.scrollTo({ top: 0, behavior: 'smooth' });
     state.currentPage = page;
+    window.dispatchEvent(new CustomEvent('olycity:page-change', { detail: { page } }));
 
     // Push to browser history
     if (pushHistory) {

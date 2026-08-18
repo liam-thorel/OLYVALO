@@ -51,12 +51,14 @@
 .curse-mute{
   display:none;
   align-items:center; justify-content:center;
-  width:34px; height:34px; flex-shrink:0;
+  min-height:34px; padding:0 11px; gap:7px; flex-shrink:0;
   border-radius:8px; border:1px solid var(--border2);
   background:var(--surf2); color:var(--muted);
-  font-size:14px; cursor:pointer;
+  font-family:'Tomorrow',sans-serif; font-size:9px; font-weight:700; letter-spacing:1px;
+  text-transform:uppercase; cursor:pointer;
   transition:border-color .25s ease, color .25s ease;
 }
+.curse-mute > span:first-child{ font-size:14px; line-height:1; }
 .curse-mute.visible{ display:flex; }
 .curse-mute:hover{ border-color:rgba(167,85,232,.4); color:var(--text); }
 .curse-mute.muted{ color:#6b3fa0; }
@@ -85,4 +87,9 @@
 @media (prefers-reduced-motion: reduce){
   .curse-toggle.on{ animation:none; }
   .curse-phrase{ animation-duration:9s; }
+}
+
+@media (max-width:700px){
+  #curse-mute-label{ display:none; }
+  .curse-mute{ width:34px; padding:0; }
 }

@@ -17,7 +17,7 @@
   <link rel="stylesheet" href="./css/agent-page.css?v=20260720-avatars">
   <link rel="stylesheet" href="./css/responsive.css?v=20260818-coop-nav">
   <link rel="stylesheet" href="./css/lol-mode.css?v=20260809-lol-sync">
-  <link rel="stylesheet" href="./css/curse.css?v=20260807-curse2">
+  <link rel="stylesheet" href="./css/curse.css?v=20260818-curse-lifecycle">
   <link rel="stylesheet" href="./css/coop-games.css?v=20260818-coop-games">
 </head>
 <body>
@@ -429,7 +429,10 @@
             <span class="live-score-side enemy" id="live-score-theirs">0</span>
           </div>
           <div class="curse-controls">
-            <button class="curse-mute" id="curse-mute-btn" type="button" title="Couper le son de la curse">🔊</button>
+            <button class="curse-mute" id="curse-mute-btn" type="button" title="Couper le son de la curse" aria-pressed="false">
+              <span id="curse-mute-icon" aria-hidden="true">🔊</span>
+              <span id="curse-mute-label">Couper le son</span>
+            </button>
             <button class="curse-toggle" id="curse-btn" type="button" aria-pressed="false">
               <span class="glyph"><svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M3 14.5c0-3.2 1.1-4.6 4-4.6 2.4 0 2.6-2 .9-3.6-2-1.9-1.4-4.8 1.6-5.3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><circle cx="11.4" cy="1.9" r="1" fill="currentColor"/></svg></span><span id="curse-btn-label">Maudire la game</span>
             </button>
@@ -485,6 +488,6 @@
   <script type="module" src="./js/firebase-draw.js?v=20260720-avatars"></script>
   <!-- Présence Firebase -->
   <script src="./js/presence.js?v=20260720-avatars"></script>
-  <script type="module" src="./js/main.js?v=20260818-coop-games"></script>
+  <script type="module" src="./js/main.js?v=20260818-curse-lifecycle"></script>
 </body>
 </html>

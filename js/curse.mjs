@@ -4,10 +4,10 @@
  * game, tout le monde qui a la page live ouverte voit les tentacules, la
  * vignette, entend le son et voit les phrases — pas juste la personne qui a
  * cliqué. L'état vit dans live/curse {active, curser, matchId, startedAt} ;
- * applyCurseState() est le SEUL point qui déclenche les effets visuels/sonores
- * locaux, que le changement vienne de notre propre clic ou d'un autre
- * visiteur. Irréversible une fois lancée (le bouton fuit le curseur) — tout
- * se réinitialise pour tout le monde à la fin de la game (setLive(false)).
+ * applyCurseState() est le point unique qui synchronise l'état partagé. Les
+ * effets locaux sont coupés hors de la page Live et lorsque l'onglet du
+ * navigateur est masqué. La curse reste irréversible pendant la partie et se
+ * réinitialise automatiquement lors de la fin ou du changement de match.
  */
 
 const FIREBASE_URL = 'https://realtime-database-5bb9f-default-rtdb.europe-west1.firebasedatabase.app';
@@ -77,6 +77,8 @@ export function initCurse(){
   const cursedLayer = document.getElementById('curse-layer');
   const vignetteEl = document.getElementById('curse-vignette');
   const muteBtn = document.getElementById('curse-mute-btn');
+  const muteIcon = document.getElementById('curse-mute-icon');
+  const muteLabel = document.getElementById('curse-mute-label');
   if (!btn || !btnLabel || !canvas || !cursedLayer) return null;
 
   const reduceMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -265,6 +267,7 @@ export function initCurse(){
 
   /* ---------------- ambient sound (drone + whispers, no external asset) ---------------- */
   let audioCtx = null, masterGain = null, whisperTimer = null, muted = false;
+  let pageActive = document.getElementById('page-live')?.classList.contains('active') ?? false;
 
   function startAmbience(){
     // Le son n'est pas un effet de "mouvement" — pas de garde reduceMotion
@@ -274,9 +277,8 @@ export function initCurse(){
     if (!AC) return;
     audioCtx = new AC();
     masterGain = audioCtx.createGain();
-    masterGain.gain.value = 0;
     masterGain.connect(audioCtx.destination);
-    masterGain.gain.linearRampToValueAtTime(muted ? 0 : AMBIENCE_TARGET_GAIN, audioCtx.currentTime + 3);
+    masterGain.gain.value = 0;
 
     const osc1 = audioCtx.createOscillator(); osc1.type = 'sawtooth'; osc1.frequency.value = 55;
     const osc2 = audioCtx.createOscillator(); osc2.type = 'sine'; osc2.frequency.value = 55 * 1.5;
@@ -289,15 +291,15 @@ export function initCurse(){
     lfo.connect(lfoGain); lfoGain.connect(filter.frequency);
 
     osc1.start(); osc2.start(); lfo.start();
-    scheduleWhisper();
   }
 
   function scheduleWhisper(){
+    if (whisperTimer) return;
     whisperTimer = setTimeout(() => { playWhisperBurst(); scheduleWhisper(); }, 3500 + Math.random() * 5000);
   }
 
   function playWhisperBurst(){
-    if (!audioCtx) return;
+    if (!audioCtx || muted || !pageActive || document.hidden || !cursed) return;
     const dur = 1.2 + Math.random() * 1.5;
     const bufferSize = Math.floor(audioCtx.sampleRate * dur);
     const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
@@ -326,14 +328,38 @@ export function initCurse(){
     audioCtx = null; masterGain = null;
   }
 
+  function refreshAmbience(){
+    const shouldPlay = cursed && pageActive && !document.hidden && !muted;
+    if (shouldPlay && !audioCtx) startAmbience();
+    if (!audioCtx || !masterGain) return;
+
+    const now = audioCtx.currentTime;
+    masterGain.gain.cancelScheduledValues(now);
+    masterGain.gain.setValueAtTime(masterGain.gain.value, now);
+    masterGain.gain.linearRampToValueAtTime(shouldPlay ? AMBIENCE_TARGET_GAIN : 0, now + 0.25);
+    if (shouldPlay) {
+      audioCtx.resume?.().catch(() => {});
+      scheduleWhisper();
+    } else if (whisperTimer) {
+      clearTimeout(whisperTimer);
+      whisperTimer = null;
+    }
+  }
+
+  function renderMuteButton(){
+    if (!muteBtn) return;
+    muteBtn.classList.toggle('muted', muted);
+    muteBtn.setAttribute('aria-pressed', String(muted));
+    muteBtn.title = muted ? 'Réactiver le son de la curse' : 'Couper le son de la curse';
+    if (muteIcon) muteIcon.textContent = muted ? '🔇' : '🔊';
+    if (muteLabel) muteLabel.textContent = muted ? 'Réactiver le son' : 'Couper le son';
+  }
+
   if (muteBtn){
     muteBtn.addEventListener('click', () => {
       muted = !muted;
-      muteBtn.classList.toggle('muted', muted);
-      muteBtn.textContent = muted ? '🔇' : '🔊';
-      if (masterGain && audioCtx){
-        masterGain.gain.linearRampToValueAtTime(muted ? 0 : AMBIENCE_TARGET_GAIN, audioCtx.currentTime + 0.3);
-      }
+      renderMuteButton();
+      refreshAmbience();
     });
   }
 
@@ -357,9 +383,13 @@ export function initCurse(){
   }
 
   function scheduleSpawn(curserName){
+    if (spawnTimer || !cursed || !pageActive) return;
     spawnPhrase(curserName);
     const delay = (1600 + Math.random() * 1800) / 1.5;
-    spawnTimer = setTimeout(() => scheduleSpawn(curserName), delay);
+    spawnTimer = setTimeout(() => {
+      spawnTimer = null;
+      scheduleSpawn(curserName);
+    }, delay);
   }
 
   function stopSpawning(){
@@ -367,10 +397,12 @@ export function initCurse(){
     cursedLayer.replaceChildren();
   }
 
-  /* ---------------- button: one-way lock, dodges the cursor ---------------- */
+  /* ---------------- button and lifecycle ---------------- */
   let cursed = false;
   let locked = false;
   let currentMatchId = '';
+  let lastCurseState = null;
+  let activeCurser = 'Quelqu’un';
 
   function dodge(){
     const margin = 70;
@@ -384,6 +416,14 @@ export function initCurse(){
     btn.style.right = 'auto';
   }
 
+  function refreshLocalEffects(){
+    const showEffects = cursed && pageActive;
+    setTentaclesActive(showEffects);
+    if (showEffects) scheduleSpawn(activeCurser);
+    else stopSpawning();
+    refreshAmbience();
+  }
+
   function resetButton(){
     cursed = false;
     locked = false;
@@ -394,8 +434,8 @@ export function initCurse(){
     btn.style.left = '';
     btn.style.top = '';
     btn.style.right = '';
-    if (muteBtn) muteBtn.classList.remove('visible', 'muted');
-    if (muteBtn) muteBtn.textContent = '🔊';
+    if (muteBtn) muteBtn.classList.remove('visible');
+    renderMuteButton();
   }
 
   // Seule fonction qui déclenche les effets locaux (tentacules, vignette,
@@ -403,26 +443,26 @@ export function initCurse(){
   // jamais directement par le clic. Ainsi la personne qui clique et tous les
   // autres visiteurs passent exactement par le même chemin.
   function applyCurseState(state){
+    lastCurseState = state || null;
     const staleForThisMatch = !!(state?.matchId && currentMatchId && state.matchId !== currentMatchId);
     const isActive = !!(state && state.active) && !staleForThisMatch;
 
-    if (isActive === cursed) return; // déjà synchronisé
     if (isActive){
+      activeCurser = state.curser || 'Quelqu’un';
+      const wasCursed = cursed;
       cursed = true;
       locked = true;
-      curseStartTime = state.startedAt || Date.now();
+      if (!wasCursed) curseStartTime = state.startedAt || Date.now();
       btn.classList.add('on', 'locked');
       btn.setAttribute('aria-pressed', 'true');
-      btnLabel.textContent = 'Annuler la curse';
-      setTentaclesActive(true);
-      scheduleSpawn(state.curser || 'Quelqu’un');
-      startAmbience();
+      btnLabel.textContent = 'Game maudite';
       if (muteBtn) muteBtn.classList.add('visible');
+      refreshLocalEffects();
     } else {
       setTentaclesActive(false);
       stopSpawning();
       stopAmbience();
-      resetButton();
+      if (cursed) resetButton();
     }
   }
 
@@ -445,9 +485,15 @@ export function initCurse(){
       curser: currentCurser(),
       matchId: currentMatchId,
       startedAt: Date.now(),
-    }).catch(() => {});
+    }).catch(() => stopAmbience());
   });
   btn.addEventListener('pointerenter', () => { if (locked) dodge(); });
+
+  document.addEventListener('visibilitychange', refreshAmbience);
+  window.addEventListener('olycity:page-change', event => {
+    pageActive = event.detail?.page === 'live';
+    refreshLocalEffects();
+  });
 
   /* ---------------- sync with Firebase (shared across all visitors) ---------------- */
   // Pas de fetch initial séparé ici : Firebase envoie toujours un premier
@@ -471,7 +517,11 @@ export function initCurse(){
   }
 
   function setMatch(matchId){
-    currentMatchId = matchId || '';
+    const nextMatchId = matchId || '';
+    if (nextMatchId === currentMatchId) return;
+    currentMatchId = nextMatchId;
+    // Une curse de la partie précédente ne doit jamais suivre la suivante.
+    applyCurseState(lastCurseState);
   }
 
   function setLive(isLive){
@@ -479,7 +529,11 @@ export function initCurse(){
     // Fin de partie détectée localement : on efface l'état partagé pour que
     // tout le monde reparte de zéro sur la prochaine game. Idempotent — peu
     // importe si plusieurs visiteurs déclenchent ce reset au même moment.
-    fbPutJSON(CURSE_PATH, null).catch(() => {});
+    const belongsToCurrentMatch = !lastCurseState?.matchId
+      || !currentMatchId
+      || lastCurseState.matchId === currentMatchId;
+    applyCurseState(null);
+    if (belongsToCurrentMatch) fbPutJSON(CURSE_PATH, null).catch(() => {});
   }
 
   return { setRoster, setMatch, setLive };
