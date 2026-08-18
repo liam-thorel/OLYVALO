@@ -5,7 +5,7 @@
 
 import { valorantApi } from './api.js';
 
-const SITE_VERSION = '20260814-admin-current-script';
+const SITE_VERSION = '20260818-coop-games';
 import { syncPlayer as henrikSyncPlayer, syncAllPlayers as henrikSyncAll, persistPlayerStats } from './henrik.js?v=20260809-val-roster-season';
 import { setStoredKey, storedKey, forgetCachedKey } from './henrik-key.mjs';
 import { rosterHTML, guestCardHTML, mapSectionHTML, stierHTML, agentPageHTML, miniRosterHTML, agentsFiltersHTML, agentsGridHTML, compCompareHTML } from './render.js?v=20260809-val-roster-season';
@@ -14,6 +14,7 @@ import { storage } from './storage.js';
 import { avatarLayersHTML } from './avatars.mjs';
 import { initAdminPage } from './admin.mjs?v=20260814-admin-current-script';
 import { initBettingPage } from './betting-page.mjs';
+import { initCoopGamesPage } from './coop-games-page.mjs?v=20260818-coop-games';
 import { getGameMode, initGameMode } from './game-mode.mjs?v=20260806-lol-mode';
 import { initLolHistoryPage, initLolLivePage } from './lol-pages.mjs?v=20260810-history-progressive';
 import { initLolRosterPages } from './lol-roster.mjs?v=20260809-lol-sync';
@@ -84,7 +85,7 @@ function setSyncStatus(html, type = 'info') {
 window.OLYCITY = {
 
   nav(page, pushHistory = true) {
-    if (!['home', 'maps', 'roster', 'agents', 'live', 'history', 'admin', 'betting'].includes(page)) page = 'home';
+    if (!['home', 'maps', 'roster', 'agents', 'live', 'history', 'admin', 'betting', 'games'].includes(page)) page = 'home';
     if (getGameMode() === 'lol' && ['maps', 'agents'].includes(page)) page = 'home';
     sessionStorage.setItem('olycity-page', page);
     // Dynamic title
@@ -96,6 +97,7 @@ window.OLYCITY = {
       history: 'OLYCITY — Historique',
       admin: 'OLYCITY — Admin',
       betting: 'OLYCITY — Paris',
+      games: 'OLYCITY — Jeux du Discord',
     };
     document.title = titles[page] || 'OLYCITY — Valorant Meta Comps';
     // Close agent page if open
@@ -127,6 +129,9 @@ window.OLYCITY = {
     }
     if (page === 'betting') {
       initBettingPage();
+    }
+    if (page === 'games') {
+      initCoopGamesPage(state.ROSTER);
     }
     const navBtn = document.querySelector(`.page-nav-btn[data-page="${page}"]`);
     if (navBtn) navBtn.classList.add('active');
@@ -756,6 +761,7 @@ window.OLYCITY = {
 
   _selectProfile(name) {
     localStorage.setItem('olycity-profile', name);
+    window.dispatchEvent(new CustomEvent('olycity:profile-change', { detail: { name } }));
     const picker = document.getElementById('profile-picker');
     if (picker) { picker.style.opacity = '0'; picker.style.transition = 'opacity .3s'; }
     setTimeout(() => location.reload(), 300);
@@ -1041,7 +1047,7 @@ async function boot() {
     } else {
       // No state = home or hash-based
       const hash = window.location.hash.replace('#', '');
-      if (hash && ['maps','roster','agents','live','history','admin','betting'].includes(hash)) {
+      if (hash && ['maps','roster','agents','live','history','admin','betting','games'].includes(hash)) {
         window.OLYCITY.nav(hash, false);
       } else if (!hash || hash === 'home') {
         window.OLYCITY.nav('home', false);
@@ -1055,7 +1061,7 @@ async function boot() {
   });
   // Push initial history state
   const initHash = window.location.hash.replace('#','');
-  const validPages = ['maps','roster','agents','live','history','admin','betting'];
+  const validPages = ['maps','roster','agents','live','history','admin','betting','games'];
   const initPage = validPages.includes(initHash)
     ? initHash
     : !initHash && validPages.includes(savedPage) ? savedPage : 'home';

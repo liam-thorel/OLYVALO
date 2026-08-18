@@ -15,9 +15,10 @@
   <link rel="stylesheet" href="./css/layout.css?v=20260810-history-progressive">
   <link rel="stylesheet" href="./css/components.css?v=20260809-val-roster-season">
   <link rel="stylesheet" href="./css/agent-page.css?v=20260720-avatars">
-  <link rel="stylesheet" href="./css/responsive.css?v=20260809-live-viewport">
+  <link rel="stylesheet" href="./css/responsive.css?v=20260818-coop-nav">
   <link rel="stylesheet" href="./css/lol-mode.css?v=20260809-lol-sync">
   <link rel="stylesheet" href="./css/curse.css?v=20260807-curse2">
+  <link rel="stylesheet" href="./css/coop-games.css?v=20260818-coop-games">
 </head>
 <body>
 
@@ -158,6 +159,9 @@
         </button>
         <button class="page-nav-btn" data-page="history" onclick="window.OLYCITY?.nav('history')">
           <span class="page-nav-icon">◇</span> Historique
+        </button>
+        <button class="page-nav-btn" data-page="games" onclick="window.OLYCITY?.nav('games')">
+          <span class="page-nav-icon">✦</span> Jeux
         </button>
         <button class="page-nav-btn" data-page="betting" onclick="window.OLYCITY?.nav('betting')">
           <span class="page-nav-icon">🎲</span> Paris
@@ -343,6 +347,56 @@
     </div>
   </div>
 
+  <!-- ═══════════ PAGE JEUX COOP ═══════════ -->
+  <div id="page-games" class="spa-page">
+    <main class="coop-page">
+      <div class="coop-shell">
+        <header class="coop-hero">
+          <div>
+            <span class="coop-kicker">La liste du Discord</span>
+            <h2>À quoi on joue ensuite ?</h2>
+            <p>Proposez des jeux coop, indiquez qui est chaud et trouvez rapidement celui qui correspond au nombre de joueurs présents.</p>
+          </div>
+          <button class="coop-add-btn" id="coop-add-btn" type="button">+ Proposer un jeu</button>
+        </header>
+        <div class="coop-toolbar">
+          <input id="coop-search" type="search" placeholder="Rechercher un jeu ou un genre…" autocomplete="off">
+          <select id="coop-players" aria-label="Nombre de joueurs">
+            <option value="0">Tous les groupes</option><option value="2">2 joueurs</option><option value="3">3 joueurs</option>
+            <option value="4">4 joueurs</option><option value="5">5 joueurs</option><option value="6">6 joueurs et +</option>
+          </select>
+          <select id="coop-status-filter" aria-label="État des jeux">
+            <option value="open">À faire</option><option value="replay">MàJ · À refaire</option><option value="planned">Prévus</option><option value="played">Joués</option><option value="all">Tous</option>
+          </select>
+          <select id="coop-sort" aria-label="Trier les jeux">
+            <option value="popular">Les plus attendus</option><option value="recent">Les plus récents</option>
+          </select>
+        </div>
+        <div class="coop-summary"><span id="coop-current-profile">Choisis d’abord ton profil</span><span id="coop-result-count">0 jeu</span></div>
+        <div class="coop-games-grid" id="coop-games-grid"></div>
+      </div>
+    </main>
+  </div>
+
+  <div class="coop-modal" id="coop-game-modal" role="dialog" aria-modal="true" aria-labelledby="coop-form-title">
+    <form class="coop-form" id="coop-game-form">
+      <div class="coop-form-head">
+        <div><h3 id="coop-form-title">Proposer un jeu</h3><p>Le lien Steam permet de récupérer automatiquement sa jaquette.</p></div>
+        <button class="coop-modal-close" id="coop-modal-close" type="button" aria-label="Fermer">×</button>
+      </div>
+      <div class="coop-fields">
+        <div class="coop-field"><label for="coop-title">Nom du jeu</label><input id="coop-title" required maxlength="80" placeholder="Lethal Company"></div>
+        <div class="coop-field"><label for="coop-steam">Lien Steam</label><input id="coop-steam" required placeholder="https://store.steampowered.com/app/…"></div>
+        <div class="coop-field"><label for="coop-min-players">Joueurs minimum</label><select id="coop-min-players"><option>1</option><option selected>2</option><option>3</option><option>4</option><option>5</option><option>6</option></select></div>
+        <div class="coop-field"><label for="coop-max-players">Joueurs maximum</label><select id="coop-max-players"><option>2</option><option>3</option><option selected>4</option><option>5</option><option>6</option><option>8</option><option>10</option><option>16</option></select></div>
+        <div class="coop-field"><label for="coop-session">Format</label><select id="coop-session"><option value="short">Une soirée</option><option value="medium" selected>Quelques sessions</option><option value="long">Longue aventure</option></select></div>
+        <div class="coop-field"><label for="coop-tags">Genres</label><input id="coop-tags" maxlength="80" placeholder="Horreur, Survie"></div>
+        <div class="coop-field coop-field-wide"><label for="coop-note">Pourquoi on devrait y jouer ?</label><textarea id="coop-note" maxlength="280" placeholder="Une courte description pour convaincre les autres…"></textarea></div>
+      </div>
+      <div class="coop-form-footer"><span class="coop-form-error" id="coop-form-error"></span><button class="coop-submit" id="coop-submit" type="submit">Ajouter à la liste</button></div>
+    </form>
+  </div>
+
   <div id="page-live" class="spa-page">
     <div class="live-page" id="live-page">
       <div data-game-panel="valorant">
@@ -431,6 +485,6 @@
   <script type="module" src="./js/firebase-draw.js?v=20260720-avatars"></script>
   <!-- Présence Firebase -->
   <script src="./js/presence.js?v=20260720-avatars"></script>
-  <script type="module" src="./js/main.js?v=20260814-admin-current-script"></script>
+  <script type="module" src="./js/main.js?v=20260818-coop-games"></script>
 </body>
 </html>
