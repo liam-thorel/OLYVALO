@@ -12,7 +12,7 @@ export async function gameCatalogEndpoint() {
   return endpointPromise;
 }
 
-export async function searchGameCatalog(value, { endpoint, fetchImpl = fetch } = {}) {
+export async function searchGameCatalog(value, { endpoint, fetchImpl = fetch, signal } = {}) {
   const query = String(value || '').trim();
   if (query.length < 2) return [];
   const base = String(endpoint ?? await gameCatalogEndpoint()).replace(/\/$/, '');
@@ -25,7 +25,7 @@ export async function searchGameCatalog(value, { endpoint, fetchImpl = fetch } =
   const url = new URL(`${base}/search`);
   if (steamAppId) url.searchParams.set('steamAppId', steamAppId);
   else url.searchParams.set('q', query);
-  const response = await fetchImpl(url, { headers: { Accept: 'application/json' } });
+  const response = await fetchImpl(url, { headers: { Accept: 'application/json' }, signal });
   const payload = await response.json().catch(() => ({}));
   if (!response.ok) throw new Error(payload.error || `Catalogue HTTP ${response.status}`);
   return Array.isArray(payload.results) ? payload.results : [];

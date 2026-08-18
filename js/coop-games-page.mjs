@@ -19,6 +19,8 @@ let initialized = false;
 let stream = null;
 let reloadTimer = null;
 let catalogSearchTimer = null;
+let catalogSearchSequence = 0;
+let catalogAbortController = null;
 let selectedCatalogGame = null;
 const filters = { search: '', players: 0, status: 'open', sort: 'popular' };
 
@@ -177,6 +179,26 @@ function catalogMeta(game) {
   return parts.join(' · ');
 }
 
+function normalizeCatalogText(value = '') {
+  return String(value).normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
+}
+
+function rankCatalogResults(results = [], query = '') {
+  const wanted = normalizeCatalogText(query);
+  const tokens = wanted.split(/\s+/).filter(Boolean);
+  return [...results].sort((left, right) => {
+    const score = result => {
+      const title = normalizeCatalogText(result.title);
+      if (title === wanted) return 10000;
+      let value = title.startsWith(wanted) ? 5000 : title.includes(wanted) ? 3000 : 0;
+      value += tokens.filter(token => title.includes(token)).length * 500;
+      value -= Math.abs(title.length - wanted.length);
+      return value;
+    };
+    return score(right) - score(left);
+  }).slice(0, 8);
+}
+
 function renderCatalogResults(results = []) {
   const root = document.getElementById('coop-catalog-results');
   if (!root) return;
@@ -233,23 +255,29 @@ async function runCatalogSearch() {
   const button = document.getElementById('coop-catalog-search-btn');
   const query = input?.value.trim() || '';
   if (query.length < 2) {
-    if (status) status.textContent = 'Écris au moins deux caractères.';
+    renderCatalogResults([]);
+    if (status) status.textContent = query ? 'Encore un caractère…' : '';
     return;
   }
+  const requestId = ++catalogSearchSequence;
+  catalogAbortController?.abort();
+  catalogAbortController = new AbortController();
   if (status) { status.classList.remove('error'); status.textContent = 'Recherche…'; }
   if (button) button.disabled = true;
   try {
-    const results = await searchGameCatalog(query);
+    const results = rankCatalogResults(await searchGameCatalog(query, { signal: catalogAbortController.signal }), query);
+    if (requestId !== catalogSearchSequence) return;
     renderCatalogResults(results);
     if (status) status.textContent = results.length ? `${results.length} résultat${results.length > 1 ? 's' : ''}` : 'Aucun jeu trouvé — utilise la saisie manuelle.';
   } catch (error) {
+    if (error.name === 'AbortError' || requestId !== catalogSearchSequence) return;
     renderCatalogResults([]);
     if (status) {
       status.classList.add('error');
       status.textContent = `${error.message} La saisie manuelle reste disponible.`;
     }
   } finally {
-    if (button) button.disabled = false;
+    if (requestId === catalogSearchSequence && button) button.disabled = false;
   }
 }
 
@@ -267,6 +295,7 @@ function resetGameForm(form) {
 
 async function submitGame(event) {
   event.preventDefault();
+  const form = event.currentTarget;
   const profile = selectedProfile();
   if (!profile) return window.OLYCITY?._showProfilePicker?.();
   const title = document.getElementById('coop-title').value.trim();
@@ -323,7 +352,7 @@ async function submitGame(event) {
   submit.textContent = 'Ajout…';
   try {
     await firebaseRequest('coopGames', { method: 'POST', body: JSON.stringify(game) });
-    resetGameForm(event.currentTarget);
+    resetGameForm(form);
     closeForm();
     await loadGames({ quiet: true });
   } catch (requestError) {
@@ -384,10 +413,17 @@ function bindControls() {
   document.getElementById('coop-catalog-search-btn')?.addEventListener('click', runCatalogSearch);
   document.getElementById('coop-catalog-query')?.addEventListener('input', () => {
     clearTimeout(catalogSearchTimer);
+    const value = document.getElementById('coop-catalog-query')?.value.trim() || '';
+    if (value.length < 2) {
+      catalogAbortController?.abort();
+      renderCatalogResults([]);
+      const status = document.getElementById('coop-catalog-status');
+      if (status) status.textContent = value ? 'Encore un caractère…' : '';
+      return;
+    }
     catalogSearchTimer = setTimeout(() => {
-      const value = document.getElementById('coop-catalog-query')?.value.trim() || '';
-      if (value.length >= 3) runCatalogSearch();
-    }, 420);
+      runCatalogSearch();
+    }, 160);
   });
   document.getElementById('coop-catalog-query')?.addEventListener('keydown', event => {
     if (event.key === 'Enter') { event.preventDefault(); runCatalogSearch(); }

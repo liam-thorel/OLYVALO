@@ -18,7 +18,7 @@
   <link rel="stylesheet" href="./css/responsive.css?v=20260818-coop-nav">
   <link rel="stylesheet" href="./css/lol-mode.css?v=20260809-lol-sync">
   <link rel="stylesheet" href="./css/curse.css?v=20260818-curse-lifecycle">
-  <link rel="stylesheet" href="./css/coop-games.css?v=20260818-game-catalog">
+  <link rel="stylesheet" href="./css/coop-games.css?v=20260818-game-catalog-fast">
 </head>
 <body>
 
@@ -381,15 +381,14 @@
   <div class="coop-modal" id="coop-game-modal" role="dialog" aria-modal="true" aria-labelledby="coop-form-title">
     <form class="coop-form" id="coop-game-form">
       <div class="coop-form-head">
-        <div><h3 id="coop-form-title">Proposer un jeu</h3><p>Cherche le jeu : sa fiche, ses genres et son nombre de joueurs seront préremplis.</p></div>
+        <div><h3 id="coop-form-title">Ajouter un jeu</h3><p>Commence à taper, puis choisis le bon résultat.</p></div>
         <button class="coop-modal-close" id="coop-modal-close" type="button" aria-label="Fermer">×</button>
       </div>
       <div class="coop-fields">
         <div class="coop-field coop-field-wide coop-catalog-picker">
-          <label for="coop-catalog-query">Rechercher dans le catalogue</label>
+          <label for="coop-catalog-query">Trouver un jeu</label>
           <div class="coop-catalog-search">
-            <input id="coop-catalog-query" autocomplete="off" placeholder="Lethal Company ou lien Steam…">
-            <button id="coop-catalog-search-btn" type="button">Rechercher</button>
+            <input id="coop-catalog-query" autocomplete="off" placeholder="Lethal Company, Minecraft, lien Steam…">
           </div>
           <div class="coop-catalog-status" id="coop-catalog-status" aria-live="polite"></div>
           <div class="coop-catalog-results" id="coop-catalog-results" role="listbox" aria-label="Résultats de jeux"></div>
@@ -503,6 +502,6 @@
   <script type="module" src="./js/firebase-draw.js?v=20260720-avatars"></script>
   <!-- Présence Firebase -->
   <script src="./js/presence.js?v=20260720-avatars"></script>
-  <script type="module" src="./js/main.js?v=20260818-game-catalog"></script>
+  <script type="module" src="./js/main.js?v=20260818-game-catalog-fast"></script>
 </body>
 </html>

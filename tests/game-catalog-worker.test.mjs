@@ -53,3 +53,24 @@ test('the Worker exposes a CORS-safe normalized search endpoint', async () => {
   assert.equal(payload.results[0].title, 'Portal 2');
   assert.equal(calls[1].options.headers.Authorization, 'Bearer token');
 });
+
+test('a partial final word falls back to broader IGDB results', async () => {
+  const bodies = [];
+  const fetchImpl = async (_url, options = {}) => {
+    bodies.push(options.body || '');
+    if (String(options.body).includes('search "Lethal c"')) return new Response('[]');
+    return new Response(JSON.stringify([
+      { id: 1, name: 'Lethal Love' },
+      { id: 2, name: 'Lethal Company' },
+    ]));
+  };
+  const response = await handleRequest(
+    new Request('https://catalog.example/search?q=Lethal%20c'),
+    { TWITCH_CLIENT_ID: 'client', TWITCH_CLIENT_SECRET: 'secret' },
+    fetchImpl,
+  );
+  const payload = await response.json();
+  assert.equal(response.status, 200);
+  assert.equal(bodies.length, 2);
+  assert.equal(payload.results[0].title, 'Lethal Company');
+});

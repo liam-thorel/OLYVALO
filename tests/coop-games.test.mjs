@@ -1,5 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
 import {
   catalogFields,
   extractSteamAppId,
@@ -68,10 +69,13 @@ test('catalog metadata fills the suggestion form with editable defaults', () => 
 
 test('catalog search accepts a Steam link and uses the configured proxy', async () => {
   let requested = '';
+  const controller = new AbortController();
   const results = await searchGameCatalog('https://store.steampowered.com/app/1966720/Lethal_Company/', {
     endpoint: 'https://catalog.example.test/',
-    fetchImpl: async url => {
+    signal: controller.signal,
+    fetchImpl: async (url, options) => {
       requested = String(url);
+      assert.equal(options.signal, controller.signal);
       return new Response(JSON.stringify({ results: [{ title: 'Lethal Company' }] }), {
         headers: { 'Content-Type': 'application/json' },
       });
@@ -79,4 +83,11 @@ test('catalog search accepts a Steam link and uses the configured proxy', async 
   });
   assert.equal(new URL(requested).searchParams.get('steamAppId'), '1966720');
   assert.equal(results[0].title, 'Lethal Company');
+});
+
+test('the async submit keeps its form reference after Firebase resolves', () => {
+  const source = readFileSync(new URL('../js/coop-games-page.mjs', import.meta.url), 'utf8');
+  assert.match(source, /const form = event\.currentTarget;/);
+  assert.match(source, /resetGameForm\(form\);/);
+  assert.doesNotMatch(source, /resetGameForm\(event\.currentTarget\);/);
 });

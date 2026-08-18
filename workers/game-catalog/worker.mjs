@@ -93,9 +93,25 @@ async function twitchToken(env, fetchImpl) {
   return accessToken;
 }
 
-async function igdbSearch(query, env, fetchImpl) {
+function rankIgdbResults(games = [], query = '') {
+  const wanted = String(query).toLowerCase().trim();
+  const tokens = wanted.split(/\s+/).filter(Boolean);
+  return [...games].sort((left, right) => {
+    const score = game => {
+      const title = String(game.name || '').toLowerCase();
+      if (title === wanted) return 10000;
+      let value = title.startsWith(wanted) ? 5000 : title.includes(wanted) ? 3000 : 0;
+      value += tokens.filter(token => title.includes(token)).length * 500;
+      value -= Math.abs(title.length - wanted.length);
+      return value;
+    };
+    return score(right) - score(left);
+  });
+}
+
+async function fetchIgdbGames(query, env, fetchImpl, limit = 30) {
   const token = await twitchToken(env, fetchImpl);
-  const body = `search "${escapeIgdbSearch(query)}"; fields id,name,slug,summary,url,cover.image_id,genres.name,game_modes.name,multiplayer_modes.onlinecoop,multiplayer_modes.offlinecoop,multiplayer_modes.onlinecoopmax,multiplayer_modes.offlinecoopmax,multiplayer_modes.onlinemax,multiplayer_modes.offlinemax,first_release_date,external_games.category,external_games.uid,external_games.url; where version_parent = null; limit 10;`;
+  const body = `search "${escapeIgdbSearch(query)}"; fields id,name,slug,summary,url,cover.image_id,genres.name,game_modes.name,multiplayer_modes.onlinecoop,multiplayer_modes.offlinecoop,multiplayer_modes.onlinecoopmax,multiplayer_modes.offlinecoopmax,multiplayer_modes.onlinemax,multiplayer_modes.offlinemax,first_release_date,external_games.category,external_games.uid,external_games.url; where version_parent = null; limit ${limit};`;
   const response = await fetchImpl(IGDB_URL, {
     method: 'POST',
     headers: {
@@ -111,6 +127,15 @@ async function igdbSearch(query, env, fetchImpl) {
     throw new Error(`IGDB_HTTP_${response.status}`);
   }
   return response.json();
+}
+
+async function igdbSearch(query, env, fetchImpl) {
+  let games = await fetchIgdbGames(query, env, fetchImpl);
+  const words = String(query).trim().split(/\s+/).filter(Boolean);
+  if (!games.length && words.length > 1) {
+    games = await fetchIgdbGames(words.slice(0, -1).join(' '), env, fetchImpl, 50);
+  }
+  return rankIgdbResults(games, query).slice(0, 12);
 }
 
 async function steamDetails(appId, fetchImpl) {
