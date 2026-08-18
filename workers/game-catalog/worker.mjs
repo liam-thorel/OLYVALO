@@ -1,6 +1,8 @@
 const IGDB_URL = 'https://api.igdb.com/v4/games';
 const TWITCH_TOKEN_URL = 'https://id.twitch.tv/oauth2/token';
 const STEAM_DETAILS_URL = 'https://store.steampowered.com/api/appdetails';
+const GAME_INDEX_URL = 'https://app.lizardbyte.dev/GameDB/buckets';
+const IGDB_FIELDS = 'id,name,slug,summary,url,cover.image_id,genres.name,game_modes.name,multiplayer_modes.onlinecoop,multiplayer_modes.offlinecoop,multiplayer_modes.onlinecoopmax,multiplayer_modes.offlinecoopmax,multiplayer_modes.onlinemax,multiplayer_modes.offlinemax,first_release_date,external_games.category,external_games.uid,external_games.url,total_rating_count,follows,hypes';
 
 let accessToken = '';
 let accessTokenExpiresAt = 0;
@@ -102,6 +104,9 @@ function rankIgdbResults(games = [], query = '') {
       if (title === wanted) return 10000;
       let value = title.startsWith(wanted) ? 5000 : title.includes(wanted) ? 3000 : 0;
       value += tokens.filter(token => title.includes(token)).length * 500;
+      value += Math.log1p(Number(game.total_rating_count) || 0) * 180;
+      value += Math.log1p(Number(game.follows) || 0) * 45;
+      value += Math.log1p(Number(game.hypes) || 0) * 20;
       value -= Math.abs(title.length - wanted.length);
       return value;
     };
@@ -111,13 +116,18 @@ function rankIgdbResults(games = [], query = '') {
 
 async function fetchIgdbGames(query, env, fetchImpl, limit = 30) {
   const token = await twitchToken(env, fetchImpl);
-  const body = `search "${escapeIgdbSearch(query)}"; fields id,name,slug,summary,url,cover.image_id,genres.name,game_modes.name,multiplayer_modes.onlinecoop,multiplayer_modes.offlinecoop,multiplayer_modes.onlinecoopmax,multiplayer_modes.offlinecoopmax,multiplayer_modes.onlinemax,multiplayer_modes.offlinemax,first_release_date,external_games.category,external_games.uid,external_games.url; where version_parent = null; limit ${limit};`;
+  const body = `search "${escapeIgdbSearch(query)}"; fields ${IGDB_FIELDS}; where version_parent = null; limit ${limit};`;
+  return fetchIgdb(body, env, fetchImpl, token);
+}
+
+async function fetchIgdb(body, env, fetchImpl, token = '') {
+  const accessTokenValue = token || await twitchToken(env, fetchImpl);
   const response = await fetchImpl(IGDB_URL, {
     method: 'POST',
     headers: {
       Accept: 'application/json',
       'Client-ID': env.TWITCH_CLIENT_ID,
-      Authorization: `Bearer ${token}`,
+      Authorization: `Bearer ${accessTokenValue}`,
     },
     body,
   });
@@ -129,8 +139,51 @@ async function fetchIgdbGames(query, env, fetchImpl, limit = 30) {
   return response.json();
 }
 
+function normalizeSearchText(value = '') {
+  return String(value)
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, ' ')
+    .trim();
+}
+
+async function searchIndexedGameIds(query, fetchImpl) {
+  const wanted = normalizeSearchText(query);
+  const prefix = wanted.replace(/\s/g, '').slice(0, 2);
+  if (prefix.length < 2) return [];
+  const response = await fetchImpl(`${GAME_INDEX_URL}/${prefix}.json`, {
+    headers: { Accept: 'application/json' },
+    cf: { cacheTtl: 86400, cacheEverything: true },
+  });
+  if (!response.ok) return [];
+  const bucket = await response.json();
+  return Object.entries(bucket || {})
+    .map(([id, entry]) => ({ id: Number(id), name: String(entry?.name || '') }))
+    .filter(entry => Number.isInteger(entry.id) && normalizeSearchText(entry.name).includes(wanted))
+    .sort((left, right) => {
+      const leftName = normalizeSearchText(left.name);
+      const rightName = normalizeSearchText(right.name);
+      const leftScore = leftName === wanted ? 10000 : leftName.startsWith(wanted) ? 5000 : 3000;
+      const rightScore = rightName === wanted ? 10000 : rightName.startsWith(wanted) ? 5000 : 3000;
+      return rightScore - leftScore || Math.abs(leftName.length - wanted.length) - Math.abs(rightName.length - wanted.length);
+    })
+    .slice(0, 40)
+    .map(entry => entry.id);
+}
+
+async function fetchIgdbGamesByIds(ids, env, fetchImpl) {
+  const safeIds = ids.map(Number).filter(Number.isInteger).slice(0, 40);
+  if (!safeIds.length) return [];
+  const body = `fields ${IGDB_FIELDS}; where id = (${safeIds.join(',')}) & version_parent = null; limit ${safeIds.length};`;
+  return fetchIgdb(body, env, fetchImpl);
+}
+
 async function igdbSearch(query, env, fetchImpl) {
-  let games = await fetchIgdbGames(query, env, fetchImpl);
+  const indexedIds = await searchIndexedGameIds(query, fetchImpl);
+  let games = indexedIds.length
+    ? await fetchIgdbGamesByIds(indexedIds, env, fetchImpl)
+    : await fetchIgdbGames(query, env, fetchImpl);
   const words = String(query).trim().split(/\s+/).filter(Boolean);
   if (!games.length && words.length > 1) {
     games = await fetchIgdbGames(words.slice(0, -1).join(' '), env, fetchImpl, 50);
