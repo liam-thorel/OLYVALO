@@ -25,6 +25,7 @@ const { rewardForGamePlayed } = require('./wallet.js');
 const { recordRankGain, lolRankPoints } = require('./rank-tracking.js');
 const { recordAward } = require('./valorant-awards.js');
 const { buildRankProgressLine } = require('./valorant-rank.js');
+const { isValorantDeathmatch } = require('./stats.js');
 const { createBoundedSet, createExpiringMap } = require('./bounded-memory.js');
 const { formatLolRank, POSITION_ICONS } = require('./lol-rank.js');
 
@@ -219,6 +220,9 @@ function alreadyNotifiedRecently(recentStarts, key) {
 // Même logique que LoL : regroupe les sessions actives partageant le même
 // matchId pour détecter les stacks (2+ joueurs OLYCITY dans la même game).
 async function notifyValorantGameStart(session, snapshot) {
+  // Aucune notification en deathmatch : mode casual, sans enjeu de classement
+  // ni de paris (un score de kills en FFA n'a rien d'une victoire d'équipe).
+  if (isValorantDeathmatch(session.mode)) return;
   const matchId = session.matchId;
   if (matchId && notifiedValorantMatches.has(matchId)) return;
 
@@ -258,12 +262,6 @@ async function notifyValorantGameStart(session, snapshot) {
     }
   }));
 
-  // Pas de paris en deathmatch — un score de kills en FFA n'a rien à voir
-  // avec une victoire/défaite d'équipe, "équipe suivie vs adverse" n'a pas
-  // de sens dans ce mode.
-  const isDeathmatch = /deathmatch/i.test(session.mode || '');
-  if (isDeathmatch) return;
-
   const bettingPlayers = rosterPlayers.map(({ session: s, member }) => ({
     member, rank: s.rank || null, championOrAgentName: null,
   }));
@@ -297,6 +295,10 @@ function chunkButtonRows(buttons, size = 5) {
 async function notifyValorantGameEnd(sessions) {
   const withResult = sessions.filter(s => s.result);
   const primary = withResult[0] || sessions[0];
+  // Deathmatch : pas de carte de fin (mode casual). L'award « deathmatch »
+  // reste enregistré plus bas — c'est une stat, pas une notification — et
+  // aucun pari n'existe pour ce mode (la notif de début les a écartés).
+  const matchIsDeathmatch = isValorantDeathmatch(primary.result?.mode || primary.mode);
   const matchId = primary.matchId || primary.result?.matchId;
   const outcome = primary.result?.result === 'win' ? 'win' : primary.result?.result === 'loss' ? 'lose' : null;
   const betting = await resolveBetting('valorant', matchId, outcome).catch(error => {
@@ -349,7 +351,7 @@ async function notifyValorantGameEnd(sessions) {
 
     const kills = result.kills ?? 0;
     const deaths = result.deaths ?? 0;
-    const isDeathmatch = /deathmatch/i.test(result.mode || '');
+    const isDeathmatch = isValorantDeathmatch(result.mode);
     const awardLines = [];
     if (isDeathmatch) {
       // Le compte de kills/morts en deathmatch n'a rien à voir avec un 5v5
@@ -374,6 +376,11 @@ async function notifyValorantGameEnd(sessions) {
       new ButtonBuilder().setLabel('🔎 Voir sur tracker.gg').setStyle(ButtonStyle.Link).setURL(trackerGgUrl),
     )
     : null;
+
+  // playerData a déjà tourné : awards enregistrés, points de participation
+  // crédités (nuls en deathmatch, car sans issue win/loss). On s'arrête ici
+  // pour le deathmatch — aucune carte de fin ne part.
+  if (matchIsDeathmatch) return;
 
   const stackBanner = playerData.length > 1
     ? `🔥 **STACK OLYCITY** — ${playerData.length} joueurs dans la même game !\n`
