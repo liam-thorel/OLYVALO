@@ -27,13 +27,28 @@ function slugify(name) {
 // viennent TOUJOURS de rosterOverlay/accounts — y compris pour les 5 du
 // roster (migrés une fois depuis riot/smurfs) — donc tous supprimables/
 // modifiables de la même façon depuis l'admin, sans compte "principal" figé.
+/**
+ * Comptes déclarés directement dans roster.json (`riot` + `smurfs`).
+ *
+ * Le bot ne lisait QUE rosterOverlay/accounts : mettre à jour le Riot ID d'un
+ * membre dans roster.json corrigeait l'affichage du site — qui, lui, lit bien
+ * ces champs (js/history-utils.mjs) — sans que le bot ne le voie jamais. Un
+ * joueur renommé disparaissait donc silencieusement du suivi malgré une
+ * correction qui semblait faite.
+ */
+function riotIdsFromRoster(player) {
+  return [player?.riot, ...(player?.smurfs || [])]
+    .filter(account => account?.name)
+    .map(account => (account.tag ? `${account.name}#${account.tag}` : String(account.name)));
+}
+
 function indexRoster(roster, overlay) {
   const overlayMembers = overlay?.members || {};
   const overlayAccounts = overlay?.accounts || {};
 
   const staticMembers = roster.map(player => ({
     id: slugify(player.name), name: player.name, avatar: player.avatar || null,
-    discordId: extractDiscordId(player.avatar), riotIds: [], puuids: [],
+    discordId: extractDiscordId(player.avatar), riotIds: riotIdsFromRoster(player), puuids: [],
   }));
 
   const staticIds = new Set(staticMembers.map(m => m.id));
@@ -47,8 +62,14 @@ function indexRoster(roster, overlay) {
     const accounts = overlayAccounts[member.id];
     if (!accounts) return;
     Object.values(accounts).forEach(account => {
-      member.riotIds.push(`${account.name}#${account.tag}`);
-      if (account.puuid) member.puuids.push(String(account.puuid));
+      const riotId = `${account.name}#${account.tag}`;
+      // rosterOverlay et roster.json peuvent déclarer le même compte.
+      if (!member.riotIds.some(known => known.toLowerCase() === riotId.toLowerCase())) {
+        member.riotIds.push(riotId);
+      }
+      if (account.puuid && !member.puuids.includes(String(account.puuid))) {
+        member.puuids.push(String(account.puuid));
+      }
     });
   });
 
