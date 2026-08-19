@@ -131,12 +131,30 @@ function averageCs(entries) {
 // autres modes — Swift Play, Deathmatch, Spike Rush... — faussent le
 // winrate/KDA d'un récap censé refléter le classé). Aucun filtre nécessaire
 // côté LoL : live/index.js ne track déjà que les queues classées (420/440).
+// Le script publie le queueID de Riot en minuscules ('competitive',
+// 'deathmatch', 'unrated', 'swiftplay', 'spikerush'…). On normalise (casse +
+// espaces) avant comparaison : un rapport au format légèrement différent ne
+// doit ni faire fuiter du non-classé dans un récap, ni exclure une vraie
+// game classée.
 const RANKED_VALORANT_MODE = 'competitive';
+
+function normalizeMode(mode) {
+  return String(mode || '').trim().toLowerCase();
+}
+
+function isRankedValorantMode(mode) {
+  return normalizeMode(mode) === RANKED_VALORANT_MODE;
+}
+
+function isValorantDeathmatch(mode) {
+  return /deathmatch/.test(normalizeMode(mode));
+}
+
 function rankedOnly(game, entries) {
-  return game === 'valorant' ? entries.filter(e => e.mode === RANKED_VALORANT_MODE) : entries;
+  return game === 'valorant' ? entries.filter(e => isRankedValorantMode(e.mode)) : entries;
 }
 
 module.exports = {
   historyFor, winrateFor, mostPlayed, recentForm, killDeathRatio, aggregateKDA, averageHsPercent, averageAcs, averageCs, HISTORY_SAMPLE_SIZE,
-  rankedOnly, RANKED_VALORANT_MODE,
+  rankedOnly, RANKED_VALORANT_MODE, isRankedValorantMode, isValorantDeathmatch,
 };
