@@ -1,5 +1,5 @@
 {
-  "version": "4.17.4",
+  "version": "4.17.5",
   "files": [
     "index.js",
     "lol-watcher.js",
@@ -20,6 +20,7 @@
     "riot-identity.js",
     "history-index.js",
     "IDENTITE.bat",
+    "restart-policy.js",
     "updater.js",
     "update-manifest.json",
     "OLYCITY-LIVE.bat",

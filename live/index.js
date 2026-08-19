@@ -11,6 +11,7 @@ const { ensureStartupLauncher } = require('./startup.js');
 const { acquireInstanceLock, releaseInstanceLock } = require('./instance-lock.js');
 const { stopLegacyLiveProcesses } = require('./legacy-cleanup.js');
 const { createLolWatcher } = require('./lol-watcher.js');
+const { planRestart } = require('./restart-policy.js');
 const { readIdentity, writeIdentity } = require('./identity.js');
 const { createAccountBinder } = require('./account-binding.js');
 const { cleanupStalePresence, PRESENCE_CLEANUP_INTERVAL_MS } = require('./maintenance.js');
@@ -19,7 +20,7 @@ const { resolveRiotIdentity } = require('./riot-identity.js');
 const { valorantHistorySummary } = require('./history-index.js');
 
 const FIREBASE_URL = 'https://realtime-database-5bb9f-default-rtdb.europe-west1.firebasedatabase.app';
-const SCRIPT_VERSION = '4.17.4';
+const SCRIPT_VERSION = '4.17.5';
 const INSTANCE_LOCK_PATH = path.join(__dirname, '.olycity-live.lock');
 const LOG_PATH = path.join(__dirname, 'olycity.log');
 const MAX_LOG_BYTES = 5 * 1024 * 1024;
@@ -74,12 +75,16 @@ process.on('exit', releaseOwnedInstanceLock);
 // deux crashs arrivent en moins de 30s (config cassée, ne pas boucler à l'infini).
 function crashRestart(reason, error) {
   console.error(`[${ts()}] ⛔ Erreur fatale (${reason}): ${error?.stack || error}`);
-  const now = Date.now();
-  const lastCrash = Number(process.env.OLYCITY_LAST_CRASH_TS || 0);
-  if (now - lastCrash < 30000) {
-    console.error(`[${ts()}] Trop de redémarrages rapprochés — arrêt du script.`);
-    process.exit(1);
-    return;
+  const plan = planRestart(
+    Date.now(),
+    Number(process.env.OLYCITY_LAST_CRASH_TS || 0),
+    Number(process.env.OLYCITY_CRASH_STREAK || 0),
+  );
+  // On relance TOUJOURS — un script de fond ne doit jamais abandonner. Le délai
+  // (appliqué au démarrage de l'enfant) espace les crashs rapprochés sans
+  // jamais renoncer à revenir.
+  if (plan.delayMs > 0) {
+    console.error(`[${ts()}] Crash rapproché — relance dans ${Math.round(plan.delayMs / 1000)}s.`);
   }
   releaseOwnedInstanceLock();
   const child = spawn(process.execPath, [__filename], {
@@ -87,7 +92,12 @@ function crashRestart(reason, error) {
     detached: true,
     stdio: 'inherit',
     windowsHide: true,
-    env: { ...process.env, OLYCITY_LAST_CRASH_TS: String(now) },
+    env: {
+      ...process.env,
+      OLYCITY_LAST_CRASH_TS: String(plan.crashTs),
+      OLYCITY_CRASH_STREAK: String(plan.streak),
+      OLYCITY_RESTART_DELAY_MS: String(plan.delayMs),
+    },
   });
   child.unref();
   process.exit(1);
@@ -1588,6 +1598,13 @@ async function updateAndRestart() {
 }
 
 async function start() {
+  // Espacement après un crash rapproché (cf. restart-policy.js) : l'enfant
+  // relancé patiente ici plutôt que de boucler à chaud.
+  const restartDelay = Number(process.env.OLYCITY_RESTART_DELAY_MS || 0);
+  if (restartDelay > 0) await new Promise(resolve => setTimeout(resolve, restartDelay));
+  // Après une minute sans nouveau crash, la série est considérée éteinte.
+  setTimeout(() => { delete process.env.OLYCITY_CRASH_STREAK; }, 60_000).unref?.();
+
   if (restartForLogRotationIfNeeded()) return;
 
   const stopLegacy = () => {
