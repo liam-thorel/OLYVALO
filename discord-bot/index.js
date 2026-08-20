@@ -1029,3 +1029,8 @@ client.on('error', error => console.error('[client:error]', error));
 client.on('warn', message => console.warn('[client:warn]', message));
 
 client.login(DISCORD_TOKEN).catch(error => console.error('[startup] login() a échoué —', error));
+
+// Exposé pour les tests : vérifier qu'aucun message ne part en deathmatch
+// exige d'exercer réellement le chemin de notification, pas seulement le
+// prédicat de mode.
+module.exports = { __test: { notifyValorantGameStart, notifyValorantGameEnd } };
