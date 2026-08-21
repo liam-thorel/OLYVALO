@@ -1,0 +1,139 @@
+name: Package du Live
+
+# Le ZIP autonome était assemblé et téléversé à la main : deux releases sont
+# déjà parties sans archive (v14.7.4, puis v4.17.5), et le lien de
+# téléchargement du site pointait alors dans le vide. On l'assemble donc ici.
+#
+# Deux déclencheurs : automatiquement à la publication d'un tag `vX.Y.Z`, et
+# manuellement (workflow_dispatch) pour rattacher l'archive à une release déjà
+# publiée sans elle.
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Tag à (re)packager, ex. v4.17.5'
+        required: true
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release-live-${{ inputs.tag || github.ref_name }}
+  cancel-in-progress: false
+
+jobs:
+  package:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.tag || github.ref_name }}
+
+      # Une archive dont la version ne correspond pas au tag ferait boucler
+      # l'auto-updater des postes : il compare la version installée à celle de
+      # la release. Mieux vaut échouer ici que publier ça.
+      - name: Vérifier la cohérence des versions
+        id: version
+        run: |
+          set -euo pipefail
+          tag='${{ inputs.tag || github.ref_name }}'
+          version="${tag#v}"
+          pkg=$(jq -r .version live/package.json)
+          manifest=$(jq -r .version live/update-manifest.json)
+          # Troisième emplacement : c'est cette valeur que les postes publient et
+          # que le panel admin affiche.
+          script=$(sed -n "s/^const SCRIPT_VERSION = '\(.*\)';$/\1/p" live/index.js)
+          echo "tag=$tag  package.json=$pkg  update-manifest.json=$manifest  SCRIPT_VERSION=$script"
+          [ "$pkg" = "$version" ] || { echo "::error::live/package.json est en $pkg, le tag annonce $version"; exit 1; }
+          [ "$manifest" = "$version" ] || { echo "::error::live/update-manifest.json est en $manifest, le tag annonce $version"; exit 1; }
+          [ "$script" = "$version" ] || { echo "::error::SCRIPT_VERSION est en $script, le tag annonce $version"; exit 1; }
+          echo "tag=$tag" >> "$GITHUB_OUTPUT"
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+
+      # Le package embarque le runtime Windows : rien à installer sur les PC du
+      # roster. On vérifie l'empreinte publiée par nodejs.org avant de l'inclure.
+      - name: Récupérer le runtime Node Windows
+        run: |
+          set -euo pipefail
+          node_version=$(tr -d '[:space:]' < live/runtime-version.txt)
+          base="https://nodejs.org/dist/v${node_version}"
+          # Nom de fichier conservé tel quel : sha256sum --check compare le nom
+          # inscrit dans SHASUMS256.txt à un fichier du même nom sur le disque.
+          curl -fsSL --retry 3 -O "${base}/node-v${node_version}-win-x64.zip"
+          curl -fsSL --retry 3 -O "${base}/SHASUMS256.txt"
+          grep " node-v${node_version}-win-x64.zip\$" SHASUMS256.txt | sha256sum --check --strict -
+          unzip -q "node-v${node_version}-win-x64.zip"
+          mkdir -p runtime
+          cp "node-v${node_version}-win-x64/node.exe" runtime/node.exe
+          cp "node-v${node_version}-win-x64/LICENSE" runtime/NODE-LICENSE.txt
+          cp SHASUMS256.txt runtime/SHASUMS256.txt
+          # Seconde vérification, sur le binaire réellement embarqué cette fois.
+          expected=$(awk '$2 == "win-x64/node.exe" { print $1 }' SHASUMS256.txt)
+          echo "${expected}  runtime/node.exe" | sha256sum --check --strict -
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: live/runtime-version.txt
+
+      - name: Installer les dépendances de production
+        run: npm ci --omit=dev
+        working-directory: live
+
+      # La liste de fichiers vient de update-manifest.json : c'est déjà elle qui
+      # décrit ce que l'auto-updater remplace. Une seule liste à tenir à jour,
+      # et un fichier ajouté au script se retrouve forcément dans l'archive.
+      - name: Assembler l'archive
+        id: archive
+        run: |
+          set -euo pipefail
+          staging=$(mktemp -d)
+          missing=0
+          while IFS= read -r file; do
+            if [ ! -f "live/$file" ]; then
+              echo "::error::update-manifest.json liste $file, absent de live/"
+              missing=1
+              continue
+            fi
+            cp "live/$file" "$staging/$file"
+          done < <(jq -r '.files[]' live/update-manifest.json)
+          [ "$missing" -eq 0 ] || exit 1
+
+          cp -r runtime "$staging/runtime"
+          cp -r live/node_modules "$staging/node_modules"
+
+          name='OLYCITY-Live-v${{ steps.version.outputs.version }}.zip'
+          (cd "$staging" && zip -qr "$GITHUB_WORKSPACE/$name" .)
+          # Second nom, stable : le site pointe sur
+          # releases/latest/download/OLYCITY-Live.zip et n'a donc plus besoin
+          # d'être modifié à chaque version.
+          cp "$name" OLYCITY-Live.zip
+          echo "name=$name" >> "$GITHUB_OUTPUT"
+          ls -lh "$name"
+
+      # Garde-fou : une archive à laquelle il manque le runtime ou un module
+      # ne démarrerait pas, et l'erreur n'apparaîtrait que sur le PC du joueur.
+      - name: Vérifier l'archive
+        run: |
+          set -euo pipefail
+          name='${{ steps.archive.outputs.name }}'
+          unzip -t "$name" > /dev/null
+          # Liste lue une seule fois : `unzip -l | grep -q` sortirait au premier
+          # résultat, unzip prendrait un SIGPIPE, et pipefail ferait échouer
+          # l'étape alors que le fichier cherché est bien là.
+          listing=$(unzip -Z1 "$name")
+          for required in index.js package.json updater.js update-manifest.json \
+                          INSTALLER.bat OLYCITY-LIVE.bat runtime/node.exe node_modules/ws/index.js; do
+            grep -qxF "$required" <<< "$listing" || { echo "::error::$required absent de l'archive"; exit 1; }
+          done
+          version=$(unzip -p "$name" package.json | jq -r .version)
+          [ "$version" = '${{ steps.version.outputs.version }}' ] || { echo "::error::package.json embarqué en $version"; exit 1; }
+
+      - name: Téléverser sur la release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release upload '${{ steps.version.outputs.tag }}' \
+            '${{ steps.archive.outputs.name }}' OLYCITY-Live.zip \
+            --clobber --repo '${{ github.repository }}'
