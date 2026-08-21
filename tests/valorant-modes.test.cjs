@@ -38,8 +38,28 @@ assert.ok(kept.every(entry => entry.mode.toLowerCase() === 'competitive'));
 assert.ok(!kept.some(entry => entry.mode === 'deathmatch'), 'aucun deathmatch dans un récap');
 assert.ok(!kept.some(entry => entry.mode === 'unrated'), 'aucun non-classé dans un récap');
 
-// LoL n'est pas filtré ici (il l'est par queueId en amont).
-const lol = [{ mode: 'CLASSIC', win: true }];
-assert.deepEqual(rankedOnly('lol', lol), lol);
+// ─── rankedOnly côté LoL : ARAM, normales et Co-op vs IA écartées ───────────
+const lol = [
+  { queueId: 420, win: true },   // Solo/Duo
+  { queueId: 440, win: false },  // Flex
+  { queueId: 450, win: true },   // ARAM
+  { queueId: 400, win: false },  // normale draft
+  { queueId: 830, win: true },   // Co-op vs IA
+  { queueId: 0, win: false },    // Practice Tool
+  { win: true },                 // entrée d'avant 4.17.5, sans queueId
+];
+const lolKept = rankedOnly('lol', lol);
+assert.deepEqual(lolKept.map(e => e.queueId), [420, 440, undefined],
+  'seules les files classées — et les vieilles entrées sans queueId — sont gardées');
+assert.ok(!lolKept.some(e => e.queueId === 450), 'aucune ARAM dans un récap');
 
-console.log('valorant-modes: deathmatch détecté, récaps strictement compétitifs');
+// Une entrée sans queueId ne doit pas être écartée : le script live n'écrit
+// d'historique que pour le classé, donc la filtrer viderait rétroactivement
+// les stats des joueurs restés sur une ancienne version.
+assert.equal(rankedOnly('lol', [{ win: true }]).length, 1);
+
+// Un jeu inconnu passe tel quel plutôt que de tout perdre silencieusement.
+const unknown = [{ win: true }];
+assert.deepEqual(rankedOnly('tft', unknown), unknown);
+
+console.log('valorant-modes: deathmatch détecté, récaps strictement classés (Valorant + LoL)');

@@ -1,6 +1,6 @@
 const { SlashCommandBuilder } = require('discord.js');
 const { ensureRoster, memberNames, memberByName } = require('../roster.js');
-const { historyFor, mostPlayed, recentForm } = require('../stats.js');
+const { historyFor, mostPlayed, recentForm, rankedOnly } = require('../stats.js');
 
 const GAME_LABELS = { valorant: 'Valorant', lol: 'League of Legends' };
 
@@ -33,9 +33,9 @@ module.exports = {
       return;
     }
 
-    const entries = await historyFor(game, member.riotIds);
+    const entries = rankedOnly(game, await historyFor(game, member.riotIds));
     if (entries.length === 0) {
-      await interaction.editReply(`Pas encore de game enregistrée pour **${member.name}** en ${GAME_LABELS[game]}.`);
+      await interaction.editReply(`Pas encore de game classée enregistrée pour **${member.name}** en ${GAME_LABELS[game]}.`);
       return;
     }
 

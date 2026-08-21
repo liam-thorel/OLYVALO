@@ -168,7 +168,13 @@ function isNonRankedLolQueue(queueId) {
 }
 
 function rankedOnly(game, entries) {
-  return game === 'valorant' ? entries.filter(e => isRankedValorantMode(e.mode)) : entries;
+  if (game === 'valorant') return entries.filter(e => isRankedValorantMode(e.mode));
+  // Côté LoL on écarte seulement ce qu'on sait être hors classé : le script
+  // live n'écrit d'historique que pour les files classées, donc un queueId
+  // manquant sur une vieille entrée désigne une game classée, pas une ARAM.
+  // Filtrer strictement viderait rétroactivement les stats de ces joueurs.
+  if (game === 'lol') return entries.filter(e => !isNonRankedLolQueue(e.queueId));
+  return entries;
 }
 
 module.exports = {
