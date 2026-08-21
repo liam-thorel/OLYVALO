@@ -25,7 +25,7 @@ const { rewardForGamePlayed } = require('./wallet.js');
 const { recordRankGain, lolRankPoints } = require('./rank-tracking.js');
 const { recordAward } = require('./valorant-awards.js');
 const { buildRankProgressLine } = require('./valorant-rank.js');
-const { isValorantDeathmatch } = require('./stats.js');
+const { isRankedValorantMode, isValorantDeathmatch } = require('./stats.js');
 const { createBoundedSet, createExpiringMap } = require('./bounded-memory.js');
 const { formatLolRank, POSITION_ICONS } = require('./lol-rank.js');
 
@@ -220,9 +220,11 @@ function alreadyNotifiedRecently(recentStarts, key) {
 // Même logique que LoL : regroupe les sessions actives partageant le même
 // matchId pour détecter les stacks (2+ joueurs OLYCITY dans la même game).
 async function notifyValorantGameStart(session, snapshot) {
-  // Aucune notification en deathmatch : mode casual, sans enjeu de classement
-  // ni de paris (un score de kills en FFA n'a rien d'une victoire d'équipe).
-  if (isValorantDeathmatch(session.mode)) return;
+  // Seules les files CLASSÉES sont notifiées, comme côté LoL où le script ne
+  // suit déjà que SoloQ et Flex. Non classé, Swift Play, Spike Rush, Escalade,
+  // Réplication et les deathmatchs n'ont ni enjeu de rang ni sens pour les
+  // paris — leurs stats ne sont pas comparables à celles d'une game classée.
+  if (!isRankedValorantMode(session.mode)) return;
   const matchId = session.matchId;
   if (matchId && notifiedValorantMatches.has(matchId)) return;
 
@@ -295,10 +297,10 @@ function chunkButtonRows(buttons, size = 5) {
 async function notifyValorantGameEnd(sessions) {
   const withResult = sessions.filter(s => s.result);
   const primary = withResult[0] || sessions[0];
-  // Deathmatch : pas de carte de fin (mode casual). L'award « deathmatch »
-  // reste enregistré plus bas — c'est une stat, pas une notification — et
-  // aucun pari n'existe pour ce mode (la notif de début les a écartés).
-  const matchIsDeathmatch = isValorantDeathmatch(primary.result?.mode || primary.mode);
+  // Idem à la fin : pas de carte hors file classée. Les awards restent
+  // enregistrés plus bas (ce sont des stats, pas des notifications) et aucun
+  // pari n'existe pour ces modes, la notif de début les ayant écartés.
+  const matchIsRanked = isRankedValorantMode(primary.result?.mode || primary.mode);
   const matchId = primary.matchId || primary.result?.matchId;
   const outcome = primary.result?.result === 'win' ? 'win' : primary.result?.result === 'loss' ? 'lose' : null;
   const betting = await resolveBetting('valorant', matchId, outcome).catch(error => {
@@ -377,10 +379,9 @@ async function notifyValorantGameEnd(sessions) {
     )
     : null;
 
-  // playerData a déjà tourné : awards enregistrés, points de participation
-  // crédités (nuls en deathmatch, car sans issue win/loss). On s'arrête ici
-  // pour le deathmatch — aucune carte de fin ne part.
-  if (matchIsDeathmatch) return;
+  // playerData a déjà tourné : awards enregistrés et points de participation
+  // crédités. On s'arrête ici hors file classée — aucune carte de fin ne part.
+  if (!matchIsRanked) return;
 
   const stackBanner = playerData.length > 1
     ? `🔥 **STACK OLYCITY** — ${playerData.length} joueurs dans la même game !\n`

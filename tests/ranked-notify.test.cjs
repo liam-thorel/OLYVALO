@@ -19,7 +19,16 @@ function loadBot() {
       case './firebase.js':
         return { fbGet: async () => null, fbPut: async () => true, fbDelete: async () => true, watchNode: () => () => {} };
       case './roster.js':
-        return { ensureRoster: async () => [], memberByIdentity: s => ({ id: 'rayhan', name: 'Rayhan', discordId: null, avatar: null, riotIds: [s?.playerName || ''] }) };
+        return {
+          ensureRoster: async () => [],
+          // Le nom dérive du playerName : chaque cas de test a donc son propre
+          // joueur, sinon la fenêtre anti-doublon de 20 min du bot bloquerait
+          // légitimement les cas suivants.
+          memberByIdentity: s => {
+            const name = String(s?.playerName || 'X').split('#')[0];
+            return { id: name.toLowerCase(), name, discordId: null, avatar: null, riotIds: [s?.playerName || ''] };
+          },
+        };
       case './trackers.js':
         return { startTrackerSync: () => {}, loadTrackersOnce: async () => ({}), trackersForPlayerGame: () => [{ channelId: 'salon-1' }] };
       case './discovered.js': return { recordDiscovered: async () => {} };
@@ -73,10 +82,15 @@ function loadBot() {
 
 const { notifyValorantGameStart, notifyValorantGameEnd } = loadBot();
 
-const session = (mode, extra = {}) => ({
-  active: true, playerName: 'RayBaz#OLY', memberId: 'rayhan', mode,
-  matchId: `match-${mode}-${Math.random()}`, ...extra,
-});
+let caseCounter = 0;
+const session = (mode, extra = {}) => {
+  caseCounter += 1;
+  const player = `Joueur${caseCounter}`;
+  return {
+    active: true, playerName: `${player}#OLY`, memberId: player.toLowerCase(), mode,
+    matchId: `match-${caseCounter}`, ...extra,
+  };
+};
 
 const endResult = mode => ({
   result: 'completed', mode, kills: 19, deaths: 29, assists: 5,
@@ -106,6 +120,20 @@ const endResult = mode => ({
     assert.deepEqual(sent, [], `aucun message pour mode=${JSON.stringify(mode)}`);
   }
 
+  // ─── Aucune file NON CLASSÉE ne doit notifier ─────────────────────────────
+  // Le deathmatch n'est qu'un cas parmi d'autres : seul le compétitif compte.
+  const casual = ['unrated', 'swiftplay', 'spikerush', 'hurm', 'ggteam', 'onefa', 'newmap', '', null];
+  for (const mode of casual) {
+    sent.length = 0;
+    const s = session(mode);
+    await notifyValorantGameStart(s, { [s.playerName]: s });
+    assert.deepEqual(sent, [], `aucune carte de début pour mode=${JSON.stringify(mode)}`);
+
+    const e = session(mode); e.active = false; e.result = endResult(mode);
+    await notifyValorantGameEnd([e]);
+    assert.deepEqual(sent, [], `aucune carte de fin pour mode=${JSON.stringify(mode)}`);
+  }
+
   // ─── Compétitif : les messages partent toujours ───────────────────────────
   sent.length = 0;
   const compStart = session('competitive');
@@ -120,5 +148,13 @@ const endResult = mode => ({
   await notifyValorantGameEnd([compEnd]);
   assert.equal(sent.length, 1, 'la carte de fin d’une game classée doit partir');
 
-  console.log('deathmatch-notify: silence total en deathmatch, messages intacts en compétitif');
+  // La casse du compétitif ne doit pas, elle, faire perdre une notif.
+  for (const mode of ['Competitive', 'COMPETITIVE', ' competitive ']) {
+    sent.length = 0;
+    const s = session(mode);
+    await notifyValorantGameStart(s, { [s.playerName]: s });
+    assert.equal(sent.length, 1, `mode=${JSON.stringify(mode)} doit être notifié`);
+  }
+
+  console.log('ranked-notify: seules les files classées notifient, sur Valorant comme sur LoL');
 })().catch(error => { console.error(error); process.exit(1); });
