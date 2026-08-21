@@ -42,9 +42,13 @@ jobs:
           version="${tag#v}"
           pkg=$(jq -r .version live/package.json)
           manifest=$(jq -r .version live/update-manifest.json)
-          echo "tag=$tag        live/package.json=$pkg        live/update-manifest.json=$manifest"
+          # Troisième emplacement : c'est cette valeur que les postes publient et
+          # que le panel admin affiche.
+          script=$(sed -n "s/^const SCRIPT_VERSION = '\(.*\)';$/\1/p" live/index.js)
+          echo "tag=$tag  package.json=$pkg  update-manifest.json=$manifest  SCRIPT_VERSION=$script"
           [ "$pkg" = "$version" ] || { echo "::error::live/package.json est en $pkg, le tag annonce $version"; exit 1; }
           [ "$manifest" = "$version" ] || { echo "::error::live/update-manifest.json est en $manifest, le tag annonce $version"; exit 1; }
+          [ "$script" = "$version" ] || { echo "::error::SCRIPT_VERSION est en $script, le tag annonce $version"; exit 1; }
           echo "tag=$tag" >> "$GITHUB_OUTPUT"
           echo "version=$version" >> "$GITHUB_OUTPUT"
 
