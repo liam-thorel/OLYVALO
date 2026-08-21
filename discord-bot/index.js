@@ -25,7 +25,7 @@ const { rewardForGamePlayed } = require('./wallet.js');
 const { recordRankGain, lolRankPoints } = require('./rank-tracking.js');
 const { recordAward } = require('./valorant-awards.js');
 const { buildRankProgressLine } = require('./valorant-rank.js');
-const { isValorantDeathmatch } = require('./stats.js');
+const { isRankedValorantMode, isValorantDeathmatch, isNonRankedLolQueue } = require('./stats.js');
 const { createBoundedSet, createExpiringMap } = require('./bounded-memory.js');
 const { formatLolRank, POSITION_ICONS } = require('./lol-rank.js');
 
@@ -220,9 +220,11 @@ function alreadyNotifiedRecently(recentStarts, key) {
 // Même logique que LoL : regroupe les sessions actives partageant le même
 // matchId pour détecter les stacks (2+ joueurs OLYCITY dans la même game).
 async function notifyValorantGameStart(session, snapshot) {
-  // Aucune notification en deathmatch : mode casual, sans enjeu de classement
-  // ni de paris (un score de kills en FFA n'a rien d'une victoire d'équipe).
-  if (isValorantDeathmatch(session.mode)) return;
+  // Seules les files CLASSÉES sont notifiées, comme côté LoL où le script ne
+  // suit déjà que SoloQ et Flex. Non classé, Swift Play, Spike Rush, Escalade,
+  // Réplication et les deathmatchs n'ont ni enjeu de rang ni sens pour les
+  // paris — leurs stats ne sont pas comparables à celles d'une game classée.
+  if (!isRankedValorantMode(session.mode)) return;
   const matchId = session.matchId;
   if (matchId && notifiedValorantMatches.has(matchId)) return;
 
@@ -295,10 +297,13 @@ function chunkButtonRows(buttons, size = 5) {
 async function notifyValorantGameEnd(sessions) {
   const withResult = sessions.filter(s => s.result);
   const primary = withResult[0] || sessions[0];
-  // Deathmatch : pas de carte de fin (mode casual). L'award « deathmatch »
-  // reste enregistré plus bas — c'est une stat, pas une notification — et
-  // aucun pari n'existe pour ce mode (la notif de début les a écartés).
-  const matchIsDeathmatch = isValorantDeathmatch(primary.result?.mode || primary.mode);
+  // Hors file classée, on s'arrête AVANT tout enregistrement : ni carte, ni
+  // points de participation, ni award. Le garde était plus bas, ce qui laissait
+  // une game non classée créditer des points de paris et alimenter les awards.
+  // Aucun pari n'existe pour ces modes (la notif de début les écarte), donc il
+  // n'y a rien à résoudre non plus.
+  if (!isRankedValorantMode(primary.result?.mode || primary.mode)) return;
+
   const matchId = primary.matchId || primary.result?.matchId;
   const outcome = primary.result?.result === 'win' ? 'win' : primary.result?.result === 'loss' ? 'lose' : null;
   const betting = await resolveBetting('valorant', matchId, outcome).catch(error => {
@@ -377,11 +382,6 @@ async function notifyValorantGameEnd(sessions) {
     )
     : null;
 
-  // playerData a déjà tourné : awards enregistrés, points de participation
-  // crédités (nuls en deathmatch, car sans issue win/loss). On s'arrête ici
-  // pour le deathmatch — aucune carte de fin ne part.
-  if (matchIsDeathmatch) return;
-
   const stackBanner = playerData.length > 1
     ? `🔥 **STACK OLYCITY** — ${playerData.length} joueurs dans la même game !\n`
     : '';
@@ -448,6 +448,12 @@ async function notifyValorantGameEnd(sessions) {
 async function notifyLolGameEnd(sessions) {
   const withResult = sessions.filter(s => s.result);
   const primary = withResult[0] || sessions[0];
+
+  // Hors file classée, on s'arrête AVANT tout enregistrement : ni résumé, ni
+  // points de participation, ni suivi de rang. Aucun pari n'a pu être ouvert
+  // sur ces games (la notif de début les écarte), donc rien à rembourser.
+  if (isNonRankedLolQueue(primary.result?.queueId ?? primary.queueId)) return;
+
   const matchId = primary.matchId || primary.result?.matchId;
   const outcome = primary.result?.win === true ? 'win' : primary.result?.win === false ? 'lose' : null;
   const betting = await resolveBetting('lol', matchId, outcome).catch(error => {
@@ -643,6 +649,10 @@ const recentLolStarts = createExpiringMap(START_DEDUPE_WINDOW_MS); // idem Valor
 // toutes les sessions actives partageant le même matchId (gameId Riot) en un
 // seul message, avec un embed par joueur (champion + matchup).
 async function notifyLolGameStart(session, snapshot) {
+  // Seules les files classées sont suivies : pas de notif ni de paris sur une
+  // normale, un ARAM ou un Co-op vs IA.
+  if (isNonRankedLolQueue(session.queueId)) return;
+
   const matchId = session.matchId;
   if (matchId && notifiedLolMatches.has(matchId)) return;
 
@@ -1033,4 +1043,4 @@ client.login(DISCORD_TOKEN).catch(error => console.error('[startup] login() a é
 // Exposé pour les tests : vérifier qu'aucun message ne part en deathmatch
 // exige d'exercer réellement le chemin de notification, pas seulement le
 // prédicat de mode.
-module.exports = { __test: { notifyValorantGameStart, notifyValorantGameEnd } };
+module.exports = { __test: { notifyValorantGameStart, notifyValorantGameEnd, notifyLolGameStart, notifyLolGameEnd } };

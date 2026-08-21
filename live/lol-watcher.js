@@ -753,6 +753,9 @@ function createLolWatcher({
       active: true,
       ts: now,
       matchId: currentMatchId,
+      // Publié dès le début de game pour que le bot puisse revérifier lui-même
+      // qu'on est bien en file classée avant de notifier ou d'ouvrir des paris.
+      queueId: currentQueueId,
       playerName: sessionKey,
       memberId: sessionMember?.memberId || '',
       member: sessionMember?.memberName || '',

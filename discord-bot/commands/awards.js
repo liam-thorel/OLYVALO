@@ -1,6 +1,6 @@
 const { SlashCommandBuilder } = require('discord.js');
 const { ensureRoster } = require('../roster.js');
-const { historyFor, killDeathRatio } = require('../stats.js');
+const { historyFor, killDeathRatio, rankedOnly } = require('../stats.js');
 const { awardsLeaderboard } = require('../valorant-awards.js');
 
 module.exports = {
@@ -13,7 +13,7 @@ module.exports = {
     const members = await ensureRoster();
 
     const ratios = await Promise.all(members.map(async member => {
-      const entries = await historyFor('valorant', member.riotIds);
+      const entries = rankedOnly('valorant', await historyFor('valorant', member.riotIds));
       return { name: member.name, ratio: killDeathRatio(entries), games: entries.length };
     }));
     const ratioLines = ratios

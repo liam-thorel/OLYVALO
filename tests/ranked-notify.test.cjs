@@ -19,7 +19,16 @@ function loadBot() {
       case './firebase.js':
         return { fbGet: async () => null, fbPut: async () => true, fbDelete: async () => true, watchNode: () => () => {} };
       case './roster.js':
-        return { ensureRoster: async () => [], memberByIdentity: s => ({ id: 'rayhan', name: 'Rayhan', discordId: null, avatar: null, riotIds: [s?.playerName || ''] }) };
+        return {
+          ensureRoster: async () => [],
+          // Le nom dérive du playerName : chaque cas de test a donc son propre
+          // joueur, sinon la fenêtre anti-doublon de 20 min du bot bloquerait
+          // légitimement les cas suivants.
+          memberByIdentity: s => {
+            const name = String(s?.playerName || 'X').split('#')[0];
+            return { id: name.toLowerCase(), name, discordId: null, avatar: null, riotIds: [s?.playerName || ''] };
+          },
+        };
       case './trackers.js':
         return { startTrackerSync: () => {}, loadTrackersOnce: async () => ({}), trackersForPlayerGame: () => [{ channelId: 'salon-1' }] };
       case './discovered.js': return { recordDiscovered: async () => {} };
@@ -71,12 +80,17 @@ function loadBot() {
   return bot.__test;
 }
 
-const { notifyValorantGameStart, notifyValorantGameEnd } = loadBot();
+const { notifyValorantGameStart, notifyValorantGameEnd, notifyLolGameStart, notifyLolGameEnd } = loadBot();
 
-const session = (mode, extra = {}) => ({
-  active: true, playerName: 'RayBaz#OLY', memberId: 'rayhan', mode,
-  matchId: `match-${mode}-${Math.random()}`, ...extra,
-});
+let caseCounter = 0;
+const session = (mode, extra = {}) => {
+  caseCounter += 1;
+  const player = `Joueur${caseCounter}`;
+  return {
+    active: true, playerName: `${player}#OLY`, memberId: player.toLowerCase(), mode,
+    matchId: `match-${caseCounter}`, ...extra,
+  };
+};
 
 const endResult = mode => ({
   result: 'completed', mode, kills: 19, deaths: 29, assists: 5,
@@ -106,6 +120,20 @@ const endResult = mode => ({
     assert.deepEqual(sent, [], `aucun message pour mode=${JSON.stringify(mode)}`);
   }
 
+  // ─── Aucune file NON CLASSÉE ne doit notifier ─────────────────────────────
+  // Le deathmatch n'est qu'un cas parmi d'autres : seul le compétitif compte.
+  const casual = ['unrated', 'swiftplay', 'spikerush', 'hurm', 'ggteam', 'onefa', 'newmap', '', null];
+  for (const mode of casual) {
+    sent.length = 0;
+    const s = session(mode);
+    await notifyValorantGameStart(s, { [s.playerName]: s });
+    assert.deepEqual(sent, [], `aucune carte de début pour mode=${JSON.stringify(mode)}`);
+
+    const e = session(mode); e.active = false; e.result = endResult(mode);
+    await notifyValorantGameEnd([e]);
+    assert.deepEqual(sent, [], `aucune carte de fin pour mode=${JSON.stringify(mode)}`);
+  }
+
   // ─── Compétitif : les messages partent toujours ───────────────────────────
   sent.length = 0;
   const compStart = session('competitive');
@@ -120,5 +148,66 @@ const endResult = mode => ({
   await notifyValorantGameEnd([compEnd]);
   assert.equal(sent.length, 1, 'la carte de fin d’une game classée doit partir');
 
-  console.log('deathmatch-notify: silence total en deathmatch, messages intacts en compétitif');
+  // La casse du compétitif ne doit pas, elle, faire perdre une notif.
+  for (const mode of ['Competitive', 'COMPETITIVE', ' competitive ']) {
+    sent.length = 0;
+    const s = session(mode);
+    await notifyValorantGameStart(s, { [s.playerName]: s });
+    assert.equal(sent.length, 1, `mode=${JSON.stringify(mode)} doit être notifié`);
+  }
+
+  // ─── LoL : seules les files classées (420 Solo/Duo, 440 Flex) ────────────
+  // Le filtrage vit déjà dans live/lol-watcher.js, mais un poste resté sur une
+  // vieille version du script pourrait publier autre chose : le bot doit s'en
+  // protéger lui-même.
+  const lolSession = (queueId, extra = {}) => {
+    caseCounter += 1;
+    const player = `Invoc${caseCounter}`;
+    return {
+      active: true, playerName: `${player}#EUW`, memberId: player.toLowerCase(),
+      matchId: `lol-${caseCounter}`, queueId,
+      champion: { name: 'Ahri', image: '' }, matchup: null, rank: null,
+      position: 'MIDDLE', region: 'euw1', ...extra,
+    };
+  };
+  const lolEndResult = queueId => ({
+    win: true, queueId, kills: 9, deaths: 2, assists: 14, cs: 210,
+    champion: { name: 'Ahri', image: '' }, durationLabel: '28:14',
+    items: [], rankBefore: null, rankAfter: null, position: 'MIDDLE',
+  });
+
+  // 450 = ARAM, 400 = Normale draft, 830/840/850 = Co-op vs IA, 0 = Practice Tool.
+  for (const queueId of [450, 400, 430, 830, 840, 850, 900, 1700, 0]) {
+    sent.length = 0;
+    const s = lolSession(queueId);
+    await notifyLolGameStart(s, { [s.playerName]: s });
+    assert.deepEqual(sent, [], `aucune carte de début LoL pour queueId=${queueId}`);
+
+    const e = lolSession(queueId); e.active = false; e.result = lolEndResult(queueId);
+    await notifyLolGameEnd([e]);
+    assert.deepEqual(sent, [], `aucune carte de fin LoL pour queueId=${queueId}`);
+  }
+
+  for (const queueId of [420, 440]) {
+    sent.length = 0;
+    const s = lolSession(queueId);
+    await notifyLolGameStart(s, { [s.playerName]: s });
+    assert.equal(sent.length, 1, `la file classée LoL ${queueId} doit être annoncée`);
+
+    sent.length = 0;
+    const e = lolSession(queueId); e.active = false; e.result = lolEndResult(queueId);
+    await notifyLolGameEnd([e]);
+    assert.equal(sent.length, 1, `la carte de fin LoL doit partir pour la file ${queueId}`);
+  }
+
+  // Ancienne version du script live : pas de queueId sur la session de début.
+  // Elle ne publie déjà que du classé, donc la notif doit continuer à partir —
+  // sinon la mise à jour du bot ferait taire tous les postes pas encore à jour.
+  sent.length = 0;
+  const legacy = lolSession(undefined);
+  delete legacy.queueId;
+  await notifyLolGameStart(legacy, { [legacy.playerName]: legacy });
+  assert.equal(sent.length, 1, 'un queueId absent ne doit pas faire sauter la notif');
+
+  console.log('ranked-notify: seules les files classées notifient, sur Valorant comme sur LoL');
 })().catch(error => { console.error(error); process.exit(1); });
