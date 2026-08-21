@@ -80,7 +80,7 @@ function loadBot() {
   return bot.__test;
 }
 
-const { notifyValorantGameStart, notifyValorantGameEnd } = loadBot();
+const { notifyValorantGameStart, notifyValorantGameEnd, notifyLolGameStart, notifyLolGameEnd } = loadBot();
 
 let caseCounter = 0;
 const session = (mode, extra = {}) => {
@@ -155,6 +155,59 @@ const endResult = mode => ({
     await notifyValorantGameStart(s, { [s.playerName]: s });
     assert.equal(sent.length, 1, `mode=${JSON.stringify(mode)} doit être notifié`);
   }
+
+  // ─── LoL : seules les files classées (420 Solo/Duo, 440 Flex) ────────────
+  // Le filtrage vit déjà dans live/lol-watcher.js, mais un poste resté sur une
+  // vieille version du script pourrait publier autre chose : le bot doit s'en
+  // protéger lui-même.
+  const lolSession = (queueId, extra = {}) => {
+    caseCounter += 1;
+    const player = `Invoc${caseCounter}`;
+    return {
+      active: true, playerName: `${player}#EUW`, memberId: player.toLowerCase(),
+      matchId: `lol-${caseCounter}`, queueId,
+      champion: { name: 'Ahri', image: '' }, matchup: null, rank: null,
+      position: 'MIDDLE', region: 'euw1', ...extra,
+    };
+  };
+  const lolEndResult = queueId => ({
+    win: true, queueId, kills: 9, deaths: 2, assists: 14, cs: 210,
+    champion: { name: 'Ahri', image: '' }, durationLabel: '28:14',
+    items: [], rankBefore: null, rankAfter: null, position: 'MIDDLE',
+  });
+
+  // 450 = ARAM, 400 = Normale draft, 830/840/850 = Co-op vs IA, 0 = Practice Tool.
+  for (const queueId of [450, 400, 430, 830, 840, 850, 900, 1700, 0]) {
+    sent.length = 0;
+    const s = lolSession(queueId);
+    await notifyLolGameStart(s, { [s.playerName]: s });
+    assert.deepEqual(sent, [], `aucune carte de début LoL pour queueId=${queueId}`);
+
+    const e = lolSession(queueId); e.active = false; e.result = lolEndResult(queueId);
+    await notifyLolGameEnd([e]);
+    assert.deepEqual(sent, [], `aucune carte de fin LoL pour queueId=${queueId}`);
+  }
+
+  for (const queueId of [420, 440]) {
+    sent.length = 0;
+    const s = lolSession(queueId);
+    await notifyLolGameStart(s, { [s.playerName]: s });
+    assert.equal(sent.length, 1, `la file classée LoL ${queueId} doit être annoncée`);
+
+    sent.length = 0;
+    const e = lolSession(queueId); e.active = false; e.result = lolEndResult(queueId);
+    await notifyLolGameEnd([e]);
+    assert.equal(sent.length, 1, `la carte de fin LoL doit partir pour la file ${queueId}`);
+  }
+
+  // Ancienne version du script live : pas de queueId sur la session de début.
+  // Elle ne publie déjà que du classé, donc la notif doit continuer à partir —
+  // sinon la mise à jour du bot ferait taire tous les postes pas encore à jour.
+  sent.length = 0;
+  const legacy = lolSession(undefined);
+  delete legacy.queueId;
+  await notifyLolGameStart(legacy, { [legacy.playerName]: legacy });
+  assert.equal(sent.length, 1, 'un queueId absent ne doit pas faire sauter la notif');
 
   console.log('ranked-notify: seules les files classées notifient, sur Valorant comme sur LoL');
 })().catch(error => { console.error(error); process.exit(1); });
