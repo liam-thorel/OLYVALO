@@ -5,7 +5,7 @@
 
 import { valorantApi } from './api.js';
 
-const SITE_VERSION = '20260823-comps-ranked-pro';
+const SITE_VERSION = '20260823-profile-picker';
 import { syncPlayer as henrikSyncPlayer, syncAllPlayers as henrikSyncAll, persistPlayerStats } from './henrik.js?v=20260809-val-roster-season';
 import { setStoredKey, storedKey, forgetCachedKey } from './henrik-key.mjs';
 import { rosterHTML, guestCardHTML, mapSectionHTML, stierHTML, agentPageHTML, miniRosterHTML, agentsFiltersHTML, agentsGridHTML, compCompareHTML } from './render.js?v=20260809-val-roster-season';
@@ -19,15 +19,19 @@ import { getGameMode, initGameMode } from './game-mode.mjs?v=20260823-patch-1304
 import { initLolHistoryPage, initLolLivePage } from './lol-pages.mjs?v=20260810-history-progressive';
 import { initLolRosterPages } from './lol-roster.mjs?v=20260809-lol-sync';
 import { state } from './state.mjs?v=20260806-lol-roster';
+import { memberId, mergeMemberProfiles, resolveMemberProfile } from './member-profiles.mjs?v=20260823-profile-picker';
 export { state };
 
 // ─── STATE ─────────────────────────────────────────
 
 // ─── LOAD JSON DATA ───────────────────────────────
 async function loadData() {
-  const [comps, roster, roles, agentsFr, lineups, callouts, meta] = await Promise.all([
+  const [comps, roster, members, memberOverlay, roles, agentsFr, lineups, callouts, meta] = await Promise.all([
     fetch(`./data/comps.json?v=${SITE_VERSION}`).then(r => r.json()),
     fetch(`./data/roster.json?v=${SITE_VERSION}`).then(r => r.json()),
+    fetch(`./data/members.json?v=${SITE_VERSION}`).then(r => r.json()),
+    fetch('https://realtime-database-5bb9f-default-rtdb.europe-west1.firebasedatabase.app/rosterOverlay.json')
+      .then(r => r.ok ? r.json() : null).catch(() => null),
     fetch(`./data/roles.json?v=${SITE_VERSION}`).then(r => r.json()),
     fetch('./data/agents-fr.json').then(r => r.json()),
     fetch('./data/lineups.json').then(r => r.json()),
@@ -37,6 +41,7 @@ async function loadData() {
 
   state.COMPS_DATA = comps;
   state.ROSTER = roster;
+  state.MEMBERS = mergeMemberProfiles({ roster, members, overlay: memberOverlay || {} });
   state.ROLES = roles.roles;
   state.ROLE_LABEL = { D: 'Duel', I: 'Init', S: 'Sent', C: 'Ctrl' };
   state.ROLE_FULL  = roles.labels;
@@ -131,7 +136,7 @@ window.OLYCITY = {
       initBettingPage();
     }
     if (page === 'games') {
-      initCoopGamesPage(state.ROSTER);
+      initCoopGamesPage(state.MEMBERS);
     }
     const navBtn = document.querySelector(`.page-nav-btn[data-page="${page}"]`);
     if (navBtn) navBtn.classList.add('active');
@@ -695,6 +700,7 @@ window.OLYCITY = {
 
     const player = { name, tag: name, role, mains, riot, avatar };
     state.ROSTER.push(player);
+    state.MEMBERS.push({ ...player, id: memberId(player.name) });
 
     // Persist in localStorage
     const custom = JSON.parse(localStorage.getItem('olycity-custom-players') || '[]');
@@ -709,69 +715,83 @@ window.OLYCITY = {
 
 
   _showProfilePicker() {
-    // Toujours rebuild pour avoir les données Firebase fraîches
-    const old = document.getElementById('profile-picker');
-    if (old) old.remove();
-    let picker = null;
-    const needsBuild = true;
-    if (true) {
-      picker = document.createElement('div');
-      picker.id = 'profile-picker';
-      Object.assign(picker.style, {
-        position:'fixed', inset:'0', zIndex:'8000',
-        background:'#0a0c10', display:'flex',
-        flexDirection:'column', alignItems:'center',
-        justifyContent:'center', gap:'40px'
-      });
-      document.body.appendChild(picker);
-    }
-    const profiles = [
-      ...state.ROSTER,
-      { name: 'Guest', tag: 'Visiteur', role: 'Fill', mains: [], avatar: null }
-    ];
+    const picker = document.getElementById('profile-picker');
+    if (!picker) return;
+    const current = resolveMemberProfile(state.MEMBERS, {
+      id: localStorage.getItem('olycity-member-id'),
+      name: localStorage.getItem('olycity-profile'),
+    });
+    const selectionRequired = !current && localStorage.getItem('olycity-profile') !== 'Guest';
+    const escape = value => String(value ?? '')
+      .replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;')
+      .replaceAll('"', '&quot;').replaceAll("'", '&#39;');
+
     picker.innerHTML = `
-      <h1 style="font-family:'Tomorrow',sans-serif;font-size:28px;font-weight:700;letter-spacing:6px;text-transform:uppercase;color:#fff">Qui joue ?</h1>
-      <div style="display:flex;gap:20px;flex-wrap:wrap;justify-content:center;max-width:800px">
-        ${profiles.map(p => {
-          const agentImg = valorantApi.agentImg(p.mains?.[0]);
-          const imgEl = avatarLayersHTML(p.name, p.avatar, agentImg);
-          const currentProfile = localStorage.getItem('olycity-profile');
-          const isActive = window._activeProfiles?.has(p.name) && p.name !== currentProfile;
-          const activeLabel = isActive ? `<div style="position:absolute;z-index:4;top:6px;right:6px;width:10px;height:10px;border-radius:50%;background:#3fcf6b;border:2px solid #0a0c10;box-shadow:0 0 6px rgba(63,207,107,.7)"></div>` : '';
-          return `<div class="profile-card" onclick="${isActive ? '' : `window.OLYCITY._selectProfile('${p.name}')`}" style="${isActive ? 'opacity:0.5;cursor:not-allowed;filter:grayscale(.3)' : ''}">
-            <div class="profile-avatar" style="position:relative">${imgEl}</div>
-            <div class="profile-name">${p.name}</div>
-            <div class="profile-role">${p.tag || p.role || ''}</div>
-          </div>`;
-        }).join('')}
-      </div>
-      <div style="font-family:'Tomorrow',sans-serif;font-size:10px;letter-spacing:2px;text-transform:uppercase;color:rgba(255,255,255,.25)">Choisis ton profil OLYCITY</div>
-    `;
-    // Always show (whether freshly created or existing)
-    picker.style.display = 'flex';
-    picker.style.opacity = '1';
-    picker.style.transition = '';
+      <div class="profile-picker-shell">
+        ${selectionRequired ? '' : '<button class="profile-picker-close" type="button" aria-label="Fermer">×</button>'}
+        <header class="profile-picker-header">
+          <span>OLYCITY</span>
+          <h1 id="profile-picker-title">Qui es-tu ?</h1>
+          <p>Choisis ton profil pour voter et personnaliser le site.</p>
+        </header>
+        <div class="profile-grid">
+          ${state.MEMBERS.map(profile => {
+            const isCurrent = current?.id === profile.id;
+            const isOnline = window._activeProfiles?.has(profile.name);
+            return `<button class="profile-card${isCurrent ? ' is-current' : ''}" type="button" data-profile-id="${escape(profile.id)}" aria-label="Continuer avec ${escape(profile.name)}">
+              <span class="profile-avatar">${avatarLayersHTML(profile.name, profile.avatar, valorantApi.agentImg(profile.mains?.[0]))}</span>
+              <span class="profile-name">${escape(profile.name)}</span>
+              <span class="profile-status${isOnline ? ' is-online' : ''}">${isCurrent ? 'Profil actuel' : isOnline ? 'En ligne' : 'Disponible'}</span>
+              ${isCurrent ? '<span class="profile-current-mark" aria-hidden="true">✓</span>' : ''}
+            </button>`;
+          }).join('')}
+        </div>
+        <button class="profile-guest-btn${localStorage.getItem('olycity-profile') === 'Guest' ? ' is-current' : ''}" type="button" data-profile-id="guest">
+          Continuer en invité
+        </button>
+      </div>`;
+
+    picker.querySelectorAll('[data-profile-id]').forEach(button => {
+      button.addEventListener('click', () => window.OLYCITY._selectProfile(button.dataset.profileId));
+    });
+    picker.querySelector('.profile-picker-close')?.addEventListener('click', () => window.OLYCITY._hideProfilePicker());
+    picker.hidden = false;
+    document.body.classList.add('profile-picker-open');
+    picker.querySelector('.profile-card.is-current, .profile-card, .profile-guest-btn')?.focus();
   },
 
   _refreshPickerDots() {
     const picker = document.getElementById('profile-picker');
-    if (picker && picker.style.display !== 'none' && picker.style.opacity !== '0') {
+    if (picker && !picker.hidden) {
       window.OLYCITY._showProfilePicker();
     }
   },
 
-  _selectProfile(name) {
-    localStorage.setItem('olycity-profile', name);
-    window.dispatchEvent(new CustomEvent('olycity:profile-change', { detail: { name } }));
+  _hideProfilePicker() {
     const picker = document.getElementById('profile-picker');
-    if (picker) { picker.style.opacity = '0'; picker.style.transition = 'opacity .3s'; }
-    setTimeout(() => location.reload(), 300);
+    if (!picker || !localStorage.getItem('olycity-profile')) return;
+    picker.hidden = true;
+    document.body.classList.remove('profile-picker-open');
+  },
+
+  _selectProfile(profileId) {
+    const profile = profileId === 'guest'
+      ? { id:'guest', name:'Guest', avatar:'' }
+      : resolveMemberProfile(state.MEMBERS, { id:profileId, name:profileId });
+    if (!profile) return;
+    localStorage.setItem('olycity-member-id', profile.id);
+    localStorage.setItem('olycity-profile', profile.name);
+    state.currentProfile = profile.name;
+    window.OLYCITY._applyProfileIndicator(profile.name);
+    window._changePresence?.(profile.name);
+    window.dispatchEvent(new CustomEvent('olycity:profile-change', { detail:profile }));
+    window.OLYCITY._hideProfilePicker();
   },
 
   _applyProfileIndicator(name) {
     const el = document.getElementById('profile-indicator');
     if (!el) return;
-    const player = state.ROSTER.find(p => p.name === name);
+    const player = state.MEMBERS.find(p => p.name === name);
     const agentFallback = valorantApi.agentImg(player?.mains?.[0]);
     const img = `<span class="profile-indicator-avatar">${avatarLayersHTML(name, player?.avatar, agentFallback)}</span>`;
     el.innerHTML = `${img}<span class="profile-indicator-name">${name}</span>`;
@@ -938,7 +958,7 @@ async function boot() {
   if (storedVersion !== SITE_VERSION) {
     // Clear cache but KEEP player stats (expensive to re-sync, don't change with code updates)
     const keys = Object.keys(localStorage).filter(k =>
-      k.startsWith('olycity-') && k !== 'olycity-player-stats' && k !== 'olycity-profile' && k !== 'olycity-game' && !k.startsWith('olycity-saved-comps-')
+      k.startsWith('olycity-') && k !== 'olycity-player-stats' && k !== 'olycity-profile' && k !== 'olycity-member-id' && k !== 'olycity-game' && !k.startsWith('olycity-saved-comps-')
     );
     keys.forEach(k => localStorage.removeItem(k));
     localStorage.setItem('olycity-version', SITE_VERSION);
@@ -1056,9 +1076,12 @@ async function boot() {
     }
   });
 
-  // Close video modal on Escape
+  // Close overlays on Escape (the first profile choice remains mandatory).
   document.addEventListener('keydown', e => {
-    if (e.key === 'Escape') window.OLYCITY.closeVideoModal();
+    if (e.key === 'Escape') {
+      window.OLYCITY.closeVideoModal();
+      window.OLYCITY._hideProfilePicker();
+    }
   });
   // Push initial history state
   const initHash = window.location.hash.replace('#','');
@@ -1083,10 +1106,17 @@ async function boot() {
   });
 
   // Profile system
-  const savedProfile = localStorage.getItem('olycity-profile');
-  if (savedProfile) {
-    state.currentProfile = savedProfile;
-    window.OLYCITY._applyProfileIndicator(savedProfile);
+  const savedMember = resolveMemberProfile(state.MEMBERS, {
+    id:localStorage.getItem('olycity-member-id'),
+    name:localStorage.getItem('olycity-profile'),
+  });
+  const savedGuest = localStorage.getItem('olycity-profile') === 'Guest';
+  if (savedMember || savedGuest) {
+    const profile = savedMember || { id:'guest', name:'Guest' };
+    localStorage.setItem('olycity-member-id', profile.id);
+    localStorage.setItem('olycity-profile', profile.name);
+    state.currentProfile = profile.name;
+    window.OLYCITY._applyProfileIndicator(profile.name);
   } else {
     window.OLYCITY._showProfilePicker();
   }

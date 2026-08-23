@@ -10,6 +10,8 @@ const page = fs.readFileSync(new URL('../index.html', import.meta.url), 'utf8');
 const liveDataStore = fs.readFileSync(new URL('../js/live-data-store.mjs', import.meta.url), 'utf8');
 const historyPager = fs.readFileSync(new URL('../js/history-pager.mjs', import.meta.url), 'utf8');
 const layout = fs.readFileSync(new URL('../css/layout.css', import.meta.url), 'utf8');
+const components = fs.readFileSync(new URL('../css/components.css', import.meta.url), 'utf8');
+const presence = fs.readFileSync(new URL('../js/presence.js', import.meta.url), 'utf8');
 
 test('shared state does not import the versioned entry module twice', () => {
   assert.match(main, /from '\.\/state\.mjs/);
@@ -31,6 +33,19 @@ test('le bandeau live ne prétend pas afficher un score indisponible en direct',
   assert.doesNotMatch(page, /id="live-score/);
   assert.doesNotMatch(interactions, /getElementById\('live-score/);
   assert.doesNotMatch(layout, /\.live-score/);
+});
+
+test('profile selection is accessible, stable and does not reload the site', () => {
+  assert.match(page, /id="profile-picker"[\s\S]*role="dialog"[\s\S]*aria-modal="true"/);
+  assert.match(page, /<button class="profile-indicator"/);
+  assert.match(main, /localStorage\.setItem\('olycity-member-id', profile\.id\)/);
+  assert.match(main, /k !== 'olycity-member-id'/);
+  assert.match(main, /window\._changePresence\?\.\(profile\.name\)/);
+  assert.doesNotMatch(main, /setTimeout\(\(\) => location\.reload\(\), 300\)/);
+  assert.match(components, /\.profile-grid[\s\S]*grid-template-columns/);
+  assert.match(components, /\.profile-guest-btn/);
+  assert.match(presence, /sessionRef\?\.set/);
+  assert.match(presence, /const previousRef = sessionRef/);
 });
 
 test('saved navigation waits for the application boot to finish', () => {

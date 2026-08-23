@@ -1,0 +1,32 @@
+[
+  {
+    "id": "nico",
+    "name": "Nico",
+    "avatar": "https://cdn.discordapp.com/avatars/295547782880559107/1ca11cbf7817b43b11e47b02ae56f80a.png?size=512"
+  },
+  {
+    "id": "liam",
+    "name": "Liam",
+    "avatar": "https://cdn.discordapp.com/avatars/292778302278598656/03a46fa292c739773d0892b8ecf37687.png?size=512"
+  },
+  {
+    "id": "rayhan",
+    "name": "Rayhan",
+    "avatar": "https://cdn.discordapp.com/avatars/967788918042935356/919ddffe5b58824ec5d534112bef9015.png?size=512"
+  },
+  {
+    "id": "mathis",
+    "name": "Mathis",
+    "avatar": "https://cdn.discordapp.com/avatars/775273322950688780/2b6fdcf90608c24413fb3777bfda41e0.png?size=512"
+  },
+  {
+    "id": "noe",
+    "name": "Noé",
+    "avatar": "https://cdn.discordapp.com/avatars/951936970924376145/45ae491d48cb98d10107c7b06209faec.png?size=512"
+  },
+  {
+    "id": "romain",
+    "name": "Romain",
+    "avatar": "https://cdn.discordapp.com/avatars/344155681416544266/e8eae97b18cfe369e307bc8c2fd0db88.png?size=256"
+  }
+]

@@ -1,6 +1,7 @@
 export const state = {
   COMPS_DATA: [],
   ROSTER: [],
+  MEMBERS: [],
   ROLES: {},
   ROLE_LABEL: {},
   ROLE_FULL: {},

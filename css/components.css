@@ -1535,16 +1535,58 @@ button.comp-tab.pro-tab {
 }
 
 /* ════════════════════════════════════════════════
-   PROFILE PICKER — Netflix style
+   PROFILE PICKER
    ════════════════════════════════════════════════ */
-.profile-card {
-  display: flex; flex-direction: column; align-items: center; gap: 10px;
-  cursor: pointer; transition: transform .2s;
+body.profile-picker-open { overflow: hidden; }
+.profile-picker {
+  position: fixed; inset: 0; z-index: 8000; display: grid; place-items: center;
+  overflow-x: hidden; overflow-y: auto; padding: 36px 24px;
+  background:
+    radial-gradient(circle at 50% 12%, color-mix(in srgb, var(--red) 12%, transparent), transparent 34%),
+    #090b0f;
 }
-.profile-card:hover { transform: scale(1.08); }
-.profile-card:hover .profile-avatar { border-color: #fff; }
+.profile-picker[hidden] { display: none; }
+.profile-picker-shell {
+  position: relative; width: min(900px, 100%); display: flex;
+  flex-direction: column; align-items: center;
+}
+.profile-picker-close {
+  position: absolute; top: -8px; right: 0; width: 38px; height: 38px;
+  border: 1px solid var(--border2); background: rgba(255,255,255,.035);
+  color: var(--muted); font: 300 24px/1 Arial, sans-serif; cursor: pointer;
+  transition: border-color .15s, color .15s, background .15s;
+}
+.profile-picker-close:hover { color: var(--text); border-color: var(--text); background: rgba(255,255,255,.07); }
+.profile-picker-header { text-align: center; margin-bottom: 34px; }
+.profile-picker-header > span {
+  display: block; margin-bottom: 12px; color: var(--red); font-family: 'Tomorrow', sans-serif;
+  font-size: 9px; font-weight: 700; letter-spacing: 4px;
+}
+.profile-picker-header h1 {
+  margin: 0; color: #fff; font-family: 'Tomorrow', sans-serif;
+  font-size: clamp(25px, 4vw, 38px); font-weight: 700; letter-spacing: 5px; text-transform: uppercase;
+}
+.profile-picker-header p {
+  margin: 12px 0 0; color: rgba(235,234,246,.56); font-size: 14px; letter-spacing: .2px;
+}
+.profile-grid {
+  width: 100%; display: grid; grid-template-columns: repeat(auto-fit, minmax(112px, 1fr));
+  gap: 14px; max-width: 860px;
+}
+.profile-card {
+  position: relative; min-width: 0; display: flex; flex-direction: column;
+  align-items: center; gap: 8px; padding: 14px 8px 13px;
+  border: 1px solid transparent; background: transparent; color: inherit;
+  cursor: pointer; transition: transform .18s, border-color .18s, background .18s;
+}
+.profile-card:hover, .profile-card:focus-visible {
+  transform: translateY(-4px); outline: none; border-color: var(--border2);
+  background: rgba(255,255,255,.035);
+}
+.profile-card.is-current { border-color: color-mix(in srgb, var(--red) 45%, transparent); }
+.profile-card:hover .profile-avatar, .profile-card:focus-visible .profile-avatar { border-color: rgba(255,255,255,.7); }
 .profile-avatar {
-  width: 100px; height: 100px; overflow: hidden;
+  display: block; width: 96px; height: 96px; overflow: hidden;
   border: 2px solid rgba(255,255,255,.15); transition: border-color .2s;
   background: var(--surf3); position: relative;
 }
@@ -1565,16 +1607,37 @@ button.comp-tab.pro-tab {
   width: 100%; height: 100%; object-fit: cover; object-position: top center;
   filter: brightness(.85);
 }
-.profile-avatar:hover img { filter: brightness(1); }
+.profile-card:hover .profile-avatar img { filter: brightness(1); }
 .profile-name {
-  font-family: 'Tomorrow', sans-serif; font-size: 13px; font-weight: 600;
-  letter-spacing: 1px; text-transform: uppercase; color: rgba(255,255,255,.7);
+  max-width: 100%; overflow: hidden; text-overflow: ellipsis;
+  font-family: 'Tomorrow', sans-serif; font-size: 12px; font-weight: 650;
+  letter-spacing: .8px; text-transform: uppercase; color: rgba(255,255,255,.82);
   transition: color .2s;
 }
 .profile-card:hover .profile-name { color: #fff; }
-.profile-role {
-  font-family: 'Tomorrow', sans-serif; font-size: 9px; letter-spacing: 2px;
-  text-transform: uppercase; color: rgba(255,255,255,.3);
+.profile-status {
+  display: flex; align-items: center; min-height: 12px; color: rgba(235,234,246,.34);
+  font-size: 9px; font-weight: 600; letter-spacing: 1px; text-transform: uppercase;
+}
+.profile-status.is-online { color: #6bd990; }
+.profile-status.is-online::before {
+  content: ''; width: 6px; height: 6px; margin-right: 6px; border-radius: 50%;
+  background: #3fcf6b; box-shadow: 0 0 7px rgba(63,207,107,.5);
+}
+.profile-current-mark {
+  position: absolute; top: 8px; right: 8px; display: grid; place-items: center;
+  width: 20px; height: 20px; border-radius: 50%; background: var(--red); color: #fff;
+  font-size: 11px; font-weight: 800; box-shadow: 0 0 0 3px #090b0f;
+}
+.profile-guest-btn {
+  margin-top: 28px; padding: 11px 18px; border: 1px solid var(--border2);
+  background: transparent; color: rgba(235,234,246,.58); cursor: pointer;
+  font-family: 'Tomorrow', sans-serif; font-size: 9px; font-weight: 650;
+  letter-spacing: 1.5px; text-transform: uppercase;
+  transition: color .15s, border-color .15s, background .15s;
+}
+.profile-guest-btn:hover, .profile-guest-btn:focus-visible, .profile-guest-btn.is-current {
+  color: var(--text); border-color: rgba(255,255,255,.42); background: rgba(255,255,255,.045); outline: none;
 }
 .profile-badge {
   position: absolute; bottom: 4px; right: 4px;
@@ -1583,10 +1646,27 @@ button.comp-tab.pro-tab {
   letter-spacing: 1px; padding: 2px 5px;
 }
 
+@media (max-width: 700px) {
+  .profile-picker { align-items: start; padding: 54px 16px 30px; }
+  .profile-picker-header { margin-bottom: 24px; }
+  .profile-picker-header p { font-size: 12px; }
+  .profile-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+  .profile-card { padding-inline: 4px; }
+  .profile-avatar { width: 82px; height: 82px; }
+}
+
+@media (max-width: 390px) {
+  .profile-picker { padding-inline: 12px; }
+  .profile-avatar { width: 74px; height: 74px; }
+  .profile-name { font-size: 10px; }
+  .profile-status { font-size: 7.5px; letter-spacing: .7px; }
+}
+
 /* Current profile indicator in topbar */
 .profile-indicator {
   display: flex; align-items: center; gap: 7px;
   cursor: pointer; padding: 4px 10px;
+  background: transparent; color: inherit; font: inherit;
   border: 1px solid var(--border); transition: border-color .15s;
   flex-shrink: 0;
 }

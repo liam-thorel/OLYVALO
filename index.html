@@ -62,22 +62,8 @@
     </div>
   </div>
 
-  <!-- PROFILE PICKER — Netflix style -->
-  <div id="profile-picker" style="
-    display:none; position:fixed; inset:0; z-index:8000;
-    background:#0a0c10;
-    flex-direction:column; align-items:center; justify-content:center; gap:40px;
-  ">
-    <h1 style="font-family:'Tomorrow',sans-serif;font-size:28px;font-weight:700;
-      letter-spacing:6px;text-transform:uppercase;color:#fff">
-      Qui joue ?
-    </h1>
-    <div id="profile-grid" style="display:flex;gap:20px;flex-wrap:wrap;justify-content:center;max-width:800px"></div>
-    <div style="font-family:'Tomorrow',sans-serif;font-size:10px;letter-spacing:2px;
-      text-transform:uppercase;color:rgba(255,255,255,.25)">
-      Choisis ton profil OLYCITY
-    </div>
-  </div>
+  <!-- PROFILE PICKER -->
+  <div id="profile-picker" class="profile-picker" role="dialog" aria-modal="true" aria-labelledby="profile-picker-title" hidden></div>
 
   <!-- LOADING SCREEN -->
   <div id="loading-screen" style="
@@ -176,9 +162,9 @@
           <button class="game-switch-btn" type="button" data-game-choice="lol" aria-pressed="false">LoL</button>
         </div>
         <!-- Profile indicator -->
-        <div class="profile-indicator" id="profile-indicator" onclick="window.OLYCITY._showProfilePicker()" title="Changer de profil">
+        <button class="profile-indicator" id="profile-indicator" type="button" onclick="window.OLYCITY._showProfilePicker()" title="Changer de profil" aria-label="Changer de profil">
           <span class="profile-indicator-name">—</span>
-        </div>
+        </button>
 
         <div class="search-wrap" data-valorant-only>
           <span class="search-icon">⌕</span>
@@ -501,6 +487,6 @@
   <script type="module" src="./js/firebase-draw.js?v=20260720-avatars"></script>
   <!-- Présence Firebase -->
   <script src="./js/presence.js?v=20260720-avatars"></script>
-  <script type="module" src="./js/main.js?v=20260823-comps-ranked-pro"></script>
+  <script type="module" src="./js/main.js?v=20260823-profile-picker"></script>
 </body>
 </html>

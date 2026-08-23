@@ -16,6 +16,7 @@ import { accountLiveState, accountRiotId, discoveryRows, normalizeGames } from '
 import { buildScriptHealth, scriptDiagnosticText, scriptHealthSummary } from './admin-health-utils.mjs?v=20260814-admin-current-script';
 import { fetchJsonWithTimeout } from './request-utils.mjs?v=20260809-route-load-stable';
 import { isLiveRecordExpired, liveDataStore, staleLiveRecords } from './live-data-store.mjs?v=20260810-firebase-connection-fix';
+import { mergeMemberProfiles } from './member-profiles.mjs?v=20260823-profile-picker';
 
 const FIREBASE_URL = 'https://realtime-database-5bb9f-default-rtdb.europe-west1.firebasedatabase.app';
 // SHA-256 du mot de passe admin. Pour le changer : recalcule le hash d'un
@@ -118,14 +119,17 @@ function applyLiveSnapshot(snapshot = {}) {
 }
 
 async function loadAll(signal) {
-  const [roster, overlay, discoveredData, liveSnapshot, updateManifest] = await Promise.all([
+  const [roster, members, overlay, discoveredData, liveSnapshot, updateManifest] = await Promise.all([
     fetchJsonWithTimeout(`./data/roster.json?v=${Date.now()}`, { signal, timeoutMs: ADMIN_LOAD_TIMEOUT_MS }),
+    fetchJsonWithTimeout(`./data/members.json?v=${Date.now()}`, { signal, timeoutMs: ADMIN_LOAD_TIMEOUT_MS }),
     fbGet('rosterOverlay', signal).catch(() => null),
     fbGet('discovered', signal).catch(() => null),
     liveDataStore.refresh({ timeoutMs:ADMIN_LOAD_TIMEOUT_MS }).catch(() => liveDataStore.snapshot()),
     fetchJsonWithTimeout(`./live/update-manifest.json?v=${Date.now()}`, { signal, timeoutMs: ADMIN_LOAD_TIMEOUT_MS }).catch(() => null),
   ]);
-  if (Array.isArray(roster)) staticRoster = roster;
+  if (Array.isArray(roster) && Array.isArray(members)) {
+    staticRoster = mergeMemberProfiles({ roster, members });
+  }
   if (overlay !== null) {
     overlayMembers = overlay?.members || {};
     overlayAccounts = overlay?.accounts || {};

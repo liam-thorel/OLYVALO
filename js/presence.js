@@ -12,6 +12,8 @@ const FIREBASE_CONFIG = {
 
 let db = null;
 let sessionRef = null;
+let heartbeatTimer = null;
+let sessionsRef = null;
 window._activeProfiles = new Set();
 
 function loadScript(src) {
@@ -25,7 +27,10 @@ function loadScript(src) {
 
 async function initPresence() {
   const profile = localStorage.getItem('olycity-profile');
-  if (!profile) return;
+  if (!profile) {
+    window._presenceReady = true;
+    return;
+  }
 
   await loadScript(`${FIREBASE_CDN_BASE}/firebase-app-compat.js`);
   await loadScript(`${FIREBASE_CDN_BASE}/firebase-database-compat.js`);
@@ -52,31 +57,35 @@ async function initPresence() {
   sessionRef.onDisconnect().remove();
 
   // Heartbeat every 8s
-  setInterval(() => sessionRef.set({ ts: Date.now() }), 8000);
+  clearInterval(heartbeatTimer);
+  heartbeatTimer = setInterval(() => sessionRef?.set({ ts: Date.now() }), 8000);
 
-  // Watch all sessions
-  db.ref('sessions').on('value', snap => {
-    window._activeProfiles = new Set();
-    if (!snap.exists()) return;
-    snap.forEach(profileSnap => {
-      let alive = false;
-      profileSnap.forEach(s => { if (Date.now() - (s.val()?.ts || 0) < 20000) alive = true; });
-      if (alive) window._activeProfiles.add(profileSnap.key);
+  // Watch all sessions once, including after an in-page profile change.
+  if (!sessionsRef) {
+    sessionsRef = db.ref('sessions');
+    sessionsRef.on('value', snap => {
+      window._activeProfiles = new Set();
+      if (snap.exists()) snap.forEach(profileSnap => {
+        let alive = false;
+        profileSnap.forEach(s => { if (Date.now() - (s.val()?.ts || 0) < 20000) alive = true; });
+        if (alive) window._activeProfiles.add(profileSnap.key);
+      });
+      // Refresh picker if open
+      const picker = document.getElementById('profile-picker');
+      if (picker && !picker.hidden) window.OLYCITY?._refreshPickerDots?.();
     });
-    // Refresh picker if open
-    const picker = document.getElementById('profile-picker');
-    if (picker && picker.style.display !== 'none') {
-      window.OLYCITY?._refreshPickerDots?.();
-    }
-  });
+  }
 
   window._presenceReady = true;
 }
 
 window._initPresence = initPresence;
 window._changePresence = async (newProfile) => {
-  if (sessionRef) await sessionRef.remove();
+  clearInterval(heartbeatTimer);
+  heartbeatTimer = null;
+  const previousRef = sessionRef;
   sessionRef = null;
+  if (previousRef) await previousRef.remove();
   // Re-init with new profile after small delay
   setTimeout(initPresence, 100);
 };
