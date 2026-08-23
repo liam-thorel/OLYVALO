@@ -95,22 +95,33 @@ async function twitchToken(env, fetchImpl) {
   return accessToken;
 }
 
-function rankIgdbResults(games = [], query = '') {
-  const wanted = String(query).toLowerCase().trim();
+export function igdbSearchScore(game = {}, query = '', now = Date.now()) {
+  const wanted = normalizeSearchText(query);
   const tokens = wanted.split(/\s+/).filter(Boolean);
+  const title = normalizeSearchText(game.name);
+  const titleWords = title.split(' ').filter(Boolean);
+  const exact = title === wanted;
+  const prefix = title.startsWith(wanted);
+  const wordPrefix = tokens.length && tokens.every(token => titleWords.some(word => word.startsWith(token)));
+  let value = exact ? 5_200 : prefix ? 4_200 : wordPrefix ? 3_400 : title.includes(wanted) ? 2_400 : 0;
+  value += tokens.filter(token => titleWords.some(word => word.startsWith(token))).length * 420;
+  value += Math.log1p(Number(game.total_rating_count) || 0) * 440;
+  value += Math.log1p(Number(game.follows) || 0) * 105;
+  value += Math.log1p(Number(game.hypes) || 0) * 170;
+
+  const releaseMs = Number(game.first_release_date) * 1000;
+  if (releaseMs > 0) {
+    const ageDays = (now - releaseMs) / 86_400_000;
+    if (ageDays >= -730 && ageDays <= 550) value += 520;
+    else if (ageDays > 550 && ageDays <= 1_100) value += 220;
+  }
+  value -= Math.abs(title.length - wanted.length) * 2;
+  return value;
+}
+
+function rankIgdbResults(games = [], query = '') {
   return [...games].sort((left, right) => {
-    const score = game => {
-      const title = String(game.name || '').toLowerCase();
-      if (title === wanted) return 10000;
-      let value = title.startsWith(wanted) ? 5000 : title.includes(wanted) ? 3000 : 0;
-      value += tokens.filter(token => title.includes(token)).length * 500;
-      value += Math.log1p(Number(game.total_rating_count) || 0) * 180;
-      value += Math.log1p(Number(game.follows) || 0) * 45;
-      value += Math.log1p(Number(game.hypes) || 0) * 20;
-      value -= Math.abs(title.length - wanted.length);
-      return value;
-    };
-    return score(right) - score(left);
+    return igdbSearchScore(right, query) - igdbSearchScore(left, query);
   });
 }
 
@@ -150,6 +161,8 @@ function normalizeSearchText(value = '') {
 
 async function searchIndexedGameIds(query, fetchImpl) {
   const wanted = normalizeSearchText(query);
+  const wantedCompact = wanted.replaceAll(' ', '');
+  const wantedTokens = wanted.split(' ').filter(Boolean);
   const prefix = wanted.replace(/\s/g, '').slice(0, 2);
   if (prefix.length < 2) return [];
   const response = await fetchImpl(`${GAME_INDEX_URL}/${prefix}.json`, {
@@ -160,7 +173,13 @@ async function searchIndexedGameIds(query, fetchImpl) {
   const bucket = await response.json();
   return Object.entries(bucket || {})
     .map(([id, entry]) => ({ id: Number(id), name: String(entry?.name || '') }))
-    .filter(entry => Number.isInteger(entry.id) && normalizeSearchText(entry.name).includes(wanted))
+    .filter(entry => {
+      if (!Number.isInteger(entry.id)) return false;
+      const title = normalizeSearchText(entry.name);
+      const titleWords = title.split(' ').filter(Boolean);
+      return title.replaceAll(' ', '').includes(wantedCompact)
+        || wantedTokens.every(token => titleWords.some(word => word.startsWith(token)));
+    })
     .sort((left, right) => {
       const leftName = normalizeSearchText(left.name);
       const rightName = normalizeSearchText(right.name);
@@ -240,7 +259,10 @@ export async function handleRequest(request, env, fetchImpl = fetch) {
     }
     if (query.length < 2 || query.length > 80) return json({ error: 'Recherche invalide' }, 400, cors);
     const games = await igdbSearch(query, env, fetchImpl);
-    return json({ results: games.map(game => normalizeIgdbGame(game)) }, 200, cors);
+    return json({ results: games.map(game => ({
+      ...normalizeIgdbGame(game),
+      catalogScore: igdbSearchScore(game, query),
+    })) }, 200, cors);
   } catch (error) {
     console.error('Game catalog search failed', error);
     const message = error.message === 'IGDB_NOT_CONFIGURED'

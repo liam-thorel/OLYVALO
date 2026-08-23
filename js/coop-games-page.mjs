@@ -2,16 +2,23 @@ import {
   catalogFields,
   extractSteamAppId,
   filterCoopGames,
-  nextCoopStatus,
   normalizeCoopGame,
   profileKey,
+  rankCatalogResults,
   steamCover,
-} from './coop-games-utils.mjs';
+} from './coop-games-utils.mjs?v=20260823-coop-categories';
 import { searchGameCatalog } from './coop-game-catalog.mjs';
 
 const FIREBASE_ROOT = 'https://realtime-database-5bb9f-default-rtdb.europe-west1.firebasedatabase.app';
 const SESSION_LABELS = { short: 'Soirée', medium: 'Quelques sessions', long: 'Longue aventure' };
-const STATUS_LABELS = { open: 'À faire', planned: 'Prévu', played: 'Joué', replay: 'MàJ · À refaire' };
+const STATUS_META = {
+  open: { label:'À découvrir', section:'À découvrir', description:'Les idées proposées par le groupe.' },
+  planned: { label:'Planifié', section:'Planifiés', description:'Les jeux retenus pour une prochaine session.' },
+  replay: { label:'À rejouer', section:'À rejouer', description:'Une mise à jour ou une bonne raison d’y retourner.' },
+  played: { label:'Terminé', section:'Terminés', description:'Les jeux que le groupe a déjà faits.' },
+};
+const STATUS_LABELS = Object.fromEntries(Object.entries(STATUS_META).map(([key, value]) => [key, value.label]));
+const STATUS_ORDER = ['open', 'planned', 'replay', 'played'];
 
 let games = [];
 let roster = [];
@@ -22,7 +29,7 @@ let catalogSearchTimer = null;
 let catalogSearchSequence = 0;
 let catalogAbortController = null;
 let selectedCatalogGame = null;
-const filters = { search: '', players: 0, status: 'all', sort: 'popular' };
+const filters = { search: '', players: 0, genre:'all', status: 'all', sort: 'popular' };
 
 const escapeHTML = value => String(value ?? '')
   .replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;')
@@ -81,11 +88,16 @@ function gameCard(game) {
   const sourceUrl = steamUrl || safeHttpsUrl(game.sourceUrl, ['igdb.com']);
   const sourceLabel = steamUrl ? 'Steam ↗' : sourceUrl ? 'IGDB ↗' : '';
   const tags = game.tags.map(tag => `<span>${escapeHTML(tag)}</span>`).join('');
+  const statusOptions = STATUS_ORDER.map(status => `<button type="button" data-action="set-status" data-status="${status}" role="menuitemradio" aria-checked="${game.status === status}">
+    <span class="coop-status-option-dot coop-status-${status}"></span><span><strong>${STATUS_META[status].label}</strong><small>${STATUS_META[status].description}</small></span>${game.status === status ? '<b>✓</b>' : ''}
+  </button>`).join('');
   return `<article class="coop-game-card" data-game-id="${escapeHTML(game.id)}">
     <div class="coop-cover">
       ${cover ? `<img src="${escapeHTML(cover)}" alt="Jaquette de ${escapeHTML(game.title)}" loading="lazy" onerror="this.hidden=true">` : ''}
-      <span class="coop-status coop-status-${game.status}">${STATUS_LABELS[game.status]}</span>
-      <button class="coop-status-cycle" type="button" data-action="status" title="Passer à l’état suivant">↻</button>
+      <div class="coop-status-control">
+        <button class="coop-status coop-status-${game.status}" type="button" data-action="status-menu" aria-expanded="false">${STATUS_LABELS[game.status]}<span aria-hidden="true">⌄</span></button>
+        <div class="coop-status-menu" role="menu" hidden><div>Changer de catégorie</div>${statusOptions}</div>
+      </div>
     </div>
     <div class="coop-card-body">
       <div class="coop-card-meta"><span>${playerRange(game)}</span><span>${SESSION_LABELS[game.session]}</span></div>
@@ -102,11 +114,49 @@ function gameCard(game) {
         <button type="button" class="coop-vote-btn${interested ? ' active' : ''}" data-action="vote">
           ${interested ? '✓ Je suis chaud' : '+ Je suis chaud'}
         </button>
-        ${game.status === 'played' ? '<button type="button" class="coop-replay-btn" data-action="replay">↻ MàJ / Rejouer</button>' : ''}
+        ${game.status === 'played' ? '<button type="button" class="coop-replay-btn" data-action="replay">Signaler du nouveau</button>' : ''}
         ${sourceUrl ? `<a href="${escapeHTML(sourceUrl)}" target="_blank" rel="noopener">${sourceLabel}</a>` : ''}
       </div>
     </div>
   </article>`;
+}
+
+function statusCounts(filteredGames) {
+  const counts = { all:filteredGames.length, open:0, planned:0, replay:0, played:0 };
+  filteredGames.forEach(game => { if (counts[game.status] !== undefined) counts[game.status] += 1; });
+  return counts;
+}
+
+function renderStatusTabs() {
+  const base = filterCoopGames(games, { ...filters, status:'all' });
+  const counts = statusCounts(base);
+  document.querySelectorAll('[data-coop-status]').forEach(button => {
+    const active = button.dataset.coopStatus === filters.status;
+    button.classList.toggle('active', active);
+    button.setAttribute('aria-pressed', String(active));
+    const count = button.querySelector('[data-status-count]');
+    if (count) count.textContent = counts[button.dataset.coopStatus] || 0;
+  });
+}
+
+function syncGenreOptions() {
+  const select = document.getElementById('coop-genre');
+  if (!select) return;
+  const current = filters.genre;
+  const genres = [...new Set(games.flatMap(game => game.tags || []).map(tag => String(tag).trim()).filter(Boolean))]
+    .sort((left, right) => left.localeCompare(right, 'fr', { sensitivity:'base' }));
+  select.innerHTML = `<option value="all">Tous les genres</option>${genres.map(genre => `<option value="${escapeHTML(genre)}">${escapeHTML(genre)}</option>`).join('')}`;
+  select.value = [...select.options].some(option => option.value === current) ? current : 'all';
+  filters.genre = select.value;
+}
+
+function gameSection(status, sectionGames) {
+  if (!sectionGames.length) return '';
+  const meta = STATUS_META[status];
+  return `<section class="coop-game-section" data-game-section="${status}">
+    <header><div><h3>${meta.section}</h3><p>${meta.description}</p></div><strong>${sectionGames.length}</strong></header>
+    <div class="coop-games-grid">${sectionGames.map(gameCard).join('')}</div>
+  </section>`;
 }
 
 function render() {
@@ -117,9 +167,13 @@ function render() {
   const profile = selectedProfile();
   if (identity) identity.textContent = profile ? `Tu votes en tant que ${profile.name}` : 'Choisis d’abord ton profil';
   const visible = filterCoopGames(games, filters);
+  renderStatusTabs();
   if (count) count.textContent = `${visible.length} jeu${visible.length > 1 ? 'x' : ''}`;
+  const grouped = filters.status === 'all' && !filters.search;
   root.innerHTML = visible.length
-    ? visible.map(gameCard).join('')
+    ? grouped
+      ? STATUS_ORDER.map(status => gameSection(status, visible.filter(game => game.status === status))).join('')
+      : `<div class="coop-games-grid">${visible.map(gameCard).join('')}</div>`
     : `<div class="coop-empty"><strong>Aucun jeu ici</strong><span>Change les filtres ou propose le premier.</span></div>`;
 }
 
@@ -129,6 +183,7 @@ async function loadGames({ quiet = false } = {}) {
   try {
     const data = await firebaseRequest('coopGames');
     games = Object.entries(data || {}).map(([id, value]) => normalizeCoopGame(id, value));
+    syncGenreOptions();
     render();
   } catch (error) {
     if (root) root.innerHTML = `<div class="coop-empty coop-error">Impossible de charger la liste. ${escapeHTML(error.message)}</div>`;
@@ -177,26 +232,6 @@ function catalogMeta(game) {
   const parts = [players, ...(game.tags || []).slice(0, 2)];
   if (game.releaseDate) parts.push(new Date(`${game.releaseDate}T12:00:00Z`).toLocaleDateString('fr-FR', { year: 'numeric' }));
   return parts.join(' · ');
-}
-
-function normalizeCatalogText(value = '') {
-  return String(value).normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
-}
-
-function rankCatalogResults(results = [], query = '') {
-  const wanted = normalizeCatalogText(query);
-  const tokens = wanted.split(/\s+/).filter(Boolean);
-  return [...results].sort((left, right) => {
-    const score = result => {
-      const title = normalizeCatalogText(result.title);
-      if (title === wanted) return 10000;
-      let value = title.startsWith(wanted) ? 5000 : title.includes(wanted) ? 3000 : 0;
-      value += tokens.filter(token => title.includes(token)).length * 500;
-      value -= Math.abs(title.length - wanted.length);
-      return value;
-    };
-    return score(right) - score(left);
-  }).slice(0, 8);
 }
 
 function renderCatalogResults(results = []) {
@@ -324,8 +359,6 @@ async function submitGame(event) {
   ));
   if (duplicate) {
     filters.status = duplicate.status;
-    const statusFilter = document.getElementById('coop-status-filter');
-    if (statusFilter) statusFilter.value = duplicate.status;
     render();
     error.textContent = `Ce jeu est déjà dans « ${STATUS_LABELS[duplicate.status]} ». Ferme cette fenêtre pour le voir.`;
     return;
@@ -372,6 +405,14 @@ async function handleCardAction(event) {
   const card = button?.closest('[data-game-id]');
   if (!button || !card) return;
   const game = games.find(item => item.id === card.dataset.gameId);
+  if (button.dataset.action === 'status-menu') {
+    const menu = button.closest('.coop-status-control')?.querySelector('.coop-status-menu');
+    const opening = Boolean(menu?.hidden);
+    document.querySelectorAll('.coop-status-menu').forEach(other => { other.hidden = true; });
+    document.querySelectorAll('[data-action="status-menu"]').forEach(other => other.setAttribute('aria-expanded', 'false'));
+    if (menu && opening) { menu.hidden = false; button.setAttribute('aria-expanded', 'true'); }
+    return;
+  }
   const profile = selectedProfile();
   if (!game || !profile) return window.OLYCITY?._showProfilePicker?.();
   button.disabled = true;
@@ -390,12 +431,22 @@ async function handleCardAction(event) {
         method: 'PATCH',
         body: JSON.stringify({ status: 'replay', replayNote: reason.trim().slice(0, 160), statusBy: profile.name, statusAt: Date.now() }),
       });
-    } else if (button.dataset.action === 'status') {
+    } else if (button.dataset.action === 'set-status') {
+      const nextStatus = button.dataset.status;
+      if (!STATUS_META[nextStatus] || nextStatus === game.status) return;
+      let replayNote = game.replayNote || null;
+      if (nextStatus === 'replay') {
+        const reason = window.prompt('Qu’est-ce qui donne envie d’y rejouer ? (mise à jour, nouveau contenu…)', game.replayNote || 'Nouvelle mise à jour');
+        if (reason === null) return;
+        replayNote = reason.trim().slice(0, 160);
+      } else if (nextStatus === 'played') {
+        replayNote = null;
+      }
       await firebaseRequest(`coopGames/${game.id}`, {
         method: 'PATCH',
         body: JSON.stringify({
-          status: nextCoopStatus(game.status),
-          replayNote: nextCoopStatus(game.status) === 'played' ? null : game.replayNote || null,
+          status: nextStatus,
+          replayNote,
           statusBy: profile.name,
           statusAt: Date.now(),
         }),
@@ -433,9 +484,15 @@ function bindControls() {
     if (event.key === 'Enter') { event.preventDefault(); runCatalogSearch(); }
   });
   document.getElementById('coop-games-grid')?.addEventListener('click', handleCardAction);
+  document.addEventListener('click', event => {
+    if (event.target.closest('.coop-status-control')) return;
+    document.querySelectorAll('.coop-status-menu').forEach(menu => { menu.hidden = true; });
+    document.querySelectorAll('[data-action="status-menu"]').forEach(button => button.setAttribute('aria-expanded', 'false'));
+  });
   document.getElementById('coop-search')?.addEventListener('input', event => { filters.search = event.target.value; render(); });
   document.getElementById('coop-players')?.addEventListener('change', event => { filters.players = Number(event.target.value); render(); });
-  document.getElementById('coop-status-filter')?.addEventListener('change', event => { filters.status = event.target.value; render(); });
+  document.getElementById('coop-genre')?.addEventListener('change', event => { filters.genre = event.target.value; render(); });
+  document.querySelectorAll('[data-coop-status]').forEach(button => button.addEventListener('click', () => { filters.status = button.dataset.coopStatus; render(); }));
   document.getElementById('coop-sort')?.addEventListener('change', event => { filters.sort = event.target.value; render(); });
   window.addEventListener('olycity:profile-change', render);
 }

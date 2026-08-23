@@ -3,11 +3,12 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import {
   catalogFields,
+  coopSearchScore,
   extractSteamAppId,
   filterCoopGames,
-  nextCoopStatus,
   normalizeCoopGame,
   profileKey,
+  rankCatalogResults,
 } from '../js/coop-games-utils.mjs';
 import { searchGameCatalog } from '../js/coop-game-catalog.mjs';
 
@@ -32,11 +33,33 @@ test('games filter by status, exact group compatibility and popularity', () => {
   assert.deepEqual(filterCoopGames(games, { status: 'all' }).map(game => game.id), ['c', 'a', 'b']);
 });
 
-test('game status cycles through the three useful group states', () => {
-  assert.equal(nextCoopStatus('open'), 'planned');
-  assert.equal(nextCoopStatus('planned'), 'played');
-  assert.equal(nextCoopStatus('played'), 'open');
-  assert.equal(nextCoopStatus('replay'), 'planned');
+test('search tolerates accents, partial words and ranks title matches first', () => {
+  const games = [
+    normalizeCoopGame('a', { title:'Évasion coop', tags:['Aventure'], interests:{ nico:{} } }),
+    normalizeCoopGame('b', { title:'Le grand jeu', note:'Une évasion entre amis', interests:{} }),
+    normalizeCoopGame('c', { title:'Simulation', tags:['Gestion'] }),
+  ];
+  assert.ok(coopSearchScore(games[0], 'evas') > coopSearchScore(games[1], 'evas'));
+  assert.deepEqual(filterCoopGames(games, { search:'évas', status:'all' }).map(game => game.id), ['a', 'b']);
+});
+
+test('genre and alphabetical sorting use existing metadata without rewriting games', () => {
+  const games = [
+    normalizeCoopGame('z', { title:'Zulu', tags:['Horreur'] }),
+    normalizeCoopGame('a', { title:'Alpha', tags:['Aventure'] }),
+    normalizeCoopGame('b', { title:'Beta', tags:['Horreur'] }),
+  ];
+  assert.deepEqual(filterCoopGames(games, { genre:'horreur', status:'all', sort:'alpha' }).map(game => game.id), ['b', 'z']);
+});
+
+test('catalog results trust server popularity and collapse duplicate titles', () => {
+  const results = rankCatalogResults([
+    { title:'Mine', catalogScore:5_500 },
+    { title:'Minecraft', catalogScore:9_500 },
+    { title:'Mine', catalogScore:5_000 },
+    { title:'Minerva', catalogScore:4_500 },
+  ], 'mine');
+  assert.deepEqual(results.map(result => result.title), ['Minecraft', 'Mine', 'Minerva']);
 });
 
 test('catalog metadata fills the suggestion form with editable defaults', () => {
@@ -90,4 +113,6 @@ test('the async submit keeps its form reference after Firebase resolves', () => 
   assert.match(source, /const form = event\.currentTarget;/);
   assert.match(source, /resetGameForm\(form\);/);
   assert.doesNotMatch(source, /resetGameForm\(event\.currentTarget\);/);
+  assert.doesNotMatch(source, /nextCoopStatus|coop-status-cycle/);
+  assert.match(source, /data-action="set-status"/);
 });

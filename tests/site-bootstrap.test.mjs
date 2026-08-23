@@ -12,6 +12,7 @@ const historyPager = fs.readFileSync(new URL('../js/history-pager.mjs', import.m
 const layout = fs.readFileSync(new URL('../css/layout.css', import.meta.url), 'utf8');
 const components = fs.readFileSync(new URL('../css/components.css', import.meta.url), 'utf8');
 const presence = fs.readFileSync(new URL('../js/presence.js', import.meta.url), 'utf8');
+const coopPage = fs.readFileSync(new URL('../js/coop-games-page.mjs', import.meta.url), 'utf8');
 
 test('shared state does not import the versioned entry module twice', () => {
   assert.match(main, /from '\.\/state\.mjs/);
@@ -46,6 +47,15 @@ test('profile selection is accessible, stable and does not reload the site', () 
   assert.match(components, /\.profile-guest-btn/);
   assert.match(presence, /sessionRef\?\.set/);
   assert.match(presence, /const previousRef = sessionRef/);
+});
+
+test('coop games expose explicit categories and cache-safe search modules', () => {
+  assert.match(page, /data-coop-status="open"/);
+  assert.match(page, /id="coop-genre"/);
+  assert.doesNotMatch(page, /id="coop-status-filter"/);
+  assert.doesNotMatch(coopPage, /coop-status-cycle|nextCoopStatus/);
+  assert.match(coopPage, /data-action="set-status"/);
+  assert.match(coopPage, /coop-games-utils\.mjs\?v=20260823-coop-categories/);
 });
 
 test('saved navigation waits for the application boot to finish', () => {

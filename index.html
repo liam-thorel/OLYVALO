@@ -18,7 +18,7 @@
   <link rel="stylesheet" href="./css/responsive.css?v=20260818-coop-nav">
   <link rel="stylesheet" href="./css/lol-mode.css?v=20260809-lol-sync">
   <link rel="stylesheet" href="./css/curse.css?v=20260818-curse-lifecycle">
-  <link rel="stylesheet" href="./css/coop-games.css?v=20260818-game-catalog-fast">
+  <link rel="stylesheet" href="./css/coop-games.css?v=20260823-coop-categories">
 </head>
 <body>
 
@@ -346,20 +346,30 @@
           <button class="coop-add-btn" id="coop-add-btn" type="button">+ Proposer un jeu</button>
         </header>
         <div class="coop-toolbar">
-          <input id="coop-search" type="search" placeholder="Rechercher un jeu ou un genre…" autocomplete="off">
-          <select id="coop-players" aria-label="Nombre de joueurs">
-            <option value="0">Tous les groupes</option><option value="2">2 joueurs</option><option value="3">3 joueurs</option>
-            <option value="4">4 joueurs</option><option value="5">5 joueurs</option><option value="6">6 joueurs et +</option>
-          </select>
-          <select id="coop-status-filter" aria-label="État des jeux">
-            <option value="all">Tous</option><option value="open">À faire</option><option value="replay">MàJ · À refaire</option><option value="planned">Prévus</option><option value="played">Joués</option>
-          </select>
-          <select id="coop-sort" aria-label="Trier les jeux">
-            <option value="popular">Les plus attendus</option><option value="recent">Les plus récents</option>
-          </select>
+          <div class="coop-search-field">
+            <span aria-hidden="true">⌕</span>
+            <input id="coop-search" type="search" placeholder="Rechercher un jeu, un genre…" aria-label="Rechercher un jeu" autocomplete="off">
+          </div>
+          <label class="coop-filter-field" for="coop-players"><span>On est combien ?</span>
+            <select id="coop-players"><option value="0">Peu importe</option><option value="2">2 joueurs</option><option value="3">3 joueurs</option>
+              <option value="4">4 joueurs</option><option value="5">5 joueurs</option><option value="6">6 joueurs et +</option></select>
+          </label>
+          <label class="coop-filter-field" for="coop-genre"><span>Genre</span>
+            <select id="coop-genre"><option value="all">Tous les genres</option></select>
+          </label>
+          <label class="coop-filter-field" for="coop-sort"><span>Trier par</span>
+            <select id="coop-sort"><option value="popular">Les plus populaires</option><option value="recent">Les derniers ajoutés</option><option value="alpha">Nom A–Z</option></select>
+          </label>
         </div>
+        <nav class="coop-status-tabs" aria-label="Catégories de jeux">
+          <button type="button" class="active" data-coop-status="all" aria-pressed="true"><span>Tous</span><strong data-status-count="all">0</strong></button>
+          <button type="button" data-coop-status="open" aria-pressed="false"><span>À découvrir</span><strong data-status-count="open">0</strong></button>
+          <button type="button" data-coop-status="planned" aria-pressed="false"><span>Planifiés</span><strong data-status-count="planned">0</strong></button>
+          <button type="button" data-coop-status="replay" aria-pressed="false"><span>À rejouer</span><strong data-status-count="replay">0</strong></button>
+          <button type="button" data-coop-status="played" aria-pressed="false"><span>Terminés</span><strong data-status-count="played">0</strong></button>
+        </nav>
         <div class="coop-summary"><span id="coop-current-profile">Choisis d’abord ton profil</span><span id="coop-result-count">0 jeu</span></div>
-        <div class="coop-games-grid" id="coop-games-grid"></div>
+        <div class="coop-games-list" id="coop-games-grid"></div>
       </div>
     </main>
   </div>
@@ -487,6 +497,6 @@
   <script type="module" src="./js/firebase-draw.js?v=20260720-avatars"></script>
   <!-- Présence Firebase -->
   <script src="./js/presence.js?v=20260720-avatars"></script>
-  <script type="module" src="./js/main.js?v=20260823-profile-picker"></script>
+  <script type="module" src="./js/main.js?v=20260823-coop-categories"></script>
 </body>
 </html>

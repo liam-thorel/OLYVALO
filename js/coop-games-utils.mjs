@@ -72,24 +72,76 @@ export function normalizeCoopGame(id, value = {}) {
   };
 }
 
-export function filterCoopGames(games = [], filters = {}) {
-  const search = String(filters.search || '').trim().toLocaleLowerCase('fr');
-  const players = Math.max(0, Number(filters.players) || 0);
-  const status = filters.status || 'open';
-  const result = games.filter(game => {
-    if (status !== 'all' && game.status !== status) return false;
-    if (players && !(game.minPlayers <= players && game.maxPlayers >= players)) return false;
-    if (!search) return true;
-    return [game.title, game.note, ...(game.tags || [])]
-      .join(' ')
-      .toLocaleLowerCase('fr')
-      .includes(search);
-  });
-  return result.sort((a, b) => filters.sort === 'recent'
-    ? b.submittedAt - a.submittedAt
-    : b.interestCount - a.interestCount || b.submittedAt - a.submittedAt);
+export function normalizeCoopSearch(value = '') {
+  return String(value || '')
+    .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+    .toLocaleLowerCase('fr')
+    .replace(/[^a-z0-9]+/g, ' ')
+    .trim();
 }
 
-export function nextCoopStatus(status = 'open') {
-  return status === 'open' || status === 'replay' ? 'planned' : status === 'planned' ? 'played' : 'open';
+export function coopSearchScore(game = {}, query = '') {
+  const wanted = normalizeCoopSearch(query);
+  if (!wanted) return 1;
+  const title = normalizeCoopSearch(game.title);
+  const tags = (game.tags || []).map(normalizeCoopSearch);
+  const details = normalizeCoopSearch([game.note, game.submittedBy].join(' '));
+  const haystack = [title, ...tags, details].filter(Boolean).join(' ');
+  const words = haystack.split(' ').filter(Boolean);
+  const compactWanted = wanted.replaceAll(' ', '');
+  const compactHaystack = haystack.replaceAll(' ', '');
+  const tokens = wanted.split(' ').filter(Boolean);
+  if (!tokens.every(token => words.some(word => word.startsWith(token)) || compactHaystack.includes(token))) return 0;
+
+  let score = title === wanted ? 10_000 : title.startsWith(wanted) ? 7_000 : title.includes(wanted) ? 5_000 : 0;
+  if (compactHaystack.includes(compactWanted)) score += 1_000;
+  tokens.forEach(token => {
+    if (title.split(' ').some(word => word.startsWith(token))) score += 500;
+    if (tags.some(tag => tag === token || tag.split(' ').some(word => word.startsWith(token)))) score += 180;
+    if (details.split(' ').some(word => word.startsWith(token))) score += 40;
+  });
+  return score || 1;
+}
+
+export function rankCatalogResults(results = [], query = '') {
+  const wanted = normalizeCoopSearch(query);
+  const tokens = wanted.split(/\s+/).filter(Boolean);
+  const ordered = [...results].sort((left, right) => {
+    const score = result => {
+      if (Number.isFinite(Number(result.catalogScore))) return Number(result.catalogScore);
+      const title = normalizeCoopSearch(result.title);
+      if (title === wanted) return 10_000;
+      let value = title.startsWith(wanted) ? 5_000 : title.includes(wanted) ? 3_000 : 0;
+      value += tokens.filter(token => title.includes(token)).length * 500;
+      value -= Math.abs(title.length - wanted.length);
+      return value;
+    };
+    return score(right) - score(left);
+  });
+  const seenTitles = new Set();
+  return ordered.filter(result => {
+    const key = normalizeCoopSearch(result.title).replaceAll(' ', '');
+    if (!key || seenTitles.has(key)) return false;
+    seenTitles.add(key);
+    return true;
+  }).slice(0, 8);
+}
+
+export function filterCoopGames(games = [], filters = {}) {
+  const search = String(filters.search || '').trim();
+  const players = Math.max(0, Number(filters.players) || 0);
+  const status = filters.status || 'open';
+  const genre = normalizeCoopSearch(filters.genre || 'all');
+  const scored = games.map(game => ({ game, searchScore:coopSearchScore(game, search) })).filter(({ game, searchScore }) => {
+    if (status !== 'all' && game.status !== status) return false;
+    if (players && !(game.minPlayers <= players && game.maxPlayers >= players)) return false;
+    if (genre !== 'all' && !(game.tags || []).some(tag => normalizeCoopSearch(tag) === genre)) return false;
+    return searchScore > 0;
+  });
+  return scored.sort((left, right) => {
+    if (search && right.searchScore !== left.searchScore) return right.searchScore - left.searchScore;
+    if (filters.sort === 'recent') return right.game.submittedAt - left.game.submittedAt;
+    if (filters.sort === 'alpha') return left.game.title.localeCompare(right.game.title, 'fr', { sensitivity:'base' });
+    return right.game.interestCount - left.game.interestCount || right.game.submittedAt - left.game.submittedAt;
+  }).map(entry => entry.game);
 }

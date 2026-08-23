@@ -3,9 +3,23 @@ import test from 'node:test';
 import {
   escapeIgdbSearch,
   handleRequest,
+  igdbSearchScore,
   normalizeIgdbGame,
   playerRangeFromIgdb,
 } from '../workers/game-catalog/worker.mjs';
+
+test('a famous prefix match outranks an obscure exact title', () => {
+  const obscure = { name:'Mine', total_rating_count:1, follows:0, hypes:0, first_release_date:1_500_000_000 };
+  const minecraft = { name:'Minecraft', total_rating_count:25_000, follows:80_000, hypes:0, first_release_date:1_247_875_200 };
+  assert.ok(igdbSearchScore(minecraft, 'mine') > igdbSearchScore(obscure, 'mine'));
+});
+
+test('recent attention helps current games with the same title relevance', () => {
+  const now = Date.UTC(2026, 7, 23);
+  const oldGame = { name:'Party Classic', total_rating_count:40, follows:20, first_release_date:1_400_000_000 };
+  const currentGame = { name:'Party Crashers', total_rating_count:40, follows:20, hypes:80, first_release_date:Math.floor(Date.UTC(2026, 4, 1) / 1000) };
+  assert.ok(igdbSearchScore(currentGame, 'party', now) > igdbSearchScore(oldGame, 'party', now));
+});
 
 test('IGDB search text cannot inject another query statement', () => {
   assert.equal(escapeIgdbSearch('Test"; limit 500;\n'), 'Test\\"; limit 500; ');
