@@ -5,22 +5,22 @@
 
 import { valorantApi } from './api.js';
 
-const SITE_VERSION = '20260823-home-dashboard';
+const SITE_VERSION = '20260823-home-art-buttons-fix';
 import { syncPlayer as henrikSyncPlayer, syncAllPlayers as henrikSyncAll, persistPlayerStats } from './henrik.js?v=20260809-val-roster-season';
 import { setStoredKey, storedKey, forgetCachedKey } from './henrik-key.mjs';
-import { rosterHTML, guestCardHTML, mapSectionHTML, agentPageHTML } from './render.js?v=20260823-home-dashboard';
+import { rosterHTML, guestCardHTML, mapSectionHTML, agentPageHTML } from './render.js?v=20260823-home-art-buttons-fix';
 import { initTheme, initTilt, initParallax, initSearch, initKeyboard, initHeroParticles, initWheelLogos, initLivePage, initHistoryPage } from './interactions.js?v=20260823-maps-cleanup';
 import { storage } from './storage.js';
 import { avatarLayersHTML } from './avatars.mjs';
 import { initAdminPage } from './admin.mjs?v=20260814-admin-current-script';
 import { initBettingPage } from './betting-page.mjs';
 import { initCoopGamesPage } from './coop-games-page.mjs?v=20260823-coop-steam-reviews';
-import { getGameMode, initGameMode } from './game-mode.mjs?v=20260823-patch-1304';
+import { getGameMode, initGameMode, setGameMode } from './game-mode.mjs?v=20260823-patch-1304';
 import { initLolHistoryPage, initLolLivePage } from './lol-pages.mjs?v=20260810-history-progressive';
 import { initLolRosterPages } from './lol-roster.mjs?v=20260809-lol-sync';
 import { state } from './state.mjs?v=20260806-lol-roster';
 import { memberId, mergeMemberProfiles, resolveMemberProfile } from './member-profiles.mjs?v=20260823-profile-picker';
-import { initHomeDashboard } from './home-dashboard.mjs?v=20260823-home-dashboard';
+import { initHomeDashboard } from './home-dashboard.mjs?v=20260823-home-art-buttons-fix';
 export { state };
 
 // ─── STATE ─────────────────────────────────────────
@@ -723,7 +723,8 @@ async function boot() {
   if (!window._homeDashboardCleanup) {
     window._homeDashboardCleanup = initHomeDashboard({
       members: state.MEMBERS,
-      valorantImage: valorantApi.mapSplash(state.COMPS_DATA[0]?.map || 'Haven'),
+      navigate: window.OLYCITY.nav.bind(window.OLYCITY),
+      openUniverse: window.OLYCITY.openUniverse.bind(window.OLYCITY),
     });
   }
   if (!window._lolRosterCleanup) window._lolRosterCleanup = initLolRosterPages();

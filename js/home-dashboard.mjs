@@ -80,13 +80,19 @@ function renderSnapshot(snapshot, members) {
   card.onclick = () => window.OLYCITY?.nav(model.page);
 }
 
-export function initHomeDashboard({ members = [], valorantImage = '' } = {}) {
-  const valorantCard = document.querySelector('[data-home-world="valorant"]');
-  if (valorantCard && valorantImage) valorantCard.style.setProperty('--home-world-image', `url("${valorantImage}")`);
+export function initHomeDashboard({ members = [], navigate, openUniverse } = {}) {
+  const worldButtons = [...document.querySelectorAll('[data-home-world][data-home-page]')];
+  const handleWorldClick = event => {
+    const { homeWorld, homePage } = event.currentTarget.dataset;
+    if (homeWorld === 'coop') (navigate || window.OLYCITY?.nav?.bind(window.OLYCITY))?.(homePage);
+    else (openUniverse || window.OLYCITY?.openUniverse?.bind(window.OLYCITY))?.(homeWorld, homePage);
+  };
+  worldButtons.forEach(button => button.addEventListener('click', handleWorldClick));
   const render = snapshot => renderSnapshot(snapshot, members);
   const unsubscribe = liveDataStore.subscribe(render);
   const timer = window.setInterval(() => render(liveDataStore.snapshot()), 10_000);
   return () => {
+    worldButtons.forEach(button => button.removeEventListener('click', handleWorldClick));
     unsubscribe();
     window.clearInterval(timer);
   };

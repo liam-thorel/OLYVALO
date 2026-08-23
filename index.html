@@ -16,7 +16,7 @@
   <link rel="stylesheet" href="./css/tokens.css?v=20260720-avatars">
   <link rel="stylesheet" href="./css/layout.css?v=20260823-mobile-design">
   <link rel="stylesheet" href="./css/components.css?v=20260823-mobile-design">
-  <link rel="stylesheet" href="./css/home.css?v=20260823-home-dashboard">
+  <link rel="stylesheet" href="./css/home.css?v=20260823-home-art-buttons-fix">
   <link rel="stylesheet" href="./css/agent-page.css?v=20260720-avatars">
   <link rel="stylesheet" href="./css/responsive.css?v=20260823-mobile-design">
   <link rel="stylesheet" href="./css/lol-mode.css?v=20260823-mobile-sections">
@@ -242,13 +242,13 @@
       </button>
 
       <div class="home-world-grid" aria-label="Choisir un univers">
-        <button class="home-world" data-home-world="valorant" type="button" onclick="window.OLYCITY?.openUniverse('valorant','maps')">
+        <button class="home-world" data-home-world="valorant" data-home-page="maps" type="button">
           <span class="home-world-copy"><small>Comps & Live</small><strong>Valorant</strong></span>
         </button>
-        <button class="home-world" data-home-world="lol" type="button" onclick="window.OLYCITY?.openUniverse('lol','live')">
+        <button class="home-world" data-home-world="lol" data-home-page="live" type="button">
           <span class="home-world-copy"><small>Live & Rangs</small><strong>League</strong></span>
         </button>
-        <button class="home-world" data-home-world="coop" type="button" onclick="window.OLYCITY?.nav('games')">
+        <button class="home-world" data-home-world="coop" data-home-page="games" type="button">
           <span class="home-world-copy"><small>Votes du groupe</small><strong>Coop</strong></span>
         </button>
       </div>
@@ -494,6 +494,6 @@
   <!-- Firebase SDK -->
   <!-- Présence Firebase -->
   <script src="./js/presence.js?v=20260720-avatars"></script>
-  <script type="module" src="./js/main.js?v=20260823-home-dashboard"></script>
+  <script type="module" src="./js/main.js?v=20260823-home-art-buttons-fix"></script>
 </body>
 </html>

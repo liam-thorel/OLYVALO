@@ -56,6 +56,12 @@ test('home is one live priority, three visual worlds and a compact member strip'
   assert.match(page, /data-home-world="valorant"/);
   assert.match(page, /data-home-world="lol"/);
   assert.match(page, /data-home-world="coop"/);
+  assert.match(page, /data-home-world="valorant" data-home-page="maps"/);
+  assert.match(page, /data-home-world="lol" data-home-page="live"/);
+  assert.match(homeDashboard, /addEventListener\('click', handleWorldClick\)/);
+  assert.match(main, /import \{ getGameMode, initGameMode, setGameMode \} from '\.\/game-mode\.mjs/);
+  assert.match(homeStyles, /valorant-keyart\.webp/);
+  assert.match(homeStyles, /league-summoners-rift\.webp/);
   assert.match(page, /id="home-member-faces"/);
   assert.doesNotMatch(page, /Agents prioritaires|id="stier-row"|id="mini-roster"/);
   assert.match(main, /initHomeDashboard\(/);

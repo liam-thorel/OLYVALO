@@ -15,7 +15,11 @@
 .home-world::after{content:'';position:absolute;z-index:-1;inset:0;background:linear-gradient(to top,rgba(5,7,11,.98),rgba(5,7,11,.08) 75%)}
 .home-world:hover{transform:translateY(-3px);border-color:rgba(255,255,255,.28)}
 .home-world:hover::before{transform:scale(1.035);filter:saturate(1) brightness(.62)}
-.home-world[data-home-world="lol"]{--home-world-image:url('https://ddragon.leagueoflegends.com/cdn/img/champion/splash/Ahri_0.jpg')}
+.home-world[data-home-world="valorant"]{--home-world-image:url('../assets/home/valorant-keyart.webp')}
+.home-world[data-home-world="valorant"]::before{background-position:center 44%}
+.home-world[data-home-world="lol"]{--home-world-image:url('../assets/home/league-summoners-rift.webp')}
+.home-world[data-home-world="lol"]::before{filter:saturate(.95) brightness(.9)}
+.home-world[data-home-world="lol"]:hover::before{filter:saturate(1.08) brightness(1)}
 .home-world[data-home-world="coop"]{--home-world-image:url('https://shared.fastly.steamstatic.com/store_item_assets/steam/apps/1966720/header.jpg')}
 .home-world-copy{position:absolute;left:16px;right:16px;bottom:14px;display:grid;gap:2px}
 .home-world-copy small{color:rgba(255,255,255,.58);font:700 8px 'Tomorrow',sans-serif;letter-spacing:1.5px;text-transform:uppercase}
