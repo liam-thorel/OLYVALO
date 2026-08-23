@@ -15,10 +15,11 @@ test('patch 13.04 exposes the official competitive map rotation', () => {
   assert.ok(!mapNames.includes('Breeze'));
 });
 
-test('every map in the current rotation has complete five-player compositions', () => {
+test('every map exposes exactly ranked, pro and fun five-player compositions', () => {
   const comps = readJson('../data/comps.json');
   for (const map of comps) {
-    assert.equal(map.comps.length, 5, `${map.map} doit proposer cinq compositions`);
+    assert.equal(map.comps.length, 3, `${map.map} doit proposer exactement trois compositions`);
+    assert.deepEqual(map.comps.map(comp => comp.tier), ['S', 'PRO', 'FUN'], `${map.map} doit garder ranked, pro puis fun`);
     for (const comp of map.comps) {
       assert.equal(comp.agents.length, 5, `${map.map} / ${comp.label} doit contenir cinq agents`);
       assert.equal(new Set(comp.agents).size, 5, `${map.map} / ${comp.label} ne doit pas contenir de doublon`);

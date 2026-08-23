@@ -73,56 +73,6 @@
         ]
       },
       {
-        "label": "Double duelist agressif",
-        "tier": "A",
-        "tierLabel": "A-TIER",
-        "winrate": 51.7,
-        "updatedAt": "Avril 2026",
-        "agents": [
-          "Neon",
-          "Phoenix",
-          "Sova",
-          "Omen",
-          "Killjoy"
-        ],
-        "source": "Esports Insider 2026",
-        "tip": "<strong>Neon + Phoenix</strong> créent une pression simultanée sur deux sites. Envoyez Neon sur A et Phoenix sur C avec Sova recon pour split la défense. <em style=\"color:#f5c842;font-size:11px\">⚠ Neon nerfée 12.09 — mobilité réduite, moins agressive</em>",
-        "agility": {
-          "antiRush": 3,
-          "postPlant": 2,
-          "retake": 3,
-          "split": 5
-        },
-        "vods": [],
-        "patch": "12.11",
-        "key": "Sova"
-      },
-      {
-        "label": "Contrôle utilitaire",
-        "tier": "B",
-        "tierLabel": "B-TIER",
-        "winrate": 51.5,
-        "updatedAt": "Mai 2026",
-        "agents": [
-          "Jett",
-          "Fade",
-          "Breach",
-          "Astra",
-          "Cypher"
-        ],
-        "source": "Esports Insider · S26 Act 1 Meta",
-        "tip": "Fade récon les 3 sites en alternance, Breach ouvre les executes avec stun + flash. Astra peut smoke 2 sites à la fois pour les fakes — idéal pour le mid vers A/C split. Jett entry sur l'info de Fade, Cypher anchor B et flank watch. Comp plus lente mais très solide en défense.",
-        "agility": {
-          "antiRush": 3,
-          "postPlant": 2,
-          "retake": 3,
-          "split": 5
-        },
-        "vods": [],
-        "patch": "12.11",
-        "key": "Fade"
-      },
-      {
         "label": "Fun — Brouillard sur 3 sites",
         "tier": "FUN",
         "tierLabel": "FUN",
@@ -256,56 +206,6 @@
         "key": "Waylay"
       },
       {
-        "label": "5-stack simple",
-        "tier": "A",
-        "tierLabel": "A-TIER",
-        "winrate": 0,
-        "updatedAt": "Août 2026",
-        "patch": "13.04",
-        "agents": [
-          "Neon",
-          "Sova",
-          "Breach",
-          "Omen",
-          "Cypher"
-        ],
-        "source": "OLYCITY · Composition coordonnée",
-        "tip": "<strong>Breach lance l'entrée de Neon</strong> pendant que Sova nettoie les positions profondes. Omen facilite les rotations rapides et Cypher garde le flanc sur cette carte très étendue.",
-        "agility": {
-          "antiRush": 4,
-          "postPlant": 4,
-          "retake": 4,
-          "split": 4
-        },
-        "vods": [],
-        "key": "Sova"
-      },
-      {
-        "label": "Contrôle double smoke",
-        "tier": "B",
-        "tierLabel": "B-TIER",
-        "winrate": 0,
-        "updatedAt": "Août 2026",
-        "patch": "13.04",
-        "agents": [
-          "Yoru",
-          "Sova",
-          "Harbor",
-          "Omen",
-          "Cypher"
-        ],
-        "source": "OLYCITY · Contrôle de carte",
-        "tip": "Harbor traverse les longues lignes de vue, Omen ferme Tower et Yoru menace une rotation instantanée. La composition demande de garder assez d'utilitaires pour le retake.",
-        "agility": {
-          "antiRush": 3,
-          "postPlant": 5,
-          "retake": 3,
-          "split": 5
-        },
-        "vods": [],
-        "key": "Omen"
-      },
-      {
         "label": "Fun — Tous dans le vide",
         "tier": "FUN",
         "tierLabel": "FUN",
@@ -412,54 +312,6 @@
             "url": "https://rib.gg/matches/689"
           }
         ]
-      },
-      {
-        "label": "Variante Hotspawn",
-        "tier": "A",
-        "tierLabel": "A-TIER",
-        "winrate": 51.4,
-        "updatedAt": "Avril 2026",
-        "agents": [
-          "Raze",
-          "Viper",
-          "Fade",
-          "Omen",
-          "Vyse"
-        ],
-        "source": "Hotspawn · Mai 2026",
-        "tip": "<strong>Vyse</strong> remplace Killjoy et offre un wall pour stopper les retakes sur C. Viper wall coupe Rubble. En five stack, assignez des rôles fixes sur chacun des 3 sites.",
-        "agility": {
-          "antiRush": 3,
-          "postPlant": 4,
-          "retake": 4,
-          "split": 3
-        },
-        "vods": [],
-        "key": "Viper"
-      },
-      {
-        "label": "Double Controller 3 Sites",
-        "tier": "B",
-        "tierLabel": "B-TIER",
-        "winrate": 51.4,
-        "updatedAt": "Mai 2026",
-        "agents": [
-          "Raze",
-          "Fade",
-          "Omen",
-          "Clove",
-          "Killjoy"
-        ],
-        "source": "ValoHub · Meta 2026 Lotus",
-        "tip": "<strong>Omen + Clove</strong> = double controller avec Clove qui peut jouer post-mort. Fade isole les sites individuellement. Killjoy garde C seul. Raze pour la mobilité entre les 3 sites.",
-        "agility": {
-          "antiRush": 4,
-          "postPlant": 5,
-          "retake": 4,
-          "split": 3
-        },
-        "vods": [],
-        "key": "Fade"
       },
       {
         "label": "Fun — 5 Initiateurs",
@@ -587,54 +439,6 @@
             "url": "https://rib.gg/matches/708"
           }
         ]
-      },
-      {
-        "label": "Défensive solide",
-        "tier": "A",
-        "tierLabel": "A-TIER",
-        "winrate": 51.9,
-        "updatedAt": "Avril 2026",
-        "agents": [
-          "Raze",
-          "Breach",
-          "Sage",
-          "Omen",
-          "Cypher"
-        ],
-        "source": "High Elo · Reddit",
-        "tip": "<strong>Sage wall</strong> sur Ramp ou B Heaven crée des 1v1 forcés. Omen phantom smokes sur mid, Breach stun. En five stack, Sage resurrecte le joueur le plus impactful.",
-        "agility": {
-          "antiRush": 5,
-          "postPlant": 3,
-          "retake": 4,
-          "split": 3
-        },
-        "vods": [],
-        "key": "Breach"
-      },
-      {
-        "label": "Triple Initiateur",
-        "tier": "B",
-        "tierLabel": "B-TIER",
-        "winrate": 52.0,
-        "updatedAt": "Mai 2026",
-        "agents": [
-          "Raze",
-          "Skye",
-          "Fade",
-          "Breach",
-          "Omen"
-        ],
-        "source": "VLR.gg Community · Reddit r/ValorantCompetitive",
-        "tip": "<strong>Skye + Fade + Breach</strong> = triple initiateur qui nettoie chaque angle avant d'entrer. Omen single controller. Raze pour la mobilité sur les escaliers. Brutal en exécute coordonnée.",
-        "agility": {
-          "antiRush": 5,
-          "postPlant": 3,
-          "retake": 4,
-          "split": 4
-        },
-        "vods": [],
-        "key": "Fade"
       },
       {
         "label": "Fun — 5-Stack Rush B",
@@ -769,64 +573,6 @@
         ]
       },
       {
-        "label": "Alternative Clove",
-        "tier": "A",
-        "tierLabel": "A-TIER",
-        "winrate": 52.5,
-        "updatedAt": "Mai 2026",
-        "agents": [
-          "Jett",
-          "Sova",
-          "KAY/O",
-          "Clove",
-          "Killjoy"
-        ],
-        "source": "ValoHub · Patch 12.05",
-        "tip": "<strong>Clove remplace Omen</strong> — ses smokes rechargeables post-mort permettent de maintenir la pression même en désavantage numérique. Très efficace pour les rounds pistolet et anti-éco.",
-        "agility": {
-          "antiRush": 3,
-          "postPlant": 4,
-          "retake": 4,
-          "split": 3
-        },
-        "vods": [
-          {
-            "label": "Pick rates · Ascent",
-            "url": "https://dak.gg/valorant/agents?map=Ascent"
-          }
-        ],
-        "key": "Sova"
-      },
-      {
-        "label": "Viper mid control",
-        "tier": "B",
-        "tierLabel": "B-TIER",
-        "winrate": 49.8,
-        "updatedAt": "Mai 2026",
-        "agents": [
-          "Jett",
-          "Sova",
-          "KAY/O",
-          "Viper",
-          "Killjoy"
-        ],
-        "source": "VLR.gg · Discussion",
-        "tip": "<strong>Viper wall pour couper mid</strong> en deux dès le début du round — force les défenseurs à choisir entre A et B. Moins flexible qu'Omen mais domine mid en défense.",
-        "agility": {
-          "antiRush": 4,
-          "postPlant": 5,
-          "retake": 2,
-          "split": 4
-        },
-        "vods": [
-          {
-            "label": "Pick rates · Ascent",
-            "url": "https://dak.gg/valorant/agents?map=Ascent"
-          }
-        ],
-        "key": "Sova"
-      },
-      {
         "label": "Fun — Wallbang Simulator",
         "tier": "FUN",
         "tierLabel": "FUN",
@@ -904,34 +650,6 @@
             "url": "https://rib.gg/matches/707"
           }
         ]
-      },
-      {
-        "tier": "A",
-        "label": "Double initiateur",
-        "agents": [
-          "Raze",
-          "Breach",
-          "Skye",
-          "Omen",
-          "Killjoy"
-        ],
-        "key": "Skye",
-        "tip": "Skye + Breach saturent les entrées en flash/stun. Raze clear les corners de Market au nade. Killjoy zone B, Omen smoke les lignes longues de A Link.",
-        "patch": "13.04"
-      },
-      {
-        "tier": "B",
-        "label": "Contrôle Market",
-        "agents": [
-          "Viper",
-          "Sova",
-          "Cypher",
-          "KAY/O",
-          "Reyna"
-        ],
-        "key": "Viper",
-        "tip": "Viper wall coupe Market en deux pour sécuriser un site sans le voir entièrement. Sova récon les flancs. Cypher watch B Link, KAY/O suppress avant entry.",
-        "patch": "13.04"
       },
       {
         "tier": "FUN",
@@ -1027,34 +745,6 @@
             "url": "https://rib.gg/matches/708"
           }
         ]
-      },
-      {
-        "tier": "A",
-        "label": "Double initiateur — walls",
-        "agents": [
-          "Raze",
-          "Breach",
-          "Sova",
-          "Cypher",
-          "Omen"
-        ],
-        "key": "Breach",
-        "tip": "A Site est plus petit et compact — Breach stun + Raze grenade nettoient les angles serrés d'A Garden avant d'entrer. Ne pas activer le mur A trop tôt : ça enferme l'équipe si le push échoue. Cypher watch le flanc mid après activation.",
-        "patch": "13.04"
-      },
-      {
-        "tier": "B",
-        "label": "Post-plant B",
-        "agents": [
-          "Viper",
-          "Sage",
-          "Cypher",
-          "KAY/O",
-          "Deadlock"
-        ],
-        "key": "Viper",
-        "tip": "B Site est plus grand, laisse de la place pour un post-plant profond. Viper wall + Sage slow ralentissent la retake. Deadlock (GravNet buffé, cooldown 50s) et Cypher piègent les axes de rotation depuis Mid.",
-        "patch": "13.04"
       },
       {
         "tier": "FUN",
