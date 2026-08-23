@@ -9,6 +9,7 @@ const lolRoster = fs.readFileSync(new URL('../js/lol-roster.mjs', import.meta.ur
 const page = fs.readFileSync(new URL('../index.html', import.meta.url), 'utf8');
 const liveDataStore = fs.readFileSync(new URL('../js/live-data-store.mjs', import.meta.url), 'utf8');
 const historyPager = fs.readFileSync(new URL('../js/history-pager.mjs', import.meta.url), 'utf8');
+const layout = fs.readFileSync(new URL('../css/layout.css', import.meta.url), 'utf8');
 
 test('shared state does not import the versioned entry module twice', () => {
   assert.match(main, /from '\.\/state\.mjs/);
@@ -25,21 +26,11 @@ test('League home and roster panels are mounted by the site', () => {
   assert.match(main, /initLolRosterPages\(\)/);
 });
 
-test('le bandeau live expose les identifiants interrogés par le JS', () => {
-  // Régression : le score de la game n'a jamais été affiché. Le JS le créait à
-  // la volée via getElementById('live-header'), mais le bandeau ne portait
-  // qu'une CLASSE `live-header` — la condition était donc toujours fausse.
+test('le bandeau live ne prétend pas afficher un score indisponible en direct', () => {
   assert.match(page, /id="live-header"/);
-  assert.match(page, /id="live-score"/);
-  assert.match(page, /id="live-score-mine"/);
-  assert.match(page, /id="live-score-theirs"/);
-
-  // L'élément est désormais déclaré dans le HTML, plus fabriqué en JS.
-  assert.doesNotMatch(interactions, /scoreEl\.id = 'live-score'/);
-
-  // Le score de Riot est absolu (Blue/Red) : il doit être réorienté du point de
-  // vue de l'observateur, comme le fait la page Historique.
-  assert.match(interactions, /selfTeam === 'CHAOS'/);
+  assert.doesNotMatch(page, /id="live-score/);
+  assert.doesNotMatch(interactions, /getElementById\('live-score/);
+  assert.doesNotMatch(layout, /\.live-score/);
 });
 
 test('saved navigation waits for the application boot to finish', () => {

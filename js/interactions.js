@@ -934,25 +934,6 @@ export function initLivePage() {
       if (playerEl.textContent !== data.playerName) playerEl.textContent = data.playerName;
     }
 
-    // Score — l'élément est déclaré dans index.html (il était auparavant créé
-    // ici à la volée, mais accroché à getElementById('live-header') alors que
-    // le bandeau ne portait qu'une CLASSE : le score n'a donc jamais été rendu.
-    const score = data.score || {};
-    const scoreEl = document.getElementById('live-score');
-    if (scoreEl) {
-      const hasScore = Number.isFinite(Number(score.blue)) || Number.isFinite(Number(score.red));
-      // Le score de Riot est absolu (Blue/Red) : on le réoriente du point de
-      // vue de l'observateur, comme le fait déjà la page Historique.
-      const selfTeam = players.find(p => p.name && p.name === data.playerName)?.team;
-      const mine   = selfTeam === 'CHAOS' ? (score.red  || 0) : (score.blue || 0);
-      const theirs = selfTeam === 'CHAOS' ? (score.blue || 0) : (score.red  || 0);
-      scoreEl.style.display = hasScore && !isPregame ? '' : 'none';
-      const mineEl = document.getElementById('live-score-mine');
-      const theirsEl = document.getElementById('live-score-theirs');
-      if (mineEl && mineEl.textContent !== String(mine)) mineEl.textContent = mine;
-      if (theirsEl && theirsEl.textContent !== String(theirs)) theirsEl.textContent = theirs;
-    }
-
     // Pregame — show map comps during agent select
     let compsEl = document.getElementById('live-comps-panel');
     if (isPregame && (data?.mapClean || data?.map)) {
@@ -973,11 +954,11 @@ export function initLivePage() {
       if (compsEl.dataset.key !== pregameRenderKey) {
         compsEl.dataset.map = pgMapName;
         compsEl.dataset.key = pregameRenderKey;
-        fetch('./data/comps.json').then(r=>r.json()).then(comps => {
+        Promise.resolve(state.COMPS_DATA).then(comps => {
           const mapData = comps.find(m => m.map === pgMapName);
           if (!mapData) { compsEl.innerHTML = ''; return; }
-          const pick = t => mapData.comps.find(c => c.tier === t);
-          const show = [pick('S'), pick('PRO'), pick('F')].filter(Boolean);
+          const pick = (...tiers) => mapData.comps.find(c => tiers.includes(c.tier));
+          const show = [pick('S'), pick('PRO'), pick('FUN', 'F')].filter(Boolean);
           compsEl.innerHTML = `
             <div class="live-pregame-header ${sideClass}">
               <div class="live-pregame-heading">

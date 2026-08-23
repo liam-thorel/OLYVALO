@@ -19,7 +19,7 @@ function applyHomeCopy(mode) {
   const meta = document.getElementById('hero-meta');
   if (meta) meta.innerHTML = lol
     ? '<span><span class="dot"></span>Live Riot Client</span><span><span class="dot"></span>Historique séparé · EUW</span>'
-    : '<span><span class="dot"></span>7 maps · Patch 13.04</span><span><span class="dot"></span>Données VLR.gg · VCT 2026</span>';
+    : '<span><span class="dot"></span>7 maps · Patch 13.04</span><span><span class="dot"></span>Ranked + VCT 2026</span>';
   const primary = document.getElementById('hero-primary-cta');
   if (primary) {
     primary.textContent = lol ? '● Voir les parties live' : '◆ Explorer les maps';
@@ -35,7 +35,7 @@ function applyHomeCopy(mode) {
   const sources = document.getElementById('footer-sources');
   if (sources) sources.innerHTML = lol
     ? 'Données : Riot Client · Data Dragon'
-    : 'Sources : <a href="https://vlr.gg" target="_blank">VLR.gg</a> · <a href="https://hotspawn.com" target="_blank">Hotspawn</a> · <a href="https://dak.gg" target="_blank">dak.gg</a>';
+    : 'Sources : <a href="https://www.rib.gg" target="_blank">RIB.gg</a> · <a href="https://metabot.gg/en/valorant" target="_blank">MetaBot</a> · <a href="https://vlr.gg" target="_blank">VLR.gg</a>';
   const activePage = document.querySelector('.spa-page.active')?.id?.replace('page-', '') || 'home';
   const pageLabel = activePage === 'home' ? (lol ? 'League of Legends' : 'Valorant Meta Comps') : activePage.charAt(0).toUpperCase() + activePage.slice(1);
   document.title = `OLYCITY — ${pageLabel}`;

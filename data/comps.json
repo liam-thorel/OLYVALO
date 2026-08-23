@@ -14,20 +14,21 @@
     },
     "comps": [
       {
-        "label": "Meta principale",
+        "label": "Ranked · recommandée",
         "tier": "S",
         "tierLabel": "S-TIER",
-        "winrate": 55.3,
-        "updatedAt": "Mai 2026",
+        "winrate": 0,
+        "updatedAt": "Août 2026",
+        "patch": "13.04",
         "agents": [
           "Neon",
+          "Phoenix",
           "Sova",
-          "Breach",
-          "Omen",
+          "Clove",
           "Killjoy"
         ],
-        "source": "VLR.gg · Hotspawn",
-        "tip": "<strong>Breach stun A Long + A Short</strong> en simultané pour forcer les 3 sites. Neon speed rush C avec Omen smoke. Killjoy anchor B seule. Sova récon pour info constante sur les 3 sites. Breach est le pick five stack — coordination indispensable.",
+        "source": "MetaBot · 38 278 parties classées",
+        "tip": "<strong>Neon et Phoenix mettent la pression sur deux sites</strong> pendant que Sova garde l'information sur les longues lignes. Clove apporte des smokes simples et rejouables, et Killjoy peut tenir seule un site pendant les rotations.",
         "agility": {
           "antiRush": 4,
           "postPlant": 3,
@@ -36,8 +37,8 @@
         },
         "vods": [
           {
-            "label": "Pick rates · Haven",
-            "url": "https://dak.gg/valorant/agents?map=Haven"
+            "label": "Statistiques ranked · Haven",
+            "url": "https://metabot.gg/en/valorant/map/Haven/agents"
           }
         ],
         "key": "Sova"
@@ -47,17 +48,17 @@
         "tier": "PRO",
         "tierLabel": "PRO",
         "winrate": 0,
-        "updatedAt": "Mai 2026",
-        "patch": "12.11",
+        "updatedAt": "Août 2026",
+        "patch": "13.04",
         "agents": [
           "Neon",
           "Sova",
           "Omen",
-          "Phoenix",
-          "Cypher"
+          "Yoru",
+          "Killjoy"
         ],
-        "source": "VLR.gg · EWC 2026 Amer Qualifier + VCT Stage 1 (post-nerf 12.09)",
-        "tip": "Pick rates EWC Americas Qualifier 2026 (post-nerf 12.09) · Sova : 92% · Neon : 75% · Omen : 75% · Phoenix : 42% · Cypher : 42% · Source : vlr.gg/event/agents/2953",
+        "source": "Sharper Esports · VCT Pacific Stage 2",
+        "tip": "Composition jouée par Sharper Esports lors de sa victoire 13-10 sur Haven contre RRQ : Neon ouvre l'espace, Yoru menace les rotations, Sova apporte l'information, Omen couvre les trois sites et Killjoy sécurise les extrémités.",
         "agility": {
           "antiRush": 3,
           "postPlant": 4,
@@ -66,8 +67,8 @@
         },
         "vods": [
           {
-            "label": "EWC Amer Qualifier · Agents",
-            "url": "https://www.vlr.gg/event/agents/2953/esports-world-cup-2026-americas-qualifier"
+            "label": "Sharper vs RRQ · Haven",
+            "url": "https://rib.gg/matches/707"
           }
         ]
       },
@@ -122,29 +123,34 @@
         "key": "Fade"
       },
       {
-        "label": "Fun — Triple Site Rush",
-        "tier": "F",
+        "label": "Fun — Brouillard sur 3 sites",
+        "tier": "FUN",
         "tierLabel": "FUN",
-        "winrate": 45.0,
-        "updatedAt": "Mai 2026",
+        "winrate": 0,
+        "updatedAt": "Août 2026",
         "agents": [
-          "Jett",
-          "Yoru",
-          "Neon",
           "Omen",
-          "Gekko"
+          "Clove",
+          "Astra",
+          "Viper",
+          "Harbor"
         ],
-        "source": "OLYCITY Creativity Lab · Pour les soirs de tilte",
-        "tip": "Yoru fake sur C, Neon rush A, Jett rush B simultanément. Omen smoke au pif. Gekko fait n'importe quoi. Le chaos est le plan. Ça marche 1 fois sur 5 mais c'est <strong>épique</strong>. <em style=\"color:#f5c842;font-size:11px\">⚠ Neon nerfée 12.09 — mobilité réduite, moins agressive</em>",
+        "source": "Inspirée de Team SMG GC · 5 contrôleurs",
+        "tip": "<strong>Recouvrez un site entier de smokes et jouez au Judge</strong>. Astra et Omen gardent les smokes importantes, Harbor trace le chemin, Viper coupe les trois accès et Clove repart au combat. Une vraie composition inhabituelle a déjà gagné en compétition.",
         "agility": {
-          "antiRush": 1,
-          "postPlant": 1,
-          "retake": 2,
-          "split": 5
+          "antiRush": 3,
+          "postPlant": 5,
+          "retake": 4,
+          "split": 3
         },
-        "vods": [],
-        "patch": "12.11",
-        "key": "Omen"
+        "vods": [
+          {
+            "label": "Team SMG GC · 5 contrôleurs",
+            "url": "https://www.vlr.gg/221296/point-of-authority-blossom-vs-team-smg-gc-game-changers-2023-asia-pacific-open-2-playoffs-ubqf/?game=155775&tab=overview"
+          }
+        ],
+        "patch": "13.04",
+        "key": "Harbor"
       }
     ],
     "notes": [
@@ -190,21 +196,21 @@
     },
     "comps": [
       {
-        "label": "Meta principale",
+        "label": "Ranked · recommandée",
         "tier": "S",
         "tierLabel": "S-TIER",
         "winrate": 0,
         "updatedAt": "Août 2026",
         "patch": "13.04",
         "agents": [
-          "Waylay",
+          "Neon",
+          "Jett",
           "Sova",
-          "Tejo",
-          "Astra",
-          "Chamber"
+          "Clove",
+          "Vyse"
         ],
-        "source": "VLR.gg · Challengers 2026 NORTH//EAST",
-        "tip": "<strong>Sova et Tejo sécurisent les longues lignes avant l'entrée</strong>. Astra coupe Tower et Bridge, Waylay crée l'espace sur les sites ouverts et Chamber verrouille les traversées du mid.",
+        "source": "MetaBot · 17 751 parties classées",
+        "tip": "<strong>Neon crée l'espace et Jett prend les premiers duels</strong> sur les longues lignes. Sova révèle les positions profondes, Clove garde les smokes disponibles même après un duel perdu et Vyse verrouille les retakes.",
         "agility": {
           "antiRush": 3,
           "postPlant": 5,
@@ -213,8 +219,8 @@
         },
         "vods": [
           {
-            "label": "Pick rates 2026 · Abyss",
-            "url": "https://www.vlr.gg/event/agents/2884/challengers-2026-north-east-stage-2"
+            "label": "Statistiques ranked · Abyss",
+            "url": "https://metabot.gg/en/valorant/map/Abyss/agents"
           }
         ],
         "key": "Sova"
@@ -227,14 +233,14 @@
         "updatedAt": "Août 2026",
         "patch": "13.04",
         "agents": [
-          "Jett",
-          "Sova",
+          "Waylay",
           "Tejo",
+          "Breach",
           "Astra",
-          "Veto"
+          "Chamber"
         ],
-        "source": "VLR.gg · VCT et Challengers 2026",
-        "tip": "Jett prend les premiers duels sur A Main ou B Main. Le double initiateur force les défenseurs à quitter leurs angles, tandis qu'Astra et Veto rendent le post-plant très difficile à reprendre.",
+        "source": "GIANTX · VCT EMEA Kickoff 2026",
+        "tip": "Composition jouée par GIANTX lors de sa victoire 13-10 sur Abyss contre Team Heretics : Waylay entre après les utilitaires de Tejo et Breach, Astra coupe les longues lignes et Chamber contrôle le mid.",
         "agility": {
           "antiRush": 4,
           "postPlant": 5,
@@ -243,11 +249,11 @@
         },
         "vods": [
           {
-            "label": "VCT 2026 · Agents",
-            "url": "https://www.vlr.gg/event/agents/2977/vct-2026-americas-stage-2"
+            "label": "GIANTX vs Heretics · Abyss",
+            "url": "https://www.rib.gg/series/giantx-vs-team-heretics-vct-2026-emea-kickoff-playoffs/99622?match=227015"
           }
         ],
-        "key": "Sova"
+        "key": "Waylay"
       },
       {
         "label": "5-stack simple",
@@ -301,7 +307,7 @@
       },
       {
         "label": "Fun — Tous dans le vide",
-        "tier": "F",
+        "tier": "FUN",
         "tierLabel": "FUN",
         "winrate": 0,
         "updatedAt": "Août 2026",
@@ -310,11 +316,11 @@
           "Jett",
           "Raze",
           "Neon",
-          "Yoru",
+          "Waylay",
           "Omen"
         ],
-        "source": "OLYCITY Creativity Lab",
-        "tip": "Cinq agents mobiles, aucun plan raisonnable : traversez les sauts, téléportez-vous partout et essayez surtout de ne pas tomber avant l'équipe adverse.",
+        "source": "Communauté Valorant · 4 duelists + 1 smoke",
+        "tip": "<strong>Quatre agents mobiles et un Omen pour cacher les traversées</strong>. Jett, Raze, Neon et Waylay doivent tous entrer par un chemin différent : le défi consiste à atteindre le site avant que quelqu'un ne tombe dans le vide.",
         "agility": {
           "antiRush": 1,
           "postPlant": 2,
@@ -322,7 +328,7 @@
           "split": 5
         },
         "vods": [],
-        "key": "Jett"
+        "key": "Waylay"
       }
     ],
     "notes": [
@@ -349,20 +355,21 @@
     },
     "comps": [
       {
-        "label": "Meta principale",
+        "label": "Ranked · recommandée",
         "tier": "S",
         "tierLabel": "S-TIER",
-        "winrate": 53.6,
-        "updatedAt": "Mai 2026",
+        "winrate": 0,
+        "updatedAt": "Août 2026",
+        "patch": "13.04",
         "agents": [
-          "Raze",
+          "Waylay",
+          "Neon",
           "Fade",
-          "Omen",
-          "Miks",
+          "Clove",
           "Vyse"
         ],
-        "source": "VLR.gg · High Elo",
-        "tip": "<strong>Vyse remplace Killjoy</strong> — Arc Rose pour stopper les retakes sur C, Steel Garden défend les accès. Miks double smoke sur les 3 sites. Fade isole les sites individuellement. Raze pour la mobilité entre A et B.",
+        "source": "MetaBot · 20 456 parties classées",
+        "tip": "<strong>Waylay et Neon accélèrent les prises d'espace</strong> entre les trois sites. Fade donne l'information sans lineups complexes, Clove offre des smokes faciles à replacer et Vyse bloque les retakes sur le site choisi.",
         "agility": {
           "antiRush": 4,
           "postPlant": 5,
@@ -371,8 +378,8 @@
         },
         "vods": [
           {
-            "label": "Pick rates · Lotus",
-            "url": "https://dak.gg/valorant/agents?map=Lotus"
+            "label": "Statistiques ranked · Lotus",
+            "url": "https://metabot.gg/en/valorant/map/Lotus/agents"
           }
         ],
         "key": "Fade"
@@ -382,17 +389,17 @@
         "tier": "PRO",
         "tierLabel": "PRO",
         "winrate": 0,
-        "updatedAt": "Mai 2026",
-        "patch": "12.11",
+        "updatedAt": "Août 2026",
+        "patch": "13.04",
         "agents": [
           "Neon",
-          "Omen",
-          "Fade",
           "Raze",
-          "Vyse"
+          "Fade",
+          "Omen",
+          "Cypher"
         ],
-        "source": "VLR.gg · EWC 2026 Amer Qualifier + VCT Stage 1 (post-nerf 12.09)",
-        "tip": "Pick rates EWC Americas Qualifier 2026 (post-nerf 12.09) · Omen : 100% · Fade : 88% · Vyse : 88% · Neon : 88% · Raze : 75% · Killjoy : 0% · Source : vlr.gg/event/agents/2953",
+        "source": "Joblife · VCT EMEA Stage 2",
+        "tip": "Composition jouée par Joblife lors de sa victoire 13-6 sur Lotus contre PCIFIC : Neon et Raze imposent un rythme très rapide, Fade prépare les entrées, Omen facilite les rotations et Cypher surveille les flancs.",
         "agility": {
           "antiRush": 4,
           "postPlant": 4,
@@ -401,8 +408,8 @@
         },
         "vods": [
           {
-            "label": "EWC Amer Qualifier · Agents",
-            "url": "https://www.vlr.gg/event/agents/2953/esports-world-cup-2026-americas-qualifier"
+            "label": "Joblife vs PCIFIC · Lotus",
+            "url": "https://rib.gg/matches/689"
           }
         ]
       },
@@ -456,10 +463,11 @@
       },
       {
         "label": "Fun — 5 Initiateurs",
-        "tier": "F",
+        "tier": "FUN",
         "tierLabel": "FUN",
-        "winrate": 44.0,
-        "updatedAt": "Mai 2026",
+        "winrate": 0,
+        "updatedAt": "Août 2026",
+        "patch": "13.04",
         "agents": [
           "Skye",
           "Fade",
@@ -467,13 +475,13 @@
           "Gekko",
           "KAY/O"
         ],
-        "source": "OLYCITY Creativity Lab · Information overload",
-        "tip": "5 initiateurs = information infinie. Vous savez exactement où est la défense à tout moment. Le problème c'est que personne peut entrer sur site. 10 minutes de recon pour planter en 1v5.",
+        "source": "Communauté Valorant · défi 5 initiateurs",
+        "tip": "<strong>Une vague d'utilitaires à chaque porte</strong> : Fade et Sova localisent, Skye et KAY/O aveuglent, puis Gekko plante avec Wingman. Sans smoke, il faut enchaîner les compétences sans laisser respirer la défense.",
         "agility": {
           "antiRush": 5,
-          "postPlant": 2,
-          "retake": 4,
-          "split": 3
+          "postPlant": 3,
+          "retake": 5,
+          "split": 4
         },
         "vods": [],
         "key": "Fade"
@@ -522,20 +530,21 @@
     },
     "comps": [
       {
-        "label": "Meta principale",
+        "label": "Ranked · recommandée",
         "tier": "S",
         "tierLabel": "S-TIER",
-        "winrate": 54.5,
-        "updatedAt": "Mai 2026",
+        "winrate": 0,
+        "updatedAt": "Août 2026",
+        "patch": "13.04",
         "agents": [
-          "Raze",
-          "Breach",
+          "Neon",
+          "Fade",
           "Skye",
-          "Miks",
-          "Cypher"
+          "Clove",
+          "Sage"
         ],
-        "source": "VLR.gg",
-        "tip": "<strong>Breach stun dans Ramp</strong> permet à Raze de satchel direct sur A Site. Skye flash B Heaven depuis Mid, Miks smoke le defender spawn. Pressez mid pour couper les rotations.",
+        "source": "MetaBot · 38 093 parties classées",
+        "tip": "<strong>Neon profite des flashs de Skye et de l'information de Fade</strong> pour casser les points d'étranglement. Clove simplifie les smokes de Heaven et Sage sécurise Mid ou ralentit une reprise.",
         "agility": {
           "antiRush": 4,
           "postPlant": 4,
@@ -544,28 +553,28 @@
         },
         "vods": [
           {
-            "label": "Pick rates · Split",
-            "url": "https://dak.gg/valorant/agents?map=Split"
+            "label": "Statistiques ranked · Split",
+            "url": "https://metabot.gg/en/valorant/map/Split/agents"
           }
         ],
-        "key": "Breach"
+        "key": "Fade"
       },
       {
         "label": "Joue comme un pro",
         "tier": "PRO",
         "tierLabel": "PRO",
         "winrate": 0,
-        "updatedAt": "Mai 2026",
-        "patch": "12.11",
+        "updatedAt": "Août 2026",
+        "patch": "13.04",
         "agents": [
-          "Neon",
-          "Viper",
-          "Omen",
-          "Fade",
-          "Raze"
+          "Raze",
+          "Skye",
+          "Astra",
+          "Cypher",
+          "Deadlock"
         ],
-        "source": "VLR.gg · EWC 2026 Amer Qualifier + VCT Stage 1 (post-nerf 12.09)",
-        "tip": "Pick rates EWC Americas Qualifier 2026 (post-nerf 12.09) · Neon : 90% · Omen : 90% · Viper : 90% · Fade : 70% · Raze : 50% · Source : vlr.gg/event/agents/2953",
+        "source": "FULL SENSE · VCT Pacific Stage 2",
+        "tip": "Composition jouée par FULL SENSE lors de sa victoire 13-7 sur Split contre QT DIG∞ : Raze entre avec les flashs de Skye, Astra contrôle Mid et le duo Cypher–Deadlock transforme les sites en forteresses.",
         "agility": {
           "antiRush": 4,
           "postPlant": 5,
@@ -574,8 +583,8 @@
         },
         "vods": [
           {
-            "label": "EWC Amer Qualifier · Agents",
-            "url": "https://www.vlr.gg/event/agents/2953/esports-world-cup-2026-americas-qualifier"
+            "label": "FULL SENSE vs QT DIG∞ · Split",
+            "url": "https://rib.gg/matches/708"
           }
         ]
       },
@@ -629,19 +638,19 @@
       },
       {
         "label": "Fun — 5-Stack Rush B",
-        "tier": "F",
+        "tier": "FUN",
         "tierLabel": "FUN",
-        "winrate": 42.0,
-        "updatedAt": "Mai 2026",
+        "winrate": 0,
+        "updatedAt": "Août 2026",
         "agents": [
-          "Sage",
           "Raze",
           "Breach",
           "Neon",
-          "Reyna"
+          "Clove",
+          "Sage"
         ],
-        "source": "OLYCITY Creativity Lab · Construction mode",
-        "tip": "<strong>Rush B total</strong> dès le début du round — Sage wall coupe l'accès à A, Neon sprint en tête, Breach stun B Heaven, Raze satchel sur site. Pas de réflexion, que de la vitesse. <em style=\"color:#f5c842;font-size:11px\">⚠ Neon nerfée 12.09 — mobilité réduite, moins agressive</em>",
+        "source": "Communauté Valorant · rush coordonné",
+        "tip": "<strong>Rush B, mais avec un vrai plan</strong> : Breach neutralise Heaven, Neon et Raze entrent ensemble, Clove ferme les rotations et Sage pose son mur dès que le site est pris. Interdiction de ralentir avant le plant.",
         "agility": {
           "antiRush": 5,
           "postPlant": 3,
@@ -649,7 +658,7 @@
           "split": 2
         },
         "vods": [],
-        "patch": "12.11",
+        "patch": "13.04",
         "key": "Breach"
       }
     ],
@@ -701,20 +710,21 @@
     ],
     "comps": [
       {
-        "label": "Meta principale",
+        "label": "Ranked · recommandée",
         "tier": "S",
         "tierLabel": "S-TIER",
-        "winrate": 56.2,
-        "updatedAt": "Mai 2026",
+        "winrate": 0,
+        "updatedAt": "Août 2026",
+        "patch": "13.04",
         "agents": [
           "Jett",
           "Sova",
           "KAY/O",
-          "Omen",
-          "Killjoy"
+          "Clove",
+          "Cypher"
         ],
-        "source": "VLR.gg · High Elo",
-        "tip": "<strong>Jett op mid Catwalk</strong> dès que possible — première info gratuite. Sova récon A depuis spawn. KAY/O flash pour entrer sur A Main. Killjoy anchor B seule. Omen smoke Heaven + Generator en execute.",
+        "source": "MetaBot · 17 829 parties classées",
+        "tip": "<strong>Jett prend les premiers duels après la reconnaissance de Sova</strong>. KAY/O neutralise les défenses de site, Clove garde des smokes simples pour l'exécute ou le retake et Cypher contrôle Mid et les flancs.",
         "agility": {
           "antiRush": 4,
           "postPlant": 5,
@@ -723,8 +733,8 @@
         },
         "vods": [
           {
-            "label": "Pick rates · Ascent",
-            "url": "https://dak.gg/valorant/agents?map=Ascent"
+            "label": "Statistiques ranked · Ascent",
+            "url": "https://metabot.gg/en/valorant/map/Ascent/agents"
           }
         ],
         "key": "Sova"
@@ -734,17 +744,17 @@
         "tier": "PRO",
         "tierLabel": "PRO",
         "winrate": 0,
-        "updatedAt": "Mai 2026",
-        "patch": "12.11",
+        "updatedAt": "Août 2026",
+        "patch": "13.04",
         "agents": [
-          "Jett",
-          "Sova",
           "Phoenix",
+          "Sova",
+          "Fade",
           "Omen",
-          "Killjoy"
+          "Cypher"
         ],
-        "source": "VLR.gg · EWC 2026 Amer Qualifier + VCT Stage 1 (post-nerf 12.09)",
-        "tip": "Pick rates EWC Americas Qualifier 2026 (post-nerf 12.09) · Omen : 100% · Sova : 100% · Jett : 83% · Cypher : 67% · Phoenix : 42% · Source : vlr.gg/event/agents/2953",
+        "source": "PCIFIC Esports · VCT EMEA Stage 2",
+        "tip": "Composition jouée par PCIFIC lors de sa victoire 13-8 sur Ascent contre Joblife : Phoenix ouvre les sites avec un double soutien d'information Sova–Fade, Omen contrôle les lignes centrales et Cypher verrouille les rotations.",
         "agility": {
           "antiRush": 4,
           "postPlant": 4,
@@ -753,8 +763,8 @@
         },
         "vods": [
           {
-            "label": "EWC Amer Qualifier · Agents",
-            "url": "https://www.vlr.gg/event/agents/2953/esports-world-cup-2026-americas-qualifier"
+            "label": "PCIFIC vs Joblife · Ascent",
+            "url": "https://rib.gg/matches/689"
           }
         ]
       },
@@ -817,28 +827,29 @@
         "key": "Sova"
       },
       {
-        "label": "5-Stack FUN",
+        "label": "Fun — Wallbang Simulator",
         "tier": "FUN",
         "tierLabel": "FUN",
-        "winrate": 31.0,
-        "updatedAt": "Mai 2026",
+        "winrate": 0,
+        "updatedAt": "Août 2026",
+        "patch": "13.04",
         "agents": [
-          "Neon",
-          "Jett",
-          "Raze",
-          "Phoenix",
-          "Reyna"
+          "Sova",
+          "Fade",
+          "Omen",
+          "Cypher",
+          "Killjoy"
         ],
-        "source": "OLYCITY Labs",
-        "tip": "5 duellistes — <strong>chaos total mid</strong>. Chacun rush un angle différent. Pas de smokes, juste des flashs et de l'ego. Pour les soirs où vous voulez juste fragger.",
+        "source": "Communauté Valorant · Odin et information",
+        "tip": "<strong>Achetez des Odin et tirez à travers tout ce qui bouge</strong>. Sova et Fade révèlent les cibles, Cypher et Killjoy multiplient les informations passives et Omen transforme les spams en duels impossibles à lire.",
         "agility": {
-          "antiRush": 1,
-          "postPlant": 1,
-          "retake": 2,
-          "split": 4
+          "antiRush": 5,
+          "postPlant": 4,
+          "retake": 4,
+          "split": 2
         },
         "vods": [],
-        "key": "Neon"
+        "key": "Sova"
       }
     ],
     "lineups": []
@@ -848,31 +859,51 @@
     "comps": [
       {
         "tier": "S",
-        "label": "Meta principale",
-        "agents": [
-          "Jett",
-          "Sova",
-          "Breach",
-          "Omen",
-          "Killjoy"
-        ],
-        "key": "Sova",
-        "tip": "<strong>Sova récon Mid Market et Marché</strong> avant chaque exécute — c'est le carrefour de la map. Breach ouvre Mid ou un site avec stun/flash. Killjoy anchor B avec turret + lockdown post-plant. Omen smoke les angles de Market pour traverser sans risque. Jett entry sur l'info donnée.",
-        "patch": "13.04"
-      },
-      {
-        "tier": "PRO",
-        "label": "Joue comme un pro",
+        "tierLabel": "S-TIER",
+        "label": "Ranked · recommandée",
         "agents": [
           "Neon",
           "Fade",
-          "Breach",
-          "Omen",
+          "Sova",
+          "Clove",
           "Cypher"
         ],
         "key": "Fade",
-        "tip": "Comp orientée contrôle d'info totale : Fade + Sova-like récon avant chaque exécute B ou A. Cypher trip Market et anchor A. Neon speed rush après les flashs de Breach.",
-        "patch": "13.04"
+        "tip": "<strong>Neon exploite les informations combinées de Fade et Sova</strong> pour gagner Mid ou B Main. Clove couvre les lignes de Market et Cypher sécurise les flancs ou verrouille B.",
+        "patch": "13.04",
+        "updatedAt": "Août 2026",
+        "winrate": 0,
+        "source": "MetaBot · 6 739 parties classées",
+        "vods": [
+          {
+            "label": "Statistiques ranked · Sunset",
+            "url": "https://metabot.gg/en/valorant/map/Sunset/agents"
+          }
+        ]
+      },
+      {
+        "tier": "PRO",
+        "tierLabel": "PRO",
+        "label": "Joue comme un pro",
+        "agents": [
+          "Neon",
+          "Phoenix",
+          "Sova",
+          "Omen",
+          "Cypher"
+        ],
+        "key": "Sova",
+        "tip": "Composition jouée par Sharper Esports lors de sa victoire 13-1 sur Sunset contre RRQ : Neon et Phoenix mettent une pression constante, Sova révèle les reprises, Omen ferme Market et Cypher contrôle B et les rotations.",
+        "patch": "13.04",
+        "updatedAt": "Août 2026",
+        "winrate": 0,
+        "source": "Sharper Esports · VCT Pacific Stage 2",
+        "vods": [
+          {
+            "label": "Sharper vs RRQ · Sunset",
+            "url": "https://rib.gg/matches/707"
+          }
+        ]
       },
       {
         "tier": "A",
@@ -903,18 +934,28 @@
         "patch": "13.04"
       },
       {
-        "tier": "F",
-        "label": "Fun — Chaos Market",
+        "tier": "FUN",
+        "tierLabel": "FUN",
+        "label": "Fun — Flashbang à cinq",
         "agents": [
-          "Jett",
-          "Raze",
+          "Phoenix",
           "Yoru",
-          "Neon",
-          "Gekko"
+          "Breach",
+          "KAY/O",
+          "Omen"
         ],
-        "key": "Neon",
-        "tip": "Cinq duelists/flanqueurs, zéro info, tout le monde rush Market en même temps. Marche une fois sur cinq mais c'est drôle.",
-        "patch": "13.04"
+        "key": "Breach",
+        "tip": "<strong>Chaque joueur peut aveugler l'adversaire</strong>. Enchaînez Paranoia, flash KAY/O, stun Breach puis Phoenix et Yoru dans les angles serrés de Market. Pensez simplement à prévenir vos propres coéquipiers.",
+        "patch": "13.04",
+        "updatedAt": "Août 2026",
+        "winrate": 0,
+        "source": "Communauté Valorant · composition full flash",
+        "agility": {
+          "antiRush": 4,
+          "postPlant": 3,
+          "retake": 4,
+          "split": 4
+        }
       }
     ],
     "region": "Location · Marché central",
@@ -941,31 +982,51 @@
     "comps": [
       {
         "tier": "S",
-        "label": "Meta principale",
+        "tierLabel": "S-TIER",
+        "label": "Ranked · recommandée",
         "agents": [
-          "Sova",
+          "Neon",
+          "Fade",
           "Sage",
-          "Cypher",
-          "Breach",
-          "Jett"
+          "Clove",
+          "Sova"
         ],
-        "key": "Sova",
-        "tip": "<strong>Contrôle du Mid Fountain est la clé</strong> — trois lanes, deux sites, et trois murs activables (A, B, Mid) qui bloquent définitivement une rotation une fois déclenchés. Sova récon avant de toucher un mur pour éviter d'ouvrir la mauvaise ligne. Sage joue autour des murs pour bloquer les contre-rotations après activation. Cypher watch les caméras ne meurent pas quand un mur tombe — position idéale pour tracker en toute sécurité après avoir déclenché un mur.",
-        "patch": "13.04"
+        "key": "Fade",
+        "tip": "<strong>Neon ouvre les passages après l'information de Fade et Sova</strong>. Clove couvre les lignes libérées par les murs activés, tandis que Sage ralentit les reprises et sécurise le plant sur cette map encore récente.",
+        "patch": "13.04",
+        "updatedAt": "Août 2026",
+        "winrate": 0,
+        "source": "MetaBot · 7 051 parties classées",
+        "vods": [
+          {
+            "label": "Statistiques ranked · Summit",
+            "url": "https://metabot.gg/en/valorant/map/Summit/agents"
+          }
+        ]
       },
       {
         "tier": "PRO",
+        "tierLabel": "PRO",
         "label": "Joue comme un pro",
         "agents": [
-          "Jett",
-          "Skye",
-          "Sova",
+          "Neon",
+          "Yoru",
+          "Fade",
           "Omen",
-          "Killjoy"
+          "Cypher"
         ],
-        "key": "Sova",
-        "tip": "Killjoy fraîchement buffée (tourelle +50% cadence, Nanoswarm 5s, Alarmbot plus rapide) tient B seule. Sova + Skye saturent l'info sur Mid avant de décider quel mur activer. Le mur B est plus gros — Killjoy anchor derrière une fois activé.",
-        "patch": "13.04"
+        "key": "Fade",
+        "tip": "Composition jouée par FULL SENSE lors de sa victoire 13-4 sur Summit contre QT DIG∞ : Neon et Yoru attaquent les timings créés par les murs, Fade donne l'information, Omen coupe les longues lignes et Cypher garde les rotations.",
+        "patch": "13.04",
+        "updatedAt": "Août 2026",
+        "winrate": 0,
+        "source": "FULL SENSE · VCT Pacific Stage 2",
+        "vods": [
+          {
+            "label": "FULL SENSE vs QT DIG∞ · Summit",
+            "url": "https://rib.gg/matches/708"
+          }
+        ]
       },
       {
         "tier": "A",
@@ -996,18 +1057,28 @@
         "patch": "13.04"
       },
       {
-        "tier": "F",
-        "label": "Fun — Wall Abuse",
+        "tier": "FUN",
+        "tierLabel": "FUN",
+        "label": "Fun — Fortnite, 99 murs",
         "agents": [
-          "Jett",
-          "Raze",
-          "Neon",
-          "Yoru",
-          "Gekko"
+          "Sage",
+          "Deadlock",
+          "Vyse",
+          "Harbor",
+          "Viper"
         ],
-        "key": "Raze",
-        "tip": "Déclenche tous les murs le plus vite possible pour un chaos total, personne ne sait où sont les lignes de vue. Attention : rester sous un mur qui tombe tue instantanément.",
-        "patch": "13.04"
+        "key": "Sage",
+        "tip": "<strong>Ajoutez cinq couches de murs aux trois murs de la map</strong>. Harbor et Viper redessinent les lignes de vue, Sage et Deadlock ferment les passages et Vyse piège la seule sortie encore ouverte.",
+        "patch": "13.04",
+        "updatedAt": "Août 2026",
+        "winrate": 0,
+        "source": "Communauté Valorant · défi murs et sentinelles",
+        "agility": {
+          "antiRush": 5,
+          "postPlant": 5,
+          "retake": 3,
+          "split": 2
+        }
       }
     ],
     "region": "Three-lane · Murs destructibles",

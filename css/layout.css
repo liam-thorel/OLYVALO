@@ -588,15 +588,6 @@ body.agent-mode .footer{ display:none; }
 }
 .live-phase.combat { color: var(--red); border-color: var(--red-mid); background: var(--red-low); }
 .live-phase.planted { color: var(--gold); border-color: rgba(245,200,66,.4); background: var(--gold-low); }
-.live-score {
-  margin-left: auto; display: flex; align-items: baseline; gap: 8px;
-  font-family: 'Tomorrow', sans-serif; font-size: 22px; font-weight: 700;
-  letter-spacing: 3px;
-}
-.live-score-side { color: #3fcf6b; }
-.live-score-side.enemy { color: var(--red); }
-.live-score-sep { color: var(--dim); font-size: 16px; }
-
 .live-timer {
   margin-left: auto; font-family: 'Tomorrow', sans-serif; font-size: 24px;
   font-weight: 700; color: var(--text); letter-spacing: 3px;
