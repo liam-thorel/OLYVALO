@@ -5,10 +5,10 @@
 
 import { valorantApi } from './api.js';
 
-const SITE_VERSION = '20260823-mobile-navigation';
+const SITE_VERSION = '20260823-mobile-comps';
 import { syncPlayer as henrikSyncPlayer, syncAllPlayers as henrikSyncAll, persistPlayerStats } from './henrik.js?v=20260809-val-roster-season';
 import { setStoredKey, storedKey, forgetCachedKey } from './henrik-key.mjs';
-import { rosterHTML, guestCardHTML, mapSectionHTML, stierHTML, agentPageHTML, miniRosterHTML, agentsFiltersHTML, agentsGridHTML, compCompareHTML } from './render.js?v=20260809-val-roster-season';
+import { rosterHTML, guestCardHTML, mapSectionHTML, stierHTML, agentPageHTML, miniRosterHTML, agentsFiltersHTML, agentsGridHTML, compCompareHTML } from './render.js?v=20260823-mobile-comps';
 import { initTheme, initTilt, initParallax, initSearch, initKeyboard, updateFavCount, initHeroParticles, initWheelLogos, initLivePage, initHistoryPage } from './interactions.js?v=20260823-comps-ranked-pro';
 import { storage } from './storage.js';
 import { avatarLayersHTML } from './avatars.mjs';
@@ -209,7 +209,16 @@ window.OLYCITY = {
     document.querySelectorAll(`#map-${mapIdx} .comp-tab`).forEach(b => b.classList.remove('active'));
     const panel = document.getElementById(`panel-${mapIdx}-${compIdx}`);
     if (panel) panel.classList.add('active');
-    if (btn) btn.classList.add('active');
+    if (btn) {
+      btn.classList.add('active');
+      if (window.matchMedia('(max-width: 768px)').matches) {
+        const tabs = btn.closest('.comp-tabs');
+        if (tabs) {
+          const left = btn.offsetLeft - (tabs.clientWidth - btn.offsetWidth) / 2;
+          tabs.scrollTo({ left: Math.max(0, left), behavior: 'smooth' });
+        }
+      }
+    }
     setTimeout(() => initTilt(), 50);
   },
 

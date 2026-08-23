@@ -60,6 +60,14 @@ test('mobile navigation keeps sections scrollable with touch-sized controls', ()
   assert.match(coopStyles, /\.coop-card-actions button,\.coop-card-actions a\{display:flex;min-height:44px/);
 });
 
+test('mobile composition cards stay compact without hiding their details', () => {
+  assert.match(render, /class="comp-mobile-details"/);
+  assert.match(responsive, /\.agents-grid\s*\{[\s\S]*grid-template-columns:\s*repeat\(6,minmax\(0,1fr\)\)/);
+  assert.match(responsive, /\.comp-mobile-details\[open\]\s*\+\s*\.comp-bottom\s*\{\s*display:\s*grid/);
+  assert.match(responsive, /\.comp-tabs\s*\{[\s\S]*overflow-x:\s*auto/);
+  assert.match(main, /const tabs = btn\.closest\('\.comp-tabs'\)/);
+});
+
 test('coop games expose explicit categories and cache-safe search modules', () => {
   assert.match(page, /data-coop-status="open"/);
   assert.match(page, /id="coop-genre"/);

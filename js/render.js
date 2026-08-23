@@ -178,6 +178,9 @@ export function compHTML(comp, mapIdx, compIdx) {
           <button class="share-comp-btn" onclick="window.OLYCITY.shareComp(${mapIdx},${compIdx},this)">↗ Partager</button>
           <button class="compare-btn" data-cid="${cid}" onclick="window.OLYCITY.selectCompare(${mapIdx},${compIdx},this)">⇄ Comparer</button>
         </div>
+        <details class="comp-mobile-details">
+          <summary><span>Plan de jeu & efficacité</span><strong>Voir</strong></summary>
+        </details>
         <div class="comp-bottom">
           <div class="comp-bottom-left">
             <div class="tip-box">
