@@ -111,7 +111,7 @@ window.OLYCITY = {
     sessionStorage.setItem('olycity-page', page);
     // Dynamic title
     const titles = {
-      home: 'OLYCITY — Accueil',
+      home: 'OLYCITY',
       maps: 'OLYCITY — Maps & Comps',
       roster: 'OLYCITY — Roster',
       history: 'OLYCITY — Historique',
@@ -119,7 +119,7 @@ window.OLYCITY = {
       betting: 'OLYCITY — Paris',
       games: 'OLYCITY — Jeux du Discord',
     };
-    document.title = titles[page] || 'OLYCITY — Valorant Meta Comps';
+    document.title = titles[page] || 'OLYCITY';
     // Close agent page if open
     const agentPage = document.getElementById('agent-page');
     if (agentPage && agentPage.classList.contains('active')) {

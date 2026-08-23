@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 
 const main = fs.readFileSync(new URL('../js/main.js', import.meta.url), 'utf8');
+const gameMode = fs.readFileSync(new URL('../js/game-mode.mjs', import.meta.url), 'utf8');
 const interactions = fs.readFileSync(new URL('../js/interactions.js', import.meta.url), 'utf8');
 const render = fs.readFileSync(new URL('../js/render.js', import.meta.url), 'utf8');
 const lolRoster = fs.readFileSync(new URL('../js/lol-roster.mjs', import.meta.url), 'utf8');
@@ -37,6 +38,15 @@ test('le bandeau live ne prétend pas afficher un score indisponible en direct',
   assert.doesNotMatch(page, /id="live-score/);
   assert.doesNotMatch(interactions, /getElementById\('live-score/);
   assert.doesNotMatch(layout, /\.live-score/);
+});
+
+test('OLYCITY is the product brand while games remain contextual modes', () => {
+  assert.match(page, /<title>OLYCITY<\/title>/);
+  assert.match(page, /id="brand-subtitle">Valorant · League · Coop<\/span>/);
+  assert.match(page, /name="application-name" content="OLYCITY"/);
+  assert.match(gameMode, /setText\('brand-subtitle', 'Valorant · League · Coop'\)/);
+  assert.match(gameMode, /Valorant · Comps, Live & Historique/);
+  assert.match(gameMode, /League of Legends · Live & Historique/);
 });
 
 test('profile selection is accessible, stable and does not reload the site', () => {

@@ -1,6 +1,6 @@
-# OLYCITY — Valorant Five Stack HQ
+# OLYCITY
 
-Site privé pour le five stack OLYCITY. Comps meta, stats live, roster et outils de session.
+Site privé du Discord OLYCITY : Valorant, League of Legends, jeux coop, historique, live et outils de groupe.
 
 **→ [olycity.gg](https://liam-thorel.github.io/OLYVALO)**
 
