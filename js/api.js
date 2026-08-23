@@ -34,42 +34,12 @@ export const valorantApi = {
       this.maps[m.displayName] = {
         splash: m.splash,
         icon: m.displayIcon,
-        minimap: m.displayIcon,
-        xMul: m.xMultiplier,
-        yMul: m.yMultiplier,
-        xAdd: m.xScalarToAdd,
-        yAdd: m.yScalarToAdd,
-        callouts: (m.callouts || []).map(c => ({
-          region: c.regionName,
-          super: c.superRegionName,
-          x: c.location?.x ?? 0,
-          y: c.location?.y ?? 0,
-        })),
       };
     });
   },
 
   agentImg(name) {
     return this.agents[name]?.portrait || this.agents[name]?.icon || null;
-  },
-
-  // Convert game coords → 0-1 range using Riot's multipliers
-  // Valorant uses Unreal Engine coords: Y increases upward in world space
-  // but minimap image has Y increasing downward → must invert Y
-  mapGameToMinimap(mapName, gameX, gameY) {
-    const m = this.maps[mapName];
-    if (!m) return { x: 0.5, y: 0.5 };
-    const x = gameX * m.xMul + m.xAdd;
-    const y = 1.0 - (gameY * m.yMul + m.yAdd); // invert Y axis
-    return { x: Math.max(0, Math.min(1, x)), y: Math.max(0, Math.min(1, y)) };
-  },
-
-  mapCallouts(mapName) {
-    return this.maps[mapName]?.callouts || [];
-  },
-
-  mapMinimap(name) {
-    return this.maps[name]?.icon || null;
   },
 
   agentFullImg(name) {

@@ -66,7 +66,20 @@ test('mobile composition cards stay compact without hiding their details', () =>
   assert.match(responsive, /\.agents-grid\s*\{[\s\S]*grid-template-columns:\s*repeat\(6,minmax\(0,1fr\)\)/);
   assert.match(responsive, /\.comp-mobile-details\[open\]\s*\+\s*\.comp-bottom\s*\{\s*display:\s*grid/);
   assert.match(responsive, /\.comp-tabs\s*\{[\s\S]*overflow-x:\s*auto/);
+  assert.match(responsive, /\.lineup-agent-tab, \.map-notes-card summary,[\s\S]*min-height:\s*44px; touch-action:\s*manipulation/);
   assert.match(main, /const tabs = btn\.closest\('\.comp-tabs'\)/);
+});
+
+test('maps keep only useful composition and lineup controls', () => {
+  assert.match(render, /class="map-notes-card"/);
+  assert.match(render, /switchMapTab\('\$\{idx\}','lineups'/);
+  assert.doesNotMatch(render, /switchMapTab\([^)]*'(?:draw|notes)'/);
+  assert.doesNotMatch(render, /winrate-pill|fav-btn|compare-btn|Efficacité de la comp/);
+  assert.doesNotMatch(main, /builder|selectCompare|toggleFav|firebase-draw|callouts\.json/);
+  assert.doesNotMatch(page, /page-agents|compare-panel-wrap|firebase-draw/);
+  assert.equal(fs.existsSync(new URL('../assets/audio/theme.mp3', import.meta.url)), false);
+  assert.equal(fs.existsSync(new URL('../data/callouts.json', import.meta.url)), false);
+  assert.equal(fs.existsSync(new URL('../js/firebase-draw.js', import.meta.url)), false);
 });
 
 test('mobile data pages keep readable spacing, controls and roster details', () => {

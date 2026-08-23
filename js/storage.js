@@ -5,7 +5,6 @@
 
 const KEYS = {
   THEME: 'olycity-theme',
-  FAVS: 'olycity-favs',
   PLAYER_STATS: 'olycity-player-stats',
 };
 
@@ -16,16 +15,6 @@ export const storage = {
   },
   setTheme(value) {
     try { localStorage.setItem(KEYS.THEME, value); } catch {}
-  },
-
-  getFavs() {
-    try {
-      const raw = localStorage.getItem(KEYS.FAVS);
-      return raw ? JSON.parse(raw) : [];
-    } catch { return []; }
-  },
-  setFavs(favs) {
-    try { localStorage.setItem(KEYS.FAVS, JSON.stringify(favs)); } catch {}
   },
 
   getPlayerStats() {

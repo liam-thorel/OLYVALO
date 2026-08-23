@@ -203,14 +203,6 @@ export function initKeyboard(onEscape) {
   });
 }
 
-// ─── FAVORITES UI ─────────────────────────────────
-export function updateFavCount() {
-  document.querySelectorAll('.fav-count').forEach(el => {
-    el.textContent = state.FAVS.length;
-  });
-}
-
-
 // ─── HERO SNAKE ──────────────────────────────────
 export function initHeroParticles() {
   const canvas = document.getElementById('hero-canvas');
@@ -372,26 +364,10 @@ export function initWheelLogos() {
 export function initLivePage() {
   if (!window._agentNameToUuid) { fetch('https://valorant-api.com/v1/agents?isPlayableCharacter=true').then(r=>r.json()).then(d=>{ window._agentNameToUuid={}; d.data?.forEach(a=>window._agentNameToUuid[a.displayName]=a.uuid); }).catch(()=>{}); }
   const FIREBASE_URL = 'https://realtime-database-5bb9f-default-rtdb.europe-west1.firebasedatabase.app';
-  const AGENT_COLORS = {
-    'Jett':'#88c8ff','Raze':'#ff9a3c','Neon':'#5ae6ff','Phoenix':'#ff6b35',
-    'Reyna':'#c77dff','Yoru':'#5e60ce','Waylay':'#a8dadc',
-    'Sova':'#4361ee','Fade':'#7b2d8b','KAY/O':'#4cc9f0','Skye':'#80b918',
-    'Breach':'#f77f00','Gekko':'#99d98c',
-    'Viper':'#57cc99','Omen':'#9381ff','Miks':'#9381ff','Clove':'#f72585',
-    'Astra':'#480ca8','Harbor':'#4895ef','Brimstone':'#ef233c',
-    'Killjoy':'#f9c74f','Cypher':'#e9ecef','Vyse':'#b5838d','Chamber':'#cdb4db',
-    'Sage':'#80ffdb',
-  };
-
-  let mapImg = null;
   let lastMapName = null;
-  let raf = null;
   let currentLiveData = null;
 
   const curse = initCurse();
-
-  const canvas = document.getElementById('live-map-canvas');
-  const ctx = canvas?.getContext('2d');
 
   let selectedSession = null;
   let lastSessions = {};
@@ -1231,41 +1207,6 @@ export function initLivePage() {
         ${!p.incognito && p.name && p.name.includes('#') ? `<a href="https://tracker.gg/valorant/profile/riot/${encodeURIComponent(p.name)}/overview" target="_blank" style="font-family:Tomorrow,sans-serif;font-size:8px;letter-spacing:1px;color:#ff4656;text-decoration:none;padding:2px 6px;border:1px solid rgba(255,70,86,.3);text-transform:uppercase">TRACKER</a>` : ''}
       </div>
     </div>`;
-  }
-
-  function drawMinimap(players) {
-    if (!ctx) return;
-    ctx.clearRect(0, 0, 400, 400);
-    if (mapImg) {
-      ctx.drawImage(mapImg, 0, 0, 400, 400);
-      ctx.fillStyle = 'rgba(6,8,12,.3)';
-      ctx.fillRect(0, 0, 400, 400);
-    } else {
-      ctx.fillStyle = '#0d1117';
-      ctx.fillRect(0, 0, 400, 400);
-    }
-
-    // Draw player dots
-    players.forEach(p => {
-      if (!p.alive) return;
-      const isAlly = p.team === 'ORDER';
-      // Valorant coords are roughly -20000 to +20000 — normalize
-      const nx = (p.position.x + 20000) / 40000;
-      const ny = 1 - (p.position.y + 20000) / 40000; // Y inverted
-      const x = nx * 400, y = ny * 400;
-      const color = AGENT_COLORS[p.agent] || (isAlly ? '#3fcf6b' : '#ff4656');
-      const r = isAlly ? 8 : 7;
-
-      ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI*2);
-      ctx.fillStyle = color; ctx.fill();
-      ctx.strokeStyle = isAlly ? '#fff' : 'rgba(255,255,255,.4)';
-      ctx.lineWidth = 2; ctx.stroke();
-
-      // Agent initial
-      ctx.fillStyle = '#000'; ctx.font = `bold ${r}px Tomorrow`;
-      ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-      ctx.fillText((p.agent||'?')[0], x, y);
-    });
   }
 
   const handleGameChange = event => {

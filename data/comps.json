@@ -17,7 +17,6 @@
         "label": "Ranked · recommandée",
         "tier": "S",
         "tierLabel": "S-TIER",
-        "winrate": 0,
         "updatedAt": "Août 2026",
         "patch": "13.04",
         "agents": [
@@ -29,12 +28,6 @@
         ],
         "source": "MetaBot · 38 278 parties classées",
         "tip": "<strong>Neon et Phoenix mettent la pression sur deux sites</strong> pendant que Sova garde l'information sur les longues lignes. Clove apporte des smokes simples et rejouables, et Killjoy peut tenir seule un site pendant les rotations.",
-        "agility": {
-          "antiRush": 4,
-          "postPlant": 3,
-          "retake": 4,
-          "split": 3
-        },
         "vods": [
           {
             "label": "Statistiques ranked · Haven",
@@ -47,7 +40,6 @@
         "label": "Joue comme un pro",
         "tier": "PRO",
         "tierLabel": "PRO",
-        "winrate": 0,
         "updatedAt": "Août 2026",
         "patch": "13.04",
         "agents": [
@@ -59,12 +51,6 @@
         ],
         "source": "Sharper Esports · VCT Pacific Stage 2",
         "tip": "Composition jouée par Sharper Esports lors de sa victoire 13-10 sur Haven contre RRQ : Neon ouvre l'espace, Yoru menace les rotations, Sova apporte l'information, Omen couvre les trois sites et Killjoy sécurise les extrémités.",
-        "agility": {
-          "antiRush": 3,
-          "postPlant": 4,
-          "retake": 3,
-          "split": 4
-        },
         "vods": [
           {
             "label": "Sharper vs RRQ · Haven",
@@ -76,7 +62,6 @@
         "label": "Fun — Brouillard sur 3 sites",
         "tier": "FUN",
         "tierLabel": "FUN",
-        "winrate": 0,
         "updatedAt": "Août 2026",
         "agents": [
           "Omen",
@@ -87,12 +72,6 @@
         ],
         "source": "Inspirée de Team SMG GC · 5 contrôleurs",
         "tip": "<strong>Recouvrez un site entier de smokes et jouez au Judge</strong>. Astra et Omen gardent les smokes importantes, Harbor trace le chemin, Viper coupe les trois accès et Clove repart au combat. Une vraie composition inhabituelle a déjà gagné en compétition.",
-        "agility": {
-          "antiRush": 3,
-          "postPlant": 5,
-          "retake": 4,
-          "split": 3
-        },
         "vods": [
           {
             "label": "Team SMG GC · 5 contrôleurs",
@@ -109,26 +88,6 @@
       "Cypher one-way cage sur B est particulièrement violent",
       "Sova drone peut lock A Long et C Long simultanément",
       "Double duelist très fort si votre équipe est bien coordonnée"
-    ],
-    "lineups": [
-      {
-        "agent": "Sova",
-        "ability": "Flèche Reconnaissance",
-        "tip": "Lineups recon sur A Long, B Mid et C Long depuis spawn",
-        "count": 12
-      },
-      {
-        "agent": "Cypher",
-        "ability": "Caméra Espionne",
-        "tip": "Positions cam B Site pour cover A et C simultanément",
-        "count": 7
-      },
-      {
-        "agent": "Omen",
-        "ability": "Couverture Sombre",
-        "tip": "One-way smokes sur B et CT depuis différents angles",
-        "count": 5
-      }
     ]
   },
   {
@@ -149,7 +108,6 @@
         "label": "Ranked · recommandée",
         "tier": "S",
         "tierLabel": "S-TIER",
-        "winrate": 0,
         "updatedAt": "Août 2026",
         "patch": "13.04",
         "agents": [
@@ -161,12 +119,6 @@
         ],
         "source": "MetaBot · 17 751 parties classées",
         "tip": "<strong>Neon crée l'espace et Jett prend les premiers duels</strong> sur les longues lignes. Sova révèle les positions profondes, Clove garde les smokes disponibles même après un duel perdu et Vyse verrouille les retakes.",
-        "agility": {
-          "antiRush": 3,
-          "postPlant": 5,
-          "retake": 4,
-          "split": 5
-        },
         "vods": [
           {
             "label": "Statistiques ranked · Abyss",
@@ -179,7 +131,6 @@
         "label": "Joue comme un pro",
         "tier": "PRO",
         "tierLabel": "PRO",
-        "winrate": 0,
         "updatedAt": "Août 2026",
         "patch": "13.04",
         "agents": [
@@ -191,12 +142,6 @@
         ],
         "source": "GIANTX · VCT EMEA Kickoff 2026",
         "tip": "Composition jouée par GIANTX lors de sa victoire 13-10 sur Abyss contre Team Heretics : Waylay entre après les utilitaires de Tejo et Breach, Astra coupe les longues lignes et Chamber contrôle le mid.",
-        "agility": {
-          "antiRush": 4,
-          "postPlant": 5,
-          "retake": 4,
-          "split": 4
-        },
         "vods": [
           {
             "label": "GIANTX vs Heretics · Abyss",
@@ -209,7 +154,6 @@
         "label": "Fun — Tous dans le vide",
         "tier": "FUN",
         "tierLabel": "FUN",
-        "winrate": 0,
         "updatedAt": "Août 2026",
         "patch": "13.04",
         "agents": [
@@ -221,12 +165,6 @@
         ],
         "source": "Communauté Valorant · 4 duelists + 1 smoke",
         "tip": "<strong>Quatre agents mobiles et un Omen pour cacher les traversées</strong>. Jett, Raze, Neon et Waylay doivent tous entrer par un chemin différent : le défi consiste à atteindre le site avant que quelqu'un ne tombe dans le vide.",
-        "agility": {
-          "antiRush": 1,
-          "postPlant": 2,
-          "retake": 2,
-          "split": 5
-        },
         "vods": [],
         "key": "Waylay"
       }
@@ -237,8 +175,7 @@
       "Gardez un sentinel au flanc : les temps de rotation sont très longs",
       "Tower et Bridge doivent être coupés avant chaque exécute",
       "Attention aux rebords sans barrière pendant les déplacements et les duels"
-    ],
-    "lineups": []
+    ]
   },
   {
     "map": "Lotus",
@@ -258,7 +195,6 @@
         "label": "Ranked · recommandée",
         "tier": "S",
         "tierLabel": "S-TIER",
-        "winrate": 0,
         "updatedAt": "Août 2026",
         "patch": "13.04",
         "agents": [
@@ -270,12 +206,6 @@
         ],
         "source": "MetaBot · 20 456 parties classées",
         "tip": "<strong>Waylay et Neon accélèrent les prises d'espace</strong> entre les trois sites. Fade donne l'information sans lineups complexes, Clove offre des smokes faciles à replacer et Vyse bloque les retakes sur le site choisi.",
-        "agility": {
-          "antiRush": 4,
-          "postPlant": 5,
-          "retake": 3,
-          "split": 4
-        },
         "vods": [
           {
             "label": "Statistiques ranked · Lotus",
@@ -288,7 +218,6 @@
         "label": "Joue comme un pro",
         "tier": "PRO",
         "tierLabel": "PRO",
-        "winrate": 0,
         "updatedAt": "Août 2026",
         "patch": "13.04",
         "agents": [
@@ -300,12 +229,6 @@
         ],
         "source": "Joblife · VCT EMEA Stage 2",
         "tip": "Composition jouée par Joblife lors de sa victoire 13-6 sur Lotus contre PCIFIC : Neon et Raze imposent un rythme très rapide, Fade prépare les entrées, Omen facilite les rotations et Cypher surveille les flancs.",
-        "agility": {
-          "antiRush": 4,
-          "postPlant": 4,
-          "retake": 3,
-          "split": 3
-        },
         "vods": [
           {
             "label": "Joblife vs PCIFIC · Lotus",
@@ -317,7 +240,6 @@
         "label": "Fun — 5 Initiateurs",
         "tier": "FUN",
         "tierLabel": "FUN",
-        "winrate": 0,
         "updatedAt": "Août 2026",
         "patch": "13.04",
         "agents": [
@@ -329,12 +251,6 @@
         ],
         "source": "Communauté Valorant · défi 5 initiateurs",
         "tip": "<strong>Une vague d'utilitaires à chaque porte</strong> : Fade et Sova localisent, Skye et KAY/O aveuglent, puis Gekko plante avec Wingman. Sans smoke, il faut enchaîner les compétences sans laisser respirer la défense.",
-        "agility": {
-          "antiRush": 5,
-          "postPlant": 3,
-          "retake": 5,
-          "split": 4
-        },
         "vods": [],
         "key": "Fade"
       }
@@ -345,26 +261,6 @@
       "Les portes pivotantes créent des timings imprévisibles",
       "Raze satchels pour naviguer entre les 3 sites à toute vitesse",
       "C site peut être anchor par une seule sentinelle"
-    ],
-    "lineups": [
-      {
-        "agent": "Fade",
-        "ability": "Hantise",
-        "tip": "Haunts pour isoler C pendant une execute A ou B",
-        "count": 8
-      },
-      {
-        "agent": "Sova",
-        "ability": "Flèche Reconnaissance",
-        "tip": "Recon darts à travers les portes pivotantes",
-        "count": 7
-      },
-      {
-        "agent": "Killjoy",
-        "ability": "Nano-Essaim",
-        "tip": "Nanoswarm post-plant C Site — positions standards DEF",
-        "count": 6
-      }
     ]
   },
   {
@@ -385,7 +281,6 @@
         "label": "Ranked · recommandée",
         "tier": "S",
         "tierLabel": "S-TIER",
-        "winrate": 0,
         "updatedAt": "Août 2026",
         "patch": "13.04",
         "agents": [
@@ -397,12 +292,6 @@
         ],
         "source": "MetaBot · 38 093 parties classées",
         "tip": "<strong>Neon profite des flashs de Skye et de l'information de Fade</strong> pour casser les points d'étranglement. Clove simplifie les smokes de Heaven et Sage sécurise Mid ou ralentit une reprise.",
-        "agility": {
-          "antiRush": 4,
-          "postPlant": 4,
-          "retake": 3,
-          "split": 5
-        },
         "vods": [
           {
             "label": "Statistiques ranked · Split",
@@ -415,7 +304,6 @@
         "label": "Joue comme un pro",
         "tier": "PRO",
         "tierLabel": "PRO",
-        "winrate": 0,
         "updatedAt": "Août 2026",
         "patch": "13.04",
         "agents": [
@@ -427,12 +315,6 @@
         ],
         "source": "FULL SENSE · VCT Pacific Stage 2",
         "tip": "Composition jouée par FULL SENSE lors de sa victoire 13-7 sur Split contre QT DIG∞ : Raze entre avec les flashs de Skye, Astra contrôle Mid et le duo Cypher–Deadlock transforme les sites en forteresses.",
-        "agility": {
-          "antiRush": 4,
-          "postPlant": 5,
-          "retake": 3,
-          "split": 4
-        },
         "vods": [
           {
             "label": "FULL SENSE vs QT DIG∞ · Split",
@@ -444,7 +326,6 @@
         "label": "Fun — 5-Stack Rush B",
         "tier": "FUN",
         "tierLabel": "FUN",
-        "winrate": 0,
         "updatedAt": "Août 2026",
         "agents": [
           "Raze",
@@ -455,12 +336,6 @@
         ],
         "source": "Communauté Valorant · rush coordonné",
         "tip": "<strong>Rush B, mais avec un vrai plan</strong> : Breach neutralise Heaven, Neon et Raze entrent ensemble, Clove ferme les rotations et Sage pose son mur dès que le site est pris. Interdiction de ralentir avant le plant.",
-        "agility": {
-          "antiRush": 5,
-          "postPlant": 3,
-          "retake": 5,
-          "split": 2
-        },
         "vods": [],
         "patch": "13.04",
         "key": "Breach"
@@ -472,26 +347,6 @@
       "Raze satchels sur les escaliers sont difficiles à contester",
       "Sage wall B Heaven force des rotations longues",
       "Cypher one-way cages sur B Site parmi les plus efficaces du jeu"
-    ],
-    "lineups": [
-      {
-        "agent": "Sova",
-        "ability": "Flèche Reconnaissance",
-        "tip": "Recon dart depuis mid pour illuminer A et B Heaven",
-        "count": 9
-      },
-      {
-        "agent": "Cypher",
-        "ability": "Cage Cybernétique",
-        "tip": "One-way cages B Site parmi les meilleures du jeu",
-        "count": 8
-      },
-      {
-        "agent": "Breach",
-        "ability": "Faille",
-        "tip": "Fault Line à travers les murs Ramp pour entrée A garantie",
-        "count": 5
-      }
     ]
   },
   {
@@ -517,7 +372,6 @@
         "label": "Ranked · recommandée",
         "tier": "S",
         "tierLabel": "S-TIER",
-        "winrate": 0,
         "updatedAt": "Août 2026",
         "patch": "13.04",
         "agents": [
@@ -529,12 +383,6 @@
         ],
         "source": "MetaBot · 17 829 parties classées",
         "tip": "<strong>Jett prend les premiers duels après la reconnaissance de Sova</strong>. KAY/O neutralise les défenses de site, Clove garde des smokes simples pour l'exécute ou le retake et Cypher contrôle Mid et les flancs.",
-        "agility": {
-          "antiRush": 4,
-          "postPlant": 5,
-          "retake": 3,
-          "split": 3
-        },
         "vods": [
           {
             "label": "Statistiques ranked · Ascent",
@@ -547,7 +395,6 @@
         "label": "Joue comme un pro",
         "tier": "PRO",
         "tierLabel": "PRO",
-        "winrate": 0,
         "updatedAt": "Août 2026",
         "patch": "13.04",
         "agents": [
@@ -559,12 +406,6 @@
         ],
         "source": "PCIFIC Esports · VCT EMEA Stage 2",
         "tip": "Composition jouée par PCIFIC lors de sa victoire 13-8 sur Ascent contre Joblife : Phoenix ouvre les sites avec un double soutien d'information Sova–Fade, Omen contrôle les lignes centrales et Cypher verrouille les rotations.",
-        "agility": {
-          "antiRush": 4,
-          "postPlant": 4,
-          "retake": 3,
-          "split": 3
-        },
         "vods": [
           {
             "label": "PCIFIC vs Joblife · Ascent",
@@ -576,7 +417,6 @@
         "label": "Fun — Wallbang Simulator",
         "tier": "FUN",
         "tierLabel": "FUN",
-        "winrate": 0,
         "updatedAt": "Août 2026",
         "patch": "13.04",
         "agents": [
@@ -588,17 +428,10 @@
         ],
         "source": "Communauté Valorant · Odin et information",
         "tip": "<strong>Achetez des Odin et tirez à travers tout ce qui bouge</strong>. Sova et Fade révèlent les cibles, Cypher et Killjoy multiplient les informations passives et Omen transforme les spams en duels impossibles à lire.",
-        "agility": {
-          "antiRush": 5,
-          "postPlant": 4,
-          "retake": 4,
-          "split": 2
-        },
         "vods": [],
         "key": "Sova"
       }
-    ],
-    "lineups": []
+    ]
   },
   {
     "map": "Sunset",
@@ -618,7 +451,6 @@
         "tip": "<strong>Neon exploite les informations combinées de Fade et Sova</strong> pour gagner Mid ou B Main. Clove couvre les lignes de Market et Cypher sécurise les flancs ou verrouille B.",
         "patch": "13.04",
         "updatedAt": "Août 2026",
-        "winrate": 0,
         "source": "MetaBot · 6 739 parties classées",
         "vods": [
           {
@@ -642,7 +474,6 @@
         "tip": "Composition jouée par Sharper Esports lors de sa victoire 13-1 sur Sunset contre RRQ : Neon et Phoenix mettent une pression constante, Sova révèle les reprises, Omen ferme Market et Cypher contrôle B et les rotations.",
         "patch": "13.04",
         "updatedAt": "Août 2026",
-        "winrate": 0,
         "source": "Sharper Esports · VCT Pacific Stage 2",
         "vods": [
           {
@@ -666,14 +497,7 @@
         "tip": "<strong>Chaque joueur peut aveugler l'adversaire</strong>. Enchaînez Paranoia, flash KAY/O, stun Breach puis Phoenix et Yoru dans les angles serrés de Market. Pensez simplement à prévenir vos propres coéquipiers.",
         "patch": "13.04",
         "updatedAt": "Août 2026",
-        "winrate": 0,
-        "source": "Communauté Valorant · composition full flash",
-        "agility": {
-          "antiRush": 4,
-          "postPlant": 3,
-          "retake": 4,
-          "split": 4
-        }
+        "source": "Communauté Valorant · composition full flash"
       }
     ],
     "region": "Location · Marché central",
@@ -692,8 +516,7 @@
       "Beaucoup de duels à courte/moyenne distance, les duelists agressifs excellent",
       "Peu d'angles longs, Operator moins dominant qu'ailleurs",
       "Le site B est plus rapide à exécuter depuis Market"
-    ],
-    "lineups": []
+    ]
   },
   {
     "map": "Summit",
@@ -713,7 +536,6 @@
         "tip": "<strong>Neon ouvre les passages après l'information de Fade et Sova</strong>. Clove couvre les lignes libérées par les murs activés, tandis que Sage ralentit les reprises et sécurise le plant sur cette map encore récente.",
         "patch": "13.04",
         "updatedAt": "Août 2026",
-        "winrate": 0,
         "source": "MetaBot · 7 051 parties classées",
         "vods": [
           {
@@ -737,7 +559,6 @@
         "tip": "Composition jouée par FULL SENSE lors de sa victoire 13-4 sur Summit contre QT DIG∞ : Neon et Yoru attaquent les timings créés par les murs, Fade donne l'information, Omen coupe les longues lignes et Cypher garde les rotations.",
         "patch": "13.04",
         "updatedAt": "Août 2026",
-        "winrate": 0,
         "source": "FULL SENSE · VCT Pacific Stage 2",
         "vods": [
           {
@@ -761,14 +582,7 @@
         "tip": "<strong>Ajoutez cinq couches de murs aux trois murs de la map</strong>. Harbor et Viper redessinent les lignes de vue, Sage et Deadlock ferment les passages et Vyse piège la seule sortie encore ouverte.",
         "patch": "13.04",
         "updatedAt": "Août 2026",
-        "winrate": 0,
-        "source": "Communauté Valorant · défi murs et sentinelles",
-        "agility": {
-          "antiRush": 5,
-          "postPlant": 5,
-          "retake": 3,
-          "split": 2
-        }
+        "source": "Communauté Valorant · défi murs et sentinelles"
       }
     ],
     "region": "Three-lane · Murs destructibles",
@@ -789,7 +603,6 @@
       "A Site est petit et compact — évitez le rush sans info",
       "B Site est plus grand, permet un post-plant profond",
       "Meta encore jeune — RR de compét réduit de 50% sur les défaites les 2 premières semaines"
-    ],
-    "lineups": []
+    ]
   }
 ]

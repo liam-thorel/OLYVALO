@@ -139,7 +139,7 @@
   color:var(--red); letter-spacing:.5px; text-align:right;
 }
 
-/* MAP SECTION TABS (Comps / Strats & Éco / Lineups) */
+/* MAP SECTION TABS (Comps / Lineups) */
 .map-section-tabs{
   display:flex; gap:0; margin-bottom:0;
   border-bottom:1px solid var(--border);

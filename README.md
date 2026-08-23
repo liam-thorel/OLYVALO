@@ -9,16 +9,16 @@ Site privé pour le five stack OLYCITY. Comps meta, stats live, roster et outils
 ## Features
 
 **Comps & Meta**
-- 7 maps en rotation — Fracture, Haven, Breeze, Lotus, Split, Pearl, Ascent
-- 5 comps par map : S-Tier, PRO (données VLR.gg EWC 2026), A, B, FUN
-- Comps PRO basées sur EWC Americas Qualifier 2026 post-nerf 12.09
-- Agent clé ★ par comp · Badge patch ⚠ si comp outdatée
-- Lineups YouTube par agent et par map
+- 7 maps suivies — Haven, Abyss, Lotus, Split, Ascent, Sunset et Summit
+- 3 choix lisibles par map : Ranked, Pro et Fun
+- Comps PRO issues des compétitions récentes et recommandations Ranked adaptées au five stack
+- Agent clé ★ par comp · Badge patch ⚠ si une source doit être révisée
+- Conseils de map intégrés et lineups YouTube conservées uniquement sur les maps couvertes
 
 **Live 🔴**
 - Agents, noms et rangs des joueurs en temps réel
 - Peak historique par actes, y compris avec un pseudo masqué quand Riot fournit l'historique du PUUID
-- Score de la game · Image de la map
+- Image de la map et serveur Riot
 - Mode streamer géré (affiche l'agent + ANONYME)
 - Bouton Tracker.gg par joueur
 - Multi-sessions : plusieurs membres peuvent lancer une game simultanément
@@ -26,13 +26,12 @@ Site privé pour le five stack OLYCITY. Comps meta, stats live, roster et outils
 
 **Roster & Profils**
 - 5 profils joueurs avec présence Firebase (point vert en temps réel)
-- Dessin collaboratif par map (canvas Firebase, couleurs par profil)
 - Page **Admin** cachée (`#admin`) : comptes secondaires par membre, ajout de
   joueurs, assignation des comptes Valorant/LoL détectés en live
 
 **Agents**
-- Fiche complète par agent · Filtres par rôle
-- Comparateur de comps · Builder de comp · Comps sauvegardées
+- Fiche complète accessible depuis les portraits des compositions
+- Compétences, présence dans les trois types de compos et lineups disponibles
 
 **Paris 🎲**
 - Page publique (`#betting`) affichant le classement des points du bot Discord

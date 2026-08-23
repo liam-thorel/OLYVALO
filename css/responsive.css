@@ -59,11 +59,6 @@
   .map-hero-stats { flex-wrap: wrap; gap: 16px; }
   .map-stat { min-width: 80px; }
 
-  .comp-compare-grid { grid-template-columns: 1fr; }
-  .comp-compare-center { flex-direction: row; justify-content: center; padding: 16px 0; }
-  .comp-compare-diffs { flex-direction: row; }
-
-  .agents-full-grid { grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); }
 }
 
 /* ── MOBILE (768px) ──────────────── */
@@ -228,7 +223,8 @@
     scroll-snap-align: start;
   }
   .map-section-tab span { display: none; }
-  .map-section-tab, .comp-tab, .history-filter-button, .history-view-tabs button,
+  .map-section-tab, .comp-tab, .lineup-agent-tab, .map-notes-card summary,
+  .history-filter-button, .history-view-tabs button,
   .lol-history-periods button, .coop-status-tabs button { min-height: 44px; touch-action: manipulation; }
 
   /* Comps */
@@ -249,7 +245,7 @@
   .comp-label-row { min-width: 0; gap: 8px; }
   .comp-tier { padding: 4px 8px; font-size: 9px; letter-spacing: 1.5px; }
   .comp-name { min-width: 0; overflow: hidden; text-overflow: ellipsis; font-size: 15px; white-space: nowrap; }
-  .comp-updated, .comp-outdated, .comp-meta, .comp-card-actions { display: none; }
+  .comp-updated, .comp-outdated, .comp-card-actions { display: none; }
 
   .agents-grid { grid-template-columns: repeat(6,minmax(0,1fr)); gap: 9px 7px; }
   .agents-grid > .agent-card { grid-column: span 2; min-width: 0; }
@@ -280,16 +276,11 @@
   .tip-box { margin-top: 0; padding: 12px; gap: 10px; }
   .tip-icon { padding: 2px 6px; font-size: 8px; letter-spacing: 1px; }
   .tip-text { font-size: 12px; line-height: 1.5; }
-  .agility-box { min-width: 0; padding: 12px; }
-  .agility-title { margin-bottom: 10px; }
   .comp-card-footer { margin-top: 12px; }
   .comp-source { display: block; margin-top: 0; font-size: 10px; line-height: 1.4; }
 
   .comp-agents { gap: 4px; }
   .comp-agents .portrait-frame { width: 52px; }
-
-  .agility-box { padding: 16px; }
-  .agility-bar-wrap { gap: 8px; }
 
   /* Nav maps */
   .nav-maps { overflow-x: auto; flex-wrap: nowrap; padding-bottom: 4px; }
@@ -298,22 +289,13 @@
   /* Roster */
   .roster-grid { grid-template-columns: 1fr; gap: 12px; }
 
-  /* Agents page */
-  .agents-page-header { flex-direction: column; gap: 12px; }
-  .agents-search { margin-left: 0; }
-  .agents-full-grid { grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); gap: 8px; }
-
-
   /* Lineups */
   .lineup-cards-grid { grid-template-columns: 1fr; }
 
-  /* Strats */
-  .strats-grid { grid-template-columns: 1fr; }
-  .eco-grid { grid-template-columns: 1fr; }
-
-  /* Compare */
-  .comp-compare-grid { grid-template-columns: 1fr; }
-  .comp-compare-center { display: none; }
+  .map-notes-card { margin: 12px 16px 18px; }
+  .map-notes-card summary { padding: 13px 14px; font-size: 10px; }
+  .map-notes-card summary strong { display: none; }
+  .map-notes-card .notes-list { padding: 12px 14px 14px; }
 
   /* Mini roster */
   .mini-roster { grid-template-columns: 1fr 1fr; }
@@ -333,9 +315,7 @@
   .topbar-tools .search-wrap { display: none; }
 
   .section-inner { padding: 0; }
-  .roster-page-inner, .agents-page-inner { padding: 32px 16px; }
-
-  .comp-compare-panel { margin: 8px; }
+  .roster-page-inner { padding: 32px 16px; }
 
   .stier-row { gap: 8px; }
   .stier-card { min-width: 90px; }

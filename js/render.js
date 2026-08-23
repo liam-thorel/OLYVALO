@@ -66,12 +66,6 @@ function rankColorDot(tierName) {
   return `<span style="display:inline-block;width:10px;height:10px;background:${colors[tier]};border-radius:50%;flex-shrink:0"></span>`;
 }
 
-function agilityBar(value, max = 5) {
-  const pct = Math.round((value / max) * 100);
-  const color = pct >= 80 ? 'var(--S)' : pct >= 60 ? 'var(--gold)' : 'var(--D)';
-  return `<div class="agility-bar-track"><div class="agility-bar-fill" style="width:${pct}%;background:${color}"></div></div>`;
-}
-
 // ─── AGENT CARD (within comp) ────────────────────
 export function agentCardHTML(name) {
   const r = state.ROLES[name] || 'D';
@@ -112,34 +106,8 @@ export function agentCardHTML(name) {
   </div>`;
 }
 
-// ─── AGILITY STATS ───────────────────────────────
-function agilityHTML(agility) {
-  if (!agility) return '';
-  const metrics = [
-    { key: 'antiRush',  label: 'Anti-Rush',  icon: '⚡' },
-    { key: 'postPlant', label: 'Post-Plant',  icon: '◆' },
-    { key: 'retake',    label: 'Retake',      icon: '↩' },
-    { key: 'split',     label: 'Split Push',  icon: '↔' },
-  ];
-  const bars = metrics.map(m => `
-    <div class="agility-row">
-      <span class="agility-icon">${m.icon}</span>
-      <span class="agility-label">${m.label}</span>
-      ${agilityBar(agility[m.key])}
-      <span class="agility-val">${agility[m.key]}/5</span>
-    </div>`).join('');
-  return `<div class="agility-box">
-    <div class="agility-title">Efficacité de la comp</div>
-    ${bars}
-    <div style="font-family:'Tomorrow',sans-serif;font-size:8px;letter-spacing:1px;text-transform:uppercase;color:var(--dim);margin-top:10px;text-align:right">
-      ★ Estimation OLYCITY
-    </div>
-  </div>`;
-}
-
 // ─── COMP PANEL ──────────────────────────────────
 export function compHTML(comp, mapIdx, compIdx) {
-  const cid = `comp-${mapIdx}-${compIdx}`;
   const agents = comp.agents.map(n => {
     const isKey = comp.key === n;
     const card = agentCardHTML(n);
@@ -148,11 +116,6 @@ export function compHTML(comp, mapIdx, compIdx) {
     return card.replace('class="agent-card"', 'class="agent-card key-agent"');
   }).join('');
   const tierCls = comp.tier === 'S' ? 'tier-s' : comp.tier === 'FUN' ? 'tier-f' : comp.tier === 'PRO' ? 'tier-pro' : 'tier-a';
-  const isFav = state.FAVS.includes(cid);
-
-  // VODs/stats link — désactivé, en attente d'une meilleure source
-  const vodsHTML = '';
-
   return `
     <div class="comp-panel ${compIdx === 0 ? 'active' : ''}" id="panel-${mapIdx}-${compIdx}">
       <div class="comp-card">
@@ -164,22 +127,13 @@ export function compHTML(comp, mapIdx, compIdx) {
               ? `<span class="comp-outdated" title="Comp du patch ${comp.patch}">⚠ Patch ${comp.patch}</span>`
               : comp.updatedAt ? `<span class="comp-updated">Maj ${comp.updatedAt}</span>` : ''}
           </div>
-          <div class="comp-meta">
-            ${comp.tier !== 'PRO' ? `<div class="winrate-pill">
-              <div class="winrate-bar"><div class="winrate-bar-fill" style="width:${comp.winrate||0}%"></div></div>
-              <span class="winrate-val">${comp.winrate ? comp.winrate.toFixed(1)+'%' : '—'}</span>
-              <span class="winrate-lbl">WR</span>
-            </div>` : ''}
-            <button class="fav-btn ${isFav ? 'active' : ''}" data-fav="${cid}" onclick="window.OLYCITY.toggleFav('${cid}')">★</button>
-          </div>
         </div>
         <div class="agents-grid">${agents}</div>
         <div class="comp-card-actions">
           <button class="share-comp-btn" onclick="window.OLYCITY.shareComp(${mapIdx},${compIdx},this)">↗ Partager</button>
-          <button class="compare-btn" data-cid="${cid}" onclick="window.OLYCITY.selectCompare(${mapIdx},${compIdx},this)">⇄ Comparer</button>
         </div>
         <details class="comp-mobile-details">
-          <summary><span>Plan de jeu & efficacité</span><strong>Voir</strong></summary>
+          <summary><span>Plan de jeu</span><strong>Voir</strong></summary>
         </details>
         <div class="comp-bottom">
           <div class="comp-bottom-left">
@@ -187,9 +141,7 @@ export function compHTML(comp, mapIdx, compIdx) {
               <span class="tip-icon">5-STACK</span>
               <span class="tip-text">${comp.tip}</span>
             </div>
-            ${vodsHTML}
           </div>
-          ${agilityHTML(comp.agility)}
         </div>
         <div class="comp-card-footer">
           <span class="comp-source">Source : ${comp.source}</span>
@@ -199,7 +151,7 @@ export function compHTML(comp, mapIdx, compIdx) {
 }
 
 // ─── LINEUPS INDIVIDUELS ─────────────────────────
-function lineupsHTML(legacyData, mapName) {
+function lineupsHTML(mapName) {
   // Use new individual lineup data from state.LINEUPS
   const mapLineups = state.LINEUPS?.[mapName];
   if (!mapLineups || Object.keys(mapLineups).length === 0) return '';
@@ -269,74 +221,6 @@ function lineupsHTML(legacyData, mapName) {
   </div>`;
 }
 
-// ─── STRATEGIES SECTION ──────────────────────────
-function strategyHTML(strats) {
-  if (!strats?.length) return '';
-  const typeColors = { default: 'var(--S)', fast: 'var(--D)', mid: 'var(--C)' };
-  const cards = strats.map(s => {
-    const color = typeColors[s.type] || 'var(--muted)';
-    const steps = s.steps.map((step, i) =>
-      `<div class="strat-step"><span class="strat-step-num">${i + 1}</span>${step}</div>`
-    ).join('');
-    return `<div class="strat-card">
-      <div class="strat-header">
-        <span class="strat-icon" style="color:${color}">${s.icon}</span>
-        <span class="strat-name" style="color:${color}">${s.name}</span>
-        <span class="strat-type">${s.type.toUpperCase()}</span>
-      </div>
-      <p class="strat-desc">${s.desc}</p>
-      <div class="strat-steps">${steps}</div>
-    </div>`;
-  }).join('');
-
-  return `<div class="strategies-section">
-    <div class="sub-section-title">
-      <span class="sub-tag">Strats</span>
-      <span class="sub-title">Stratégies de site</span>
-      <div class="sub-line"></div>
-    </div>
-    <div class="strat-grid">${cards}</div>
-  </div>`;
-}
-
-// ─── ECO GUIDE ───────────────────────────────────
-function ecoHTML(eco) {
-  if (!eco) return '';
-  const rounds = [
-    { key: 'pistol', label: 'Pistolet',    icon: '🔫', color: 'var(--muted)' },
-    { key: 'eco',    label: 'Éco',         icon: '💸', color: 'var(--D)' },
-    { key: 'force',  label: 'Force Buy',   icon: '⚠',  color: 'var(--gold)' },
-    { key: 'full',   label: 'Full Buy',    icon: '✓',  color: 'var(--S)' },
-  ];
-  const cards = rounds.map(r => {
-    const d = eco[r.key];
-    if (!d) return '';
-    const agents = d.agents?.map(a => {
-      const img = valorantApi.agentImg(a);
-      return img
-        ? `<img class="eco-agent-icon" src="${img}" alt="${a}" title="${a}">`
-        : `<span class="eco-agent-icon-ph">${a[0]}</span>`;
-    }).join('') || '';
-    return `<div class="eco-card">
-      <div class="eco-card-header">
-        <span class="eco-round-label" style="color:${r.color}">${r.icon} ${r.label}</span>
-        ${agents ? `<div class="eco-agents">${agents}</div>` : ''}
-      </div>
-      <p class="eco-tip">${d.tip}</p>
-      ${d.buy ? `<div class="eco-buy"><span class="eco-buy-label">Achat :</span> ${d.buy}</div>` : ''}
-    </div>`;
-  }).join('');
-
-  return `<div class="eco-section">
-    <div class="sub-section-title">
-      <span class="sub-tag">Éco</span>
-      <span class="sub-title">Guide d'achat par round</span>
-      <div class="sub-line"></div>
-    </div>
-    <div class="eco-grid">${cards}</div>
-  </div>`;
-}
-
 // ─── MAP SECTION ─────────────────────────────────
 export function mapSectionHTML(data, idx) {
   const splash = valorantApi.mapSplash(data.map);
@@ -358,14 +242,6 @@ export function mapSectionHTML(data, idx) {
   ).join('');
 
   const hasLineups = !!(state.LINEUPS?.[data.map] && Object.keys(state.LINEUPS[data.map]).length > 0);
-  const lineupsTabLabel = hasLineups
-    ? `📹 Lineups <span style="font-size:9px;opacity:.7">(${Object.keys(state.LINEUPS[data.map]).join(', ')})</span>`
-    : '📹 Lineups';
-
-  const totalMaps = state.COMPS_DATA.length;
-  const prevIdx = idx > 0 ? idx - 1 : null;
-  const nextIdx = idx < totalMaps - 1 ? idx + 1 : null;
-
   return `
     <section class="map-section ${idx === 0 ? 'active' : ''}" id="map-${idx}">
 
@@ -380,7 +256,6 @@ export function mapSectionHTML(data, idx) {
             <div class="map-hero-tags">${tags}</div>
           </div>
           <div class="map-hero-stats">
-            <div class="map-stat"><div class="map-stat-val">${data.comps.length}</div><div class="map-stat-lbl">Comps</div></div>
             <div class="map-stat"><div class="map-stat-val">${data.stats.difficulty}</div><div class="map-stat-lbl">Difficulté</div></div>
             <div class="map-stat" style="max-width:160px"><div class="map-stat-val" style="font-size:clamp(14px,1.5vw,22px)">${data.stats.sides}</div><div class="map-stat-lbl">Équilibre</div></div>
             ${data.stats.bestSite ? `<div class="map-stat"><div class="map-stat-val" style="font-size:clamp(14px,1.5vw,22px);color:var(--red)">${data.stats.bestSite}</div><div class="map-stat-lbl">Meilleur site ATK</div></div>` : ''}
@@ -388,41 +263,26 @@ export function mapSectionHTML(data, idx) {
         </div>
       </div>
 
-      <!-- Section tabs: Comps / Strats & Éco / Lineups -->
+      <!-- Navigation volontairement limitée aux compos et aux lineups utiles. -->
       <div class="map-section-tabs">
         <button class="map-section-tab active" onclick="window.OLYCITY.switchMapTab('${idx}','comps',this)">◈ Comps</button>
         ${hasLineups ? `<button class="map-section-tab" onclick="window.OLYCITY.switchMapTab('${idx}','lineups',this)">📹 Lineups</button>` : ''}
-        <button class="map-section-tab" onclick="window.OLYCITY.switchMapTab('${idx}','draw',this)">✏ Dessin</button>
-        <button class="map-section-tab" onclick="window.OLYCITY.switchMapTab('${idx}','notes',this)">★ Notes</button>
       </div>
 
       <!-- COMPS TAB -->
       <div class="map-section-panel active" id="maptab-${idx}-comps">
         <div class="comp-tabs">${tabs}</div>
         ${panels}
+        <details class="map-notes-card">
+          <summary><span>Conseils pour ${data.map}</span><strong>${data.notes.length} repères</strong></summary>
+          <div class="notes-list">${notes}</div>
+        </details>
       </div>
-
-      <!-- STRATS & ÉCO TAB -->
-
 
       <!-- LINEUPS TAB -->
       ${hasLineups ? `<div class="map-section-panel" id="maptab-${idx}-lineups">
-        ${lineupsHTML(data.lineups, data.map)}
+        ${lineupsHTML(data.map)}
       </div>` : ''}
-
-      <!-- CALLOUTS TAB -->
-
-
-      <!-- NOTES TAB -->
-      <div class="map-section-panel" id="maptab-${idx}-notes">
-        <div class="notes-card" style="margin-top:0;border-top:none">
-          <div class="notes-card-title">Notes Meta — ${data.map}</div>
-          <div class="notes-list">${notes}</div>
-        </div>
-      </div>
-      <div class="map-section-panel" id="maptab-${idx}-draw">
-        <div id="draw-board-${idx}"></div>
-      </div>
 
     </section>`;
 }
@@ -605,7 +465,7 @@ export function getCompsUsingAgent(name) {
   state.COMPS_DATA.forEach((map, mi) => {
     map.comps.forEach((comp, ci) => {
       if (comp.agents.includes(name)) {
-        usage.push({ map: map.map, mapIdx: mi, compIdx: ci, label: comp.label, tier: comp.tier, winrate: comp.winrate });
+        usage.push({ map: map.map, mapIdx: mi, compIdx: ci, label: comp.label, tier: comp.tier });
       }
     });
   });
@@ -657,8 +517,7 @@ export function agentPageHTML(name) {
             <div class="usage-map">${u.map}</div>
             <div class="usage-comp-label">${u.label}</div>
             <div class="usage-meta">
-              <span class="usage-tier ${u.tier}">${u.tier}-TIER</span>
-              <span class="usage-wr">${u.winrate ? u.winrate.toFixed(1)+'% WR' : 'Pro'}</span>
+              <span class="usage-tier ${u.tier}">${u.tier === 'S' ? 'RANKED' : u.tier}</span>
               <span class="usage-go">→</span>
             </div>
           </div>
@@ -672,8 +531,7 @@ export function agentPageHTML(name) {
     : `<span class="played-none">Aucun joueur OLYCITY n'a cet agent en main.</span>`;
 
   const pickCount = usage.length;
-  const avgWR = usage.length > 0
-    ? (usage.filter(u=>u.winrate).reduce((s, u) => s + u.winrate, 0) / (usage.filter(u=>u.winrate).length||1)).toFixed(1) : '—';
+  const mapCount = new Set(usage.map(item => item.map)).size;
   const fullEl = fullPortrait
     ? `<img class="agent-portrait-full" src="${fullPortrait}" alt="${display}">`  : '';
   // Background cinématique : vidéo YouTube en loop si dispo, sinon background art
@@ -727,9 +585,9 @@ export function agentPageHTML(name) {
             ${frData.origin ? `<span class="agent-origin">Origine : ${frData.origin}</span>` : ''}
           </div>
           <p class="agent-bio">${frData.bio || apiData?.desc || 'Biographie indisponible.'}</p>
-          <div class="agent-quick-stats">
-            <div class="aqs"><div class="aqs-val">${pickCount}</div><div class="aqs-lbl">Comp${pickCount>1?'s':''} OLYCITY</div></div>
-            <div class="aqs"><div class="aqs-val">${avgWR}${avgWR!=='—'?'%':''}</div><div class="aqs-lbl">WR moyen</div></div>
+            <div class="agent-quick-stats">
+              <div class="aqs"><div class="aqs-val">${pickCount}</div><div class="aqs-lbl">Comp${pickCount>1?'s':''} OLYCITY</div></div>
+            <div class="aqs"><div class="aqs-val">${mapCount}</div><div class="aqs-lbl">Map${mapCount>1?'s':''}</div></div>
             <div class="aqs"><div class="aqs-val">${players.length}</div><div class="aqs-lbl">Joueur${players.length>1?'s':''}</div></div>
           </div>
           ${(()=>{
@@ -824,463 +682,4 @@ export function miniRosterHTML() {
       ${rankEl}
     </div>`;
   }).join('');
-}
-
-// ─── CALLOUTS MAP ────────────────────────────────
-export function calloutsHTML(mapName) {
-  // Uses ONLY static coordinates from callouts.json — never overridden by API
-  const zones = state.CALLOUTS?.[mapName]?.zones || [];
-  if (!zones.length) return '<div style="padding:24px;color:var(--dim);font-family:Tomorrow,sans-serif;font-size:11px;letter-spacing:2px">Callouts non configurés pour cette map.</div>';
-
-  const minimapUrl = valorantApi.mapMinimap(mapName);
-  const W = 1024, H = 1024;
-
-  const bg = minimapUrl
-    ? `<image href="${minimapUrl}" x="0" y="0" width="${W}" height="${H}" preserveAspectRatio="xMidYMid meet"/>`
-    : `<rect width="${W}" height="${H}" fill="#0d1117"/>`;
-
-  const overlay = `<rect width="${W}" height="${H}" fill="rgba(6,8,12,.3)"/>`;
-
-  const labels = zones.map(z => {
-    const cx = (z.x / 100) * W;
-    const cy = (z.y / 100) * H;
-    const r = z.major ? 10 : 6;
-    const fontSize = z.major ? 13 : 10;
-    const textLen = (z.label || '').length * (fontSize * 0.62);
-    const bgW = textLen + 14;
-    const bgH = fontSize + 8;
-    const pulse = z.major ? `
-      <circle r="${r+6}" fill="none" stroke="${z.color}" stroke-width="1.5" opacity=".0">
-        <animate attributeName="r" values="${r+2};${r+11};${r+2}" dur="2.5s" repeatCount="indefinite"/>
-        <animate attributeName="opacity" values=".5;0;.5" dur="2.5s" repeatCount="indefinite"/>
-      </circle>` : '';
-    return `<g transform="translate(${cx.toFixed(1)},${cy.toFixed(1)})">
-      ${pulse}
-      <circle r="${r}" fill="${z.color}" opacity="${z.major ? '.95' : '.8'}"/>
-      ${z.major ? `<circle r="${r+4}" fill="none" stroke="${z.color}" stroke-width="1" opacity=".45"/>` : ''}
-      <rect x="${(-bgW/2).toFixed(1)}" y="${(-bgH-r-3).toFixed(1)}" width="${bgW.toFixed(1)}" height="${bgH}"
-        rx="2" fill="rgba(6,8,12,.88)" stroke="${z.color}" stroke-width=".8" opacity=".92"/>
-      <text x="0" y="${(-r-5).toFixed(1)}" text-anchor="middle"
-        font-family="Tomorrow,sans-serif" font-size="${fontSize}" font-weight="${z.major ? '700':'500'}"
-        letter-spacing="${z.major ? '1':'0'}" fill="${z.major ? '#fff':'rgba(255,255,255,.82)'}">
-        ${z.label}
-      </text>
-    </g>`;
-  }).join('');
-
-  const svgContent = `<svg viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg" style="display:block;width:100%;height:auto">
-    ${bg}${overlay}${labels}
-  </svg>`;
-
-  const legend = [
-    { color:'#ff4656', label:'Spawn ATK' }, { color:'#3fcfcf', label:'Spawn DEF / CT' },
-    { color:'#f5c842', label:'Zone A' }, { color:'#a87fff', label:'Zone B / C' },
-    { color:'#ff8200', label:'Mid' },
-  ].map(l => `<div class="callout-legend-item">
-    <div class="callout-legend-dot" style="background:${l.color}"></div>${l.label}
-  </div>`).join('');
-
-  return `<div class="callouts-section">
-    <div class="callout-map-wrap" style="max-width:680px">${svgContent}</div>
-    <div class="callout-legend">${legend}
-      <div style="font-family:Tomorrow,sans-serif;font-size:8px;letter-spacing:1px;color:var(--dim);margin-top:8px">Positions manuelles · ${zones.length} zones</div>
-    </div>
-  </div>`;
-}
-// ─── COMP BUILDER ────────────────────────────────
-// Partial render helpers for fast slot updates
-function compBuilderSlotsHTML(slots) {
-  const roleLabels = { D:'Duelliste', I:'Initiateur', S:'Sentinelle', C:'Contrôleur' };
-  return slots.map((agent, i) => {
-    if (agent) {
-      const img = valorantApi.agentImg(agent);
-      const role = state.ROLES[agent] || 'D';
-      return `<div class="comp-builder-slot filled">
-        ${img ? `<img src="${img}" alt="${agent}">` : ''}
-        <span class="comp-builder-slot-name">${displayName(agent)}</span>
-        <span class="comp-builder-slot-role">${roleLabels[role] || ''}</span>
-        <button class="comp-builder-slot-remove" onclick="window.OLYCITY.builderRemove(${i})">✕</button>
-      </div>`;
-    }
-    return `<div class="comp-builder-slot" onclick="window.OLYCITY.builderFocusSlot(${i})" id="builder-slot-${i}">
-      <span class="comp-builder-slot-empty">Slot ${i+1}<br>Cliquer pour<br>assigner</span>
-    </div>`;
-  }).join('');
-}
-
-function compBuilderAgilityHTML(slots) {
-  const agilityKeys = ['antiRush','postPlant','retake','split'];
-  const agilityLabels = ['Anti-Rush','Post-Plant','Retake','Split'];
-  const roleScores = {
-    D: { antiRush:2, postPlant:2, retake:3, split:4 },
-    I: { antiRush:4, postPlant:3, retake:3, split:3 },
-    S: { antiRush:4, postPlant:4, retake:2, split:2 },
-    C: { antiRush:3, postPlant:5, retake:3, split:3 },
-  };
-  const filled = slots.filter(Boolean);
-  return agilityKeys.map((k, idx) => {
-    let score = 0;
-    filled.forEach(a => { score += (roleScores[state.ROLES[a]||'D']?.[k] || 3); });
-    const avg = filled.length > 0 ? Math.min(5, Math.round(score / filled.length)) : 0;
-    const color = avg >= 4 ? 'green' : avg <= 2 ? 'red' : '';
-    return `<div class="cba-stat">
-      <span class="cba-val ${color}">${avg > 0 ? avg+'/5' : '—'}</span>
-      <span class="cba-lbl">${agilityLabels[idx]}</span>
-    </div>`;
-  }).join('');
-}
-
-export function compBuilderHTML(slots = [null,null,null,null,null]) {
-  const roleLabels = { D:'Duelliste', I:'Initiateur', S:'Sentinelle', C:'Contrôleur' };
-  // Cache partial render functions for fast updates
-  window._builderPartials = { compBuilderSlotsHTML, compBuilderAgilityHTML };
-
-  const slotsHTML = slots.map((agent, i) => {
-    if (agent) {
-      const img = valorantApi.agentImg(agent);
-      const role = state.ROLES[agent] || 'D';
-      return `<div class="comp-builder-slot filled">
-        ${img ? `<img src="${img}" alt="${agent}">` : ''}
-        <span class="comp-builder-slot-name">${displayName(agent)}</span>
-        <span class="comp-builder-slot-role">${roleLabels[role] || ''}</span>
-        <button class="comp-builder-slot-remove" onclick="window.OLYCITY.builderRemove(${i})">✕</button>
-      </div>`;
-    }
-    return `<div class="comp-builder-slot" onclick="window.OLYCITY.builderFocusSlot(${i})" id="builder-slot-${i}">
-      <span class="comp-builder-slot-empty">Slot ${i+1}<br>Cliquer pour<br>assigner</span>
-    </div>`;
-  }).join('');
-
-  // All agents sorted
-  const allAgents = Object.keys(valorantApi.agents).sort();
-  const usedSet = new Set(slots.filter(Boolean));
-  const agentsHTML = allAgents.map(name => {
-    const img = valorantApi.agentImg(name);
-    const used = usedSet.has(name) ? 'used' : '';
-    return `<div class="comp-builder-agent ${used}" data-agent="${name}" onclick="window.OLYCITY.builderAddAgent('${name}')">
-      ${img ? `<img src="${img}" alt="${name}">` : ''}
-      <span class="comp-builder-agent-name">${displayName(name)}</span>
-    </div>`;
-  }).join('');
-
-  // Agility preview
-  const agilityKeys = ['antiRush','postPlant','retake','split'];
-  const agilityLabels = ['Anti-Rush','Post-Plant','Retake','Split'];
-  const roleScores = {
-    D: { antiRush:2, postPlant:2, retake:3, split:4 },
-    I: { antiRush:4, postPlant:3, retake:3, split:3 },
-    S: { antiRush:4, postPlant:4, retake:2, split:2 },
-    C: { antiRush:3, postPlant:5, retake:3, split:3 },
-  };
-  const filled = slots.filter(Boolean);
-  const agilityHTML = agilityKeys.map((k, idx) => {
-    let score = 0;
-    filled.forEach(a => { const r = state.ROLES[a]||'D'; score += (roleScores[r]?.[k] || 3); });
-    const avg = filled.length > 0 ? Math.min(5, Math.round(score / filled.length)) : 0;
-    const color = avg >= 4 ? 'green' : avg <= 2 ? 'red' : '';
-    return `<div class="cba-stat">
-      <span class="cba-val ${color}">${avg > 0 ? avg+'/5' : '—'}</span>
-      <span class="cba-lbl">${agilityLabels[idx]}</span>
-    </div>`;
-  }).join('');
-
-  const mapOptions = state.COMPS_DATA.map((m, i) =>
-    `<option value="${i}">${m.map}</option>`
-  ).join('');
-
-  return `<div class="comp-builder-section">
-    <div class="comp-builder-title">Comp Builder</div>
-    <div style="display:flex;align-items:center;gap:12px;margin-bottom:20px;flex-wrap:wrap">
-      <span style="font-family:'Tomorrow',sans-serif;font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--muted)">Map :</span>
-      <select id="builder-map-select" onchange="window.OLYCITY.builderSetMap(this.value)"
-        style="background:var(--surf2);border:1px solid var(--border2);color:var(--text);
-               padding:8px 16px;font-family:'Tomorrow',sans-serif;font-size:12px;
-               outline:none;cursor:pointer;min-width:140px">
-        <option value="">— Aucune —</option>
-        ${mapOptions}
-      </select>
-      <span id="builder-map-context" style="font-family:'Tomorrow',sans-serif;font-size:10px;
-        letter-spacing:1px;color:var(--dim);text-transform:uppercase"></span>
-    </div>
-    <div class="comp-builder-slots" id="builder-slots-wrap">${slotsHTML}</div>
-    <div style="font-family:'Tomorrow',sans-serif;font-size:9px;letter-spacing:2px;text-transform:uppercase;color:var(--muted);margin-bottom:10px">
-      Choisir les agents :
-    </div>
-    <div class="comp-builder-agents">${agentsHTML}</div>
-    <div class="comp-builder-footer">
-      <button class="comp-builder-clear" onclick="window.OLYCITY.builderClear()">✕ Reset</button>
-      <button class="comp-builder-save" onclick="window.OLYCITY.builderSave()">★ Sauvegarder</button>
-      ${filled.length >= 2 ? `<button class="compare-btn" onclick="window.OLYCITY.builderCompare()" style="margin-left:4px">⇄ Comparer avec une comp meta</button>` : ''}
-      <div class="comp-builder-agility" id="builder-agility-wrap">${agilityHTML}</div>
-    </div>
-  </div>`;
-}
-
-
-export function agentsFiltersHTML() {
-  const roles = [
-    { key: 'all', label: 'Tous' },
-    { key: 'D',   label: 'Duelliste' },
-    { key: 'I',   label: 'Initiateur' },
-    { key: 'S',   label: 'Sentinelle' },
-    { key: 'C',   label: 'Contrôleur' },
-  ];
-  return roles.map(r =>
-    `<button class="agent-filter-btn ${r.key !== 'all' ? r.key : ''} ${r.key === 'all' ? 'active' : ''}"
-      data-role="${r.key}"
-      onclick="window.OLYCITY.filterAgents('${r.key}', this)">
-      ${r.label}
-    </button>`
-  ).join('');
-}
-
-export function agentsGridHTML(filter = 'all', search = '') {
-  const allAgents = Object.keys(valorantApi.agents).sort();
-  const q = search.toLowerCase().trim();
-
-  const filtered = allAgents.filter(name => {
-    const role = state.ROLES[name] || 'D';
-    const matchRole = filter === 'all' || role === filter;
-    const matchSearch = !q || name.toLowerCase().includes(q);
-    return matchRole && matchSearch;
-  });
-
-  if (filtered.length === 0) {
-    return `<div class="agents-empty">Aucun agent trouvé</div>`;
-  }
-
-  return filtered.map(name => agentCardHTML(name)).join('');
-}
-
-export function savedCompsHTML(profile) {
-  const p = profile || state.currentProfile || 'guest';
-  let saved = [];
-  try {
-    const key = `olycity-saved-comps-${p}`;
-    saved = JSON.parse(localStorage.getItem(key) || '[]');
-  } catch(e) {}
-
-  if (saved.length === 0) {
-    return `<div class="saved-comps-section">
-      <div class="sub-section-title">
-        <span class="sub-tag">Sauvegardées</span>
-        <span class="sub-title">Mes comps custom</span>
-        <div class="sub-line"></div>
-      </div>
-      <div class="no-saved">Aucune comp sauvegardée — crée-en une dans le builder ci-dessus</div>
-    </div>`;
-  }
-
-  const cards = saved.map((comp, i) => {
-    const agents = (comp.agents || []).map(name => {
-      const img = valorantApi.agentImg(name);
-      return `<div class="saved-comp-agent">
-        ${img ? `<img src="${img}" alt="${name}" title="${name}">` : ''}
-      </div>`;
-    }).join('');
-    const date = comp.createdAt
-      ? new Date(comp.createdAt).toLocaleDateString('fr-FR', { day:'2-digit', month:'short' })
-      : '—';
-    return `<div class="saved-comp-card">
-      <div class="saved-comp-name">${comp.name}</div>
-      <div class="saved-comp-agents">${agents}</div>
-      <div class="saved-comp-date">Créée le ${date} · ${comp.agents?.length || 0} agents${comp.map ? ` · ${comp.map}` : ''}</div>
-      <div class="saved-comp-actions">
-        <button class="saved-comp-btn load" onclick="window.OLYCITY.builderLoad(${i})">↺ Charger</button>
-        <button class="saved-comp-btn" onclick="window.OLYCITY.savedCompCompare(${i})" style="color:var(--gold);border-color:rgba(245,200,66,.3)">⇄ Comparer</button>
-        <button class="saved-comp-btn del" onclick="window.OLYCITY.savedCompDelete(${i})">✕ Sup.</button>
-      </div>
-    </div>`;
-  }).join('');
-
-  return `<div class="saved-comps-section">
-    <div class="sub-section-title">
-      <span class="sub-tag">Sauvegardées</span>
-      <span class="sub-title">Mes comps custom (${saved.length})</span>
-      <div class="sub-line"></div>
-    </div>
-    <div class="saved-comps-grid">${cards}</div>
-  </div>`;
-}
-
-export function compCompareHTML(compA, compB) {
-  const metrics = [
-    { key:'antiRush',  label:'Anti-Rush',  icon:'⚡' },
-    { key:'postPlant', label:'Post-Plant',  icon:'◆'  },
-    { key:'retake',    label:'Retake',      icon:'↩'  },
-    { key:'split',     label:'Split Push',  icon:'↔'  },
-  ];
-  const barColor = v => v >= 4 ? 'var(--S)' : v >= 3 ? 'var(--gold)' : 'var(--D)';
-
-  function agentsCol(comp) {
-    return (comp.agents || []).map(name => {
-      const img = valorantApi.agentImg(name);
-      return `<div class="comp-compare-agent" onclick="window.OLYCITY.showAgentPage('${name}')">
-        ${img ? `<img src="${img}" alt="${name}">` : ''}
-        <span>${displayName(name)}</span>
-      </div>`;
-    }).join('');
-  }
-
-  function agilityCol(comp, isLeft) {
-    return metrics.map(m => {
-      const val = comp.agility?.[m.key] || 0;
-      const pct = (val/5)*100;
-      // For left col, bar grows right-to-left to face the center
-      const barStyle = isLeft
-        ? `width:${pct}%;background:${barColor(val)};right:0;left:auto`
-        : `width:${pct}%;background:${barColor(val)}`;
-      const track = isLeft
-        ? `<div class="comp-compare-bar" style="direction:rtl"><div class="comp-compare-fill" style="${barStyle}"></div></div>`
-        : `<div class="comp-compare-bar"><div class="comp-compare-fill" style="${barStyle}"></div></div>`;
-      return `<div class="comp-compare-metric" style="${isLeft ? 'flex-direction:row-reverse;text-align:right' : ''}">
-        <span class="comp-compare-num">${val}/5</span>
-        ${track}
-      </div>`;
-    }).join('');
-  }
-
-  // Center diff badges
-  const diffs = metrics.map(m => {
-    const vA = compA.agility?.[m.key] || 0;
-    const vB = compB.agility?.[m.key] || 0;
-    const d = vA - vB;
-    const cls = d > 0 ? 'pos' : d < 0 ? 'neg' : 'eq';
-    const label = d > 0 ? `+${d}` : d < 0 ? `${d}` : '=';
-    return `<div style="display:flex;align-items:center;gap:4px;height:28px">
-      <span class="diff-badge ${cls}">${label}</span>
-    </div>`;
-  }).join('');
-
-  const tierA = compA.tier === 'S' ? 'tier-s' : 'tier-a';
-  const tierB = compB.tier === 'S' ? 'tier-s' : 'tier-a';
-
-  // ─── Smart analysis ─────────────────────────────
-  function analyzeComps(cA, cB) {
-    const roleCount = (comp) => {
-      const agents = comp.agents || [];
-      return agents.reduce((acc, a) => {
-        const r = state.ROLES[a] || 'D';
-        acc[r] = (acc[r] || 0) + 1;
-        return acc;
-      }, {});
-    };
-    const rA = roleCount(cA), rB = roleCount(cB);
-    const agilityKeys = ['antiRush','postPlant','retake','split'];
-    const agilityLabels = { antiRush:'anti-rush', postPlant:'post-plant', retake:'retake', split:'split' };
-
-    const advantages = [], disadvantages = [];
-
-    // WR comparison
-    if (cA.winrate && cB.winrate) {
-      const diff = (cA.winrate - cB.winrate).toFixed(1);
-      if (Math.abs(diff) >= 1) {
-        const better = diff > 0 ? cA.label : cB.label;
-        const worse = diff > 0 ? cB.label : cA.label;
-        advantages.push(`<strong>${better}</strong> a un meilleur winrate sourcé (+${Math.abs(diff)}%)`);
-      }
-    }
-
-    // Agility advantages
-    agilityKeys.forEach(k => {
-      const vA = cA.agility?.[k] || 0;
-      const vB = cB.agility?.[k] || 0;
-      if (vA - vB >= 2) advantages.push(`<strong>${cA.label}</strong> est nettement supérieure en ${agilityLabels[k]}`);
-      else if (vB - vA >= 2) advantages.push(`<strong>${cB.label}</strong> est nettement supérieure en ${agilityLabels[k]}`);
-    });
-
-    // Role analysis
-    const duelA = rA.D || 0, duelB = rB.D || 0;
-    const ctrlA = rA.C || 0, ctrlB = rB.C || 0;
-    const initA = rA.I || 0, initB = rB.I || 0;
-    const sentA = rA.S || 0, sentB = rB.S || 0;
-
-    if (duelA > duelB) advantages.push(`<strong>${cA.label}</strong> est plus agressive (${duelA} duellist${duelA > 1 ? 's' : ''} vs ${duelB})`);
-    else if (duelB > duelA) advantages.push(`<strong>${cB.label}</strong> est plus agressive (${duelB} duellist${duelB > 1 ? 's' : ''} vs ${duelA})`);
-
-    if (ctrlA > ctrlB) advantages.push(`<strong>${cA.label}</strong> a plus de contrôle map (${ctrlA} controller${ctrlA > 1 ? 's' : ''})`);
-    else if (ctrlB > ctrlA) advantages.push(`<strong>${cB.label}</strong> a plus de contrôle map (${ctrlB} controller${ctrlB > 1 ? 's' : ''})`);
-
-    if (initA > initB) advantages.push(`<strong>${cA.label}</strong> a plus d'information (${initA} initiateur${initA > 1 ? 's' : ''})`);
-    else if (initB > initA) advantages.push(`<strong>${cB.label}</strong> a plus d'information (${initB} initiateur${initB > 1 ? 's' : ''})`);
-
-    // Défauts
-    if (duelA >= 2 && ctrlA === 0) disadvantages.push(`<strong>${cA.label}</strong> manque de smokes — exécutes difficiles sans controller`);
-    if (duelB >= 2 && ctrlB === 0) disadvantages.push(`<strong>${cB.label}</strong> manque de smokes — exécutes difficiles sans controller`);
-    if (sentA === 0) disadvantages.push(`<strong>${cA.label}</strong> n'a pas de sentinel — flancs et anchors vulnérables`);
-    if (sentB === 0) disadvantages.push(`<strong>${cB.label}</strong> n'a pas de sentinel — flancs et anchors vulnérables`);
-    if (initA === 0) disadvantages.push(`<strong>${cA.label}</strong> manque d'info — difficile de clear les angles en exécute`);
-    if (initB === 0) disadvantages.push(`<strong>${cB.label}</strong> manque d'info — difficile de clear les angles en exécute`);
-
-    if (!advantages.length && !disadvantages.length) {
-      return '<p style="color:var(--muted);font-size:13px">Les deux comps sont équilibrées — aucun avantage décisif.</p>';
-    }
-
-    const html = [];
-    if (advantages.length) {
-      html.push(`<div style="margin-bottom:10px">
-        <div style="font-family:'Tomorrow',sans-serif;font-size:9px;letter-spacing:2px;text-transform:uppercase;color:var(--S);margin-bottom:6px">✓ Avantages</div>
-        ${advantages.map(a => `<div style="font-size:12.5px;color:var(--muted);line-height:1.6;padding:2px 0">${a}</div>`).join('')}
-      </div>`);
-    }
-    if (disadvantages.length) {
-      html.push(`<div>
-        <div style="font-family:'Tomorrow',sans-serif;font-size:9px;letter-spacing:2px;text-transform:uppercase;color:var(--D);margin-bottom:6px">✗ Défauts</div>
-        ${disadvantages.map(d => `<div style="font-size:12.5px;color:var(--muted);line-height:1.6;padding:2px 0">${d}</div>`).join('')}
-      </div>`);
-    }
-    return html.join('');
-  }
-
-  const analysisHTML = analyzeComps(compA, compB);
-
-  return `<div class="comp-compare-panel active">
-    <div class="comp-compare-header">
-      <div class="comp-compare-title">
-        ⇄ Comparaison
-        <span class="comp-compare-subtitle">Sélectionne 2 comps · les diff sont au centre</span>
-      </div>
-      <button class="comp-compare-close" onclick="window.OLYCITY.closeCompare()">✕ Fermer</button>
-    </div>
-    <div class="comp-compare-grid">
-
-      <div class="comp-compare-col">
-        <div class="comp-compare-col-title">
-          <span class="comp-tier ${tierA}">${compA.tierLabel}</span>${compA.label}
-        </div>
-        <div class="comp-compare-agents">${agentsCol(compA)}</div>
-        <div class="comp-compare-wr">${compA.winrate.toFixed(1)}%</div>
-        <div class="comp-compare-wr-lbl">Win rate</div>
-        <div class="comp-compare-agility" style="margin-top:16px">${agilityCol(compA, true)}</div>
-        <div class="comp-compare-tip">${compA.tip}</div>
-      </div>
-
-      <div class="comp-compare-center">
-        <div style="font-family:'Tomorrow',sans-serif;font-size:8px;letter-spacing:2px;color:var(--dim);text-transform:uppercase;margin-bottom:8px">WR</div>
-        <div class="diff-badge ${compA.winrate > compB.winrate ? 'pos' : compA.winrate < compB.winrate ? 'neg' : 'eq'}" style="margin-bottom:24px">
-          ${compA.winrate > compB.winrate ? '+' : ''}${(compA.winrate - compB.winrate).toFixed(1)}%
-        </div>
-        <div class="comp-compare-diffs">${diffs}</div>
-      </div>
-
-      <div class="comp-compare-col">
-        <div class="comp-compare-col-title">
-          <span class="comp-tier ${tierB}">${compB.tierLabel}</span>${compB.label}
-        </div>
-        <div class="comp-compare-agents">${agentsCol(compB)}</div>
-        <div class="comp-compare-wr">${compB.winrate.toFixed(1)}%</div>
-        <div class="comp-compare-wr-lbl">Win rate</div>
-        <div class="comp-compare-agility" style="margin-top:16px">${agilityCol(compB, false)}</div>
-        <div class="comp-compare-tip">${compB.tip}</div>
-      </div>
-
-    </div>
-    <div style="padding:20px 28px;border-top:1px solid var(--border);background:var(--surf2)">
-      <div style="font-family:'Tomorrow',sans-serif;font-size:10px;font-weight:700;
-        letter-spacing:3px;text-transform:uppercase;color:var(--text);margin-bottom:12px">
-        Analyse OLYCITY
-      </div>
-      ${analysisHTML}
-    </div>
-  </div>`;
 }

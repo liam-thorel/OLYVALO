@@ -13,9 +13,9 @@
   <link href="https://fonts.googleapis.com/css2?family=Tomorrow:wght@400;500;600;700&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="./css/tokens.css?v=20260720-avatars">
   <link rel="stylesheet" href="./css/layout.css?v=20260810-history-progressive">
-  <link rel="stylesheet" href="./css/components.css?v=20260823-mobile-comps">
+  <link rel="stylesheet" href="./css/components.css?v=20260823-maps-cleanup">
   <link rel="stylesheet" href="./css/agent-page.css?v=20260720-avatars">
-  <link rel="stylesheet" href="./css/responsive.css?v=20260823-mobile-sections">
+  <link rel="stylesheet" href="./css/responsive.css?v=20260823-maps-cleanup">
   <link rel="stylesheet" href="./css/lol-mode.css?v=20260823-mobile-sections">
   <link rel="stylesheet" href="./css/curse.css?v=20260818-curse-lifecycle">
   <link rel="stylesheet" href="./css/coop-games.css?v=20260823-mobile-sections">
@@ -135,9 +135,6 @@
         </div>
         <button class="page-nav-btn" data-page="roster" onclick="window.OLYCITY?.nav('roster')">
           <span class="page-nav-icon">◉</span> Roster
-        </button>
-        <button class="page-nav-btn" data-page="agents" data-valorant-only onclick="window.OLYCITY?.nav('agents')" hidden aria-hidden="true">
-          <span class="page-nav-icon">◈</span> Agents
         </button>
         <button class="page-nav-btn" data-page="live" onclick="window.OLYCITY?.nav('live')" style="position:relative">
           <span class="page-nav-icon" style="color:#ff4656">●</span> Live
@@ -284,33 +281,6 @@
         <div id="video-modal-frame" style="position:absolute;inset:0"></div>
       </div>
       <div id="video-modal-desc" style="font-size:13px;color:rgba(255,255,255,.5);margin-top:12px;line-height:1.6;padding:0 2px"></div>
-    </div>
-  </div>
-
-  <!-- Comp compare panel (overlay dans page maps) -->
-  <div id="compare-panel-wrap" style="display:none;position:fixed;inset:0;z-index:200;background:rgba(10,12,16,.85);backdrop-filter:blur(8px);overflow-y:auto;padding:60px 32px">
-    <div id="compare-panel-content" style="max-width:1000px;margin:0 auto"></div>
-  </div>
-
-  <!-- ═══════════ PAGE AGENTS ═══════════ -->
-  <div id="page-agents" class="spa-page">
-    <div class="agents-page-inner">
-      <div class="agents-page-header">
-        <div>
-          <span class="roster-eyebrow">Codex</span>
-          <h2 class="roster-title">Tous les agents</h2>
-        </div>
-        <div class="agents-filters" id="agents-filters">
-          <!-- populated by main.js -->
-        </div>
-        <div class="search-wrap agents-search">
-          <span class="search-icon">⌕</span>
-          <input type="text" id="agents-search-input" class="search-input" placeholder="Rechercher…" autocomplete="off" style="width:180px">
-        </div>
-      </div>
-      <div class="agents-full-grid" id="agents-full-grid">
-        <!-- populated by main.js -->
-      </div>
     </div>
   </div>
 
@@ -494,9 +464,8 @@
     }
   </script>
   <!-- Firebase SDK -->
-  <script type="module" src="./js/firebase-draw.js?v=20260720-avatars"></script>
   <!-- Présence Firebase -->
   <script src="./js/presence.js?v=20260720-avatars"></script>
-  <script type="module" src="./js/main.js?v=20260823-three-comps"></script>
+  <script type="module" src="./js/main.js?v=20260823-maps-cleanup"></script>
 </body>
 </html>

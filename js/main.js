@@ -5,11 +5,11 @@
 
 import { valorantApi } from './api.js';
 
-const SITE_VERSION = '20260823-three-comps';
+const SITE_VERSION = '20260823-maps-cleanup';
 import { syncPlayer as henrikSyncPlayer, syncAllPlayers as henrikSyncAll, persistPlayerStats } from './henrik.js?v=20260809-val-roster-season';
 import { setStoredKey, storedKey, forgetCachedKey } from './henrik-key.mjs';
-import { rosterHTML, guestCardHTML, mapSectionHTML, stierHTML, agentPageHTML, miniRosterHTML, agentsFiltersHTML, agentsGridHTML, compCompareHTML } from './render.js?v=20260823-mobile-comps';
-import { initTheme, initTilt, initParallax, initSearch, initKeyboard, updateFavCount, initHeroParticles, initWheelLogos, initLivePage, initHistoryPage } from './interactions.js?v=20260823-comps-ranked-pro';
+import { rosterHTML, guestCardHTML, mapSectionHTML, stierHTML, agentPageHTML, miniRosterHTML } from './render.js?v=20260823-maps-cleanup';
+import { initTheme, initTilt, initParallax, initSearch, initKeyboard, initHeroParticles, initWheelLogos, initLivePage, initHistoryPage } from './interactions.js?v=20260823-maps-cleanup';
 import { storage } from './storage.js';
 import { avatarLayersHTML } from './avatars.mjs';
 import { initAdminPage } from './admin.mjs?v=20260814-admin-current-script';
@@ -26,7 +26,7 @@ export { state };
 
 // ─── LOAD JSON DATA ───────────────────────────────
 async function loadData() {
-  const [comps, roster, members, memberOverlay, roles, agentsFr, lineups, callouts, meta] = await Promise.all([
+  const [comps, roster, members, memberOverlay, roles, agentsFr, lineups, meta] = await Promise.all([
     fetch(`./data/comps.json?v=${SITE_VERSION}`).then(r => r.json()),
     fetch(`./data/roster.json?v=${SITE_VERSION}`).then(r => r.json()),
     fetch(`./data/members.json?v=${SITE_VERSION}`).then(r => r.json()),
@@ -35,7 +35,6 @@ async function loadData() {
     fetch(`./data/roles.json?v=${SITE_VERSION}`).then(r => r.json()),
     fetch('./data/agents-fr.json').then(r => r.json()),
     fetch('./data/lineups.json').then(r => r.json()),
-    fetch('./data/callouts.json').then(r => r.json()),
     fetch(`./data/meta.json?v=${SITE_VERSION}`).then(r => r.json()),
   ]);
 
@@ -49,14 +48,12 @@ async function loadData() {
   state.GLOBAL_NOTES = roles.globalNotes;
   state.AGENT_FR = agentsFr;
   state.LINEUPS = lineups;
-  state.CALLOUTS = callouts;
   state.META = meta;
   // Load custom players added at runtime
   try {
     const custom = JSON.parse(localStorage.getItem('olycity-custom-players') || '[]');
     custom.forEach(p => { if (!state.ROSTER.find(r => r.name === p.name)) state.ROSTER.push(p); });
   } catch(e) {}
-  state.FAVS = storage.getFavs();
   state.PLAYER_STATS = storage.getPlayerStats();
 
   // Static mains from roster.json — not overridden by unreliable API topAgents
@@ -90,15 +87,14 @@ function setSyncStatus(html, type = 'info') {
 window.OLYCITY = {
 
   nav(page, pushHistory = true) {
-    if (!['home', 'maps', 'roster', 'agents', 'live', 'history', 'admin', 'betting', 'games'].includes(page)) page = 'home';
-    if (getGameMode() === 'lol' && ['maps', 'agents'].includes(page)) page = 'home';
+    if (!['home', 'maps', 'roster', 'live', 'history', 'admin', 'betting', 'games'].includes(page)) page = 'home';
+    if (getGameMode() === 'lol' && page === 'maps') page = 'home';
     sessionStorage.setItem('olycity-page', page);
     // Dynamic title
     const titles = {
       home: 'OLYCITY — Accueil',
       maps: 'OLYCITY — Maps & Comps',
       roster: 'OLYCITY — Roster',
-      agents: 'OLYCITY — Agents',
       history: 'OLYCITY — Historique',
       admin: 'OLYCITY — Admin',
       betting: 'OLYCITY — Paris',
@@ -222,17 +218,6 @@ window.OLYCITY = {
     setTimeout(() => initTilt(), 50);
   },
 
-  toggleFav(cid) {
-    const idx = state.FAVS.indexOf(cid);
-    if (idx >= 0) state.FAVS.splice(idx, 1);
-    else state.FAVS.push(cid);
-    storage.setFavs(state.FAVS);
-    document.querySelectorAll(`.fav-btn[data-fav="${cid}"]`).forEach(btn => {
-      btn.classList.toggle('active', state.FAVS.includes(cid));
-    });
-    updateFavCount();
-  },
-
   showAgentPage(name) {
     // Push agent page to history so back button works
     window.history.pushState({ page: 'agent', agent: name }, '', `${window.location.pathname}#agent-${encodeURIComponent(name)}`);
@@ -284,208 +269,6 @@ window.OLYCITY = {
     });
   },
 
-  // ─── COMPARE COMP ────────────────────────────
-  selectCompare(mapIdx, compIdx, btn) {
-    const existing = state.compareSelections.findIndex(s => s.mapIdx === mapIdx && s.compIdx === compIdx);
-    if (existing >= 0) {
-      state.compareSelections.splice(existing, 1);
-      if (btn) btn.classList.remove('selected');
-    } else {
-      if (state.compareSelections.length >= 2) {
-        // Reset old selection
-        document.querySelectorAll('.compare-btn.selected').forEach(b => b.classList.remove('selected'));
-        state.compareSelections = [];
-      }
-      state.compareSelections.push({ mapIdx, compIdx });
-      if (btn) btn.classList.add('selected');
-    }
-    if (state.compareSelections.length === 2) {
-      const [a, b] = state.compareSelections;
-      const compA = state.COMPS_DATA[a.mapIdx].comps[a.compIdx];
-      const compB = state.COMPS_DATA[b.mapIdx].comps[b.compIdx];
-      const wrap = document.getElementById('compare-panel-wrap');
-      const inner = document.getElementById('compare-panel-content');
-      if (wrap && inner) {
-        inner.innerHTML = compCompareHTML(compA, compB);
-        wrap.style.display = 'block';
-        wrap.scrollTo(0, 0);
-      }
-    }
-  },
-
-  closeCompare() {
-    const wrap = document.getElementById('compare-panel-wrap');
-    if (wrap) wrap.style.display = 'none';
-    document.querySelectorAll('.compare-btn.selected').forEach(b => b.classList.remove('selected'));
-    state.compareSelections = [];
-  },
-
-  // ─── COMP BUILDER ────────────────────────────
-  _renderBuilder(profile) {
-    const wrap = document.getElementById('comp-builder-wrap');
-    const p = profile || state.currentProfile || 'guest';
-    if (wrap) wrap.innerHTML = compBuilderHTML(state.builderSlots) + savedCompsHTML(p);
-  },
-
-  builderFocusSlot(i) {
-    state.builderFocusSlot = i;
-    document.querySelectorAll('.comp-builder-slot').forEach((el, idx) => {
-      el.style.borderColor = idx === i ? 'var(--red)' : '';
-    });
-  },
-
-  builderAddAgent(name) {
-    const slot = state.builderFocusSlot;
-    if (state.builderSlots[slot] === null || state.builderSlots[slot] !== name) {
-      state.builderSlots[slot] = name;
-      const next = state.builderSlots.findIndex((s, i) => i > slot && s === null);
-      state.builderFocusSlot = next >= 0 ? next : slot;
-    }
-    localStorage.setItem('olycity-builder', JSON.stringify(state.builderSlots));
-    window.OLYCITY._updateBuilderSlots();
-  },
-
-  builderRemove(i) {
-    state.builderSlots[i] = null;
-    state.builderFocusSlot = i;
-    localStorage.setItem('olycity-builder', JSON.stringify(state.builderSlots));
-    window.OLYCITY._updateBuilderSlots();
-  },
-
-  builderClear() {
-    state.builderSlots = [null,null,null,null,null];
-    state.builderFocusSlot = 0;
-    localStorage.removeItem('olycity-builder');
-    window.OLYCITY._renderBuilder(state.currentProfile);
-  },
-
-  // Partial update: only slots + used markers, no full re-render
-  _updateBuilderSlots() {
-    const { compBuilderSlotsHTML, compBuilderAgilityHTML } = window._builderPartials || {};
-    if (!compBuilderSlotsHTML) {
-      // Fallback: full re-render if partials not available
-      window.OLYCITY._renderBuilder(state.currentProfile);
-      return;
-    }
-    // Update slots
-    const slotsEl = document.getElementById('builder-slots-wrap');
-    if (slotsEl) slotsEl.innerHTML = compBuilderSlotsHTML(state.builderSlots);
-    // Update agility
-    const agilEl = document.getElementById('builder-agility-wrap');
-    if (agilEl) agilEl.innerHTML = compBuilderAgilityHTML(state.builderSlots);
-    // Update used markers on agent grid
-    const usedSet = new Set(state.builderSlots.filter(Boolean));
-    document.querySelectorAll('.comp-builder-agent[data-agent]').forEach(el => {
-      el.classList.toggle('used', usedSet.has(el.dataset.agent));
-    });
-  },
-
-  builderSetMap(mapIdx) {
-    state.builderMapIdx = mapIdx !== '' ? +mapIdx : null;
-    // Update context label
-    const ctx = document.getElementById('builder-map-context');
-    if (ctx && mapIdx !== '') {
-      const m = state.COMPS_DATA[+mapIdx];
-      ctx.textContent = m ? `${m.stats.difficulty} · ${m.stats.sides}` : '';
-    } else if (ctx) ctx.textContent = '';
-  },
-
-  savedCompCompare(i) {
-    try {
-      const saved = JSON.parse(localStorage.getItem(`olycity-saved-comps-${state.currentProfile||'guest'}`) || '[]');
-      if (!saved[i]) return;
-      const comp = saved[i];
-      const roleScores = {
-        D:{antiRush:2,postPlant:2,retake:3,split:4},
-        I:{antiRush:4,postPlant:3,retake:3,split:3},
-        S:{antiRush:4,postPlant:4,retake:2,split:2},
-        C:{antiRush:3,postPlant:5,retake:3,split:3},
-      };
-      const keys = ['antiRush','postPlant','retake','split'];
-      const agility = {};
-      keys.forEach(k => {
-        let total = 0;
-        (comp.agents||[]).forEach(a => { total += (roleScores[state.ROLES[a]||'D']?.[k]||3); });
-        agility[k] = comp.agents.length > 0 ? Math.min(5, Math.round(total/comp.agents.length)) : 0;
-      });
-      const savedComp = {
-        label: comp.name, tierLabel: 'CUSTOM', tier: 'X',
-        agents: comp.agents, winrate: 0,
-        tip: 'Comp sauvegardée depuis le Builder OLYCITY', agility,
-      };
-      // Open picker to choose what to compare against
-      window.OLYCITY._compareAgainst = savedComp;
-      const list = document.getElementById('builder-compare-list');
-      if (list) {
-        list.innerHTML = state.COMPS_DATA.flatMap((mapData, mi) =>
-          mapData.comps.filter(c => c.tier !== 'F').map((metaComp, ci) => {
-            const tierCls = metaComp.tier === 'S' ? 'tier-s' : 'tier-a';
-            const agentImgs = metaComp.agents.slice(0,5).map(a => {
-              const img = valorantApi.agentImg(a);
-              return img ? `<img src="${img}" style="width:28px;height:36px;object-fit:cover;object-position:top center;border:1px solid var(--border)">` : '';
-            }).join('');
-            return `<div style="display:flex;align-items:center;gap:12px;padding:10px 14px;background:var(--surf2);border:1px solid var(--border);cursor:pointer;transition:border-color .15s"
-              onmouseover="this.style.borderColor='var(--gold)'" onmouseout="this.style.borderColor='var(--border)'"
-              onclick="window.OLYCITY._runSavedCompare(${mi},${ci})">
-              <span style="font-family:Tomorrow,sans-serif;font-size:9px;letter-spacing:1px;color:var(--muted);min-width:52px">${mapData.map}</span>
-              <span class="comp-tier ${tierCls}" style="font-size:8px;padding:1px 6px">${metaComp.tierLabel}</span>
-              <span style="font-family:Tomorrow,sans-serif;font-size:11px;font-weight:600;color:var(--text);flex:1">${metaComp.label}</span>
-              <div style="display:flex;gap:3px">${agentImgs}</div>
-            </div>`;
-          })
-        ).join('');
-      }
-      document.getElementById('builder-compare-modal').style.display = 'block';
-    } catch(e) { console.error(e); }
-  },
-
-  _runSavedCompare(mapIdx, compIdx) {
-    document.getElementById('builder-compare-modal').style.display = 'none';
-    const metaComp = state.COMPS_DATA[mapIdx]?.comps[compIdx];
-    const savedComp = window.OLYCITY._compareAgainst;
-    if (!metaComp || !savedComp) return;
-    const wrap = document.getElementById('compare-panel-wrap');
-    const inner = document.getElementById('compare-panel-content');
-    if (wrap && inner) {
-      inner.innerHTML = compCompareHTML(savedComp, metaComp);
-      wrap.style.display = 'block';
-      wrap.scrollTo(0, 0);
-    }
-  },
-
-  builderLoad(i) {
-    try {
-      const saved = JSON.parse(localStorage.getItem(`olycity-saved-comps-${state.currentProfile||'guest'}`) || '[]');
-      if (saved[i]) {
-        const agents = saved[i].agents || [];
-        state.builderSlots = [...agents.slice(0,5), ...Array(5).fill(null)].slice(0,5);
-        state.builderFocusSlot = 0;
-        window.OLYCITY._renderBuilder();
-      }
-    } catch(e) {}
-  },
-
-  savedCompDelete(i) {
-    try {
-      const saved = JSON.parse(localStorage.getItem(`olycity-saved-comps-${state.currentProfile||'guest'}`) || '[]');
-      saved.splice(i, 1);
-      localStorage.setItem(`olycity-saved-comps-${state.currentProfile||'guest'}`, JSON.stringify(saved));
-      window.OLYCITY._renderBuilder();
-    } catch(e) {}
-  },
-
-  builderSave() {
-    const filled = state.builderSlots.filter(Boolean);
-    if (filled.length < 2) { alert('Ajoute au moins 2 agents avant de sauvegarder.'); return; }
-    const name = prompt('Nom de cette comp :', 'Ma Comp Custom');
-    if (!name) return;
-    const key = `olycity-saved-comps-${state.currentProfile||'guest'}`;
-    const saved = JSON.parse(localStorage.getItem(key) || '[]');
-    saved.push({ name, agents: filled, map: state.builderMapIdx != null ? state.COMPS_DATA[state.builderMapIdx]?.map : null, createdAt: Date.now() });
-    localStorage.setItem(key, JSON.stringify(saved));
-    window.OLYCITY._renderBuilder(state.currentProfile);
-  },
-
   _refreshLineupTabs(mapIdx) {
     const mapName = state.COMPS_DATA[mapIdx]?.map;
     if (!mapName) return;
@@ -509,86 +292,6 @@ window.OLYCITY = {
     if (firstVisible) {
       const tabEl = document.querySelector(`.lineup-agent-tab[data-map="${mapName}"][data-agent="${firstVisible}"]`);
       window.OLYCITY.switchLineupAgent(mapName, firstVisible, tabEl);
-    }
-  },
-
-  builderSetMap(idx) {
-    state.builderMapIdx = idx !== '' ? +idx : null;
-    const ctx = document.getElementById('builder-map-context');
-    if (ctx && idx !== '') {
-      const m = state.COMPS_DATA[+idx];
-      ctx.textContent = m ? `${m.stats.difficulty} · ${m.stats.sides}` : '';
-    } else if (ctx) ctx.textContent = '';
-  },
-
-  builderCompare() {
-    const filled = state.builderSlots.filter(Boolean);
-    if (filled.length < 2) return;
-
-    // Build picker list of all meta comps
-    const list = document.getElementById('builder-compare-list');
-    if (!list) return;
-
-    list.innerHTML = state.COMPS_DATA.flatMap((mapData, mi) =>
-      mapData.comps
-        .filter(c => c.tier !== 'F')
-        .map((comp, ci) => {
-          const tierCls = comp.tier === 'S' ? 'tier-s' : 'tier-a';
-          const agentImgs = comp.agents.slice(0,5).map(a => {
-            const img = valorantApi.agentImg(a);
-            return img ? `<img src="${img}" style="width:28px;height:36px;object-fit:cover;object-position:top center;border:1px solid var(--border)">` : '';
-          }).join('');
-          return `<div style="display:flex;align-items:center;gap:12px;padding:10px 14px;background:var(--surf2);border:1px solid var(--border);cursor:pointer;transition:border-color .15s"
-            onmouseover="this.style.borderColor='var(--gold)'" onmouseout="this.style.borderColor='var(--border)'"
-            onclick="window.OLYCITY.builderCompareWith(${mi},${ci})">
-            <span style="font-family:Tomorrow,sans-serif;font-size:9px;letter-spacing:1px;color:var(--muted);min-width:52px">${mapData.map}</span>
-            <span class="comp-tier ${tierCls}" style="font-size:8px;padding:1px 6px">${comp.tierLabel}</span>
-            <span style="font-family:Tomorrow,sans-serif;font-size:11px;font-weight:600;color:var(--text);flex:1">${comp.label}</span>
-            <div style="display:flex;gap:3px">${agentImgs}</div>
-          </div>`;
-        })
-    ).join('');
-
-    document.getElementById('builder-compare-modal').style.display = 'block';
-  },
-
-  builderCompareWith(mapIdx, compIdx) {
-    document.getElementById('builder-compare-modal').style.display = 'none';
-    const metaComp = state.COMPS_DATA[mapIdx]?.comps[compIdx];
-    if (!metaComp) return;
-
-    const filled = state.builderSlots.filter(Boolean);
-    const builderComp = {
-      label: 'Ma Comp Builder',
-      tierLabel: 'CUSTOM',
-      tier: 'X',
-      agents: filled,
-      winrate: 0,
-      tip: 'Comp créée dans le Builder OLYCITY',
-      agility: (() => {
-        const roleScores = {
-          D: { antiRush:2, postPlant:2, retake:3, split:4 },
-          I: { antiRush:4, postPlant:3, retake:3, split:3 },
-          S: { antiRush:4, postPlant:4, retake:2, split:2 },
-          C: { antiRush:3, postPlant:5, retake:3, split:3 },
-        };
-        const keys = ['antiRush','postPlant','retake','split'];
-        const result = {};
-        keys.forEach(k => {
-          let total = 0;
-          filled.forEach(a => { total += (roleScores[state.ROLES[a]||'D']?.[k] || 3); });
-          result[k] = filled.length > 0 ? Math.min(5, Math.round(total/filled.length)) : 0;
-        });
-        return result;
-      })(),
-    };
-
-    const wrap = document.getElementById('compare-panel-wrap');
-    const inner = document.getElementById('compare-panel-content');
-    if (wrap && inner) {
-      inner.innerHTML = compCompareHTML(builderComp, metaComp);
-      wrap.style.display = 'block';
-      wrap.scrollTo(0, 0);
     }
   },
 
@@ -632,16 +335,6 @@ window.OLYCITY = {
   },
 
   switchMapTab(mapIdx, tab, btn) {
-    // Init draw board on first open
-    if (tab === 'draw') {
-      const boardEl = document.getElementById(`draw-board-${mapIdx}`);
-      if (boardEl && !boardEl.hasChildNodes()) {
-        const mapName = state.COMPS_DATA[mapIdx]?.map;
-        if (mapName) {
-          import('./firebase-draw.js').then(m => m.initDrawBoard(mapName, boardEl));
-        }
-      }
-    }
     const prefix = `maptab-${mapIdx}-`;
     document.querySelectorAll(`[id^="${prefix}"]`).forEach(el => el.classList.remove('active'));
     document.querySelectorAll(`#map-${mapIdx} .map-section-tab`).forEach(b => b.classList.remove('active'));
@@ -822,16 +515,6 @@ window.OLYCITY = {
     el.innerHTML = `${img}<span class="profile-indicator-name">${name}</span>`;
   },
 
-  filterAgents(role, btn) {
-    // Update active button
-    document.querySelectorAll('.agent-filter-btn').forEach(b => b.classList.remove('active'));
-    if (btn) btn.classList.add('active');
-    state.currentAgentFilter = role;
-    const search = document.getElementById('agents-search-input')?.value || '';
-    document.getElementById('agents-full-grid').innerHTML = agentsGridHTML(role, search);
-    setTimeout(() => initTilt(), 50);
-  },
-
   // Le site est public : aucune clé ne peut y être cachée. Chacun renseigne
   // donc la sienne (gratuite), conservée dans son navigateur.
   // Reflète l'état de la clé sur le bouton, pour qu'on sache d'un coup d'œil
@@ -965,9 +648,6 @@ function renderAll() {
   // Roster (full + mini)
   document.getElementById('roster-grid').innerHTML = rosterHTML() + guestCardHTML();
   document.getElementById('mini-roster').innerHTML = miniRosterHTML();
-  // Agents page
-  document.getElementById('agents-filters').innerHTML = agentsFiltersHTML();
-  document.getElementById('agents-full-grid').innerHTML = agentsGridHTML();
   // S-Tier
   document.getElementById('stier-row').innerHTML = stierHTML();
   // Global notes
@@ -983,7 +663,7 @@ async function boot() {
   if (storedVersion !== SITE_VERSION) {
     // Clear cache but KEEP player stats (expensive to re-sync, don't change with code updates)
     const keys = Object.keys(localStorage).filter(k =>
-      k.startsWith('olycity-') && k !== 'olycity-player-stats' && k !== 'olycity-profile' && k !== 'olycity-member-id' && k !== 'olycity-game' && !k.startsWith('olycity-saved-comps-')
+      k.startsWith('olycity-') && k !== 'olycity-player-stats' && k !== 'olycity-profile' && k !== 'olycity-member-id' && k !== 'olycity-game'
     );
     keys.forEach(k => localStorage.removeItem(k));
     localStorage.setItem('olycity-version', SITE_VERSION);
@@ -1024,8 +704,6 @@ async function boot() {
     return;
   }
 
-  // Expose map icons for firebase-draw.js
-  window._valorantApiMaps = valorantApi.maps;
   renderAll();
   if (!window._lolRosterCleanup) window._lolRosterCleanup = initLolRosterPages();
   initSearch((name) => window.OLYCITY.showAgentPage(name));
@@ -1040,29 +718,7 @@ async function boot() {
     }
   });
 
-  // Agents page search
-  const agentsInput = document.getElementById('agents-search-input');
-  if (agentsInput) {
-    agentsInput.addEventListener('input', (e) => {
-      const role = state.currentAgentFilter || 'all';
-      document.getElementById('agents-full-grid').innerHTML = agentsGridHTML(role, e.target.value);
-      setTimeout(() => initTilt(), 50);
-    });
-  }
   setTimeout(() => initTilt(), 200);
-
-  // Restore last fav comp
-  if (state.FAVS.length > 0) {
-    const [first] = state.FAVS;
-    const match = first.match(/comp-(\d+)-(\d+)/);
-    if (match) {
-      const mi = +match[1], ci = +match[2];
-      const mapBtn = document.querySelector(`[data-map-idx="${mi}"]`);
-      window.OLYCITY.showMap(mi, mapBtn);
-      const tabBtns = document.querySelectorAll(`#map-${mi} .comp-tab`);
-      if (tabBtns[ci]) window.OLYCITY.switchComp(mi, ci, tabBtns[ci]);
-    }
-  }
 
   // URL hash — shared comp link
   if (window.location.hash) {
@@ -1081,10 +737,6 @@ async function boot() {
     const state_data = e.state;
     // Close video modal if open
     window.OLYCITY.closeVideoModal();
-    // Close compare panel if open
-    const compareWrap = document.getElementById('compare-panel-wrap');
-    if (compareWrap) compareWrap.style.display = 'none';
-
     if (state_data?.page === 'agent') {
       // Re-open agent page
       if (state_data.agent) window.OLYCITY.showAgentPage(state_data.agent);
@@ -1093,7 +745,7 @@ async function boot() {
     } else {
       // No state = home or hash-based
       const hash = window.location.hash.replace('#', '');
-      if (hash && ['maps','roster','agents','live','history','admin','betting','games'].includes(hash)) {
+      if (hash && ['maps','roster','live','history','admin','betting','games'].includes(hash)) {
         window.OLYCITY.nav(hash, false);
       } else if (!hash || hash === 'home') {
         window.OLYCITY.nav('home', false);
@@ -1110,7 +762,7 @@ async function boot() {
   });
   // Push initial history state
   const initHash = window.location.hash.replace('#','');
-  const validPages = ['maps','roster','agents','live','history','admin','betting','games'];
+  const validPages = ['maps','roster','live','history','admin','betting','games'];
   const initPage = validPages.includes(initHash)
     ? initHash
     : !initHash && validPages.includes(savedPage) ? savedPage : 'home';

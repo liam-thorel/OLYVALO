@@ -23,7 +23,21 @@ test('every map exposes exactly ranked, pro and fun five-player compositions', (
     for (const comp of map.comps) {
       assert.equal(comp.agents.length, 5, `${map.map} / ${comp.label} doit contenir cinq agents`);
       assert.equal(new Set(comp.agents).size, 5, `${map.map} / ${comp.label} ne doit pas contenir de doublon`);
+      assert.ok(!Object.hasOwn(comp, 'winrate'), `${map.map} / ${comp.label} ne doit pas inventer de winrate`);
+      assert.ok(!Object.hasOwn(comp, 'agility'), `${map.map} / ${comp.label} ne doit pas afficher de score estimé`);
     }
+    assert.ok(!Object.hasOwn(map, 'lineups'), `${map.map} ne doit pas garder l’ancien format de lineups`);
+  }
+});
+
+test('lineups only cover maps that are still displayed', () => {
+  const comps = readJson('../data/comps.json');
+  const lineups = readJson('../data/lineups.json');
+  const activeMaps = new Set(comps.map(entry => entry.map));
+
+  for (const [map, agents] of Object.entries(lineups)) {
+    assert.ok(activeMaps.has(map), `${map} ne doit pas rester dans les lineups hors rotation`);
+    assert.ok(Object.keys(agents).length > 0, `${map} doit avoir au moins un agent couvert`);
   }
 });
 
