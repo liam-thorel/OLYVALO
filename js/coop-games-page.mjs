@@ -22,7 +22,7 @@ let catalogSearchTimer = null;
 let catalogSearchSequence = 0;
 let catalogAbortController = null;
 let selectedCatalogGame = null;
-const filters = { search: '', players: 0, status: 'open', sort: 'popular' };
+const filters = { search: '', players: 0, status: 'all', sort: 'popular' };
 
 const escapeHTML = value => String(value ?? '')
   .replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;')
@@ -318,12 +318,16 @@ async function submitGame(event) {
     error.textContent = 'Le maximum de joueurs doit être supérieur au minimum.';
     return;
   }
-  const duplicate = games.some(game => game.status !== 'played' && (
+  const duplicate = games.find(game => game.status !== 'played' && (
     (steamAppId && game.steamAppId === steamAppId)
     || (selectedCatalogGame?.igdbId && game.igdbId === selectedCatalogGame.igdbId)
   ));
   if (duplicate) {
-    error.textContent = 'Ce jeu est déjà dans la liste.';
+    filters.status = duplicate.status;
+    const statusFilter = document.getElementById('coop-status-filter');
+    if (statusFilter) statusFilter.value = duplicate.status;
+    render();
+    error.textContent = `Ce jeu est déjà dans « ${STATUS_LABELS[duplicate.status]} ». Ferme cette fenêtre pour le voir.`;
     return;
   }
   const tags = document.getElementById('coop-tags').value.split(',').map(tag => tag.trim()).filter(Boolean).slice(0, 4);

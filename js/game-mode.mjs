@@ -15,11 +15,11 @@ function applyHomeCopy(mode) {
   const lol = mode === 'lol';
   setText('brand-subtitle', lol ? 'League Live & Historique' : 'Valorant Meta Comps');
   setText('hero-eyebrow', lol ? 'OLYCITY · League of Legends · EUW' : 'OLYCITY · Five Stack · EU');
-  setText('hero-subtitle', lol ? 'League Live · Historique · Paris' : 'Valorant Meta Comps · Patch 13.00');
+  setText('hero-subtitle', lol ? 'League Live · Historique · Paris' : 'Valorant Meta Comps · Patch 13.04');
   const meta = document.getElementById('hero-meta');
   if (meta) meta.innerHTML = lol
     ? '<span><span class="dot"></span>Live Riot Client</span><span><span class="dot"></span>Historique séparé · EUW</span>'
-    : '<span><span class="dot"></span>7 maps · Patch 13.00</span><span><span class="dot"></span>Données VLR.gg · EWC 2026</span>';
+    : '<span><span class="dot"></span>7 maps · Patch 13.04</span><span><span class="dot"></span>Données VLR.gg · VCT 2026</span>';
   const primary = document.getElementById('hero-primary-cta');
   if (primary) {
     primary.textContent = lol ? '● Voir les parties live' : '◆ Explorer les maps';
@@ -31,7 +31,7 @@ function applyHomeCopy(mode) {
     secondary.onclick = () => window.OLYCITY?.nav(lol ? 'history' : 'roster');
   }
   setText('history-page-subtitle', lol ? 'Les parties League of Legends du groupe' : 'Les parties du five stack');
-  setText('footer-product', lol ? 'OLYCITY · League Live & Historique · EUW · 2026' : 'OLYCITY · Valorant Meta Comps · Patch 13.00 · 2026');
+  setText('footer-product', lol ? 'OLYCITY · League Live & Historique · EUW · 2026' : 'OLYCITY · Valorant Meta Comps · Patch 13.04 · 2026');
   const sources = document.getElementById('footer-sources');
   if (sources) sources.innerHTML = lol
     ? 'Données : Riot Client · Data Dragon'

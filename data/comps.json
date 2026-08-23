@@ -176,44 +176,45 @@
     ]
   },
   {
-    "map": "Breeze",
-    "region": "Open map · Longue portée",
+    "map": "Abyss",
+    "region": "Norvège · Faille sans frontières",
     "tags": [
-      "Viper indispensable",
-      "Operator dominant",
-      "Longs angles"
+      "Contrôle du mid",
+      "Longues rotations",
+      "Chutes mortelles"
     ],
     "stats": {
-      "difficulty": "4.5/5",
-      "sides": "Défenseurs favorisés",
-      "bestSite": "B Hall"
+      "difficulty": "4.3/5",
+      "sides": "Léger avantage attaque",
+      "bestSite": "B"
     },
     "comps": [
       {
         "label": "Meta principale",
         "tier": "S",
         "tierLabel": "S-TIER",
-        "winrate": 56.2,
-        "updatedAt": "Mai 2026",
+        "winrate": 0,
+        "updatedAt": "Août 2026",
+        "patch": "13.04",
         "agents": [
-          "Jett",
+          "Waylay",
           "Sova",
-          "KAY/O",
-          "Viper",
-          "Cypher"
+          "Tejo",
+          "Astra",
+          "Chamber"
         ],
-        "source": "VLR.gg · Rework 12.00",
-        "tip": "<strong>Viper wall coupe B Main</strong> en deux — un joueur doit main Viper. Jett Operator sur A Hall. KAY/O ZERO/POINT supprime les ultis défensifs sur les exécutes.",
+        "source": "VLR.gg · Challengers 2026 NORTH//EAST",
+        "tip": "<strong>Sova et Tejo sécurisent les longues lignes avant l'entrée</strong>. Astra coupe Tower et Bridge, Waylay crée l'espace sur les sites ouverts et Chamber verrouille les traversées du mid.",
         "agility": {
           "antiRush": 3,
           "postPlant": 5,
-          "retake": 2,
-          "split": 3
+          "retake": 4,
+          "split": 5
         },
         "vods": [
           {
-            "label": "Pick rates · Breeze",
-            "url": "https://dak.gg/valorant/agents?map=Breeze"
+            "label": "Pick rates 2026 · Abyss",
+            "url": "https://www.vlr.gg/event/agents/2884/challengers-2026-north-east-stage-2"
           }
         ],
         "key": "Sova"
@@ -223,130 +224,115 @@
         "tier": "PRO",
         "tierLabel": "PRO",
         "winrate": 0,
-        "updatedAt": "Mai 2026",
-        "patch": "12.11",
+        "updatedAt": "Août 2026",
+        "patch": "13.04",
+        "agents": [
+          "Jett",
+          "Sova",
+          "Tejo",
+          "Astra",
+          "Veto"
+        ],
+        "source": "VLR.gg · VCT et Challengers 2026",
+        "tip": "Jett prend les premiers duels sur A Main ou B Main. Le double initiateur force les défenseurs à quitter leurs angles, tandis qu'Astra et Veto rendent le post-plant très difficile à reprendre.",
+        "agility": {
+          "antiRush": 4,
+          "postPlant": 5,
+          "retake": 4,
+          "split": 4
+        },
+        "vods": [
+          {
+            "label": "VCT 2026 · Agents",
+            "url": "https://www.vlr.gg/event/agents/2977/vct-2026-americas-stage-2"
+          }
+        ],
+        "key": "Sova"
+      },
+      {
+        "label": "5-stack simple",
+        "tier": "A",
+        "tierLabel": "A-TIER",
+        "winrate": 0,
+        "updatedAt": "Août 2026",
+        "patch": "13.04",
         "agents": [
           "Neon",
           "Sova",
-          "Harbor",
-          "Viper",
-          "Jett"
+          "Breach",
+          "Omen",
+          "Cypher"
         ],
-        "source": "VLR.gg · EWC 2026 Amer Qualifier + VCT Stage 1 (post-nerf 12.09)",
-        "tip": "Pick rates EWC Americas Qualifier 2026 (post-nerf 12.09) · Sova : 100% · Harbor : 79% · Neon : 79% · Viper : 57% · Jett : 50% · Source : vlr.gg/event/agents/2953",
+        "source": "OLYCITY · Composition coordonnée",
+        "tip": "<strong>Breach lance l'entrée de Neon</strong> pendant que Sova nettoie les positions profondes. Omen facilite les rotations rapides et Cypher garde le flanc sur cette carte très étendue.",
+        "agility": {
+          "antiRush": 4,
+          "postPlant": 4,
+          "retake": 4,
+          "split": 4
+        },
+        "vods": [],
+        "key": "Sova"
+      },
+      {
+        "label": "Contrôle double smoke",
+        "tier": "B",
+        "tierLabel": "B-TIER",
+        "winrate": 0,
+        "updatedAt": "Août 2026",
+        "patch": "13.04",
+        "agents": [
+          "Yoru",
+          "Sova",
+          "Harbor",
+          "Omen",
+          "Cypher"
+        ],
+        "source": "OLYCITY · Contrôle de carte",
+        "tip": "Harbor traverse les longues lignes de vue, Omen ferme Tower et Yoru menace une rotation instantanée. La composition demande de garder assez d'utilitaires pour le retake.",
         "agility": {
           "antiRush": 3,
           "postPlant": 5,
           "retake": 3,
-          "split": 3
-        },
-        "vods": [
-          {
-            "label": "EWC Amer Qualifier · Agents",
-            "url": "https://www.vlr.gg/event/agents/2953/esports-world-cup-2026-americas-qualifier"
-          }
-        ]
-      },
-      {
-        "label": "Longue portée",
-        "tier": "A",
-        "tierLabel": "A-TIER",
-        "winrate": 52.8,
-        "updatedAt": "Mars 2026",
-        "agents": [
-          "Chamber",
-          "Jett",
-          "Sova",
-          "Viper",
-          "Fade"
-        ],
-        "source": "gamer.org · dak.gg meta",
-        "tip": "<strong>Chamber + Jett</strong> = domination totale à l'Operator. Fade remplace Cypher pour plus de recon actif. Évitez les agents sans mobilité.",
-        "agility": {
-          "antiRush": 2,
-          "postPlant": 4,
-          "retake": 2,
-          "split": 2
-        },
-        "vods": [],
-        "key": "Sova"
-      },
-      {
-        "label": "Double Duelist Longue Portée",
-        "tier": "B",
-        "tierLabel": "B-TIER",
-        "winrate": 53.9,
-        "updatedAt": "Mai 2026",
-        "agents": [
-          "Jett",
-          "Reyna",
-          "Sova",
-          "Viper",
-          "Chamber"
-        ],
-        "source": "ValoHub · Plat+ data 2026",
-        "tip": "<strong>Jett + Chamber double Operator</strong> — les deux meilleurs agents à l'Op sur les longues sightlines de Breeze. Viper wall B, Sova info A. Reyna nettoie les restes.",
-        "agility": {
-          "antiRush": 2,
-          "postPlant": 4,
-          "retake": 2,
-          "split": 2
-        },
-        "vods": [],
-        "key": "Sova"
-      },
-      {
-        "label": "Fun — Yoru Teleporter Chaos",
-        "tier": "F",
-        "tierLabel": "FUN",
-        "winrate": 43.0,
-        "updatedAt": "Mai 2026",
-        "agents": [
-          "Yoru",
-          "Omen",
-          "Viper",
-          "KAY/O",
-          "Jett"
-        ],
-        "source": "OLYCITY Creativity Lab · Stratégie mentale",
-        "tip": "Yoru pose ses téléporteurs aux deux sites. Omen teleport depuis le milieu. Viper wall coupe la map. L'objectif : faire croire à la défense que vous êtes partout. Psychologiquement dévastateur.",
-        "agility": {
-          "antiRush": 2,
-          "postPlant": 3,
-          "retake": 2,
-          "split": 3
+          "split": 5
         },
         "vods": [],
         "key": "Omen"
+      },
+      {
+        "label": "Fun — Tous dans le vide",
+        "tier": "F",
+        "tierLabel": "FUN",
+        "winrate": 0,
+        "updatedAt": "Août 2026",
+        "patch": "13.04",
+        "agents": [
+          "Jett",
+          "Raze",
+          "Neon",
+          "Yoru",
+          "Omen"
+        ],
+        "source": "OLYCITY Creativity Lab",
+        "tip": "Cinq agents mobiles, aucun plan raisonnable : traversez les sauts, téléportez-vous partout et essayez surtout de ne pas tomber avant l'équipe adverse.",
+        "agility": {
+          "antiRush": 1,
+          "postPlant": 2,
+          "retake": 2,
+          "split": 5
+        },
+        "vods": [],
+        "key": "Jett"
       }
     ],
     "notes": [
-      "Viper reste le pick le plus important — son wall coupe A Hall et B Main",
-      "Jett ou Chamber au Operator sur les longues sightlines",
-      "KAY/O ZERO/POINT supprime les abilities défensives lors des exécutes",
-      "Sova recon dart traverse les espaces ouverts avec de nombreux lineups",
-      "Évitez les agents sans mobilité — les rotations sont très longues"
+      "Le contrôle du mid réduit fortement les rotations entre A et B",
+      "Sova est très rentable grâce aux longues lignes et aux sites ouverts",
+      "Gardez un sentinel au flanc : les temps de rotation sont très longs",
+      "Tower et Bridge doivent être coupés avant chaque exécute",
+      "Attention aux rebords sans barrière pendant les déplacements et les duels"
     ],
-    "lineups": [
-      {
-        "agent": "Sova",
-        "ability": "Flèche Reconnaissance",
-        "tip": "Recon darts sur les longs espaces ouverts A et B",
-        "count": 15
-      },
-      {
-        "agent": "Viper",
-        "ability": "Morsure de Serpent",
-        "tip": "Post-plant molly lineups B Site et A Site depuis l'extérieur",
-        "count": 9
-      },
-      {
-        "agent": "KAY/O",
-        "ability": "FRAG/ment",
-        "tip": "Grenades post-plant sur les positions défensives courantes",
-        "count": 6
-      }
-    ]
+    "lineups": []
   },
   {
     "map": "Lotus",
@@ -872,7 +858,7 @@
         ],
         "key": "Sova",
         "tip": "<strong>Sova récon Mid Market et Marché</strong> avant chaque exécute — c'est le carrefour de la map. Breach ouvre Mid ou un site avec stun/flash. Killjoy anchor B avec turret + lockdown post-plant. Omen smoke les angles de Market pour traverser sans risque. Jett entry sur l'info donnée.",
-        "patch": "13.00"
+        "patch": "13.04"
       },
       {
         "tier": "PRO",
@@ -886,7 +872,7 @@
         ],
         "key": "Fade",
         "tip": "Comp orientée contrôle d'info totale : Fade + Sova-like récon avant chaque exécute B ou A. Cypher trip Market et anchor A. Neon speed rush après les flashs de Breach.",
-        "patch": "13.00"
+        "patch": "13.04"
       },
       {
         "tier": "A",
@@ -900,7 +886,7 @@
         ],
         "key": "Skye",
         "tip": "Skye + Breach saturent les entrées en flash/stun. Raze clear les corners de Market au nade. Killjoy zone B, Omen smoke les lignes longues de A Link.",
-        "patch": "13.00"
+        "patch": "13.04"
       },
       {
         "tier": "B",
@@ -914,7 +900,7 @@
         ],
         "key": "Viper",
         "tip": "Viper wall coupe Market en deux pour sécuriser un site sans le voir entièrement. Sova récon les flancs. Cypher watch B Link, KAY/O suppress avant entry.",
-        "patch": "13.00"
+        "patch": "13.04"
       },
       {
         "tier": "F",
@@ -928,7 +914,7 @@
         ],
         "key": "Neon",
         "tip": "Cinq duelists/flanqueurs, zéro info, tout le monde rush Market en même temps. Marche une fois sur cinq mais c'est drôle.",
-        "patch": "13.00"
+        "patch": "13.04"
       }
     ],
     "region": "Location · Marché central",
@@ -965,7 +951,7 @@
         ],
         "key": "Sova",
         "tip": "<strong>Contrôle du Mid Fountain est la clé</strong> — trois lanes, deux sites, et trois murs activables (A, B, Mid) qui bloquent définitivement une rotation une fois déclenchés. Sova récon avant de toucher un mur pour éviter d'ouvrir la mauvaise ligne. Sage joue autour des murs pour bloquer les contre-rotations après activation. Cypher watch les caméras ne meurent pas quand un mur tombe — position idéale pour tracker en toute sécurité après avoir déclenché un mur.",
-        "patch": "13.00"
+        "patch": "13.04"
       },
       {
         "tier": "PRO",
@@ -979,7 +965,7 @@
         ],
         "key": "Sova",
         "tip": "Killjoy fraîchement buffée (tourelle +50% cadence, Nanoswarm 5s, Alarmbot plus rapide) tient B seule. Sova + Skye saturent l'info sur Mid avant de décider quel mur activer. Le mur B est plus gros — Killjoy anchor derrière une fois activé.",
-        "patch": "13.00"
+        "patch": "13.04"
       },
       {
         "tier": "A",
@@ -993,7 +979,7 @@
         ],
         "key": "Breach",
         "tip": "A Site est plus petit et compact — Breach stun + Raze grenade nettoient les angles serrés d'A Garden avant d'entrer. Ne pas activer le mur A trop tôt : ça enferme l'équipe si le push échoue. Cypher watch le flanc mid après activation.",
-        "patch": "13.00"
+        "patch": "13.04"
       },
       {
         "tier": "B",
@@ -1007,7 +993,7 @@
         ],
         "key": "Viper",
         "tip": "B Site est plus grand, laisse de la place pour un post-plant profond. Viper wall + Sage slow ralentissent la retake. Deadlock (GravNet buffé, cooldown 50s) et Cypher piègent les axes de rotation depuis Mid.",
-        "patch": "13.00"
+        "patch": "13.04"
       },
       {
         "tier": "F",
@@ -1021,14 +1007,14 @@
         ],
         "key": "Raze",
         "tip": "Déclenche tous les murs le plus vite possible pour un chaos total, personne ne sait où sont les lignes de vue. Attention : rester sous un mur qui tombe tue instantanément.",
-        "patch": "13.00"
+        "patch": "13.04"
       }
     ],
     "region": "Three-lane · Murs destructibles",
     "tags": [
       "Murs activables",
       "Mid Fountain clé",
-      "Nouvelle map 13.00"
+      "Murs activables"
     ],
     "stats": {
       "difficulty": "4.2/5",

@@ -5,7 +5,7 @@
 
 import { valorantApi } from './api.js';
 
-const SITE_VERSION = '20260818-game-catalog';
+const SITE_VERSION = '20260823-patch-1304';
 import { syncPlayer as henrikSyncPlayer, syncAllPlayers as henrikSyncAll, persistPlayerStats } from './henrik.js?v=20260809-val-roster-season';
 import { setStoredKey, storedKey, forgetCachedKey } from './henrik-key.mjs';
 import { rosterHTML, guestCardHTML, mapSectionHTML, stierHTML, agentPageHTML, miniRosterHTML, agentsFiltersHTML, agentsGridHTML, compCompareHTML } from './render.js?v=20260809-val-roster-season';
@@ -14,8 +14,8 @@ import { storage } from './storage.js';
 import { avatarLayersHTML } from './avatars.mjs';
 import { initAdminPage } from './admin.mjs?v=20260814-admin-current-script';
 import { initBettingPage } from './betting-page.mjs';
-import { initCoopGamesPage } from './coop-games-page.mjs?v=20260818-game-catalog';
-import { getGameMode, initGameMode } from './game-mode.mjs?v=20260806-lol-mode';
+import { initCoopGamesPage } from './coop-games-page.mjs?v=20260818-coop-status';
+import { getGameMode, initGameMode } from './game-mode.mjs?v=20260823-patch-1304';
 import { initLolHistoryPage, initLolLivePage } from './lol-pages.mjs?v=20260810-history-progressive';
 import { initLolRosterPages } from './lol-roster.mjs?v=20260809-lol-sync';
 import { state } from './state.mjs?v=20260806-lol-roster';
@@ -26,13 +26,13 @@ export { state };
 // ─── LOAD JSON DATA ───────────────────────────────
 async function loadData() {
   const [comps, roster, roles, agentsFr, lineups, callouts, meta] = await Promise.all([
-    fetch('./data/comps.json').then(r => r.json()),
+    fetch(`./data/comps.json?v=${SITE_VERSION}`).then(r => r.json()),
     fetch(`./data/roster.json?v=${SITE_VERSION}`).then(r => r.json()),
-    fetch('./data/roles.json').then(r => r.json()),
+    fetch(`./data/roles.json?v=${SITE_VERSION}`).then(r => r.json()),
     fetch('./data/agents-fr.json').then(r => r.json()),
     fetch('./data/lineups.json').then(r => r.json()),
     fetch('./data/callouts.json').then(r => r.json()),
-    fetch('./data/meta.json').then(r => r.json()),
+    fetch(`./data/meta.json?v=${SITE_VERSION}`).then(r => r.json()),
   ]);
 
   state.COMPS_DATA = comps;
