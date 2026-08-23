@@ -5,7 +5,7 @@
 
 import { valorantApi } from './api.js';
 
-const SITE_VERSION = '20260823-coop-steam-reviews';
+const SITE_VERSION = '20260823-mobile-navigation';
 import { syncPlayer as henrikSyncPlayer, syncAllPlayers as henrikSyncAll, persistPlayerStats } from './henrik.js?v=20260809-val-roster-season';
 import { setStoredKey, storedKey, forgetCachedKey } from './henrik-key.mjs';
 import { rosterHTML, guestCardHTML, mapSectionHTML, stierHTML, agentPageHTML, miniRosterHTML, agentsFiltersHTML, agentsGridHTML, compCompareHTML } from './render.js?v=20260809-val-roster-season';
@@ -114,7 +114,10 @@ window.OLYCITY = {
     }
     // Hide all pages
     document.querySelectorAll('.spa-page').forEach(p => p.classList.remove('active'));
-    document.querySelectorAll('.page-nav-btn').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.page-nav-btn').forEach(b => {
+      b.classList.remove('active');
+      b.removeAttribute('aria-current');
+    });
 
     // Show target page
     const pageEl = document.getElementById(`page-${page}`);
@@ -139,7 +142,20 @@ window.OLYCITY = {
       initCoopGamesPage(state.MEMBERS);
     }
     const navBtn = document.querySelector(`.page-nav-btn[data-page="${page}"]`);
-    if (navBtn) navBtn.classList.add('active');
+    if (navBtn) {
+      navBtn.classList.add('active');
+      navBtn.setAttribute('aria-current', 'page');
+      if (window.matchMedia('(max-width: 768px)').matches) {
+        const nav = document.getElementById('page-nav');
+        requestAnimationFrame(() => {
+          if (!nav) return;
+          const navRect = nav.getBoundingClientRect();
+          const buttonRect = navBtn.getBoundingClientRect();
+          const left = nav.scrollLeft + buttonRect.left - navRect.left - (nav.clientWidth - buttonRect.width) / 2;
+          nav.scrollTo({ left:Math.max(0, left), behavior:pushHistory ? 'smooth' : 'auto' });
+        });
+      }
+    }
 
     // Show/hide map nav
 

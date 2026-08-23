@@ -11,6 +11,8 @@ const liveDataStore = fs.readFileSync(new URL('../js/live-data-store.mjs', impor
 const historyPager = fs.readFileSync(new URL('../js/history-pager.mjs', import.meta.url), 'utf8');
 const layout = fs.readFileSync(new URL('../css/layout.css', import.meta.url), 'utf8');
 const components = fs.readFileSync(new URL('../css/components.css', import.meta.url), 'utf8');
+const responsive = fs.readFileSync(new URL('../css/responsive.css', import.meta.url), 'utf8');
+const coopStyles = fs.readFileSync(new URL('../css/coop-games.css', import.meta.url), 'utf8');
 const presence = fs.readFileSync(new URL('../js/presence.js', import.meta.url), 'utf8');
 const coopPage = fs.readFileSync(new URL('../js/coop-games-page.mjs', import.meta.url), 'utf8');
 
@@ -47,6 +49,15 @@ test('profile selection is accessible, stable and does not reload the site', () 
   assert.match(components, /\.profile-guest-btn/);
   assert.match(presence, /sessionRef\?\.set/);
   assert.match(presence, /const previousRef = sessionRef/);
+});
+
+test('mobile navigation keeps sections scrollable with touch-sized controls', () => {
+  assert.match(responsive, /\.page-nav\s*\{[\s\S]*overflow-x:\s*auto/);
+  assert.match(responsive, /\.page-nav-btn\s*\{[\s\S]*min-height:\s*44px/);
+  assert.match(responsive, /\.game-switch-btn, \.profile-indicator\s*\{\s*min-height:\s*44px/);
+  assert.match(main, /nav\.scrollTo\(\{ left:Math\.max\(0, left\)/);
+  assert.match(main, /navBtn\.setAttribute\('aria-current', 'page'\)/);
+  assert.match(coopStyles, /\.coop-card-actions button,\.coop-card-actions a\{display:flex;min-height:44px/);
 });
 
 test('coop games expose explicit categories and cache-safe search modules', () => {
