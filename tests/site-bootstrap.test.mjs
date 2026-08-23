@@ -4,6 +4,7 @@ import fs from 'node:fs';
 
 const main = fs.readFileSync(new URL('../js/main.js', import.meta.url), 'utf8');
 const gameMode = fs.readFileSync(new URL('../js/game-mode.mjs', import.meta.url), 'utf8');
+const homeDashboard = fs.readFileSync(new URL('../js/home-dashboard.mjs', import.meta.url), 'utf8');
 const interactions = fs.readFileSync(new URL('../js/interactions.js', import.meta.url), 'utf8');
 const render = fs.readFileSync(new URL('../js/render.js', import.meta.url), 'utf8');
 const lolRoster = fs.readFileSync(new URL('../js/lol-roster.mjs', import.meta.url), 'utf8');
@@ -15,6 +16,7 @@ const components = fs.readFileSync(new URL('../css/components.css', import.meta.
 const responsive = fs.readFileSync(new URL('../css/responsive.css', import.meta.url), 'utf8');
 const coopStyles = fs.readFileSync(new URL('../css/coop-games.css', import.meta.url), 'utf8');
 const lolStyles = fs.readFileSync(new URL('../css/lol-mode.css', import.meta.url), 'utf8');
+const homeStyles = fs.readFileSync(new URL('../css/home.css', import.meta.url), 'utf8');
 const presence = fs.readFileSync(new URL('../js/presence.js', import.meta.url), 'utf8');
 const coopPage = fs.readFileSync(new URL('../js/coop-games-page.mjs', import.meta.url), 'utf8');
 
@@ -25,8 +27,8 @@ test('shared state does not import the versioned entry module twice', () => {
   assert.match(lolRoster, /from '\.\/state\.mjs\?v=20260806-lol-roster'/);
 });
 
-test('League home and roster panels are mounted by the site', () => {
-  assert.match(page, /id="lol-home-ranks"/);
+test('League roster panels are mounted without duplicating detailed ranks on home', () => {
+  assert.doesNotMatch(page, /id="lol-home-ranks"/);
   assert.match(page, /id="lol-roster-grid"/);
   assert.match(page, /id="lol-sync-all-btn"/);
   assert.match(lolRoster, /lolRosterSyncRequest/);
@@ -45,8 +47,21 @@ test('OLYCITY is the product brand while games remain contextual modes', () => {
   assert.match(page, /id="brand-subtitle">Valorant · League · Coop<\/span>/);
   assert.match(page, /name="application-name" content="OLYCITY"/);
   assert.match(gameMode, /setText\('brand-subtitle', 'Valorant · League · Coop'\)/);
-  assert.match(gameMode, /Valorant · Comps, Live & Historique/);
-  assert.match(gameMode, /League of Legends · Live & Historique/);
+  assert.match(gameMode, /setText\('hero-subtitle', 'Valorant · League · Coop'\)/);
+  assert.match(gameMode, /primary\.textContent = '● Voir le Live'/);
+});
+
+test('home is one live priority, three visual worlds and a compact member strip', () => {
+  assert.match(page, /id="home-now-card"/);
+  assert.match(page, /data-home-world="valorant"/);
+  assert.match(page, /data-home-world="lol"/);
+  assert.match(page, /data-home-world="coop"/);
+  assert.match(page, /id="home-member-faces"/);
+  assert.doesNotMatch(page, /Agents prioritaires|id="stier-row"|id="mini-roster"/);
+  assert.match(main, /initHomeDashboard\(/);
+  assert.match(homeDashboard, /liveDataStore\.subscribe\(render\)/);
+  assert.match(homeStyles, /\.home-world-grid\{display:grid;grid-template-columns:repeat\(3,minmax\(0,1fr\)\)/);
+  assert.match(homeStyles, /@media\(max-width:768px\)/);
 });
 
 test('profile selection is accessible, stable and does not reload the site', () => {
@@ -81,7 +96,6 @@ test('mobile composition cards stay compact without hiding their details', () =>
   assert.match(responsive, /\.comp-mobile-details\[open\]\s*\+\s*\.comp-bottom\s*\{\s*display:\s*grid/);
   assert.match(responsive, /\.comp-tabs\s*\{[\s\S]*overflow-x:\s*auto/);
   assert.match(responsive, /\.lineup-agent-tab, \.map-notes-card summary,[\s\S]*min-height:\s*44px; touch-action:\s*manipulation/);
-  assert.match(responsive, /\.stier-row\s*\{\s*display:grid;\s*grid-template-columns:repeat\(2,minmax\(0,1fr\)\)/);
   assert.match(main, /const tabs = btn\.closest\('\.comp-tabs'\)/);
 });
 

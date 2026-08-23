@@ -14,21 +14,18 @@ function setText(id, value) {
 function applyHomeCopy(mode) {
   const lol = mode === 'lol';
   setText('brand-subtitle', 'Valorant · League · Coop');
-  setText('hero-eyebrow', lol ? 'OLYCITY · League of Legends · EUW' : 'OLYCITY · Five Stack · EU');
-  setText('hero-subtitle', lol ? 'League of Legends · Live & Historique' : 'Valorant · Comps, Live & Historique');
+  setText('hero-eyebrow', 'OLYCITY · Le Discord');
+  setText('hero-subtitle', 'Valorant · League · Coop');
   const meta = document.getElementById('hero-meta');
-  if (meta) meta.innerHTML = lol
-    ? '<span><span class="dot"></span>Live Riot Client</span><span><span class="dot"></span>Historique séparé · EUW</span>'
-    : '<span><span class="dot"></span>7 maps · Patch 13.04</span><span><span class="dot"></span>Ranked + VCT 2026</span>';
+  if (meta) meta.style.display = 'none';
   const primary = document.getElementById('hero-primary-cta');
   if (primary) {
-    primary.textContent = lol ? '● Voir les parties live' : '◆ Explorer les maps';
-    primary.onclick = () => window.OLYCITY?.nav(lol ? 'live' : 'maps');
+    primary.textContent = '● Voir le Live';
+    primary.onclick = () => window.OLYCITY?.nav('live');
   }
   const secondary = document.getElementById('hero-secondary-cta');
   if (secondary) {
-    secondary.textContent = lol ? '◇ Ouvrir l’historique' : '◉ Voir le roster';
-    secondary.onclick = () => window.OLYCITY?.nav(lol ? 'history' : 'roster');
+    secondary.style.display = 'none';
   }
   setText('history-page-subtitle', lol ? 'Les parties League of Legends du groupe' : 'Les parties du five stack');
   setText('footer-product', 'OLYCITY · 2026');

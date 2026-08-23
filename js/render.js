@@ -105,7 +105,6 @@ export function agentCardHTML(name) {
     </div>
   </div>`;
 }
-
 // ─── COMP PANEL ──────────────────────────────────
 export function compHTML(comp, mapIdx, compIdx) {
   const agents = comp.agents.map(n => {
@@ -390,34 +389,6 @@ export function rosterHTML() {
   </div>`;
 }
 
-// ─── S-TIER ──────────────────────────────────────
-export function stierHTML() {
-  return state.S_TIER.map(name => {
-    const img = valorantApi.agentImg(name);
-    const imgEl = img
-      ? `<img src="${img}" alt="${name}" loading="lazy">`
-      : `<div class="portrait-ph" style="font-size:28px">${name[0]}</div>`;
-    const role = state.ROLES[name] || 'D';
-    const roleLabel = state.ROLE_FULL[role] || '';
-    // Count how many comps use this agent
-    const pickCount = state.COMPS_DATA.reduce((acc, map) =>
-      acc + map.comps.filter(c => c.agents.includes(name)).length, 0);
-    const mapsUsed = state.COMPS_DATA
-      .filter(map => map.comps.some(c => c.agents.includes(name)))
-      .map(m => m.map.slice(0,3).toUpperCase())
-      .join(' · ');
-    return `<div class="stier-card" title="${name}" onclick="window.OLYCITY.showAgentPage('${name}')">
-      <div class="stier-frame">
-        ${imgEl}
-        <span class="stier-badge">S-TIER</span>
-        ${mapsUsed ? `<div class="stier-maps">${mapsUsed}</div>` : ''}
-      </div>
-      <span class="stier-name">${name}</span>
-      <span class="stier-role">${roleLabel}</span>
-    </div>`;
-  }).join('');
-}
-
 // ─── GLOBAL NOTES ────────────────────────────────
 export function globalNotesHTML() {
   return state.GLOBAL_NOTES.map(n =>
@@ -662,24 +633,4 @@ export function guestCardHTML() {
         </a>
     </div>
   </div>`;
-}
-
-// ─── MINI ROSTER (home page) ─────────────────────
-export function miniRosterHTML() {
-  return state.ROSTER.map(p => {
-    const agentFallback = valorantApi.agentImg(p.mains?.[0]);
-    const imgEl = avatarLayersHTML(p.name, p.avatar, agentFallback);
-    const stats = state.PLAYER_STATS[p.name] || {};
-    const rankEl = stats.rank
-      ? `<span class="mini-player-rank">${stats.rank.split(' ').slice(0,1)[0]}</span>`
-      : '';
-    return `<div class="mini-player" onclick="window.OLYCITY.nav('roster')">
-      <div class="mini-player-avatar">${imgEl}</div>
-      <div class="mini-player-info">
-        <div class="mini-player-name">${p.name}</div>
-        <div class="mini-player-role">${p.tag}</div>
-      </div>
-      ${rankEl}
-    </div>`;
-  }).join('');
 }

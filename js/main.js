@@ -5,10 +5,10 @@
 
 import { valorantApi } from './api.js';
 
-const SITE_VERSION = '20260823-maps-cleanup';
+const SITE_VERSION = '20260823-home-dashboard';
 import { syncPlayer as henrikSyncPlayer, syncAllPlayers as henrikSyncAll, persistPlayerStats } from './henrik.js?v=20260809-val-roster-season';
 import { setStoredKey, storedKey, forgetCachedKey } from './henrik-key.mjs';
-import { rosterHTML, guestCardHTML, mapSectionHTML, stierHTML, agentPageHTML, miniRosterHTML } from './render.js?v=20260823-maps-cleanup';
+import { rosterHTML, guestCardHTML, mapSectionHTML, agentPageHTML } from './render.js?v=20260823-home-dashboard';
 import { initTheme, initTilt, initParallax, initSearch, initKeyboard, initHeroParticles, initWheelLogos, initLivePage, initHistoryPage } from './interactions.js?v=20260823-maps-cleanup';
 import { storage } from './storage.js';
 import { avatarLayersHTML } from './avatars.mjs';
@@ -20,6 +20,7 @@ import { initLolHistoryPage, initLolLivePage } from './lol-pages.mjs?v=20260810-
 import { initLolRosterPages } from './lol-roster.mjs?v=20260809-lol-sync';
 import { state } from './state.mjs?v=20260806-lol-roster';
 import { memberId, mergeMemberProfiles, resolveMemberProfile } from './member-profiles.mjs?v=20260823-profile-picker';
+import { initHomeDashboard } from './home-dashboard.mjs?v=20260823-home-dashboard';
 export { state };
 
 // ─── STATE ─────────────────────────────────────────
@@ -102,6 +103,11 @@ window.OLYCITY = {
     menu.hidden = !willOpen;
     trigger.setAttribute('aria-expanded', String(willOpen));
     document.body.classList.toggle('mobile-nav-menu-open', willOpen);
+  },
+
+  openUniverse(game, page) {
+    if (game === 'valorant' || game === 'lol') setGameMode(game, { navigate:false });
+    this.nav(page);
   },
 
   nav(page, pushHistory = true) {
@@ -192,10 +198,7 @@ window.OLYCITY = {
       if (al) { al.style.display = 'flex'; al.disabled = mi === 0; al.style.opacity = mi === 0 ? '0.3' : '1'; }
       if (ar) { ar.style.display = 'flex'; ar.disabled = mi === total-1; ar.style.opacity = mi === total-1 ? '0.3' : '1'; }
     }
-    // Update mini roster on home
     if (page === 'home') {
-      const el = document.getElementById('mini-roster');
-      if (el) el.innerHTML = miniRosterHTML();
       setTimeout(() => initHeroParticles(), 50);
     }
   },
@@ -660,11 +663,8 @@ function renderAll() {
   }
   // Map sections
   document.getElementById('main').innerHTML = state.COMPS_DATA.map((d, i) => mapSectionHTML(d, i)).join('');
-  // Roster (full + mini)
+  // Roster
   document.getElementById('roster-grid').innerHTML = rosterHTML() + guestCardHTML();
-  document.getElementById('mini-roster').innerHTML = miniRosterHTML();
-  // S-Tier
-  document.getElementById('stier-row').innerHTML = stierHTML();
   // Global notes
   const gnGrid = document.getElementById('global-notes-grid');
   if (gnGrid) gnGrid.innerHTML = globalNotesHTML();
@@ -720,6 +720,12 @@ async function boot() {
   }
 
   renderAll();
+  if (!window._homeDashboardCleanup) {
+    window._homeDashboardCleanup = initHomeDashboard({
+      members: state.MEMBERS,
+      valorantImage: valorantApi.mapSplash(state.COMPS_DATA[0]?.map || 'Haven'),
+    });
+  }
   if (!window._lolRosterCleanup) window._lolRosterCleanup = initLolRosterPages();
   initSearch((name) => window.OLYCITY.showAgentPage(name));
 

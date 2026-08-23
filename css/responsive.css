@@ -160,13 +160,6 @@
   .section-title { font-size: 24px; line-height: 1.15; }
   .section-line { display: none; }
 
-  .stier-row { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:22px 10px; }
-  .stier-card { width:100%; min-width:0; max-width:none; gap:8px; }
-  .stier-frame { aspect-ratio:4/5; }
-  .stier-name { font-size:13px; }
-  .stier-role { font-size:10px; }
-  .stier-maps { padding:24px 6px 7px; font-size:8px; line-height:1.3; }
-
   .comp-tabs,
   .history-filters > .history-filter-group:first-child > div {
     box-shadow: inset -18px 0 18px -20px var(--red);
@@ -354,9 +347,6 @@
   .map-notes-card summary strong { display: none; }
   .map-notes-card .notes-list { padding: 12px 14px 14px; }
 
-  /* Mini roster */
-  .mini-roster { grid-template-columns: 1fr 1fr; }
-
   /* Agent page */
   .agent-hero-content { grid-template-columns: 1fr; }
   .agent-portrait-wrap { display: none; }
@@ -374,6 +364,4 @@
   .section-inner { padding: 0; }
   .roster-page-inner { padding: 32px 16px; }
 
-  .stier-row { gap: 20px 8px; }
-  .stier-card { min-width: 0; }
 }

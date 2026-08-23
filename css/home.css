@@ -1,0 +1,55 @@
+.home-dashboard{position:relative;z-index:2;max-width:1280px;margin:0 auto;padding:28px 32px 56px}
+.home-now-card{position:relative;width:100%;display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:end;gap:18px;min-height:190px;overflow:hidden;padding:28px;border:1px solid var(--border2);background:linear-gradient(120deg,rgba(255,70,86,.14),rgba(16,19,26,.94) 55%),var(--surf);color:inherit;text-align:left;cursor:pointer;transition:border-color .2s,transform .2s}
+.home-now-card::before{content:'';position:absolute;inset:0 auto 0 0;width:3px;background:var(--red);box-shadow:0 0 18px var(--red)}
+.home-now-card::after{content:'';position:absolute;right:-80px;top:-130px;width:330px;height:330px;border:1px solid color-mix(in srgb,var(--red) 25%,transparent);border-radius:50%;opacity:.5}
+.home-now-card:hover{transform:translateY(-2px);border-color:var(--red-mid)}
+.home-now-card[data-state="lol"]{background:linear-gradient(120deg,rgba(201,155,63,.18),rgba(7,20,31,.96) 58%),var(--surf)}
+.home-now-copy{position:relative;z-index:1;display:grid;gap:7px}
+.home-now-copy>span{color:var(--red);font:700 9px 'Tomorrow',sans-serif;letter-spacing:2.4px;text-transform:uppercase}
+.home-now-copy>strong{color:var(--text);font:700 clamp(26px,4vw,48px) 'Tomorrow',sans-serif;letter-spacing:-.5px}
+.home-now-copy>small{color:var(--muted);font-size:14px}
+.home-now-action{position:relative;z-index:1;min-height:44px;display:flex;align-items:center;justify-content:center;padding:0 18px;border:1px solid var(--red-mid);background:var(--red-low);color:var(--text);font:700 10px 'Tomorrow',sans-serif;letter-spacing:1.2px;text-transform:uppercase}
+.home-world-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin-top:12px}
+.home-world{--home-world-image:none;position:relative;min-height:150px;overflow:hidden;padding:16px;border:1px solid var(--border);background:#11141b;color:#fff;text-align:left;cursor:pointer;isolation:isolate;transition:transform .2s,border-color .2s}
+.home-world::before{content:'';position:absolute;z-index:-2;inset:0;background-image:var(--home-world-image);background-position:center;background-size:cover;filter:saturate(.85) brightness(.52);transition:transform .35s,filter .35s}
+.home-world::after{content:'';position:absolute;z-index:-1;inset:0;background:linear-gradient(to top,rgba(5,7,11,.98),rgba(5,7,11,.08) 75%)}
+.home-world:hover{transform:translateY(-3px);border-color:rgba(255,255,255,.28)}
+.home-world:hover::before{transform:scale(1.035);filter:saturate(1) brightness(.62)}
+.home-world[data-home-world="lol"]{--home-world-image:url('https://ddragon.leagueoflegends.com/cdn/img/champion/splash/Ahri_0.jpg')}
+.home-world[data-home-world="coop"]{--home-world-image:url('https://shared.fastly.steamstatic.com/store_item_assets/steam/apps/1966720/header.jpg')}
+.home-world-copy{position:absolute;left:16px;right:16px;bottom:14px;display:grid;gap:2px}
+.home-world-copy small{color:rgba(255,255,255,.58);font:700 8px 'Tomorrow',sans-serif;letter-spacing:1.5px;text-transform:uppercase}
+.home-world-copy strong{font:700 18px 'Tomorrow',sans-serif;letter-spacing:.2px}
+.home-member-strip{width:100%;display:flex;align-items:center;justify-content:space-between;gap:18px;margin-top:12px;padding:13px 16px;border:1px solid var(--border);background:rgba(16,19,26,.72);color:inherit;font:inherit;cursor:pointer}
+.home-member-faces{display:flex;align-items:center;padding-left:7px}
+.home-member-face{position:relative;width:36px;height:36px;margin-left:-7px;overflow:hidden;border:2px solid var(--surf2);border-radius:50%;background:var(--surf3)}
+.home-member-face .user-avatar-initial,.home-member-face .user-avatar-fallback-image,.home-member-face .user-avatar-primary{border-radius:50%}
+.home-member-face.online::after{content:'';position:absolute;z-index:5;right:0;bottom:1px;width:7px;height:7px;border:2px solid var(--surf2);border-radius:50%;background:#4bd07b}
+.home-member-strip>span{color:var(--muted);font-size:12px;font-weight:600}
+
+@media(max-width:768px){
+  #page-home .hero{padding:34px 16px 24px}
+  #page-home .hero-eyebrow{margin-bottom:18px;padding:5px 12px;font-size:8px;letter-spacing:2.4px}
+  #page-home .hero-title{font-size:clamp(44px,14vw,58px)}
+  #page-home .hero-sub{margin-top:14px;font-size:10px;letter-spacing:2.4px}
+  #page-home .hero-meta,#page-home .hero-cta-secondary{display:none}
+  #page-home .hero-ctas{margin-top:22px}
+  #page-home .hero-cta-primary{min-height:46px;padding:10px 24px}
+  .home-dashboard{padding:12px 16px 38px}
+  .home-now-card{grid-template-columns:1fr;align-items:end;min-height:160px;padding:20px}
+  .home-now-copy>strong{font-size:28px}
+  .home-now-copy>small{font-size:12px}
+  .home-now-action{width:max-content}
+  .home-world-grid{gap:7px}
+  .home-world{min-height:116px;padding:10px}
+  .home-world-copy{left:10px;right:8px;bottom:10px}
+  .home-world-copy small{font-size:7px;letter-spacing:.8px}
+  .home-world-copy strong{font-size:13px}
+  .home-member-strip{padding:11px 12px}
+  .home-member-face{width:34px;height:34px}
+}
+
+@media(max-width:360px){
+  .home-world-copy small{display:none}
+  .home-world-copy strong{font-size:12px}
+}

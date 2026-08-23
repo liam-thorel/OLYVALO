@@ -16,6 +16,7 @@
   <link rel="stylesheet" href="./css/tokens.css?v=20260720-avatars">
   <link rel="stylesheet" href="./css/layout.css?v=20260823-mobile-design">
   <link rel="stylesheet" href="./css/components.css?v=20260823-mobile-design">
+  <link rel="stylesheet" href="./css/home.css?v=20260823-home-dashboard">
   <link rel="stylesheet" href="./css/agent-page.css?v=20260720-avatars">
   <link rel="stylesheet" href="./css/responsive.css?v=20260823-mobile-design">
   <link rel="stylesheet" href="./css/lol-mode.css?v=20260823-mobile-sections">
@@ -230,32 +231,32 @@
       </div>
     </header>
 
-    <!-- S-TIER -->
-    <section class="section" data-valorant-only>
-      <div class="section-inner">
-        <div class="section-header">
-          <span class="section-tag">S-Tier</span>
-          <h2 class="section-title">Agents prioritaires</h2>
-          <div class="section-line"></div>
-        </div>
-        <div class="stier-row" id="stier-row"></div>
-      </div>
-    </section>
+    <section class="home-dashboard" aria-label="Aperçu OLYCITY">
+      <button class="home-now-card" id="home-now-card" type="button" onclick="window.OLYCITY?.nav('live')">
+        <span class="home-now-copy">
+          <span id="home-now-kicker">En ce moment</span>
+          <strong id="home-now-title">Connexion au groupe…</strong>
+          <small id="home-now-detail">Synchronisation du Live</small>
+        </span>
+        <span class="home-now-action" id="home-now-action">Voir le Live</span>
+      </button>
 
-    <!-- MINI ROSTER PREVIEW -->
-    <section class="section">
-      <div class="section-inner">
-        <div class="section-header">
-          <span class="section-tag">Équipe</span>
-          <h2 class="section-title">Le squad OLYCITY</h2>
-          <div class="section-line"></div>
-          <button class="tool-btn" onclick="window.OLYCITY?.nav('roster')" style="margin-left:auto">
-            Voir tout →
-          </button>
-        </div>
-        <div class="mini-roster" id="mini-roster" data-game-panel="valorant"></div>
-        <div class="lol-home-ranks" id="lol-home-ranks" data-game-panel="lol"></div>
+      <div class="home-world-grid" aria-label="Choisir un univers">
+        <button class="home-world" data-home-world="valorant" type="button" onclick="window.OLYCITY?.openUniverse('valorant','maps')">
+          <span class="home-world-copy"><small>Comps & Live</small><strong>Valorant</strong></span>
+        </button>
+        <button class="home-world" data-home-world="lol" type="button" onclick="window.OLYCITY?.openUniverse('lol','live')">
+          <span class="home-world-copy"><small>Live & Rangs</small><strong>League</strong></span>
+        </button>
+        <button class="home-world" data-home-world="coop" type="button" onclick="window.OLYCITY?.nav('games')">
+          <span class="home-world-copy"><small>Votes du groupe</small><strong>Coop</strong></span>
+        </button>
       </div>
+
+      <button class="home-member-strip" type="button" onclick="window.OLYCITY?.nav('roster')" aria-label="Voir les membres OLYCITY">
+        <span class="home-member-faces" id="home-member-faces"></span>
+        <span id="home-online-label">Connexion…</span>
+      </button>
     </section>
 
   </div>
@@ -493,6 +494,6 @@
   <!-- Firebase SDK -->
   <!-- Présence Firebase -->
   <script src="./js/presence.js?v=20260720-avatars"></script>
-  <script type="module" src="./js/main.js?v=20260823-mobile-design"></script>
+  <script type="module" src="./js/main.js?v=20260823-home-dashboard"></script>
 </body>
 </html>
