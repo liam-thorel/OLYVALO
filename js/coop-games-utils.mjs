@@ -20,6 +20,12 @@ export function steamCover(appId = '') {
     : '';
 }
 
+const COOP_GAME_MANAGER_IDS = new Set(['nico', 'liam']);
+
+export function canDeleteCoopGame(profile = null) {
+  return COOP_GAME_MANAGER_IDS.has(String(profile?.id || '').toLowerCase());
+}
+
 export function catalogFields(result = {}) {
   const steamAppId = String(result.steamAppId || '');
   const genres = Array.isArray(result.genres) ? result.genres.map(String).filter(Boolean).slice(0, 4) : [];

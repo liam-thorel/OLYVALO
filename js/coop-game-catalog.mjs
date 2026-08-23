@@ -30,3 +30,16 @@ export async function searchGameCatalog(value, { endpoint, fetchImpl = fetch, si
   if (!response.ok) throw new Error(payload.error || `Catalogue HTTP ${response.status}`);
   return Array.isArray(payload.results) ? payload.results : [];
 }
+
+export async function fetchSteamReviewSummaries(appIds = [], { endpoint, fetchImpl = fetch, signal } = {}) {
+  const ids = [...new Set(appIds.map(String).filter(id => /^\d{2,10}$/.test(id)))].slice(0, 20);
+  if (!ids.length) return [];
+  const base = String(endpoint ?? await gameCatalogEndpoint()).replace(/\/$/, '');
+  if (!base) return [];
+  const url = new URL(`${base}/reviews`);
+  url.searchParams.set('ids', ids.join(','));
+  const response = await fetchImpl(url, { headers: { Accept: 'application/json' }, signal });
+  const payload = await response.json().catch(() => ({}));
+  if (!response.ok) throw new Error(payload.error || `Avis Steam HTTP ${response.status}`);
+  return Array.isArray(payload.reviews) ? payload.reviews : [];
+}

@@ -1,6 +1,7 @@
 const IGDB_URL = 'https://api.igdb.com/v4/games';
 const TWITCH_TOKEN_URL = 'https://id.twitch.tv/oauth2/token';
 const STEAM_DETAILS_URL = 'https://store.steampowered.com/api/appdetails';
+const STEAM_REVIEWS_URL = 'https://store.steampowered.com/appreviews';
 const GAME_INDEX_URL = 'https://app.lizardbyte.dev/GameDB/buckets';
 const IGDB_FIELDS = 'id,name,slug,summary,url,cover.image_id,genres.name,game_modes.name,multiplayer_modes.onlinecoop,multiplayer_modes.offlinecoop,multiplayer_modes.onlinecoopmax,multiplayer_modes.offlinecoopmax,multiplayer_modes.onlinemax,multiplayer_modes.offlinemax,first_release_date,external_games.category,external_games.uid,external_games.url,total_rating_count,follows,hypes';
 
@@ -222,6 +223,49 @@ async function steamDetails(appId, fetchImpl) {
   return payload[appId].data;
 }
 
+export function normalizeSteamReviewSummary(appId, payload = {}) {
+  const summary = payload?.query_summary || {};
+  const totalPositive = Math.max(0, Number(summary.total_positive) || 0);
+  const totalNegative = Math.max(0, Number(summary.total_negative) || 0);
+  const totalReviews = Math.max(0, Number(summary.total_reviews) || totalPositive + totalNegative);
+  return {
+    steamAppId: String(appId),
+    available: Boolean(payload?.query_summary),
+    reviewScore: Math.max(0, Number(summary.review_score) || 0),
+    reviewScoreDescription: String(summary.review_score_desc || ''),
+    totalPositive,
+    totalNegative,
+    totalReviews,
+    positivePercent: totalReviews ? Math.round((totalPositive / totalReviews) * 100) : 0,
+  };
+}
+
+async function steamReviewSummary(appId, fetchImpl) {
+  const url = new URL(`${STEAM_REVIEWS_URL}/${appId}`);
+  url.searchParams.set('json', '1');
+  url.searchParams.set('filter', 'all');
+  url.searchParams.set('language', 'all');
+  url.searchParams.set('purchase_type', 'all');
+  url.searchParams.set('num_per_page', '1');
+  const response = await fetchImpl(url, {
+    headers: { Accept:'application/json' },
+    cf: { cacheTtl:3600, cacheEverything:true },
+  });
+  if (!response.ok) throw new Error(`STEAM_REVIEWS_HTTP_${response.status}`);
+  return normalizeSteamReviewSummary(appId, await response.json());
+}
+
+async function steamReviewSummaries(ids, fetchImpl) {
+  return Promise.all(ids.map(async appId => {
+    try {
+      return await steamReviewSummary(appId, fetchImpl);
+    } catch (error) {
+      console.warn('Steam reviews unavailable', appId, error.message);
+      return normalizeSteamReviewSummary(appId);
+    }
+  }));
+}
+
 async function searchBySteam(appId, env, fetchImpl) {
   const steam = await steamDetails(appId, fetchImpl);
   const candidates = await igdbSearch(steam.name, env, fetchImpl);
@@ -250,8 +294,18 @@ export async function handleRequest(request, env, fetchImpl = fetch) {
   const cors = corsHeaders(request, env);
   if (request.method === 'OPTIONS') return new Response(null, { status: 204, headers: cors });
   const url = new URL(request.url);
-  if (request.method !== 'GET' || url.pathname !== '/search') return json({ error: 'Not found' }, 404, cors);
+  if (request.method !== 'GET') return json({ error: 'Not found' }, 404, cors);
   try {
+    if (url.pathname === '/reviews') {
+      const ids = [...new Set(String(url.searchParams.get('ids') || '').split(',').filter(id => /^\d{2,10}$/.test(id)))].slice(0, 20);
+      if (!ids.length) return json({ error:'Identifiants Steam invalides' }, 400, cors);
+      return json(
+        { reviews:await steamReviewSummaries(ids, fetchImpl) },
+        200,
+        { ...cors, 'Cache-Control':'public, max-age=1800' },
+      );
+    }
+    if (url.pathname !== '/search') return json({ error: 'Not found' }, 404, cors);
     const steamAppId = String(url.searchParams.get('steamAppId') || '');
     const query = String(url.searchParams.get('q') || '').trim();
     if (steamAppId && /^\d{2,10}$/.test(steamAppId)) {

@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import {
+  canDeleteCoopGame,
   catalogFields,
   coopSearchScore,
   extractSteamAppId,
@@ -10,7 +11,7 @@ import {
   profileKey,
   rankCatalogResults,
 } from '../js/coop-games-utils.mjs';
-import { searchGameCatalog } from '../js/coop-game-catalog.mjs';
+import { fetchSteamReviewSummaries, searchGameCatalog } from '../js/coop-game-catalog.mjs';
 
 test('Steam links and raw app ids resolve to one stable id', () => {
   assert.equal(extractSteamAppId('https://store.steampowered.com/app/1245620/ELDEN_RING/'), '1245620');
@@ -41,6 +42,14 @@ test('search tolerates accents, partial words and ranks title matches first', ()
   ];
   assert.ok(coopSearchScore(games[0], 'evas') > coopSearchScore(games[1], 'evas'));
   assert.deepEqual(filterCoopGames(games, { search:'évas', status:'all' }).map(game => game.id), ['a', 'b']);
+});
+
+test('only Nico and Liam profiles can expose destructive game controls', () => {
+  assert.equal(canDeleteCoopGame({ id:'nico', name:'Nico' }), true);
+  assert.equal(canDeleteCoopGame({ id:'liam', name:'Liam' }), true);
+  assert.equal(canDeleteCoopGame({ id:'rayhan', name:'Rayhan' }), false);
+  assert.equal(canDeleteCoopGame({ name:'Nico' }), false);
+  assert.equal(canDeleteCoopGame(null), false);
 });
 
 test('genre and alphabetical sorting use existing metadata without rewriting games', () => {
@@ -108,6 +117,20 @@ test('catalog search accepts a Steam link and uses the configured proxy', async 
   assert.equal(results[0].title, 'Lethal Company');
 });
 
+test('Steam review summaries are fetched once for unique valid app ids', async () => {
+  let requested = '';
+  const reviews = await fetchSteamReviewSummaries(['1966720', '1966720', 'invalid', '1245620'], {
+    endpoint:'https://catalog.example.test',
+    fetchImpl:async url => {
+      requested = String(url);
+      return new Response(JSON.stringify({ reviews:[{ steamAppId:'1966720', positivePercent:97 }] }));
+    },
+  });
+  assert.equal(new URL(requested).pathname, '/reviews');
+  assert.equal(new URL(requested).searchParams.get('ids'), '1966720,1245620');
+  assert.equal(reviews[0].positivePercent, 97);
+});
+
 test('the async submit keeps its form reference after Firebase resolves', () => {
   const source = readFileSync(new URL('../js/coop-games-page.mjs', import.meta.url), 'utf8');
   assert.match(source, /const form = event\.currentTarget;/);
@@ -115,4 +138,8 @@ test('the async submit keeps its form reference after Firebase resolves', () => 
   assert.doesNotMatch(source, /resetGameForm\(event\.currentTarget\);/);
   assert.doesNotMatch(source, /nextCoopStatus|coop-status-cycle/);
   assert.match(source, /data-action="set-status"/);
+  assert.match(source, /data-action="delete"/);
+  assert.match(source, /method: 'DELETE'/);
+  assert.match(source, /sort: 'recent'/);
+  assert.match(source, /fetchSteamReviewSummaries/);
 });

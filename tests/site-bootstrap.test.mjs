@@ -52,10 +52,11 @@ test('profile selection is accessible, stable and does not reload the site', () 
 test('coop games expose explicit categories and cache-safe search modules', () => {
   assert.match(page, /data-coop-status="open"/);
   assert.match(page, /id="coop-genre"/);
+  assert.match(page, /<option value="recent" selected>Les derniers ajoutés<\/option>/);
   assert.doesNotMatch(page, /id="coop-status-filter"/);
   assert.doesNotMatch(coopPage, /coop-status-cycle|nextCoopStatus/);
   assert.match(coopPage, /data-action="set-status"/);
-  assert.match(coopPage, /coop-games-utils\.mjs\?v=20260823-coop-categories/);
+  assert.match(coopPage, /coop-games-utils\.mjs\?v=20260823-coop-steam-reviews/);
 });
 
 test('saved navigation waits for the application boot to finish', () => {

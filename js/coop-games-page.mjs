@@ -1,4 +1,5 @@
 import {
+  canDeleteCoopGame,
   catalogFields,
   extractSteamAppId,
   filterCoopGames,
@@ -6,8 +7,8 @@ import {
   profileKey,
   rankCatalogResults,
   steamCover,
-} from './coop-games-utils.mjs?v=20260823-coop-categories';
-import { searchGameCatalog } from './coop-game-catalog.mjs';
+} from './coop-games-utils.mjs?v=20260823-coop-steam-reviews';
+import { fetchSteamReviewSummaries, searchGameCatalog } from './coop-game-catalog.mjs?v=20260823-coop-steam-reviews';
 
 const FIREBASE_ROOT = 'https://realtime-database-5bb9f-default-rtdb.europe-west1.firebasedatabase.app';
 const SESSION_LABELS = { short: 'Soirée', medium: 'Quelques sessions', long: 'Longue aventure' };
@@ -29,7 +30,9 @@ let catalogSearchTimer = null;
 let catalogSearchSequence = 0;
 let catalogAbortController = null;
 let selectedCatalogGame = null;
-const filters = { search: '', players: 0, genre:'all', status: 'all', sort: 'popular' };
+let steamReviews = new Map();
+let steamReviewIds = '';
+const filters = { search: '', players: 0, genre:'all', status: 'all', sort: 'recent' };
 
 const escapeHTML = value => String(value ?? '')
   .replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;')
@@ -58,7 +61,7 @@ async function firebaseRequest(path, options = {}) {
 function selectedProfile() {
   const name = localStorage.getItem('olycity-profile') || '';
   const member = roster.find(player => player.name === name);
-  return name && member ? { name, avatar: member.avatar || '' } : null;
+  return name && member ? { id: member.id || '', name, avatar: member.avatar || '' } : null;
 }
 
 function playerRange(game) {
@@ -80,8 +83,26 @@ function interestAvatars(game) {
   }).join('');
 }
 
+function formatReviewCount(value) {
+  return new Intl.NumberFormat('fr-FR', { notation:'compact', maximumFractionDigits:1 }).format(Number(value) || 0);
+}
+
+function steamReviewMarkup(game) {
+  if (!game.steamAppId) return '';
+  const review = steamReviews.get(game.steamAppId);
+  if (!review) return '<div class="coop-steam-review is-loading"><span>Steam</span><small>Avis en cours…</small></div>';
+  if (review.available === false) return '<div class="coop-steam-review is-empty"><span>Steam</span><small>Avis indisponibles</small></div>';
+  if (!review.totalReviews) return '<div class="coop-steam-review is-empty"><span>Steam</span><small>Pas encore d’avis</small></div>';
+  const percent = Math.max(0, Math.min(100, Number(review.positivePercent) || 0));
+  const tone = percent >= 80 ? 'positive' : percent >= 60 ? 'mixed' : 'negative';
+  return `<div class="coop-steam-review is-${tone}" title="${escapeHTML(`${review.totalPositive} avis positifs sur ${review.totalReviews}`)}">
+    <span>Steam</span><strong>${percent} % positifs</strong><small>${formatReviewCount(review.totalReviews)} avis</small>
+  </div>`;
+}
+
 function gameCard(game) {
   const profile = selectedProfile();
+  const canDelete = canDeleteCoopGame(profile);
   const interested = profile && game.interests?.[profileKey(profile.name)];
   const cover = safeHttpsUrl(game.coverUrl || steamCover(game.steamAppId));
   const steamUrl = safeHttpsUrl(game.steamUrl, ['steampowered.com']);
@@ -96,13 +117,19 @@ function gameCard(game) {
       ${cover ? `<img src="${escapeHTML(cover)}" alt="Jaquette de ${escapeHTML(game.title)}" loading="lazy" onerror="this.hidden=true">` : ''}
       <div class="coop-status-control">
         <button class="coop-status coop-status-${game.status}" type="button" data-action="status-menu" aria-expanded="false">${STATUS_LABELS[game.status]}<span aria-hidden="true">⌄</span></button>
-        <div class="coop-status-menu" role="menu" hidden><div>Changer de catégorie</div>${statusOptions}</div>
+        <div class="coop-status-menu" role="menu" hidden>
+          <div>Changer de catégorie</div>${statusOptions}
+          ${canDelete ? `<button class="coop-delete-option" type="button" data-action="delete" role="menuitem">
+            <span aria-hidden="true">×</span><span><strong>Supprimer le jeu</strong><small>Retire aussi ses votes</small></span>
+          </button>` : ''}
+        </div>
       </div>
     </div>
     <div class="coop-card-body">
       <div class="coop-card-meta"><span>${playerRange(game)}</span><span>${SESSION_LABELS[game.session]}</span></div>
       <h3>${escapeHTML(game.title)}</h3>
       ${tags ? `<div class="coop-tags">${tags}</div>` : ''}
+      ${steamReviewMarkup(game)}
       ${game.replayNote ? `<div class="coop-replay-note"><strong>Nouveau contenu${game.statusBy ? ` · ${escapeHTML(game.statusBy)}` : ''}</strong>${escapeHTML(game.replayNote)}</div>` : ''}
       ${game.note ? `<p>${escapeHTML(game.note)}</p>` : ''}
       <div class="coop-submitter">Proposé par ${escapeHTML(game.submittedBy)}</div>
@@ -185,8 +212,29 @@ async function loadGames({ quiet = false } = {}) {
     games = Object.entries(data || {}).map(([id, value]) => normalizeCoopGame(id, value));
     syncGenreOptions();
     render();
+    void loadSteamReviews();
   } catch (error) {
     if (root) root.innerHTML = `<div class="coop-empty coop-error">Impossible de charger la liste. ${escapeHTML(error.message)}</div>`;
+  }
+}
+
+async function loadSteamReviews() {
+  const ids = [...new Set(games.map(game => game.steamAppId).filter(Boolean))].sort();
+  const key = ids.join(',');
+  if (!key) { steamReviews = new Map(); steamReviewIds = ''; return; }
+  if (key === steamReviewIds) return;
+  steamReviewIds = key;
+  try {
+    const summaries = await fetchSteamReviewSummaries(ids);
+    if (steamReviewIds !== key) return;
+    steamReviews = new Map(summaries.map(review => [String(review.steamAppId), review]));
+    render();
+  } catch (reviewError) {
+    if (steamReviewIds === key) {
+      steamReviews = new Map(ids.map(steamAppId => [steamAppId, { steamAppId, available:false, totalReviews:0 }]));
+      render();
+    }
+    console.warn('[OLYCITY] Avis Steam indisponibles', reviewError);
   }
 }
 
@@ -451,8 +499,15 @@ async function handleCardAction(event) {
           statusAt: Date.now(),
         }),
       });
+    } else if (button.dataset.action === 'delete') {
+      if (!canDeleteCoopGame(profile)) return;
+      const confirmed = window.confirm(`Supprimer « ${game.title} » de la liste ?\n\nLes votes associés seront également supprimés. Cette action est définitive.`);
+      if (!confirmed) return;
+      await firebaseRequest(`coopGames/${game.id}`, { method: 'DELETE' });
     }
     await loadGames({ quiet: true });
+  } catch (actionError) {
+    window.alert(`Action impossible : ${actionError.message}`);
   } finally {
     button.disabled = false;
   }

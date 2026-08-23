@@ -5,6 +5,7 @@ import {
   handleRequest,
   igdbSearchScore,
   normalizeIgdbGame,
+  normalizeSteamReviewSummary,
   playerRangeFromIgdb,
 } from '../workers/game-catalog/worker.mjs';
 
@@ -45,6 +46,48 @@ test('IGDB games keep their Steam identity and artwork', () => {
   assert.equal(game.steamAppId, '12345');
   assert.equal(game.coverUrl, 'https://images.igdb.com/igdb/image/upload/t_cover_big/co123.jpg');
   assert.equal(game.maxPlayers, 4);
+});
+
+test('Steam review totals become a stable positive percentage', () => {
+  assert.deepEqual(normalizeSteamReviewSummary('1966720', {
+    query_summary: {
+      review_score:9,
+      review_score_desc:'Overwhelmingly Positive',
+      total_positive:970,
+      total_negative:30,
+      total_reviews:1000,
+    },
+  }), {
+    steamAppId:'1966720',
+    available:true,
+    reviewScore:9,
+    reviewScoreDescription:'Overwhelmingly Positive',
+    totalPositive:970,
+    totalNegative:30,
+    totalReviews:1000,
+    positivePercent:97,
+  });
+});
+
+test('the Worker batches Steam review summaries without failing the whole list', async () => {
+  const calls = [];
+  const response = await handleRequest(
+    new Request('https://catalog.example/reviews?ids=1966720,1245620,invalid'),
+    {},
+    async url => {
+      calls.push(String(url));
+      if (String(url).includes('/1245620?')) return new Response('', { status:503 });
+      return new Response(JSON.stringify({ query_summary:{ total_positive:90, total_negative:10, total_reviews:100 } }));
+    },
+  );
+  const payload = await response.json();
+  assert.equal(response.status, 200);
+  assert.equal(response.headers.get('Cache-Control'), 'public, max-age=1800');
+  assert.equal(calls.length, 2);
+  assert.equal(payload.reviews[0].positivePercent, 90);
+  assert.equal(payload.reviews[0].available, true);
+  assert.equal(payload.reviews[1].available, false);
+  assert.equal(payload.reviews[1].totalReviews, 0);
 });
 
 test('the Worker exposes a CORS-safe normalized search endpoint', async () => {
