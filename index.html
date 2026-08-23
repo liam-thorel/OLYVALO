@@ -12,10 +12,10 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Tomorrow:wght@400;500;600;700&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="./css/tokens.css?v=20260720-avatars">
-  <link rel="stylesheet" href="./css/layout.css?v=20260810-history-progressive">
-  <link rel="stylesheet" href="./css/components.css?v=20260823-maps-cleanup">
+  <link rel="stylesheet" href="./css/layout.css?v=20260823-mobile-design">
+  <link rel="stylesheet" href="./css/components.css?v=20260823-mobile-design">
   <link rel="stylesheet" href="./css/agent-page.css?v=20260720-avatars">
-  <link rel="stylesheet" href="./css/responsive.css?v=20260823-maps-cleanup">
+  <link rel="stylesheet" href="./css/responsive.css?v=20260823-mobile-design">
   <link rel="stylesheet" href="./css/lol-mode.css?v=20260823-mobile-sections">
   <link rel="stylesheet" href="./css/curse.css?v=20260818-curse-lifecycle">
   <link rel="stylesheet" href="./css/coop-games.css?v=20260823-mobile-sections">
@@ -149,6 +149,11 @@
         <button class="page-nav-btn" data-page="betting" onclick="window.OLYCITY?.nav('betting')">
           <span class="page-nav-icon">🎲</span> Paris
         </button>
+        <button class="page-nav-btn mobile-nav-more-trigger" id="mobile-nav-more-trigger" type="button"
+                aria-label="Afficher les autres sections" aria-expanded="false"
+                onclick="window.OLYCITY?.toggleMobileNavMenu()">
+          <span class="page-nav-icon">•••</span> Plus
+        </button>
       </div>
 
       <!-- MAP SELECTOR (visible only on maps page) -->
@@ -172,6 +177,26 @@
       </div>
     </div>
   </nav>
+
+  <div class="mobile-nav-more-backdrop" id="mobile-nav-more-menu" hidden
+       onclick="window.OLYCITY?.closeMobileNavMenu()">
+    <div class="mobile-nav-more-sheet" role="dialog" aria-modal="true" aria-label="Autres sections"
+         onclick="event.stopPropagation()">
+      <div class="mobile-nav-more-head">
+        <div><span>Navigation</span><strong>Autres sections</strong></div>
+        <button type="button" aria-label="Fermer" onclick="window.OLYCITY?.closeMobileNavMenu()">×</button>
+      </div>
+      <button type="button" data-mobile-page="roster" onclick="window.OLYCITY?.nav('roster')">
+        <span>◉</span><div><strong>Roster</strong><small>Joueurs, rangs et statistiques</small></div><i>›</i>
+      </button>
+      <button type="button" data-mobile-page="games" onclick="window.OLYCITY?.nav('games')">
+        <span>✦</span><div><strong>Jeux</strong><small>Suggestions coop du Discord</small></div><i>›</i>
+      </button>
+      <button type="button" data-mobile-page="betting" onclick="window.OLYCITY?.nav('betting')">
+        <span>🎲</span><div><strong>Paris</strong><small>Points fictifs et pronostics</small></div><i>›</i>
+      </button>
+    </div>
+  </div>
 
   <!-- AGENT PAGE (overlay global) -->
   <div id="agent-page" class="agent-page"></div>
@@ -466,6 +491,6 @@
   <!-- Firebase SDK -->
   <!-- Présence Firebase -->
   <script src="./js/presence.js?v=20260720-avatars"></script>
-  <script type="module" src="./js/main.js?v=20260823-maps-cleanup"></script>
+  <script type="module" src="./js/main.js?v=20260823-mobile-design"></script>
 </body>
 </html>

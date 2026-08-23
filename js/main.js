@@ -86,9 +86,28 @@ function setSyncStatus(html, type = 'info') {
 // ─── WINDOW.OLYCITY — handlers inline HTML ─────────
 window.OLYCITY = {
 
+  closeMobileNavMenu() {
+    const menu = document.getElementById('mobile-nav-more-menu');
+    const trigger = document.getElementById('mobile-nav-more-trigger');
+    if (menu) menu.hidden = true;
+    if (trigger) trigger.setAttribute('aria-expanded', 'false');
+    document.body.classList.remove('mobile-nav-menu-open');
+  },
+
+  toggleMobileNavMenu() {
+    const menu = document.getElementById('mobile-nav-more-menu');
+    const trigger = document.getElementById('mobile-nav-more-trigger');
+    if (!menu || !trigger) return;
+    const willOpen = menu.hidden;
+    menu.hidden = !willOpen;
+    trigger.setAttribute('aria-expanded', String(willOpen));
+    document.body.classList.toggle('mobile-nav-menu-open', willOpen);
+  },
+
   nav(page, pushHistory = true) {
     if (!['home', 'maps', 'roster', 'live', 'history', 'admin', 'betting', 'games'].includes(page)) page = 'home';
     if (getGameMode() === 'lol' && page === 'maps') page = 'home';
+    this.closeMobileNavMenu();
     sessionStorage.setItem('olycity-page', page);
     // Dynamic title
     const titles = {
@@ -141,15 +160,11 @@ window.OLYCITY = {
     if (navBtn) {
       navBtn.classList.add('active');
       navBtn.setAttribute('aria-current', 'page');
-      if (window.matchMedia('(max-width: 768px)').matches) {
-        const nav = document.getElementById('page-nav');
-        requestAnimationFrame(() => {
-          if (!nav) return;
-          const navRect = nav.getBoundingClientRect();
-          const buttonRect = navBtn.getBoundingClientRect();
-          const left = nav.scrollLeft + buttonRect.left - navRect.left - (nav.clientWidth - buttonRect.width) / 2;
-          nav.scrollTo({ left:Math.max(0, left), behavior:pushHistory ? 'smooth' : 'auto' });
-        });
+      const morePages = ['roster', 'games', 'betting'];
+      const moreTrigger = document.getElementById('mobile-nav-more-trigger');
+      if (morePages.includes(page) && moreTrigger) {
+        moreTrigger.classList.add('active');
+        moreTrigger.setAttribute('aria-current', 'page');
       }
     }
 

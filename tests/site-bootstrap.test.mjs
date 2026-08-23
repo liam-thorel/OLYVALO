@@ -52,11 +52,15 @@ test('profile selection is accessible, stable and does not reload the site', () 
   assert.match(presence, /const previousRef = sessionRef/);
 });
 
-test('mobile navigation keeps sections scrollable with touch-sized controls', () => {
-  assert.match(responsive, /\.page-nav\s*\{[\s\S]*overflow-x:\s*auto/);
-  assert.match(responsive, /\.page-nav-btn\s*\{[\s\S]*min-height:\s*44px/);
+test('mobile navigation keeps primary sections reachable with a compact more menu', () => {
+  assert.match(page, /id="mobile-nav-more-trigger"/);
+  assert.match(page, /id="mobile-nav-more-menu" hidden/);
+  assert.match(responsive, /\.page-nav\s*\{[\s\S]*position:\s*fixed;[\s\S]*bottom:\s*0/);
+  assert.match(responsive, /\.page-nav-btn\s*\{[\s\S]*min-height:\s*54px/);
+  assert.match(responsive, /\.page-nav > \.page-nav-btn\[data-page="roster"\][\s\S]*display:\s*none/);
   assert.match(responsive, /\.game-switch-btn, \.profile-indicator\s*\{\s*min-height:\s*44px/);
-  assert.match(main, /nav\.scrollTo\(\{ left:Math\.max\(0, left\)/);
+  assert.match(main, /toggleMobileNavMenu\(\)/);
+  assert.match(main, /morePages\.includes\(page\)/);
   assert.match(main, /navBtn\.setAttribute\('aria-current', 'page'\)/);
   assert.match(coopStyles, /\.coop-card-actions button,\.coop-card-actions a\{display:flex;min-height:44px/);
 });
@@ -67,6 +71,7 @@ test('mobile composition cards stay compact without hiding their details', () =>
   assert.match(responsive, /\.comp-mobile-details\[open\]\s*\+\s*\.comp-bottom\s*\{\s*display:\s*grid/);
   assert.match(responsive, /\.comp-tabs\s*\{[\s\S]*overflow-x:\s*auto/);
   assert.match(responsive, /\.lineup-agent-tab, \.map-notes-card summary,[\s\S]*min-height:\s*44px; touch-action:\s*manipulation/);
+  assert.match(responsive, /\.stier-row\s*\{\s*display:grid;\s*grid-template-columns:repeat\(2,minmax\(0,1fr\)\)/);
   assert.match(main, /const tabs = btn\.closest\('\.comp-tabs'\)/);
 });
 

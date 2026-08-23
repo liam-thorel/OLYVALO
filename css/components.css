@@ -343,12 +343,12 @@
 }
 .stier-card:hover .stier-frame img{ transform:scale(1.05); }
 .stier-name{
-  font-family:'Tomorrow',sans-serif; font-size:13px; font-weight:700;
-  text-transform:uppercase; letter-spacing:2px; color:var(--text);
+  font-family:'Tomorrow',sans-serif; font-size:14px; font-weight:700;
+  letter-spacing:.5px; color:var(--text);
 }
 .stier-role{
-  font-family:'Tomorrow',sans-serif; font-size:9px; letter-spacing:2px;
-  text-transform:uppercase; color:var(--muted); margin-top:-4px;
+  font-family:'DM Sans',sans-serif; font-size:11px; letter-spacing:.2px;
+  color:var(--muted); margin-top:-4px;
 }
 .stier-badge{
   position:absolute; top:8px; right:8px;

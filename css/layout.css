@@ -60,6 +60,10 @@
   background:var(--red); border-color:var(--red); color:#fff;
 }
 .page-nav-icon{ font-size:13px; }
+.mobile-nav-more-trigger,
+.mobile-nav-more-backdrop { display:none; }
+
+.mobile-nav-more-backdrop[hidden] { display:none !important; }
 
 /* MAP NAV (dans page Maps) */
 .nav-maps{ display:flex; gap:2px; flex:1; justify-content:center; flex-wrap:wrap; }
@@ -271,7 +275,7 @@
 }
 .section-title{
   font-family:'Tomorrow',sans-serif; font-size:28px; font-weight:600;
-  letter-spacing:1px; text-transform:uppercase; color:var(--text);
+  letter-spacing:.2px; color:var(--text);
 }
 .section-line{ flex:1; height:1px; background:linear-gradient(90deg, var(--border2), transparent); min-width:80px; }
 
@@ -290,7 +294,7 @@
 }
 .roster-title{
   font-family:'Tomorrow',sans-serif; font-size:42px; font-weight:700;
-  letter-spacing:2px; text-transform:uppercase; color:var(--text); line-height:1;
+  letter-spacing:.2px; color:var(--text); line-height:1;
 }
 .roster-sub{ color:var(--muted); font-size:13px; margin-left:auto; letter-spacing:.5px; }
 
