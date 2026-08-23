@@ -126,11 +126,23 @@
   .live-minimap-wrap { width: 100%; max-width: 100%; }
   .live-players { grid-template-columns: 1fr; min-width: 0; }
   .live-diagnostic { flex-wrap: wrap; }
-  .live-diagnostic-version { margin-left: auto; }
+  .live-diagnostic-copy { flex: 1; }
+  .live-diagnostic-copy strong { font-size: 11px; }
+  .live-diagnostic-copy span { font-size: 10px; line-height: 1.35; white-space: normal; }
+  .live-diagnostic-version, .live-client-chip-version { display: none; }
   .live-client-list { grid-template-columns: 1fr; }
   .live-client-group { grid-column: auto; }
   .live-client-group-members { grid-template-columns: 1fr; }
-  .live-download-link { width: 100%; text-align: center; }
+  .live-download-link {
+    display: flex; width: 100%; min-height: 44px; box-sizing: border-box;
+    align-items: center; justify-content: center; text-align: center; font-size: 9px;
+  }
+  .live-client-chip { min-height: 44px; box-sizing: border-box; padding: 7px 9px 7px 11px; }
+  .live-client-avatar { flex-basis: 30px; width: 30px; height: 30px; }
+  .live-client-info strong { font-size: 10px; }
+  .live-client-info small { font-size: 9.5px; white-space: normal; }
+  .live-client-group-heading strong { font-size: 8px; }
+  .live-client-group-heading small { font-size: 8.5px; }
   .live-pregame-header { flex-direction: column; min-height: 0; padding: 16px; }
   .live-side-card { min-width: 0; width: 100%; box-sizing: border-box; }
   .live-pregame-heading strong { letter-spacing: 3px; }
@@ -155,6 +167,17 @@
   .history-filters { align-items: stretch; flex-direction: column; gap: 14px; padding: 12px; }
   .history-filter-group > div { width: 100%; }
   .history-filter-button { flex: 1; min-width: max-content; }
+  .history-filters > .history-filter-group:first-child > div {
+    flex-wrap: nowrap; overflow-x: auto; padding-bottom: 3px;
+    scrollbar-width: none; -webkit-overflow-scrolling: touch;
+  }
+  .history-filters > .history-filter-group:first-child > div::-webkit-scrollbar { display: none; }
+  .history-filters > .history-filter-group:first-child .history-filter-button { flex: 0 0 auto; }
+  .history-load-more-wrap button {
+    width: 100%; max-width: 290px; min-height: 46px; border: 1px solid var(--red);
+    background: var(--red-low); color: var(--text); font: 650 12px 'DM Sans', sans-serif;
+    cursor: pointer;
+  }
   .history-analysis > summary { grid-template-columns: 1fr auto; }
   .history-analysis > summary small { display: none; }
   .history-duration { display: none; }
@@ -163,6 +186,17 @@
   .history-player { grid-template-columns: 30px minmax(70px,1fr) auto 48px; gap: 6px; }
   .history-team-heading { grid-template-columns: 30px minmax(70px,1fr) auto 48px; gap: 6px; }
   .brand-sub { display: none; }
+
+  /* Pages de données : marges constantes et titres lisibles. */
+  #page-history > .container, #page-betting > .container {
+    width: 100%; box-sizing: border-box; padding: 24px 16px 0 !important;
+  }
+  .history-page-title { font-size: 25px; }
+  .history-page-subtitle { margin-bottom: 22px; font-size: 13px; }
+
+  /* Roster : actions tactiles et en-tête moins encombrant. */
+  .roster-title { font-size: 36px; line-height: 1.05; }
+  .sync-all-btn, .henrik-key-btn, .player-sync-btn, .tracker-btn { min-height: 44px; box-sizing: border-box; }
 
   /* Hero compact */
   .hero { padding: 40px 20px 32px; }
@@ -298,7 +332,7 @@
   .page-nav-btn { min-width: 72px; letter-spacing: 0; }
   .topbar-tools .search-wrap { display: none; }
 
-  .section-inner { padding: 32px 16px; }
+  .section-inner { padding: 0; }
   .roster-page-inner, .agents-page-inner { padding: 32px 16px; }
 
   .comp-compare-panel { margin: 8px; }

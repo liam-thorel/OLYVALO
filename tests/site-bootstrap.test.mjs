@@ -13,6 +13,7 @@ const layout = fs.readFileSync(new URL('../css/layout.css', import.meta.url), 'u
 const components = fs.readFileSync(new URL('../css/components.css', import.meta.url), 'utf8');
 const responsive = fs.readFileSync(new URL('../css/responsive.css', import.meta.url), 'utf8');
 const coopStyles = fs.readFileSync(new URL('../css/coop-games.css', import.meta.url), 'utf8');
+const lolStyles = fs.readFileSync(new URL('../css/lol-mode.css', import.meta.url), 'utf8');
 const presence = fs.readFileSync(new URL('../js/presence.js', import.meta.url), 'utf8');
 const coopPage = fs.readFileSync(new URL('../js/coop-games-page.mjs', import.meta.url), 'utf8');
 
@@ -66,6 +67,17 @@ test('mobile composition cards stay compact without hiding their details', () =>
   assert.match(responsive, /\.comp-mobile-details\[open\]\s*\+\s*\.comp-bottom\s*\{\s*display:\s*grid/);
   assert.match(responsive, /\.comp-tabs\s*\{[\s\S]*overflow-x:\s*auto/);
   assert.match(main, /const tabs = btn\.closest\('\.comp-tabs'\)/);
+});
+
+test('mobile data pages keep readable spacing, controls and roster details', () => {
+  assert.match(responsive, /#page-history > \.container, #page-betting > \.container/);
+  assert.match(responsive, /\.history-load-more-wrap button\s*\{[\s\S]*min-height:\s*46px/);
+  assert.match(responsive, /\.live-client-chip\s*\{[\s\S]*min-height:\s*44px/);
+  assert.match(responsive, /\.section-inner\s*\{\s*padding:\s*0/);
+  assert.match(lolStyles, /\.lol-roster-champion strong\{font-size:10px\}/);
+  assert.match(coopStyles, /\.coop-cover\{aspect-ratio:16\/7\}/);
+  assert.match(page, /lol-mode\.css\?v=20260823-mobile-sections/);
+  assert.match(page, /coop-games\.css\?v=20260823-mobile-sections/);
 });
 
 test('coop games expose explicit categories and cache-safe search modules', () => {
