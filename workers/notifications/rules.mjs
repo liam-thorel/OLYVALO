@@ -18,15 +18,15 @@ export function notificationMessage(type, value = {}) {
   if (type === 'reminder') {
     const minutes = Number(value.reminderMinutes) || 15;
     return {
-      title:'🎮 ' + (value.gameTitle || 'Session OLYCITY') + ` dans ${minutes} minutes`,
-      body:'Rendez-vous à ' + (value.time || '') + '. Préparez-vous !',
+      title:'OLYCITY',
+      body:'🎮 ' + (value.gameTitle || 'Session de jeu') + ` dans ${minutes} minutes · Rendez-vous à ` + (value.time || '') + '.',
       tag:'session-' + (value.startsAt || value.updatedAt || ''),
       url:'./#home',
     };
   }
   return {
-    title:'🏆 ' + value.member + ' passe ' + value.after,
-    body:value.before + ' → ' + value.after + ' sur ' + (value.game === 'lol' ? 'League of Legends' : 'Valorant'),
+    title:'OLYCITY',
+    body:'🏆 ' + value.member + ' passe ' + value.after + ' · ' + value.before + ' → ' + value.after + ' sur ' + (value.game === 'lol' ? 'League of Legends' : 'Valorant'),
     tag:'rank-' + value.game + '-' + (value.id || value.memberId || ''),
     url:'./#history',
   };

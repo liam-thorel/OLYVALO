@@ -18,7 +18,10 @@
   padding:14px 32px; max-width:1600px; margin:0 auto;
 }
 
-.brand{ display:flex; align-items:center; gap:12px; cursor:pointer; flex-shrink:0; }
+.brand{
+  display:flex; align-items:center; justify-content:center; cursor:pointer; flex-shrink:0;
+  padding:0; border:0; background:transparent; color:inherit;
+}
 .brand-mark{
   width:38px; height:38px;
   background:linear-gradient(135deg, var(--red), #c1303d);
@@ -33,16 +36,6 @@
   box-shadow:none;
   overflow:visible;
 }
-.brand-text{ display:flex; flex-direction:column; line-height:1; }
-.brand-title{
-  font-family:'Tomorrow',sans-serif; font-size:20px; font-weight:700;
-  color:var(--text); letter-spacing:2px;
-}
-.brand-sub{
-  font-family:'Tomorrow',sans-serif; font-size:9px; font-weight:500;
-  letter-spacing:3.5px; color:var(--red); margin-top:2px;
-}
-
 /* PAGE NAV (Accueil / Maps / Roster) */
 .page-nav{
   display:flex; gap:4px; flex-shrink:0;

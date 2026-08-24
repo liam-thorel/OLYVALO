@@ -27,6 +27,15 @@ test('League ignores divisions and detects only promotion to a higher tier', () 
   }).after, 'Gold');
 });
 
+test('notification title stays limited to the OLYCITY brand', () => {
+  const message = notificationMessage('rank', {
+    member:'Nico', before:'Diamant', after:'Ascendant', game:'valorant', id:'match-1',
+  });
+  assert.equal(message.title, 'OLYCITY');
+  assert.equal(message.body, '🏆 Nico passe Ascendant · Diamant → Ascendant sur Valorant');
+  assert.equal(message.url, './#history');
+});
+
 test('session reminders open once around T minus 30 and T minus 15', () => {
   const startsAt = Date.UTC(2026, 7, 24, 20, 0);
   assert.deepEqual(dueReminderMinutes({ startsAt }, startsAt - 31 * 60_000), []);
@@ -35,6 +44,10 @@ test('session reminders open once around T minus 30 and T minus 15', () => {
   assert.equal(reminderDue({ startsAt }, startsAt - 15 * 60_000), true);
   assert.deepEqual(dueReminderMinutes({ startsAt }, startsAt - 15 * 60_000), [15]);
   assert.equal(reminderDue({ startsAt }, startsAt - 12 * 60_000), false);
-  assert.match(notificationMessage('reminder', { gameTitle:'PEAK', time:'22:00', reminderMinutes:30 }).title, /30 minutes/);
-  assert.match(notificationMessage('reminder', { gameTitle:'PEAK', time:'22:00', reminderMinutes:15 }).title, /15 minutes/);
+  const reminder30 = notificationMessage('reminder', { gameTitle:'PEAK', time:'22:00', reminderMinutes:30 });
+  const reminder15 = notificationMessage('reminder', { gameTitle:'PEAK', time:'22:00', reminderMinutes:15 });
+  assert.equal(reminder30.title, 'OLYCITY');
+  assert.match(reminder30.body, /PEAK dans 30 minutes/);
+  assert.equal(reminder15.title, 'OLYCITY');
+  assert.match(reminder15.body, /PEAK dans 15 minutes/);
 });

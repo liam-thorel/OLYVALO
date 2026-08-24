@@ -171,8 +171,8 @@ export async function handleRequest(request, env) {
     // the test route throw a 500 before the notification was even sent.
     await env.PUSH_SUBSCRIPTIONS.put(rateKey, '1', { expirationTtl:60 });
     const sent = await broadcast(env, {
-      title:'✅ Notifications OLYCITY',
-      body:'Test reçu pour ' + String(payload.name || memberId) + '. Les rappels sont opérationnels.',
+      title:'OLYCITY',
+      body:'✅ Test reçu pour ' + String(payload.name || memberId) + ' · Les rappels sont opérationnels.',
       tag:'test-' + memberId,
       url:'./#admin',
     }, memberId);

@@ -51,6 +51,8 @@ test('le bandeau live ne prétend pas afficher un score indisponible en direct',
 test('OLYCITY is the product brand while games remain contextual modes', () => {
   assert.match(page, /<title>OLYCITY<\/title>/);
   assert.match(page, /name="application-name" content="OLYCITY"/);
+  assert.match(page, /class="brand"[^>]+aria-label="Retour à l’accueil"/);
+  assert.doesNotMatch(page, /class="brand-title"/);
   assert.doesNotMatch(page, /id="brand-subtitle"|id="hero-subtitle"/);
   assert.doesNotMatch(gameMode, /setText\('(?:brand|hero)-subtitle'/);
   assert.match(gameMode, /primary\.textContent = '● Voir le Live'/);
@@ -69,7 +71,7 @@ test('home is one live priority, three visual worlds and a compact member strip'
   assert.match(homeStyles, /league-champions-group\.webp/);
   assert.match(homeStyles, /peak-keyart\.webp/);
   assert.match(page, /home\.css\?v=20260824-session-planner/);
-  assert.match(page, /design-system\.css\?v=20260824-sessions-history/);
+  assert.match(page, /design-system\.css\?v=20260824-topbar-brand/);
   assert.match(page, /<span class="hero-title-frame">OLYCITY<\/span>/);
   assert.doesNotMatch(page, /id="hero-eyebrow"/);
   assert.match(page, /id="home-member-faces"/);
@@ -149,7 +151,7 @@ test('mobile data pages keep readable spacing, controls and roster details', () 
   assert.match(responsive, /\.section-inner\s*\{\s*padding:\s*0/);
   assert.match(lolStyles, /\.lol-roster-champion strong\{font-size:10px\}/);
   assert.match(coopStyles, /\.coop-cover\{aspect-ratio:16\/7\}/);
-  assert.match(page, /lol-mode\.css\?v=20260824-mobile-data-cache/);
+  assert.match(page, /lol-mode\.css\?v=20260824-topbar-brand/);
   assert.match(page, /coop-games\.css\?v=20260824-mobile-data-cache/);
   assert.match(designSystem, /\.history-filter-group\s*\{\s*grid-template-columns:\s*55px minmax\(0,1fr\)/);
   assert.match(designSystem, /\.coop-filter-field:last-child\s*\{\s*flex-basis:\s*100%/);

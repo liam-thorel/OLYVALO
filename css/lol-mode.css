@@ -29,8 +29,6 @@
 :root[data-game="lol"] .bg-glow-2 { background:radial-gradient(circle,rgba(15,112,164,.15),transparent 62%); }
 :root[data-game="lol"] .topbar { background:rgba(3,11,19,.92); border-bottom-color:rgba(201,155,63,.18); }
 :root[data-game="lol"] #profile-picker { background:radial-gradient(circle at 50% 20%,#0b2940,#030a11 62%)!important; }
-:root[data-game="lol"] .brand-title { color:#f2dfad; text-shadow:0 0 24px rgba(201,155,63,.25); }
-:root[data-game="lol"] .brand-sub { color:#7196ad; }
 :root[data-game="lol"] .page-nav-btn.active { color:#f4d98e; }
 :root[data-game="lol"] .page-nav-btn.active::after { background:linear-gradient(90deg,transparent,var(--gold),transparent); }
 :root[data-game="lol"] .hero { background:linear-gradient(180deg,rgba(5,27,43,.45),transparent); }

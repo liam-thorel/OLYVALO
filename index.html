@@ -17,15 +17,15 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Tomorrow:wght@400;500;600;700&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="./css/tokens.css?v=20260824-page-shell">
-  <link rel="stylesheet" href="./css/layout.css?v=20260824-footer-spacing">
+  <link rel="stylesheet" href="./css/layout.css?v=20260824-topbar-brand">
   <link rel="stylesheet" href="./css/components.css?v=20260824-mobile-map-admin">
   <link rel="stylesheet" href="./css/home.css?v=20260824-session-planner">
   <link rel="stylesheet" href="./css/agent-page.css?v=20260720-avatars">
-  <link rel="stylesheet" href="./css/responsive.css?v=20260824-sessions-history">
-  <link rel="stylesheet" href="./css/lol-mode.css?v=20260824-mobile-data-cache">
+  <link rel="stylesheet" href="./css/responsive.css?v=20260824-topbar-brand">
+  <link rel="stylesheet" href="./css/lol-mode.css?v=20260824-topbar-brand">
   <link rel="stylesheet" href="./css/curse.css?v=20260818-curse-lifecycle">
   <link rel="stylesheet" href="./css/coop-games.css?v=20260824-mobile-data-cache">
-  <link rel="stylesheet" href="./css/design-system.css?v=20260824-sessions-history">
+  <link rel="stylesheet" href="./css/design-system.css?v=20260824-topbar-brand">
 </head>
 <body>
 
@@ -107,14 +107,11 @@
   <!-- TOP BAR -->
   <nav class="topbar">
     <div class="topbar-row">
-      <div class="brand" onclick="window.OLYCITY?.nav('home')">
+      <button class="brand" type="button" onclick="window.OLYCITY?.nav('home')" aria-label="Retour à l’accueil" title="Accueil">
         <div class="brand-mark brand-mark-wheel" style="width:36px;height:40px;padding:0;background:transparent;border:none">
           <canvas id="logo-canvas-topbar" width="36" height="40"></canvas>
         </div>
-        <div class="brand-text">
-          <span class="brand-title">OLYCITY</span>
-        </div>
-      </div>
+      </button>
 
       <!-- PAGE NAV -->
       <div class="page-nav" id="page-nav">

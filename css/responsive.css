@@ -33,8 +33,6 @@
 @media (max-width: 600px) {
   .hero{ padding:40px 16px 28px; }
   .hero-title-frame::before, .hero-title-frame::after{ width:16px; height:16px; }
-  .brand-title{ font-size:16px; }
-  .brand-sub{ font-size:8px; letter-spacing:2.5px; }
   .nav-map-btn{ padding:6px 10px; font-size:10px; }
   .map-hero{ height:220px; }
   .map-hero-title{ font-size:32px; }
@@ -77,10 +75,8 @@
     gap: 10px;
     padding: 8px 12px;
   }
-  .brand { grid-column: 1; grid-row: 1; min-width: 0; gap: 8px; }
+  .brand { grid-column: 1; grid-row: 1; min-width: 0; }
   .brand-mark-wheel { flex: 0 0 auto; }
-  .brand-text { min-width: 0; }
-  .brand-title { overflow: hidden; font-size: 16px; text-overflow: ellipsis; white-space: nowrap; }
   .topbar-tools { grid-column: 2; grid-row: 1; justify-self: end; margin-left: 0; }
   .game-switch-btn, .profile-indicator { min-height: 44px; touch-action: manipulation; }
   .profile-indicator { min-width: 44px; justify-content: center; padding: 4px 8px; }
@@ -254,7 +250,6 @@
   .history-self-agent { width: 32px; height: 32px; }
   .history-player { grid-template-columns: 30px minmax(70px,1fr) auto 48px; gap: 6px; }
   .history-team-heading { grid-template-columns: 30px minmax(70px,1fr) auto 48px; gap: 6px; }
-  .brand-sub { display: none; }
 
   /* Pages de données : marges constantes et titres lisibles. */
   #page-history > .container, #page-betting > .container {
@@ -381,7 +376,6 @@
 
 /* ── SMALL MOBILE (480px) ─────────── */
 @media (max-width: 480px) {
-  .brand-title { font-size: 14px; letter-spacing: 1.4px; }
   .profile-indicator-name { display: none; }
   .page-nav-btn { min-width: 0; overflow:hidden; letter-spacing: 0; white-space:nowrap; }
   .topbar-tools .search-wrap { display: none; }

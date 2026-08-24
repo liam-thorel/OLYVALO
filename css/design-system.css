@@ -273,7 +273,6 @@
 .coop-field input,.coop-field select,.coop-field textarea { background: var(--surface-soft); }
 
 @media (max-width: 1180px) and (min-width: 769px) {
-  .brand-sub { display: none; }
   .topbar-row { gap: 12px; padding-inline: 18px; }
   .page-nav-btn { padding-inline: 9px; }
   .page-nav-icon { display: none; }
