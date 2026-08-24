@@ -19,13 +19,13 @@
   <link rel="stylesheet" href="./css/tokens.css?v=20260720-avatars">
   <link rel="stylesheet" href="./css/layout.css?v=20260824-live-history-density">
   <link rel="stylesheet" href="./css/components.css?v=20260823-mobile-design">
-  <link rel="stylesheet" href="./css/home.css?v=20260824-home-group-pwa">
+  <link rel="stylesheet" href="./css/home.css?v=20260824-balanced-app">
   <link rel="stylesheet" href="./css/agent-page.css?v=20260720-avatars">
   <link rel="stylesheet" href="./css/responsive.css?v=20260824-live-history-density">
   <link rel="stylesheet" href="./css/lol-mode.css?v=20260824-live-history-density">
   <link rel="stylesheet" href="./css/curse.css?v=20260818-curse-lifecycle">
   <link rel="stylesheet" href="./css/coop-games.css?v=20260823-mobile-sections">
-  <link rel="stylesheet" href="./css/design-system.css?v=20260824-readable-pwa">
+  <link rel="stylesheet" href="./css/design-system.css?v=20260824-balanced-app">
 </head>
 <body>
 
@@ -247,10 +247,15 @@
         </button>
       </div>
 
-      <button class="home-member-strip" type="button" onclick="window.OLYCITY?.nav('roster')" aria-label="Voir les membres OLYCITY">
-        <span class="home-member-faces" id="home-member-faces"></span>
-        <span id="home-online-label">Connexion…</span>
-      </button>
+      <div class="home-member-row">
+        <button class="home-member-strip" type="button" onclick="window.OLYCITY?.nav('roster')" aria-label="Voir les membres OLYCITY">
+          <span class="home-member-faces" id="home-member-faces"></span>
+          <span id="home-online-label">Connexion…</span>
+        </button>
+        <button class="home-app-launcher" id="home-app-launcher" type="button" aria-label="Installation et notifications OLYCITY">
+          <span aria-hidden="true">↓</span><strong>Application</strong>
+        </button>
+      </div>
 
       <div class="home-group-grid">
         <section class="home-group-panel home-tonight-panel" aria-labelledby="home-tonight-title">
@@ -270,11 +275,6 @@
         </section>
       </div>
 
-      <button class="home-install-band" id="pwa-install-band" type="button" hidden>
-        <span class="home-install-icon" aria-hidden="true">↓</span>
-        <span><strong>Installer OLYCITY</strong><small id="pwa-install-summary">Accès rapide depuis ton écran d’accueil.</small></span>
-        <i>Voir comment</i>
-      </button>
     </section>
 
   </div>
@@ -293,6 +293,25 @@
       <p class="home-sheet-status" id="home-tonight-status" aria-live="polite"></p>
       <footer><button class="home-sheet-primary" type="submit">Enregistrer la soirée</button></footer>
     </form>
+  </div>
+
+  <div class="home-sheet" id="home-app-modal" role="dialog" aria-modal="true" aria-labelledby="home-app-modal-title" hidden>
+    <div class="home-sheet-card home-app-card">
+      <header><div><span>Sur tes appareils</span><h2 id="home-app-modal-title">Application OLYCITY</h2></div><button type="button" data-home-app-close aria-label="Fermer">×</button></header>
+      <p class="home-app-intro">Installe le site comme une application et choisis si tu veux recevoir les rappels du groupe.</p>
+      <div class="home-utility-grid home-app-grid">
+        <button class="home-install-band" id="pwa-install-band" type="button" hidden>
+          <span class="home-install-icon" aria-hidden="true">↓</span>
+          <span><strong>Installer OLYCITY</strong><small id="pwa-install-summary">Accès rapide depuis ton écran d’accueil.</small></span>
+          <i>Voir comment</i>
+        </button>
+        <button class="home-install-band home-notification-band" id="push-notification-band" type="button" hidden>
+          <span class="home-install-icon" aria-hidden="true">●</span>
+          <span><strong>Notifications OLYCITY</strong><small id="push-notification-summary">Activer les rappels et les rank-ups.</small></span>
+          <i>Activer</i>
+        </button>
+      </div>
+    </div>
   </div>
 
   <div class="home-sheet" id="pwa-install-modal" role="dialog" aria-modal="true" aria-labelledby="pwa-install-title" hidden>
@@ -538,6 +557,6 @@
   <!-- Firebase SDK -->
   <!-- Présence Firebase -->
   <script src="./js/presence.js?v=20260720-avatars"></script>
-  <script type="module" src="./js/main.js?v=20260824-group-pwa-2"></script>
+  <script type="module" src="./js/main.js?v=20260824-balanced-app"></script>
 </body>
 </html>

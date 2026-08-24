@@ -13,7 +13,7 @@ import { rosterHTML, guestCardHTML, mapSectionHTML, agentPageHTML } from './rend
 import { initTheme, initTilt, initParallax, initSearch, initKeyboard, initHeroParticles, initWheelLogos, initLivePage, initHistoryPage } from './interactions.js?v=20260824-ux-polish';
 import { storage } from './storage.js';
 import { avatarLayersHTML } from './avatars.mjs';
-import { initAdminPage } from './admin.mjs?v=20260814-admin-current-script';
+import { initAdminPage } from './admin.mjs?v=20260824-push';
 import { initBettingPage } from './betting-page.mjs';
 import { initCoopGamesPage } from './coop-games-page.mjs?v=20260824-ux-polish';
 import { getGameMode, initGameMode, setGameMode } from './game-mode.mjs?v=20260824-home-world-art';
@@ -21,9 +21,10 @@ import { initLolHistoryPage, initLolLivePage } from './lol-pages.mjs?v=20260824-
 import { initLolRosterPages } from './lol-roster.mjs?v=20260809-lol-sync';
 import { state } from './state.mjs?v=20260806-lol-roster';
 import { memberId, mergeMemberProfiles, resolveMemberProfile } from './member-profiles.mjs?v=20260823-profile-picker';
-import { initHomeDashboard } from './home-dashboard.mjs?v=20260823-home-art-buttons-fix';
-import { initHomeGroup } from './home-group.mjs?v=20260824-home-group-2';
-import { initPwaInstall } from './pwa-install.mjs?v=20260824-pwa';
+import { initHomeDashboard } from './home-dashboard.mjs?v=20260824-home-online';
+import { initHomeGroup } from './home-group.mjs?v=20260824-notifications';
+import { initPwaInstall } from './pwa-install.mjs?v=20260824-app-panel';
+import { initPushNotifications } from './push-notifications.mjs?v=20260824-push';
 export { state };
 
 // ─── STATE ─────────────────────────────────────────
@@ -747,6 +748,10 @@ async function boot() {
     });
   }
   if (!window._homeGroupCleanup) window._homeGroupCleanup = initHomeGroup(state.MEMBERS);
+  if (!window._pushNotificationsReady) {
+    window._pushNotificationsReady = true;
+    initPushNotifications();
+  }
   if (!window._lolRosterCleanup) window._lolRosterCleanup = initLolRosterPages();
   initSearch((name) => window.OLYCITY.showAgentPage(name));
 

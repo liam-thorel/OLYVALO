@@ -1,5 +1,5 @@
 import { fetchJsonWithTimeout } from './request-utils.mjs?v=20260809-route-load-stable';
-import { buildHomeActivity, localDateKey, normalizeGroupNight, relativeActivityTime, responseCounts } from './home-group-utils.mjs?v=20260824-home-group';
+import { buildHomeActivity, localDateKey, normalizeGroupNight, relativeActivityTime, responseCounts } from './home-group-utils.mjs?v=20260824-push';
 
 const FIREBASE_ROOT = 'https://realtime-database-5bb9f-default-rtdb.europe-west1.firebasedatabase.app';
 const LAST_SEEN_KEY = 'olycity-home-activity-seen';
@@ -108,7 +108,7 @@ async function loadHomeGroup() {
     fetchJsonWithTimeout(`${FIREBASE_ROOT}/groupNight/current.json`, { timeoutMs:3_500 }),
     fetchJsonWithTimeout(`${FIREBASE_ROOT}/coopGames.json`, { timeoutMs:3_500 }),
     fetchJsonWithTimeout(`${FIREBASE_ROOT}/historyIndex/valorant.json${historyQuery}`, { timeoutMs:3_500 }),
-    fetchJsonWithTimeout(`${FIREBASE_ROOT}/historyIndex/lol.json${historyQuery}`, { timeoutMs:3_500 }),
+    fetchJsonWithTimeout(`${FIREBASE_ROOT}/live/lolHistory.json${historyQuery}`, { timeoutMs:3_500 }),
   ]);
   plan = normalizeGroupNight(nightResult.status === 'fulfilled' ? nightResult.value : null);
   const fetchedGames = gamesResult.status === 'fulfilled' ? gamesResult.value || {} : {};
@@ -170,6 +170,8 @@ async function submitPlan(event) {
   if (!current) return window.OLYCITY?._showProfilePicker?.();
   const submit = event.currentTarget.querySelector('[type="submit"]');
   const time = document.getElementById('home-tonight-time')?.value || '21:30';
+  const date = localDateKey();
+  const startsAt = new Date(`${date}T${time}:00`).getTime();
   const select = document.getElementById('home-tonight-game');
   const game = games.find(item => item.id === select?.value);
   submit.disabled = true;
@@ -177,7 +179,7 @@ async function submitPlan(event) {
   try {
     const updatedAt = Date.now();
     await firebaseWrite('groupNight/current', 'PATCH', {
-      date:localDateKey(), time, gameId:game?.id || '', gameTitle:game?.title || 'Jeu à décider',
+      date, time, startsAt, gameId:game?.id || '', gameTitle:game?.title || 'Jeu à décider',
       createdBy:current.name, updatedAt,
     });
     if (pendingResponse) await firebaseWrite(`groupNight/current/responses/${profileKey(current.id || current.name)}`, 'PUT', {

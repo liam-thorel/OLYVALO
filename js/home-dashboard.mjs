@@ -54,7 +54,7 @@ export function homeDashboardState(snapshot = {}, now = Date.now()) {
 
 function memberFaces(members, onlineIds) {
   return members.map(member => `
-    <span class="home-member-face${onlineIds.has(member.id) ? ' online' : ''}" title="${member.name}">
+    <span class="home-member-face${onlineIds.has(String(member.id || '').toLowerCase()) ? ' online' : ''}" title="${member.name}">
       ${avatarLayersHTML(member.name, member.avatar)}
     </span>`).join('');
 }
@@ -71,7 +71,7 @@ function renderSnapshot(snapshot, members) {
 
   const model = homeDashboardState(snapshot);
   faces.innerHTML = memberFaces(members, model.onlineIds);
-  onlineLabel.textContent = model.onlineIds.size ? `${model.onlineIds.size} en ligne` : 'Personne en ligne';
+  onlineLabel.textContent = `${model.onlineIds.size} en ligne`;
   card.dataset.state = model.state;
   kicker.textContent = model.kicker;
   title.textContent = model.title;

@@ -51,12 +51,14 @@ jobs:
         env:
           HENRIK_API_KEY: ${{ secrets.HENRIK_API_KEY }}
           GAME_CATALOG_ENDPOINT: ${{ vars.GAME_CATALOG_ENDPOINT }}
+          NOTIFICATION_ENDPOINT: ${{ vars.NOTIFICATION_ENDPOINT }}
         run: |
           # Encodage via JSON.stringify : aucune valeur de configuration ne
           # peut casser le module si elle contient un caractère spécial.
-          printf 'export const CONFIG = {\n  HENRIK_API_KEY: %s,\n  GAME_CATALOG_ENDPOINT: %s,\n};\n' \
+          printf 'export const CONFIG = {\n  HENRIK_API_KEY: %s,\n  GAME_CATALOG_ENDPOINT: %s,\n  NOTIFICATION_ENDPOINT: %s,\n};\n' \
             "$(node -p 'JSON.stringify(process.env.HENRIK_API_KEY || "")')" \
-            "$(node -p 'JSON.stringify(process.env.GAME_CATALOG_ENDPOINT || "")')" > _site/config.js
+            "$(node -p 'JSON.stringify(process.env.GAME_CATALOG_ENDPOINT || "")')" \
+            "$(node -p 'JSON.stringify(process.env.NOTIFICATION_ENDPOINT || "")')" > _site/config.js
           if [ -z "$HENRIK_API_KEY" ]; then
             echo "::notice::Aucun secret HENRIK_API_KEY — chaque visiteur renseignera sa clé depuis la page Roster."
           fi

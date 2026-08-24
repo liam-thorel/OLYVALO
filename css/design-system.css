@@ -156,6 +156,37 @@
 .home-world-copy small { font-family: 'DM Sans',sans-serif; font-size: 10px; letter-spacing: .3px; text-transform: none; }
 .home-member-strip { border: 0; background: rgba(16,19,26,.52); }
 
+/* L’accueil desktop tient dans une fenêtre d’application 1080p sans sacrifier
+   les tailles tactiles ni la lisibilité des informations utiles. */
+@media (min-width:769px) and (min-height:720px) {
+  #page-home .hero { padding: 8px 32px 6px; }
+  #page-home .hero-eyebrow { margin-bottom: 5px; font-size: 9px; }
+  #page-home .hero-title { font-size: clamp(46px,4.5vw,58px); }
+  #page-home .hero-meta { display:none; }
+  #page-home .hero-ctas { margin-top: 8px; }
+  #page-home .hero-cta-primary,#page-home .hero-cta-secondary { min-height: 40px; padding-block: 8px; }
+  .home-dashboard { padding: 5px 32px 14px; }
+  .home-now-card { box-sizing:border-box;height:126px;min-height:0;padding:17px 20px; }
+  .home-now-copy > strong { font-size: clamp(25px,2.7vw,36px); }
+  .home-now-copy > small { font-size: 13px; }
+  .home-world-grid { gap: 10px; margin-top: 8px; }
+  .home-world { min-height: 142px; }
+  .home-world-copy { left: 14px; bottom: 12px; }
+  .home-world-copy strong { font-size: 17px; }
+  .home-member-row { margin-top: 8px; }
+  .home-member-strip { padding: 7px 13px; }
+  .home-member-face { width: 30px; height: 30px; }
+  .home-group-grid { gap: 10px; margin-top: 8px; }
+  .home-group-panel { padding: 10px 13px; }
+  .home-group-heading { margin-bottom: 6px; }
+  .home-tonight-content { min-height: 40px; }
+  .home-activity-list { gap: 4px; }
+  .home-activity-item { min-height: 20px; }
+  .home-utility-grid { gap: 10px; }
+  .home-install-band { min-height: 46px; padding-block: 6px; }
+  .home-install-icon { width: 31px; height: 31px; }
+}
+
 /* Dense data views stay readable without turning every row into a box. */
 .history-game-list,.lol-history-list { gap: 8px; }
 .history-game-summary,.lol-history-match > summary { min-height: 58px; }

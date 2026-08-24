@@ -24,6 +24,21 @@ test('home activity combines both games and coop without exceeding the limit', (
   assert.match(events[1].text, /Liam.*Teemo/);
 });
 
+test('home activity highlights real rank promotions but ignores divisions', () => {
+  const events = buildHomeActivity({
+    valorant:{ valo:{ ts:300, reports:{ nico:{ memberId:'nico', rr:{ tierBefore:11, tier:12 } } } } },
+    lol:{
+      promoted:{ ts:250, memberId:'liam', rankBefore:{ tier:'SILVER' }, rankAfter:{ tier:'GOLD' } },
+      division:{ ts:200, memberId:'nico', rankBefore:{ tier:'GOLD', division:'II' }, rankAfter:{ tier:'GOLD', division:'I' } },
+    },
+    members:[{ id:'nico', name:'Nico' }, { id:'liam', name:'Liam' }],
+    limit:10,
+  });
+  assert.ok(events.some(event => /Nico est passé Gold sur Valorant/.test(event.text)));
+  assert.ok(events.some(event => /Liam est passé Gold sur League/.test(event.text)));
+  assert.equal(events.filter(event => event.kind === 'rank').length, 2);
+});
+
 test('installation help adapts to iPhone, Android and desktop', () => {
   assert.match(installInstructions('iPhone Safari').steps.join(' '), /Partager/);
   assert.match(installInstructions('Android Chrome').device, /Android/);

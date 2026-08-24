@@ -66,9 +66,10 @@ test('home is one live priority, three visual worlds and a compact member strip'
   assert.match(homeStyles, /valorant-keyart\.webp/);
   assert.match(homeStyles, /league-champions-group\.webp/);
   assert.match(homeStyles, /peak-keyart\.webp/);
-  assert.match(page, /home\.css\?v=20260824-home-group-pwa/);
-  assert.match(page, /design-system\.css\?v=20260824-readable-pwa/);
+  assert.match(page, /home\.css\?v=20260824-balanced-app/);
+  assert.match(page, /design-system\.css\?v=20260824-balanced-app/);
   assert.match(page, /id="home-member-faces"/);
+  assert.match(homeStyles, /\.home-member-face\.online\{border-color:#4bd07b/);
   assert.doesNotMatch(page, /Agents prioritaires|id="stier-row"|id="mini-roster"/);
   assert.match(main, /initHomeDashboard\(/);
   assert.match(homeDashboard, /liveDataStore\.subscribe\(render\)/);
@@ -178,6 +179,16 @@ test('startup reveals the shell before optional APIs and supports installation',
   assert.match(page, /id="pwa-install-band"/);
   assert.match(pwaInstall, /serviceWorker\.register\('\.\/sw\.js'/);
   assert.doesNotMatch(page, /getRegistrations\(\)[\s\S]*unregister/);
+});
+
+test('PWA exposes opt-in notifications and admin test controls without touching the bot', () => {
+  assert.match(page, /id="home-app-launcher"/);
+  assert.match(page, /id="home-app-modal"/);
+  assert.match(page, /id="push-notification-band"/);
+  assert.match(main, /initPushNotifications/);
+  assert.match(fs.readFileSync(new URL('../sw.js', import.meta.url), 'utf8'), /addEventListener\('push'/);
+  assert.match(fs.readFileSync(new URL('../sw.js', import.meta.url), 'utf8'), /self\.registration\.scope/);
+  assert.match(fs.readFileSync(new URL('../js\/admin.mjs', import.meta.url), 'utf8'), /admin-test-notification/);
 });
 
 test('Live and Coop explain loading, empty and recovery states', () => {

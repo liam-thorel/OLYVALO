@@ -7,6 +7,7 @@ const read = f => fs.readFileSync(path.join(root, f), 'utf8');
 
 const workflow = read('.github/workflows/pages.yml');
 assert.match(workflow, /cp index\.html \.nojekyll manifest\.webmanifest sw\.js _site\//);
+assert.match(workflow, /NOTIFICATION_ENDPOINT/);
 
 // Le workflow copie explicitement ce qu'il publie : ce qui n'est pas listé
 // n'arrive pas en ligne. On extrait cette liste pour la confronter à ce que

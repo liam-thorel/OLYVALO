@@ -17,6 +17,7 @@ import { buildScriptHealth, scriptDiagnosticText, scriptHealthSummary } from './
 import { fetchJsonWithTimeout } from './request-utils.mjs?v=20260809-route-load-stable';
 import { isLiveRecordExpired, liveDataStore, staleLiveRecords } from './live-data-store.mjs?v=20260810-firebase-connection-fix';
 import { mergeMemberProfiles } from './member-profiles.mjs?v=20260823-profile-picker';
+import { currentPushState, enablePushNotifications, sendTestPush } from './push-notifications.mjs?v=20260824-push';
 
 const FIREBASE_URL = 'https://realtime-database-5bb9f-default-rtdb.europe-west1.firebasedatabase.app';
 // SHA-256 du mot de passe admin. Pour le changer : recalcule le hash d'un
@@ -340,6 +341,17 @@ function render() {
         <div id="admin-health-dashboard">${renderHealthDashboardHTML()}</div>
       </section>
 
+      ${['nico', 'liam'].includes(localStorage.getItem('olycity-member-id') || '') ? `
+      <section class="admin-section admin-notification-section">
+        <div class="admin-section-head">
+          <div>
+            <h3>Notifications</h3>
+            <p class="admin-dim" id="admin-notification-status">Vérification de cet appareil…</p>
+          </div>
+          <button type="button" class="admin-btn admin-btn-primary" id="admin-test-notification">Tester sur mon appareil</button>
+        </div>
+      </section>` : ''}
+
       <section class="admin-section">
         <h3>Comptes détectés non assignés</h3>
         <div id="admin-discovered">${renderDiscoveredHTML()}</div>
@@ -366,6 +378,26 @@ async function reloadAndRender(root) {
 
 function wireEvents(root) {
   root.querySelector('#admin-refresh-btn')?.addEventListener('click', () => reloadAndRender(root));
+
+  const testNotification = root.querySelector('#admin-test-notification');
+  const notificationStatus = root.querySelector('#admin-notification-status');
+  if (testNotification) {
+    currentPushState().then(state => { if (notificationStatus) notificationStatus.textContent = state.label; });
+    testNotification.addEventListener('click', async () => {
+      testNotification.disabled = true;
+      if (notificationStatus) notificationStatus.textContent = 'Préparation du test…';
+      try {
+        const state = await currentPushState();
+        if (state.state !== 'enabled') await enablePushNotifications();
+        const result = await sendTestPush();
+        if (notificationStatus) notificationStatus.textContent = result.sent
+          ? 'Notification envoyée sur cet appareil.'
+          : 'Aucun appareil abonné pour ce profil.';
+      } catch (error) {
+        if (notificationStatus) notificationStatus.textContent = error.message;
+      } finally { testNotification.disabled = false; }
+    });
+  }
 
   root.querySelector('#admin-purge-stale-btn')?.addEventListener('click', async event => {
     const button = event.currentTarget;
@@ -607,6 +639,7 @@ const ADMIN_CSS = `
 .admin-section{margin-top:32px;padding-top:24px;border-top:1px solid rgba(255,255,255,.08)}
 .admin-section-head{display:flex;align-items:center;justify-content:space-between}
 .admin-health-section{margin-top:14px;padding:20px;border:1px solid var(--border,rgba(255,255,255,.08));background:linear-gradient(145deg,rgba(255,255,255,.035),rgba(255,255,255,.012));border-radius:10px}
+.admin-notification-section{padding:16px;border:1px solid rgba(63,207,207,.18);background:rgba(63,207,207,.035);border-radius:8px}.admin-notification-section h3{margin:0 0 5px}.admin-notification-section p{margin:0}
 .admin-health-heading h3{margin:0 0 4px;font:700 14px Tomorrow,sans-serif;letter-spacing:1.4px;text-transform:uppercase}.admin-health-heading p{margin:0}
 .admin-health-actions{display:flex;align-items:flex-end;gap:8px;flex-direction:column}.admin-health-actions .admin-btn:disabled{opacity:.45;cursor:default}
 .admin-health-summary{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin:18px 0 14px}.admin-health-summary>div{display:grid;gap:2px;padding:12px 14px;border:1px solid var(--border,rgba(255,255,255,.08));background:rgba(0,0,0,.16);border-radius:7px}.admin-health-summary strong{font:700 22px Tomorrow,sans-serif;color:var(--text)}.admin-health-summary span{font-size:10px;text-transform:uppercase;letter-spacing:1px;color:var(--dim)}.admin-health-summary .attention strong{color:#f5c842}

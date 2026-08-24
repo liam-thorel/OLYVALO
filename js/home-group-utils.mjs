@@ -1,3 +1,5 @@
+import { rankPromotion } from './rank-promotion.mjs?v=20260824-push';
+
 export function localDateKey(now = new Date()) {
   const date = now instanceof Date ? now : new Date(now);
   const pad = value => String(value).padStart(2, '0');
@@ -46,6 +48,13 @@ export function buildHomeActivity({ valorant = {}, lol = {}, coop = {}, plan = n
     const name = memberName(match, members);
     const won = String(match.result || '').toLowerCase() === 'win';
     events.push({ id:`valorant-${id}`, kind:'valorant', ts, fresh:ts > lastSeen, text:`${name} a ${won ? 'gagné' : 'terminé'} sur ${match.map || 'Valorant'}` });
+    const reports = Object.values(match?.reports || {});
+    reports.forEach((report, index) => {
+      const promotion = rankPromotion('valorant', report);
+      if (!promotion) return;
+      const promotedName = memberName(report, members);
+      events.push({ id:`rank-valorant-${id}-${index}`, kind:'rank', ts:ts + 1, fresh:ts > lastSeen, text:`${promotedName} est passé ${promotion.after} sur Valorant` });
+    });
   });
   Object.entries(lol || {}).forEach(([id, match]) => {
     const ts = normalizeTimestamp(match?.ts);
@@ -53,6 +62,8 @@ export function buildHomeActivity({ valorant = {}, lol = {}, coop = {}, plan = n
     const name = memberName(match, members);
     const champion = match.champion?.name || match.championName || match.champion || 'League';
     events.push({ id:`lol-${id}`, kind:'lol', ts, fresh:ts > lastSeen, text:`${name} a ${match.win ? 'gagné' : 'joué'} avec ${champion}` });
+    const promotion = rankPromotion('lol', match);
+    if (promotion) events.push({ id:`rank-lol-${id}`, kind:'rank', ts:ts + 1, fresh:ts > lastSeen, text:`${name} est passé ${promotion.after} sur League` });
   });
   Object.entries(coop || {}).forEach(([id, game]) => {
     const submittedAt = normalizeTimestamp(game?.submittedAt);

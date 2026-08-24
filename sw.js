@@ -1,4 +1,4 @@
-const CACHE_NAME = 'olycity-shell-20260824-2';
+const CACHE_NAME = 'olycity-shell-20260824-balanced-app';
 const APP_SHELL = [
   './', './index.html', './manifest.webmanifest', './assets/logo.svg',
   './assets/pwa-icon-192.png', './assets/pwa-icon-512.png',
@@ -36,5 +36,30 @@ self.addEventListener('fetch', event => {
       return response;
     }).catch(() => cached);
     return cached || network;
+  }));
+});
+
+self.addEventListener('push', event => {
+  let payload = {};
+  try { payload = event.data?.json() || {}; } catch { payload = { body:event.data?.text() || '' }; }
+  event.waitUntil(self.registration.showNotification(payload.title || 'OLYCITY', {
+    body:payload.body || '',
+    icon:'./assets/pwa-icon-192.png?v=20260824-icon-3',
+    badge:'./assets/pwa-icon-192.png?v=20260824-icon-3',
+    tag:payload.tag || 'olycity',
+    data:{ url:payload.url || './' },
+  }));
+});
+
+self.addEventListener('notificationclick', event => {
+  event.notification.close();
+  const target = new URL(event.notification.data?.url || './', self.registration.scope).href;
+  event.waitUntil(clients.matchAll({ type:'window', includeUncontrolled:true }).then(openClients => {
+    const existing = openClients.find(client => client.url.startsWith(self.location.origin));
+    if (existing) {
+      existing.navigate(target);
+      return existing.focus();
+    }
+    return clients.openWindow(target);
   }));
 });

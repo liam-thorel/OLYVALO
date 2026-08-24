@@ -27,6 +27,19 @@ function closeModal() {
   document.getElementById('pwa-install-modal').hidden = true;
 }
 
+function closeAppModal() {
+  const modal = document.getElementById('home-app-modal');
+  if (modal) modal.hidden = true;
+}
+
+function refreshAppLauncher() {
+  const launcher = document.getElementById('home-app-launcher');
+  if (!launcher) return;
+  const install = document.getElementById('pwa-install-band');
+  const push = document.getElementById('push-notification-band');
+  launcher.hidden = Boolean(install?.hidden && push?.hidden);
+}
+
 function openModal() {
   const guide = installInstructions();
   document.getElementById('pwa-install-device').textContent = guide.device;
@@ -34,6 +47,7 @@ function openModal() {
   const action = document.getElementById('pwa-install-action');
   action.hidden = !installPrompt;
   document.getElementById('pwa-install-modal').hidden = false;
+  closeAppModal();
 }
 
 async function installNow() {
@@ -52,6 +66,7 @@ function refreshBanner() {
   banner.hidden = isStandalone();
   const summary = document.getElementById('pwa-install-summary');
   if (summary) summary.textContent = installInstructions().summary;
+  refreshAppLauncher();
 }
 
 async function registerServiceWorker() {
@@ -65,6 +80,14 @@ async function registerServiceWorker() {
 }
 
 export function initPwaInstall() {
+  document.getElementById('home-app-launcher')?.addEventListener('click', () => {
+    const modal = document.getElementById('home-app-modal');
+    if (modal) modal.hidden = false;
+  });
+  document.querySelectorAll('[data-home-app-close]').forEach(button => button.addEventListener('click', closeAppModal));
+  document.getElementById('home-app-modal')?.addEventListener('click', event => {
+    if (event.target.id === 'home-app-modal') closeAppModal();
+  });
   document.getElementById('pwa-install-band')?.addEventListener('click', openModal);
   document.getElementById('pwa-install-action')?.addEventListener('click', installNow);
   document.querySelectorAll('[data-pwa-close]').forEach(button => button.addEventListener('click', closeModal));
@@ -78,6 +101,7 @@ export function initPwaInstall() {
     installPrompt = null;
     refreshBanner();
   });
+  window.addEventListener('olycity:app-options-change', refreshAppLauncher);
   refreshBanner();
   void registerServiceWorker();
 }

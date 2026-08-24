@@ -1,0 +1,15 @@
+name = "olycity-notifications"
+main = "worker.mjs"
+compatibility_date = "2026-08-24"
+
+[vars]
+SITE_ORIGIN = "https://liam-thorel.github.io"
+FIREBASE_ROOT = "https://realtime-database-5bb9f-default-rtdb.europe-west1.firebasedatabase.app"
+VAPID_SUBJECT = "https://liam-thorel.github.io/OLYVALO/"
+
+[triggers]
+crons = ["* * * * *"]
+
+[[kv_namespaces]]
+binding = "PUSH_SUBSCRIPTIONS"
+id = "CONFIGURE_BEFORE_DEPLOY"
