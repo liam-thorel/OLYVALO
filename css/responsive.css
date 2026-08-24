@@ -159,6 +159,26 @@
   .section-title { font-size: 24px; line-height: 1.15; }
   .section-line { display: none; }
 
+  .mobile-map-picker {
+    position:relative; z-index:3; display:flex; gap:8px; overflow-x:auto;
+    padding:10px 14px 11px; border-bottom:1px solid var(--border);
+    background:color-mix(in srgb,var(--bg) 94%,transparent);
+    scrollbar-width:none; scroll-snap-type:x proximity; -webkit-overflow-scrolling:touch;
+  }
+  .mobile-map-picker::-webkit-scrollbar { display:none; }
+  .mobile-map-picker .nav-map-btn {
+    flex:0 0 auto; min-width:112px; min-height:48px; display:grid;
+    grid-template-columns:42px auto; align-items:center; gap:8px; padding:6px 10px;
+    border:1px solid var(--border2); border-radius:5px; background:var(--surf);
+    color:var(--muted); scroll-snap-align:center; touch-action:manipulation;
+  }
+  .mobile-map-picker .nav-map-btn.active {
+    border-color:var(--red-mid); background:var(--red-low); color:var(--text);
+    box-shadow:inset 0 -2px 0 var(--red);
+  }
+  .mobile-map-picker .nav-map-icon { width:42px; height:28px; }
+  .mobile-map-picker .nav-map-label { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+
   .comp-tabs,
   .history-filters > .history-filter-group:first-child > div {
     box-shadow: inset -18px 0 18px -20px var(--red);
@@ -283,6 +303,7 @@
   .map-section-panel { padding-top: 16px; }
   .comp-tabs {
     flex-wrap: nowrap; gap: 8px; margin: 0 0 14px; overflow-x: auto;
+    box-shadow:none;
     scrollbar-width: none; scroll-snap-type: x proximity; -webkit-overflow-scrolling: touch;
   }
   .comp-tabs::-webkit-scrollbar { display: none; }

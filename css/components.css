@@ -960,6 +960,12 @@ body.profile-picker-open { overflow: hidden; }
 .profile-guest-btn:hover, .profile-guest-btn:focus-visible, .profile-guest-btn.is-current {
   color: var(--text); border-color: rgba(255,255,255,.42); background: rgba(255,255,255,.045); outline: none;
 }
+.profile-admin-btn {
+  min-height:44px; margin-top:10px; padding:10px 18px; border:1px solid var(--red-mid);
+  border-radius:4px; background:var(--red-low); color:var(--text); cursor:pointer;
+  font:650 11px 'DM Sans',sans-serif; touch-action:manipulation;
+}
+.profile-admin-btn:hover,.profile-admin-btn:focus-visible { border-color:var(--red); background:color-mix(in srgb,var(--red-low) 72%,var(--surf2)); outline:none; }
 .profile-badge {
   position: absolute; bottom: 4px; right: 4px;
   background: var(--red); color: #fff;

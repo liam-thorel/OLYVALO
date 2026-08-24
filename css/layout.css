@@ -208,6 +208,7 @@
 
 /* MAIN */
 .main{ position:relative; z-index:2; max-width:1600px; margin:0 auto; padding:0 32px 40px; }
+.mobile-map-picker{ display:none; }
 
 /* SECTIONS */
 .section{ padding:48px 32px; border-top:1px solid var(--border); }

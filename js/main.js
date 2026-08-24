@@ -6,19 +6,19 @@
 import { valorantApi } from './api.js';
 import { fetchJsonWithTimeout } from './request-utils.mjs?v=20260809-route-load-stable';
 
-const SITE_VERSION = '20260824-home-breathing';
+const SITE_VERSION = '20260824-mobile-data-cache';
 const BOOT_RETRY_KEY = 'olycity-boot-retry';
 import { syncPlayer as henrikSyncPlayer, syncAllPlayers as henrikSyncAll, persistPlayerStats } from './henrik.js?v=20260809-val-roster-season';
 import { setStoredKey, storedKey, forgetCachedKey } from './henrik-key.mjs';
-import { rosterHTML, guestCardHTML, mapSectionHTML, agentPageHTML } from './render.js?v=20260823-home-art-buttons-fix';
+import { rosterHTML, guestCardHTML, mapSectionHTML, agentPageHTML, navMapsHTML } from './render.js?v=20260823-home-art-buttons-fix';
 import { initTheme, initTilt, initParallax, initSearch, initKeyboard, initHeroParticles, initWheelLogos, initLivePage, initHistoryPage } from './interactions.js?v=20260824-ux-polish';
 import { storage } from './storage.js';
 import { avatarLayersHTML } from './avatars.mjs';
 import { initAdminPage } from './admin.mjs?v=20260824-mobile-controls';
 import { initBettingPage } from './betting-page.mjs';
-import { initCoopGamesPage } from './coop-games-page.mjs?v=20260824-ux-polish';
+import { initCoopGamesPage } from './coop-games-page.mjs?v=20260824-mobile-data-cache';
 import { getGameMode, initGameMode, setGameMode } from './game-mode.mjs?v=20260824-home-title';
-import { initLolHistoryPage, initLolLivePage } from './lol-pages.mjs?v=20260824-live-history-density';
+import { initLolHistoryPage, initLolLivePage } from './lol-pages.mjs?v=20260824-mobile-data-cache';
 import { initLolRosterPages } from './lol-roster.mjs?v=20260809-lol-sync';
 import { state } from './state.mjs?v=20260806-lol-roster';
 import { memberId, mergeMemberProfiles, resolveMemberProfile } from './member-profiles.mjs?v=20260823-profile-picker';
@@ -223,7 +223,15 @@ window.OLYCITY = {
     document.querySelectorAll('.nav-map-btn').forEach(b => b.classList.remove('active'));
     const section = document.getElementById(`map-${idx}`);
     if (section) section.classList.add('active');
-    if (btn) btn.classList.add('active');
+    document.querySelectorAll(`.nav-map-btn[data-map-idx="${idx}"]`).forEach(b => b.classList.add('active'));
+    if (window.matchMedia('(max-width: 768px)').matches) {
+      const picker = document.getElementById('mobile-map-picker');
+      const activeMap = picker?.querySelector(`[data-map-idx="${idx}"]`);
+      if (picker && activeMap) {
+        const left = activeMap.offsetLeft - (picker.clientWidth - activeMap.offsetWidth) / 2;
+        picker.scrollTo({ left:Math.max(0, left), behavior:'smooth' });
+      }
+    }
 
     setTimeout(() => initTilt(), 50);
   },
@@ -471,6 +479,7 @@ window.OLYCITY = {
       name: localStorage.getItem('olycity-profile'),
     });
     const selectionRequired = !current && localStorage.getItem('olycity-profile') !== 'Guest';
+    const canOpenAdmin = ['nico', 'liam'].includes(current?.id);
     const escape = value => String(value ?? '')
       .replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;')
       .replaceAll('"', '&quot;').replaceAll("'", '&#39;');
@@ -498,12 +507,17 @@ window.OLYCITY = {
         <button class="profile-guest-btn${localStorage.getItem('olycity-profile') === 'Guest' ? ' is-current' : ''}" type="button" data-profile-id="guest">
           Continuer en invité
         </button>
+        ${canOpenAdmin ? '<button class="profile-admin-btn" type="button" data-profile-admin>⚙ Administration</button>' : ''}
       </div>`;
 
     picker.querySelectorAll('[data-profile-id]').forEach(button => {
       button.addEventListener('click', () => window.OLYCITY._selectProfile(button.dataset.profileId));
     });
     picker.querySelector('.profile-picker-close')?.addEventListener('click', () => window.OLYCITY._hideProfilePicker());
+    picker.querySelector('[data-profile-admin]')?.addEventListener('click', () => {
+      window.OLYCITY._hideProfilePicker();
+      window.OLYCITY.nav('admin');
+    });
     picker.hidden = false;
     document.body.classList.add('profile-picker-open');
     picker.querySelector('.profile-card.is-current, .profile-card, .profile-guest-btn')?.focus();
@@ -652,6 +666,8 @@ window.OLYCITY = {
 
 // ─── RENDER ───────────────────────────────────────
 function renderAll() {
+  const mobileMapPicker = document.getElementById('mobile-map-picker');
+  if (mobileMapPicker) mobileMapPicker.innerHTML = navMapsHTML();
   // Populate hover dropdown
   const mapsMenu = document.getElementById('nav-maps-menu');
   if (mapsMenu) {
@@ -695,7 +711,7 @@ async function boot() {
   if (storedVersion !== SITE_VERSION) {
     // Clear cache but KEEP player stats (expensive to re-sync, don't change with code updates)
     const keys = Object.keys(localStorage).filter(k =>
-      k.startsWith('olycity-') && !['olycity-player-stats','olycity-profile','olycity-member-id','olycity-game','olycity-static-data-cache','olycity-valorant-visuals','olycity-home-activity-seen'].includes(k)
+      k.startsWith('olycity-') && !['olycity-player-stats','olycity-profile','olycity-member-id','olycity-game','olycity-static-data-cache','olycity-valorant-visuals','olycity-home-activity-seen','olycity-lol-history-cache-v1','olycity-coop-games-cache-v1'].includes(k)
     );
     keys.forEach(k => localStorage.removeItem(k));
     localStorage.setItem('olycity-version', SITE_VERSION);

@@ -64,6 +64,18 @@ export function createHistoryPager({
     return snapshot();
   }
 
+  async function refresh() {
+    const visibleCount = Math.max(pageSize, loaded.size);
+    await loadIndex({ force:true });
+    const visibleEntries = index.slice(0, visibleCount);
+    const visibleIds = new Set(visibleEntries.map(entry => entry.id));
+    [...loaded.keys()].forEach(id => {
+      if (!visibleIds.has(id)) loaded.delete(id);
+    });
+    visibleEntries.forEach(entry => loaded.set(entry.id, summaryValue(entry.value)));
+    return snapshot();
+  }
+
   async function loadDetail(id) {
     if (detailCache.has(id)) return detailCache.get(id);
     const detail = await fetchJson(url(`${dataPath}/${encodeURIComponent(id)}`), { timeoutMs:8_000 });
@@ -89,5 +101,5 @@ export function createHistoryPager({
     detailCache.clear();
   }
 
-  return { loadDetail, loadIndex, loadNext, reset, snapshot };
+  return { loadDetail, loadIndex, loadNext, refresh, reset, snapshot };
 }

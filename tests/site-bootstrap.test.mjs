@@ -93,6 +93,9 @@ test('profile selection is accessible, stable and does not reload the site', () 
   assert.doesNotMatch(main, /setTimeout\(\(\) => location\.reload\(\), 300\)/);
   assert.match(components, /\.profile-grid[\s\S]*grid-template-columns/);
   assert.match(components, /\.profile-guest-btn/);
+  assert.match(components, /\.profile-admin-btn/);
+  assert.match(main, /\['nico', 'liam'\]\.includes\(current\?\.id\)/);
+  assert.match(main, /data-profile-admin[\s\S]*?nav\('admin'\)/);
   assert.match(presence, /sessionRef\?\.set/);
   assert.match(presence, /const previousRef = sessionRef/);
 });
@@ -114,6 +117,10 @@ test('mobile navigation keeps primary sections reachable with a compact more men
 });
 
 test('mobile composition cards stay compact without hiding their details', () => {
+  assert.match(page, /id="mobile-map-picker"[\s\S]*aria-label="Choisir une map"/);
+  assert.match(main, /mobileMapPicker\.innerHTML = navMapsHTML\(\)/);
+  assert.match(responsive, /\.mobile-map-picker\s*\{[\s\S]*overflow-x:\s*auto/);
+  assert.match(responsive, /\.comp-tabs\s*\{[\s\S]*box-shadow:\s*none/);
   assert.match(render, /class="comp-mobile-details"/);
   assert.match(responsive, /\.agents-grid\s*\{[\s\S]*grid-template-columns:\s*repeat\(6,minmax\(0,1fr\)\)/);
   assert.match(responsive, /\.comp-mobile-details\[open\]\s*\+\s*\.comp-bottom\s*\{\s*display:\s*grid/);
@@ -141,8 +148,8 @@ test('mobile data pages keep readable spacing, controls and roster details', () 
   assert.match(responsive, /\.section-inner\s*\{\s*padding:\s*0/);
   assert.match(lolStyles, /\.lol-roster-champion strong\{font-size:10px\}/);
   assert.match(coopStyles, /\.coop-cover\{aspect-ratio:16\/7\}/);
-  assert.match(page, /lol-mode\.css\?v=20260824-live-history-density/);
-  assert.match(page, /coop-games\.css\?v=20260823-mobile-sections/);
+  assert.match(page, /lol-mode\.css\?v=20260824-mobile-data-cache/);
+  assert.match(page, /coop-games\.css\?v=20260824-mobile-data-cache/);
   assert.match(designSystem, /\.history-filter-group\s*\{\s*grid-template-columns:\s*55px minmax\(0,1fr\)/);
   assert.match(designSystem, /\.coop-filter-field:last-child\s*\{\s*flex-basis:\s*100%/);
 });
@@ -171,6 +178,16 @@ test('history and admin requests cannot stay pending forever', () => {
   assert.match(historyPager, /timeoutMs:8_000/);
   assert.match(historyPager, /timeoutMs:12_000/);
   assert.match(admin, /fetchJsonWithTimeout\(`\$\{FIREBASE_URL\}\/\$\{path\}\.json`/);
+});
+
+test('mobile data pages render their last good copy before background refresh', () => {
+  assert.match(lolPages, /olycity-lol-history-cache-v1/);
+  assert.match(lolPages, /lolHistoryPager\.refresh\(\)/);
+  assert.match(lolPages, /Mode hors connexion/);
+  assert.match(historyPager, /async function refresh\(\)/);
+  assert.match(coopPage, /olycity-coop-games-cache-v1/);
+  assert.match(coopPage, /loadGames\(\{ quiet:true \}\)/);
+  assert.match(coopPage, /timeoutMs = 8_000/);
 });
 
 test('startup reveals the shell before optional APIs and supports installation', () => {

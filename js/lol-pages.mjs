@@ -1,9 +1,13 @@
 import { groupLolSessions, lolKda, normalizeLolHistory, summarizeLolDays } from './lol-utils.mjs?v=20260810-firebase-connection-fix';
 import { liveDataStore } from './live-data-store.mjs?v=20260810-firebase-connection-fix';
-import { createHistoryPager } from './history-pager.mjs?v=20260810-history-progressive';
+import { createHistoryPager } from './history-pager.mjs?v=20260824-mobile-history-cache';
 
 const FIREBASE_URL = 'https://realtime-database-5bb9f-default-rtdb.europe-west1.firebasedatabase.app';
+const LOL_HISTORY_CACHE_KEY = 'olycity-lol-history-cache-v1';
 let historyLoadSequence = 0;
+let historyReady = false;
+let lastHistoryState = null;
+let lastHistorySavedAt = 0;
 const lolHistoryPager = createHistoryPager({
   firebaseUrl:FIREBASE_URL,
   indexPath:'historyIndex/lol',
@@ -13,6 +17,43 @@ const lolHistoryPager = createHistoryPager({
 const esc = value => String(value ?? '').replace(/[&<>'"]/g, char => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', "'":'&#39;', '"':'&quot;' }[char]));
 const image = value => typeof value === 'object' ? value?.image : value;
 const name = value => typeof value === 'object' ? value?.name : value;
+
+function readHistoryCache() {
+  try {
+    const cached = JSON.parse(localStorage.getItem(LOL_HISTORY_CACHE_KEY) || 'null');
+    if (!cached || typeof cached.savedAt !== 'number' || !cached.state?.data || typeof cached.state.data !== 'object') return null;
+    return cached;
+  } catch { return null; }
+}
+
+function rememberHistoryState(state) {
+  lastHistoryState = state;
+  lastHistorySavedAt = Date.now();
+  try {
+    localStorage.setItem(LOL_HISTORY_CACHE_KEY, JSON.stringify({ savedAt:lastHistorySavedAt, state }));
+  } catch { /* Le stockage peut être désactivé ou plein sur mobile. */ }
+}
+
+function historyCacheLabel(savedAt) {
+  const elapsed = Math.max(0, Date.now() - Number(savedAt || 0));
+  if (elapsed < 60_000) return 'à l’instant';
+  if (elapsed < 3_600_000) return `il y a ${Math.max(1, Math.round(elapsed / 60_000))} min`;
+  if (elapsed < 86_400_000) return `il y a ${Math.round(elapsed / 3_600_000)} h`;
+  return new Date(savedAt).toLocaleDateString('fr-FR', { day:'numeric', month:'short' });
+}
+
+function showHistorySyncNote(savedAt, state = 'syncing') {
+  const el = document.getElementById('lol-history-content');
+  if (!el) return;
+  el.querySelector('.lol-history-cache-note')?.remove();
+  const note = document.createElement('div');
+  note.className = `lol-history-cache-note is-${state}`;
+  note.setAttribute('role', 'status');
+  note.innerHTML = state === 'syncing'
+    ? `<span></span><strong>Historique enregistré affiché</strong><small>Actualisation en cours · ${esc(historyCacheLabel(savedAt))}</small>`
+    : `<span></span><strong>Mode hors connexion</strong><small>Dernière copie ${esc(historyCacheLabel(savedAt))}</small>`;
+  el.prepend(note);
+}
 
 function rankLabel(rank) {
   if (!rank) return 'Non classé';
@@ -114,9 +155,16 @@ function renderHistory(matches, player = 'all', period = 'all', pagerState = lol
   document.getElementById('lol-history-player')?.addEventListener('change', event => renderHistory(matches, event.target.value, period, pagerState));
   el.querySelectorAll('[data-lol-period]').forEach(button => button.addEventListener('click', () => renderHistory(matches, player, button.dataset.lolPeriod, pagerState)));
   el.querySelector('[data-lol-history-load-more]')?.addEventListener('click', async event => {
-    event.currentTarget.disabled = true;
-    const next = await lolHistoryPager.loadNext();
-    renderHistory(normalizeLolHistory(next.data), player, period, next);
+    const button = event.currentTarget;
+    button.disabled = true;
+    try {
+      const next = await lolHistoryPager.loadNext();
+      rememberHistoryState(next);
+      renderHistory(normalizeLolHistory(next.data), player, period, next);
+    } catch {
+      button.disabled = false;
+      button.textContent = 'Connexion interrompue · réessayer';
+    }
   });
   el.querySelectorAll('details[data-lol-history-id]').forEach(details => details.addEventListener('toggle', async () => {
     if (!details.open || details.dataset.detailLoaded === '1') return;
@@ -140,14 +188,29 @@ export async function initLolHistoryPage() {
   const el = document.getElementById('lol-history-content');
   if (!el) return;
   const loadSequence = ++historyLoadSequence;
-  el.innerHTML = '<div class="data-state-card is-loading"><span class="data-state-pulse" aria-hidden="true"></span><div><strong>Chargement de l’historique</strong><small>Récupération des dernières parties League of Legends</small></div><span class="data-state-lines" aria-hidden="true"><i></i><i></i></span></div>';
+  const cached = lastHistoryState ? { savedAt:lastHistorySavedAt, state:lastHistoryState } : readHistoryCache();
+  if (cached?.state) {
+    lastHistoryState = cached.state;
+    lastHistorySavedAt = cached.savedAt;
+    renderHistory(normalizeLolHistory(cached.state.data), 'all', 'all', cached.state);
+    showHistorySyncNote(cached.savedAt, 'syncing');
+  } else {
+    el.innerHTML = '<div class="data-state-card is-loading"><span class="data-state-pulse" aria-hidden="true"></span><div><strong>Chargement de l’historique</strong><small>Récupération des dernières parties League of Legends</small></div><span class="data-state-lines" aria-hidden="true"><i></i><i></i></span></div>';
+  }
   try {
-    const pagerState = await lolHistoryPager.loadNext();
+    const pagerState = historyReady ? await lolHistoryPager.refresh() : await lolHistoryPager.loadNext();
     if (loadSequence !== historyLoadSequence) return;
+    historyReady = true;
+    rememberHistoryState(pagerState);
     const matches = normalizeLolHistory(pagerState.data);
     renderHistory(matches, 'all', 'all', pagerState);
   } catch {
     if (loadSequence !== historyLoadSequence) return;
+    if (cached?.state) {
+      renderHistory(normalizeLolHistory(cached.state.data), 'all', 'all', cached.state);
+      showHistorySyncNote(cached.savedAt, 'offline');
+      return;
+    }
     el.innerHTML = '<div class="data-state-card is-error"><span class="data-state-pulse" aria-hidden="true"></span><div><strong>Historique indisponible</strong><small>La connexion a pris trop de temps.</small></div><button type="button" data-lol-history-retry class="btn btn-primary">Réessayer</button></div>';
     el.querySelector('[data-lol-history-retry]')?.addEventListener('click', initLolHistoryPage);
   }

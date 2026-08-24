@@ -11,6 +11,7 @@ import {
 import { fetchSteamReviewSummaries, searchGameCatalog } from './coop-game-catalog.mjs?v=20260823-coop-steam-reviews';
 
 const FIREBASE_ROOT = 'https://realtime-database-5bb9f-default-rtdb.europe-west1.firebasedatabase.app';
+const COOP_GAMES_CACHE_KEY = 'olycity-coop-games-cache-v1';
 const SESSION_LABELS = { short: 'Soirée', medium: 'Quelques sessions', long: 'Longue aventure' };
 const STATUS_META = {
   open: { label:'À découvrir', section:'À découvrir', description:'Les idées proposées par le groupe.' },
@@ -32,11 +33,35 @@ let catalogAbortController = null;
 let selectedCatalogGame = null;
 let steamReviews = new Map();
 let steamReviewIds = '';
+let syncNotice = null;
 const filters = { search: '', players: 0, genre:'all', status: 'all', sort: 'recent' };
 
 const escapeHTML = value => String(value ?? '')
   .replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;')
   .replaceAll('"', '&quot;').replaceAll("'", '&#39;');
+
+function readGamesCache() {
+  try {
+    const cached = JSON.parse(localStorage.getItem(COOP_GAMES_CACHE_KEY) || 'null');
+    if (!cached || typeof cached.savedAt !== 'number' || !Array.isArray(cached.games)) return null;
+    return {
+      savedAt:cached.savedAt,
+      games:cached.games.map(game => normalizeCoopGame(String(game?.id || ''), game)).filter(game => game.id),
+    };
+  } catch { return null; }
+}
+
+function writeGamesCache() {
+  try {
+    localStorage.setItem(COOP_GAMES_CACHE_KEY, JSON.stringify({ savedAt:Date.now(), games }));
+  } catch { /* Le stockage peut être désactivé ou plein sur mobile. */ }
+}
+
+function syncNoticeMarkup() {
+  if (!syncNotice) return '';
+  const offline = syncNotice.state === 'offline';
+  return `<div class="coop-cache-note is-${offline ? 'offline' : 'syncing'}" role="status"><span></span><strong>${offline ? 'Copie enregistrée' : 'Jeux déjà disponibles'}</strong><small>${offline ? 'Synchronisation indisponible pour le moment' : 'Synchronisation en arrière-plan…'}</small></div>`;
+}
 
 function safeHttpsUrl(value, allowedHosts = null) {
   try {
@@ -50,12 +75,18 @@ function safeHttpsUrl(value, allowedHosts = null) {
 }
 
 async function firebaseRequest(path, options = {}) {
-  const response = await fetch(`${FIREBASE_ROOT}/${path}.json`, {
-    ...options,
-    headers: { 'Content-Type': 'application/json', ...(options.headers || {}) },
-  });
-  if (!response.ok) throw new Error(`Firebase HTTP ${response.status}`);
-  return response.status === 204 ? null : response.json();
+  const { timeoutMs = 8_000, signal, ...fetchOptions } = options;
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    const response = await fetch(`${FIREBASE_ROOT}/${path}.json`, {
+      ...fetchOptions,
+      signal:signal || controller.signal,
+      headers: { 'Content-Type': 'application/json', ...(fetchOptions.headers || {}) },
+    });
+    if (!response.ok) throw new Error(`Firebase HTTP ${response.status}`);
+    return response.status === 204 ? null : response.json();
+  } finally { clearTimeout(timeout); }
 }
 
 function selectedProfile() {
@@ -207,7 +238,7 @@ function render() {
   renderStatusTabs();
   if (count) count.textContent = `${visible.length} jeu${visible.length > 1 ? 'x' : ''}`;
   const grouped = filters.status === 'all' && !filters.search;
-  root.innerHTML = visible.length
+  const content = visible.length
     ? grouped
       ? STATUS_ORDER.map(status => gameSection(status, visible.filter(game => game.status === status))).join('')
       : `<div class="coop-games-grid">${visible.map(gameCard).join('')}</div>`
@@ -217,6 +248,7 @@ function render() {
       'Retire un filtre pour retrouver toute la liste.',
       '<button type="button" class="btn btn-primary" data-coop-reset>Réinitialiser</button>',
     );
+  root.innerHTML = syncNoticeMarkup() + content;
 }
 
 async function loadGames({ quiet = false } = {}) {
@@ -229,10 +261,17 @@ async function loadGames({ quiet = false } = {}) {
   try {
     const data = await firebaseRequest('coopGames');
     games = Object.entries(data || {}).map(([id, value]) => normalizeCoopGame(id, value));
+    syncNotice = null;
+    writeGamesCache();
     syncGenreOptions();
     render();
     void loadSteamReviews();
   } catch (error) {
+    if (games.length) {
+      syncNotice = { state:'offline' };
+      render();
+      return;
+    }
     if (root) root.innerHTML = coopStateMarkup(
       'error',
       'Liste indisponible',
@@ -597,10 +636,23 @@ export function initCoopGamesPage(nextRoster = []) {
   roster = nextRoster;
   if (!initialized) {
     initialized = true;
+    const cached = readGamesCache();
+    if (cached?.games.length) {
+      games = cached.games;
+      syncNotice = { state:'syncing', savedAt:cached.savedAt };
+    }
     bindControls();
     startRealtime();
-    loadGames();
+    if (games.length) {
+      syncGenreOptions();
+      render();
+      void loadSteamReviews();
+      void loadGames({ quiet:true });
+    } else {
+      void loadGames();
+    }
   } else {
     render();
+    void loadGames({ quiet:true });
   }
 }
