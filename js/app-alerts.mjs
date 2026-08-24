@@ -35,6 +35,22 @@ async function registration() {
   return navigator.serviceWorker.ready;
 }
 
+function pushError(error, stage = 'subscribe') {
+  const message = String(error?.message || error || '');
+  if (/push service error|push service not available|could not connect to push server/i.test(message)) {
+    return new Error('Le service Push de ce navigateur est indisponible. Ouvre OLYCITY dans Chrome ou Edge, puis installe l’application depuis ce navigateur.');
+  }
+  if (/load failed|failed to fetch|networkerror|network request failed/i.test(message)) {
+    return new Error(stage === 'test'
+      ? 'Le test n’a pas pu joindre le service OLYCITY. Réessaie dans une minute.'
+      : 'Connexion au service de notifications impossible. Vérifie le réseau puis réessaie.');
+  }
+  if (/notallowederror|permission denied|denied/i.test(message)) {
+    return new Error('Les notifications sont bloquées dans les réglages du navigateur ou du téléphone.');
+  }
+  return new Error(message || 'Activation des notifications impossible.');
+}
+
 export async function currentPushState() {
   if (!pushSupported()) return { state:'unsupported', label:'Notifications non compatibles' };
   if (Notification.permission === 'denied') return { state:'denied', label:'Notifications bloquées dans le navigateur' };
@@ -56,16 +72,23 @@ export async function enablePushNotifications() {
   const worker = await registration();
   let subscription = await worker.pushManager.getSubscription();
   if (!subscription) {
-    subscription = await worker.pushManager.subscribe({
-      userVisibleOnly:true,
-      applicationServerKey:base64UrlBytes(remote.publicKey),
-    });
+    try {
+      subscription = await worker.pushManager.subscribe({
+        userVisibleOnly:true,
+        applicationServerKey:base64UrlBytes(remote.publicKey),
+      });
+    } catch (error) {
+      throw pushError(error);
+    }
   }
-  const response = await fetch(`${remote.endpoint}/subscriptions`, {
-    method:'POST',
-    headers:{ 'Content-Type':'application/json' },
-    body:JSON.stringify({ ...profile, subscription:subscription.toJSON(), userAgent:navigator.userAgent }),
-  });
+  let response;
+  try {
+    response = await fetch(`${remote.endpoint}/subscriptions`, {
+      method:'POST',
+      headers:{ 'Content-Type':'application/json' },
+      body:JSON.stringify({ ...profile, subscription:subscription.toJSON(), userAgent:navigator.userAgent }),
+    });
+  } catch (error) { throw pushError(error, 'register'); }
   if (!response.ok) throw new Error('Impossible d’enregistrer cet appareil.');
   window.dispatchEvent(new CustomEvent('olycity:push-state'));
   return currentPushState();
@@ -95,11 +118,14 @@ export async function sendTestPush() {
   }
   const remote = await config();
   if (!remote) throw new Error('Le service de notifications n’est pas encore configuré.');
-  const response = await fetch(`${remote.endpoint}/notifications/test`, {
-    method:'POST',
-    headers:{ 'Content-Type':'application/json' },
-    body:JSON.stringify(profile),
-  });
+  let response;
+  try {
+    response = await fetch(`${remote.endpoint}/notifications/test`, {
+      method:'POST',
+      headers:{ 'Content-Type':'application/json' },
+      body:JSON.stringify(profile),
+    });
+  } catch (error) { throw pushError(error, 'test'); }
   const payload = await response.json().catch(() => ({}));
   if (!response.ok) throw new Error(payload.error || 'Le test a échoué.');
   return payload;

@@ -1,6 +1,7 @@
 {
   "name": "OLYCITY",
   "short_name": "OLYCITY",
+  "id": "./",
   "description": "Le hub Valorant, League et jeux coop du Discord OLYCITY.",
   "start_url": "./",
   "scope": "./",

@@ -1,15 +1,18 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { handleRequest, runScheduled } from '../workers/notifications/worker.mjs';
+import notificationWorker, { handleRequest, runScheduled } from '../workers/notifications/worker.mjs';
 
-function fakeKv() {
+function fakeKv({ rejectShortTtl = false } = {}) {
   const values = new Map();
   return {
     async get(key, type) {
       const value = values.get(key);
       return type === 'json' && value ? JSON.parse(value) : value ?? null;
     },
-    async put(key, value) { values.set(key, String(value)); },
+    async put(key, value, options = {}) {
+      if (rejectShortTtl && options.expirationTtl && options.expirationTtl < 60) throw new Error('Invalid expiration_ttl');
+      values.set(key, String(value));
+    },
     async delete(key) { values.delete(key); },
     async list({ prefix = '' } = {}) {
       return { keys:[...values.keys()].filter(key => key.startsWith(prefix)).map(name => ({ name })), list_complete:true };
@@ -57,8 +60,28 @@ test('subscription endpoint rejects malformed entries and stores valid devices',
   assert.equal((await workerEnv.PUSH_SUBSCRIPTIONS.list({ prefix:'sub:' })).keys.length, 0);
 });
 
-test('admin notification test is limited to Nico and Liam and rate limited', async () => {
+test('unexpected Worker failures stay readable across CORS', async () => {
   const workerEnv = env();
+  workerEnv.PUSH_SUBSCRIPTIONS.put = async () => { throw new Error('KV unavailable'); };
+  const originalError = console.error;
+  console.error = () => {};
+  try {
+    const response = await notificationWorker.fetch(new Request('https://push.example/subscriptions', {
+      method:'POST',
+      headers:{ Origin:'https://liam-thorel.github.io', 'Content-Type':'application/json' },
+      body:JSON.stringify({
+        memberId:'nico', name:'Nico',
+        subscription:{ endpoint:'https://push.example/device', keys:{ p256dh:'key', auth:'auth' } },
+      }),
+    }), workerEnv);
+    assert.equal(response.status, 500);
+    assert.equal(response.headers.get('Access-Control-Allow-Origin'), 'https://liam-thorel.github.io');
+    assert.match((await response.json()).error, /temporairement indisponible/);
+  } finally { console.error = originalError; }
+});
+
+test('admin notification test is limited to Nico and Liam and rate limited', async () => {
+  const workerEnv = { ...env(), PUSH_SUBSCRIPTIONS:fakeKv({ rejectShortTtl:true }) };
   const forbidden = await handleRequest(new Request('https://push.example/notifications/test', {
     method:'POST', headers:{ 'Content-Type':'application/json' }, body:JSON.stringify({ memberId:'rayhan' }),
   }), workerEnv);

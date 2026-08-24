@@ -167,7 +167,9 @@ export async function handleRequest(request, env) {
     if (!ADMIN_TESTERS.has(memberId)) return json({ error:'Test réservé à Nico et Liam' }, 403, cors);
     const rateKey = 'test-rate:' + memberId;
     if (await env.PUSH_SUBSCRIPTIONS.get(rateKey)) return json({ error:'Attends quelques secondes avant un nouveau test.' }, 429, cors);
-    await env.PUSH_SUBSCRIPTIONS.put(rateKey, '1', { expirationTtl:20 });
+    // Cloudflare KV rejects TTL values below 60 seconds. A shorter value made
+    // the test route throw a 500 before the notification was even sent.
+    await env.PUSH_SUBSCRIPTIONS.put(rateKey, '1', { expirationTtl:60 });
     const sent = await broadcast(env, {
       title:'✅ Notifications OLYCITY',
       body:'Test reçu pour ' + String(payload.name || memberId) + '. Les rappels sont opérationnels.',
@@ -180,7 +182,14 @@ export async function handleRequest(request, env) {
 }
 
 export default {
-  fetch:handleRequest,
+  async fetch(request, env) {
+    try {
+      return await handleRequest(request, env);
+    } catch (error) {
+      console.error('[OLYCITY Push]', error);
+      return json({ error:'Service de notifications temporairement indisponible.' }, 500, corsHeaders(request, env));
+    }
+  },
   scheduled(controller, env, ctx) {
     ctx.waitUntil(runScheduled(env, controller.scheduledTime));
   },

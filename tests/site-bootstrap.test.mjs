@@ -7,6 +7,7 @@ const gameMode = fs.readFileSync(new URL('../js/game-mode.mjs', import.meta.url)
 const homeDashboard = fs.readFileSync(new URL('../js/home-dashboard.mjs', import.meta.url), 'utf8');
 const homeGroup = fs.readFileSync(new URL('../js/home-group.mjs', import.meta.url), 'utf8');
 const pwaInstall = fs.readFileSync(new URL('../js/pwa-install.mjs', import.meta.url), 'utf8');
+const appAlerts = fs.readFileSync(new URL('../js/app-alerts.mjs', import.meta.url), 'utf8');
 const interactions = fs.readFileSync(new URL('../js/interactions.js', import.meta.url), 'utf8');
 const render = fs.readFileSync(new URL('../js/render.js', import.meta.url), 'utf8');
 const lolRoster = fs.readFileSync(new URL('../js/lol-roster.mjs', import.meta.url), 'utf8');
@@ -202,7 +203,7 @@ test('startup reveals the shell before optional APIs and supports installation',
   assert.match(main, /await loadData\(\)/);
   assert.doesNotMatch(main, /await Promise\.all\(\[loadData\(\), valorantApi\.load\(\)\]\)/);
   assert.match(main, /olycity-static-data-cache/);
-  assert.match(page, /rel="manifest" href="\.\/manifest\.webmanifest"/);
+  assert.match(page, /rel="manifest" href="\.\/manifest\.webmanifest(?:\?[^\"]+)?"/);
   assert.match(page, /id="pwa-install-band"/);
   assert.match(pwaInstall, /serviceWorker\.register\('\.\/sw\.js'/);
   assert.match(pwaInstall, /updateViaCache:'none'/);
@@ -223,13 +224,16 @@ test('PWA exposes opt-in notifications and admin test controls without touching 
   assert.match(page, /id="push-notification-band"/);
   assert.match(main, /initPushNotifications/);
   assert.doesNotMatch(main, /push-notifications\.mjs/);
-  assert.match(main, /import\('\.\/app-alerts\.mjs\?v=20260824-reminder-controls'\)[\s\S]*\.catch/);
+  assert.match(main, /import\('\.\/app-alerts\.mjs\?v=20260824-push-fix'\)[\s\S]*\.catch/);
   assert.doesNotMatch(admin, /push-notifications\.mjs/);
   assert.match(admin, /loadPushModule\(\)[\s\S]*Notifications bloquées par le navigateur/);
-  assert.match(admin, /app-alerts\.mjs\?v=20260824-reminder-controls/);
+  assert.match(admin, /app-alerts\.mjs\?v=20260824-push-fix/);
   assert.match(fs.readFileSync(new URL('../sw.js', import.meta.url), 'utf8'), /addEventListener\('push'/);
   assert.match(fs.readFileSync(new URL('../sw.js', import.meta.url), 'utf8'), /self\.registration\.scope/);
   assert.match(fs.readFileSync(new URL('../js\/admin.mjs', import.meta.url), 'utf8'), /admin-test-notification/);
+  assert.match(appAlerts, /Ouvre OLYCITY dans Chrome ou Edge/);
+  assert.match(appAlerts, /Le test n’a pas pu joindre le service OLYCITY/);
+  assert.match(fs.readFileSync(new URL('../manifest.webmanifest', import.meta.url), 'utf8'), /"id": "\.\/"/);
 });
 
 test('Live and Coop explain loading, empty and recovery states', () => {

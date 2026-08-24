@@ -6,7 +6,7 @@
 import { valorantApi } from './api.js';
 import { fetchJsonWithTimeout } from './request-utils.mjs?v=20260809-route-load-stable';
 
-const SITE_VERSION = '20260824-sessions-history';
+const SITE_VERSION = '20260824-notification-fix';
 const BOOT_RETRY_KEY = 'olycity-boot-retry';
 import { syncPlayer as henrikSyncPlayer, syncAllPlayers as henrikSyncAll, persistPlayerStats } from './henrik.js?v=20260809-val-roster-season';
 import { setStoredKey, storedKey, forgetCachedKey } from './henrik-key.mjs';
@@ -14,7 +14,7 @@ import { rosterHTML, guestCardHTML, mapSectionHTML, agentPageHTML, navMapsHTML }
 import { initTheme, initTilt, initParallax, initSearch, initKeyboard, initHeroParticles, initWheelLogos, initLivePage, initHistoryPage } from './interactions.js?v=20260824-sessions-history';
 import { storage } from './storage.js';
 import { avatarLayersHTML } from './avatars.mjs';
-import { initAdminPage } from './admin.mjs?v=20260824-mobile-controls';
+import { initAdminPage } from './admin.mjs?v=20260824-notification-fix';
 import { initBettingPage } from './betting-page.mjs';
 import { initCoopGamesPage } from './coop-games-page.mjs?v=20260824-mobile-data-cache';
 import { getGameMode, initGameMode, setGameMode } from './game-mode.mjs?v=20260824-home-title';
@@ -776,7 +776,7 @@ async function boot() {
   if (!window._homeGroupCleanup) window._homeGroupCleanup = initHomeGroup(state.MEMBERS);
   if (!window._pushNotificationsReady) {
     window._pushNotificationsReady = true;
-    void import('./app-alerts.mjs?v=20260824-reminder-controls')
+    void import('./app-alerts.mjs?v=20260824-push-fix')
       .then(({ initPushNotifications }) => initPushNotifications())
       .catch(error => console.warn('[OLYCITY] Notifications indisponibles', error));
   }
