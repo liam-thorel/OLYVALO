@@ -22,7 +22,7 @@ self.addEventListener('fetch', event => {
   if (url.origin !== self.location.origin) return;
 
   if (request.mode === 'navigate') {
-    event.respondWith(fetch(request).then(response => {
+    event.respondWith(fetch(request, { cache:'no-store' }).then(response => {
       const copy = response.clone();
       caches.open(CACHE_NAME).then(cache => cache.put('./index.html', copy));
       return response;
@@ -30,13 +30,10 @@ self.addEventListener('fetch', event => {
     return;
   }
 
-  event.respondWith(caches.match(request).then(cached => {
-    const network = fetch(request).then(response => {
-      if (response.ok) caches.open(CACHE_NAME).then(cache => cache.put(request, response.clone()));
-      return response;
-    }).catch(() => cached);
-    return cached || network;
-  }));
+  event.respondWith(fetch(request, { cache:'no-store' }).then(response => {
+    if (response.ok) caches.open(CACHE_NAME).then(cache => cache.put(request, response.clone()));
+    return response;
+  }).catch(() => caches.match(request).then(cached => cached || Response.error())));
 });
 
 self.addEventListener('push', event => {

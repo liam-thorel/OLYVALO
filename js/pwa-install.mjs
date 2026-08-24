@@ -72,7 +72,14 @@ function refreshBanner() {
 async function registerServiceWorker() {
   if (!('serviceWorker' in navigator)) return;
   try {
-    const registration = await navigator.serviceWorker.register('./sw.js', { scope:'./' });
+    const hadController = Boolean(navigator.serviceWorker.controller);
+    let reloadingForUpdate = false;
+    if (hadController) navigator.serviceWorker.addEventListener('controllerchange', () => {
+      if (reloadingForUpdate) return;
+      reloadingForUpdate = true;
+      window.location.reload();
+    }, { once:true });
+    const registration = await navigator.serviceWorker.register('./sw.js', { scope:'./', updateViaCache:'none' });
     registration.update().catch(() => {});
   } catch (error) {
     console.warn('[OLYCITY] Installation hors ligne indisponible', error);

@@ -24,7 +24,7 @@ import { state } from './state.mjs?v=20260806-lol-roster';
 import { memberId, mergeMemberProfiles, resolveMemberProfile } from './member-profiles.mjs?v=20260823-profile-picker';
 import { initHomeDashboard } from './home-dashboard.mjs?v=20260824-home-online';
 import { initHomeGroup } from './home-group.mjs?v=20260824-notifications';
-import { initPwaInstall } from './pwa-install.mjs?v=20260824-app-panel';
+import { initPwaInstall } from './pwa-install.mjs?v=20260824-network-first';
 import { initPushNotifications } from './push-notifications.mjs?v=20260824-push';
 export { state };
 

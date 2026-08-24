@@ -178,6 +178,11 @@ test('startup reveals the shell before optional APIs and supports installation',
   assert.match(page, /rel="manifest" href="\.\/manifest\.webmanifest"/);
   assert.match(page, /id="pwa-install-band"/);
   assert.match(pwaInstall, /serviceWorker\.register\('\.\/sw\.js'/);
+  assert.match(pwaInstall, /updateViaCache:'none'/);
+  assert.match(pwaInstall, /controllerchange/);
+  const worker = fs.readFileSync(new URL('../sw.js', import.meta.url), 'utf8');
+  assert.match(worker, /fetch\(request, \{ cache:'no-store' \}\)/);
+  assert.doesNotMatch(worker, /return cached \|\| network/);
   assert.doesNotMatch(page, /getRegistrations\(\)[\s\S]*unregister/);
   assert.match(main, /boot\(\)\.catch\(showBootFailure\)/);
   assert.match(main, /Connexion interrompue/);

@@ -10,6 +10,15 @@ const {
   startupLauncherPath,
 } = require('../live/startup.js');
 const { acquireInstanceLock, releaseInstanceLock } = require('../live/instance-lock.js');
+const liveSource = fs.readFileSync(path.join(__dirname, '..', 'live', 'index.js'), 'utf8');
+
+assert.doesNotMatch(
+  liveSource,
+  /async function poll\(\)\s*\{\s*if \(!agentsReady\) return;/,
+  'la présence ne doit jamais dépendre du chargement de valorant-api.com',
+);
+assert.match(liveSource, /request\.setTimeout\(timeoutMs/);
+assert.match(liveSource, /nouvelle tentative dans 60s/);
 
 const fakeAppData = path.join('C:', 'Users', 'Player', 'AppData', 'Roaming');
 assert.equal(startupLauncherPath(fakeAppData), path.join(

@@ -20,7 +20,7 @@ const { resolveRiotIdentity } = require('./riot-identity.js');
 const { valorantHistorySummary } = require('./history-index.js');
 
 const FIREBASE_URL = 'https://realtime-database-5bb9f-default-rtdb.europe-west1.firebasedatabase.app';
-const SCRIPT_VERSION = '4.17.6';
+const SCRIPT_VERSION = '4.17.7';
 const INSTANCE_LOCK_PATH = path.join(__dirname, '.olycity-live.lock');
 const LOG_PATH = path.join(__dirname, 'olycity.log');
 const MAX_LOG_BYTES = 5 * 1024 * 1024;
@@ -397,34 +397,55 @@ let AGENT_UUIDS = {};
 let AGENT_ICONS = {};
 let RIOT_CLIENT_VERSION = 'unknown';
 
-https.get('https://valorant-api.com/v1/version', res => {
-  let d = '';
-  res.on('data', c => d += c);
-  res.on('end', () => {
-    try {
-      const v = JSON.parse(d);
-      // Format: "branch-version-builddate-buildver"
-      RIOT_CLIENT_VERSION = v.data?.riotClientVersion || v.data?.version || 'unknown';
-      console.log(`[init] ✅ Client version: ${RIOT_CLIENT_VERSION.split('-').slice(0,2).join('-')}`);
-    } catch {}
-  });
-}).on('error', () => {});
 let agentsReady = false;
-https.get('https://valorant-api.com/v1/agents?isPlayableCharacter=true', res => {
-  let d = '';
-  res.on('data', c => d += c);
-  res.on('end', () => {
-    try {
-      const data = JSON.parse(d);
-      data.data?.forEach(a => {
-        AGENT_UUIDS[a.uuid.toLowerCase()] = a.displayName;
-        AGENT_ICONS[a.uuid.toLowerCase()] = a.displayIcon || '';
+
+function valorantApiJson(apiPath, timeoutMs = 5000) {
+  return new Promise((resolve, reject) => {
+    const request = https.get(`https://valorant-api.com${apiPath}`, res => {
+      let body = '';
+      res.on('data', chunk => body += chunk);
+      res.on('end', () => {
+        if (res.statusCode !== 200) return reject(new Error(`HTTP ${res.statusCode}`));
+        try { resolve(JSON.parse(body)); }
+        catch { reject(new Error('Réponse JSON invalide')); }
       });
+    });
+    request.setTimeout(timeoutMs, () => request.destroy(new Error('Délai dépassé')));
+    request.on('error', reject);
+  });
+}
+
+async function refreshValorantMetadata() {
+  const [version, agents] = await Promise.allSettled([
+    valorantApiJson('/v1/version'),
+    valorantApiJson('/v1/agents?isPlayableCharacter=true'),
+  ]);
+  if (version.status === 'fulfilled') {
+    const data = version.value;
+    RIOT_CLIENT_VERSION = data.data?.riotClientVersion || data.data?.version || RIOT_CLIENT_VERSION;
+  }
+  if (agents.status === 'fulfilled') {
+    const nextUuids = {};
+    const nextIcons = {};
+    agents.value.data?.forEach(agent => {
+      nextUuids[agent.uuid.toLowerCase()] = agent.displayName;
+      nextIcons[agent.uuid.toLowerCase()] = agent.displayIcon || '';
+    });
+    if (Object.keys(nextUuids).length) {
+      AGENT_UUIDS = nextUuids;
+      AGENT_ICONS = nextIcons;
       agentsReady = true;
       console.log(`[init] ✅ ${Object.keys(AGENT_UUIDS).length} agents chargés`);
-    } catch {}
-  });
-}).on('error', () => {});
+    }
+  }
+  if (!agentsReady) {
+    console.log('[init] ⚠️ Métadonnées agents indisponibles — nouvelle tentative dans 60s');
+    const retry = setTimeout(refreshValorantMetadata, 60_000);
+    retry.unref?.();
+  }
+}
+
+refreshValorantMetadata().catch(() => {});
 
 // Fallback static UUIDs
 // Agent names loaded from API only — no fallback to avoid wrong assignments
@@ -954,7 +975,6 @@ async function fetchPostMatchRR(tokens, matchId) {
 }
 
 async function poll() {
-  if (!agentsReady) return;
   const lock = readLockfile();
   if (!lock) {
     tries++;
