@@ -179,6 +179,9 @@ test('startup reveals the shell before optional APIs and supports installation',
   assert.match(page, /id="pwa-install-band"/);
   assert.match(pwaInstall, /serviceWorker\.register\('\.\/sw\.js'/);
   assert.doesNotMatch(page, /getRegistrations\(\)[\s\S]*unregister/);
+  assert.match(main, /boot\(\)\.catch\(showBootFailure\)/);
+  assert.match(main, /Connexion interrompue/);
+  assert.match(main, /olycity-boot-retry/);
 });
 
 test('PWA exposes opt-in notifications and admin test controls without touching the bot', () => {

@@ -6,7 +6,8 @@
 import { valorantApi } from './api.js';
 import { fetchJsonWithTimeout } from './request-utils.mjs?v=20260809-route-load-stable';
 
-const SITE_VERSION = '20260824-home-group-pwa';
+const SITE_VERSION = '20260824-boot-recovery';
+const BOOT_RETRY_KEY = 'olycity-boot-retry';
 import { syncPlayer as henrikSyncPlayer, syncAllPlayers as henrikSyncAll, persistPlayerStats } from './henrik.js?v=20260809-val-roster-season';
 import { setStoredKey, storedKey, forgetCachedKey } from './henrik-key.mjs';
 import { rosterHTML, guestCardHTML, mapSectionHTML, agentPageHTML } from './render.js?v=20260823-home-art-buttons-fix';
@@ -852,7 +853,34 @@ async function boot() {
     window.OLYCITY.showMap(state.currentMapIdx || 0, document.querySelector(`[data-map-idx="${state.currentMapIdx || 0}"]`));
     if (state.currentProfile) window.OLYCITY._applyProfileIndicator(state.currentProfile);
   });
+  try { sessionStorage.removeItem(BOOT_RETRY_KEY); } catch {}
+  window.__OLYCITY_READY__ = true;
   console.log('[OLYCITY] Ready ✓');
 }
 
-boot();
+function showBootFailure(error) {
+  console.error('[OLYCITY] Startup failed', error);
+  document.getElementById('loading-screen')?.classList.add('is-dismissed');
+  const title = document.getElementById('home-now-title');
+  const detail = document.getElementById('home-now-detail');
+  const action = document.getElementById('home-now-action');
+  const online = document.getElementById('home-online-label');
+  const activity = document.getElementById('home-activity-list');
+  if (title) title.textContent = 'Connexion interrompue';
+  if (detail) detail.textContent = 'Le site va relancer le chargement.';
+  if (action) action.textContent = 'Réessayer';
+  if (online) online.textContent = 'Hors ligne';
+  if (activity) activity.innerHTML = '<span class="home-activity-empty">Impossible de synchroniser le groupe.</span>';
+  const card = document.getElementById('home-now-card');
+  if (card) card.onclick = () => window.location.reload();
+
+  try {
+    const alreadyRetried = sessionStorage.getItem(BOOT_RETRY_KEY) === SITE_VERSION;
+    if (!alreadyRetried) {
+      sessionStorage.setItem(BOOT_RETRY_KEY, SITE_VERSION);
+      window.setTimeout(() => window.location.reload(), 900);
+    }
+  } catch {}
+}
+
+boot().catch(showBootFailure);

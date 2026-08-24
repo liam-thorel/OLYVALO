@@ -1,4 +1,4 @@
-const CACHE_NAME = 'olycity-shell-20260824-balanced-app';
+const CACHE_NAME = 'olycity-shell-20260824-boot-recovery';
 const APP_SHELL = [
   './', './index.html', './manifest.webmanifest', './assets/logo.svg',
   './assets/pwa-icon-192.png', './assets/pwa-icon-512.png',
