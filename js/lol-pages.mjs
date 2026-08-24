@@ -109,7 +109,7 @@ function renderHistory(matches, player = 'all', period = 'all', pagerState = lol
     <div class="lol-filter-group"><span>Joueur</span><select id="lol-history-player"><option value="all">Tous</option>${players.map(value => `<option value="${esc(value)}" ${value === player ? 'selected' : ''}>${esc(value)}</option>`).join('')}</select></div>
     <div class="lol-history-periods">${[['all','Tout'],['7d','7 jours'],['today','Aujourd’hui']].map(([value,label]) => `<button data-lol-period="${value}" class="${period === value ? 'active' : ''}">${label}</button>`).join('')}</div>
   </div>
-  ${filtered.length ? `<section class="lol-day-recap"><span>Résumé</span>${days.map(day => `<div><strong>${esc(day.date)}</strong><span>${day.games} game${day.games > 1 ? 's' : ''}</span><b>${day.wins}V · ${day.games-day.wins}D</b><small>${day.games ? Math.round(day.wins/day.games*100) : 0}% WR</small></div>`).join('')}</section><div class="lol-history-list">${filtered.map(matchRow).join('')}</div>` : '<div class="lol-empty-state"><span class="lol-empty-rune">L</span><strong>Aucune partie dans cette période</strong><small>L’historique LoL est indépendant de Valorant.</small></div>'}`;
+  ${filtered.length ? `<details class="lol-history-recap"><summary><span>Résumé de la période</span><small>${filtered.length} partie${filtered.length > 1 ? 's' : ''}</small><i>⌄</i></summary><section class="lol-day-recap">${days.map(day => `<div><strong>${esc(day.date)}</strong><span>${day.games} game${day.games > 1 ? 's' : ''}</span><b>${day.wins}V · ${day.games-day.wins}D</b><small>${day.games ? Math.round(day.wins/day.games*100) : 0}% WR</small></div>`).join('')}</section></details><div class="lol-history-list">${filtered.map(matchRow).join('')}</div>` : '<div class="lol-empty-state"><span class="lol-empty-rune">L</span><strong>Aucune partie dans cette période</strong><small>L’historique LoL est indépendant de Valorant.</small></div>'}`;
   el.insertAdjacentHTML('beforeend', `<div class="history-load-more-wrap">${pagerState.hasMore ? `<button type="button" class="btn btn-primary" data-lol-history-load-more>Charger les anciennes · ${pagerState.loaded}/${pagerState.total}</button>` : `<span>${pagerState.loaded} partie${pagerState.loaded > 1 ? 's' : ''} chargée${pagerState.loaded > 1 ? 's' : ''}</span>`}</div>`);
   document.getElementById('lol-history-player')?.addEventListener('change', event => renderHistory(matches, event.target.value, period, pagerState));
   el.querySelectorAll('[data-lol-period]').forEach(button => button.addEventListener('click', () => renderHistory(matches, player, button.dataset.lolPeriod, pagerState)));
@@ -123,7 +123,7 @@ function renderHistory(matches, player = 'all', period = 'all', pagerState = lol
     const match = matches.find(candidate => String(candidate.id) === details.dataset.lolHistoryId);
     const target = details.querySelector('[data-lol-history-detail]');
     if (!target || !match?.__summary) { details.dataset.detailLoaded = '1'; return; }
-    target.innerHTML = '<span class="history-detail-loading">Chargement des détails…</span>';
+    target.innerHTML = '<div class="history-detail-loading is-loading"><span></span>Chargement des détails…</div>';
     try {
       const raw = await lolHistoryPager.loadDetail(match.id);
       const full = normalizeLolHistory({ [match.id]:raw })[0];
@@ -140,7 +140,7 @@ export async function initLolHistoryPage() {
   const el = document.getElementById('lol-history-content');
   if (!el) return;
   const loadSequence = ++historyLoadSequence;
-  el.innerHTML = '<div class="lol-empty-state"><span class="lol-empty-rune">L</span><strong>Chargement de l’historique…</strong></div>';
+  el.innerHTML = '<div class="data-state-card is-loading"><span class="data-state-pulse" aria-hidden="true"></span><div><strong>Chargement de l’historique</strong><small>Récupération des dernières parties League of Legends</small></div><span class="data-state-lines" aria-hidden="true"><i></i><i></i></span></div>';
   try {
     const pagerState = await lolHistoryPager.loadNext();
     if (loadSequence !== historyLoadSequence) return;
@@ -148,7 +148,7 @@ export async function initLolHistoryPage() {
     renderHistory(matches, 'all', 'all', pagerState);
   } catch {
     if (loadSequence !== historyLoadSequence) return;
-    el.innerHTML = '<div class="lol-empty-state"><strong>Historique indisponible</strong><small>La connexion a pris trop de temps.</small><button type="button" data-lol-history-retry class="btn btn-primary">Réessayer</button></div>';
+    el.innerHTML = '<div class="data-state-card is-error"><span class="data-state-pulse" aria-hidden="true"></span><div><strong>Historique indisponible</strong><small>La connexion a pris trop de temps.</small></div><button type="button" data-lol-history-retry class="btn btn-primary">Réessayer</button></div>';
     el.querySelector('[data-lol-history-retry]')?.addEventListener('click', initLolHistoryPage);
   }
 }

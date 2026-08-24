@@ -14,12 +14,12 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Tomorrow:wght@400;500;600;700&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="./css/tokens.css?v=20260720-avatars">
-  <link rel="stylesheet" href="./css/layout.css?v=20260823-mobile-design">
+  <link rel="stylesheet" href="./css/layout.css?v=20260824-live-history-density">
   <link rel="stylesheet" href="./css/components.css?v=20260823-mobile-design">
   <link rel="stylesheet" href="./css/home.css?v=20260823-home-art-buttons-fix">
   <link rel="stylesheet" href="./css/agent-page.css?v=20260720-avatars">
-  <link rel="stylesheet" href="./css/responsive.css?v=20260823-mobile-design">
-  <link rel="stylesheet" href="./css/lol-mode.css?v=20260823-mobile-sections">
+  <link rel="stylesheet" href="./css/responsive.css?v=20260824-live-history-density">
+  <link rel="stylesheet" href="./css/lol-mode.css?v=20260824-live-history-density">
   <link rel="stylesheet" href="./css/curse.css?v=20260818-curse-lifecycle">
   <link rel="stylesheet" href="./css/coop-games.css?v=20260823-mobile-sections">
 </head>
@@ -245,8 +245,8 @@
         <button class="home-world" data-home-world="valorant" data-home-page="maps" type="button">
           <span class="home-world-copy"><small>Comps & Live</small><strong>Valorant</strong></span>
         </button>
-        <button class="home-world" data-home-world="lol" data-home-page="live" type="button">
-          <span class="home-world-copy"><small>Live & Rangs</small><strong>League</strong></span>
+        <button class="home-world" data-home-world="lol" data-home-page="roster" type="button">
+          <span class="home-world-copy"><small>Roster & Rangs</small><strong>League</strong></span>
         </button>
         <button class="home-world" data-home-world="coop" data-home-page="games" type="button">
           <span class="home-world-copy"><small>Votes du groupe</small><strong>Coop</strong></span>
@@ -422,7 +422,13 @@
         <a href="https://github.com/liam-thorel/OLYVALO/releases/latest/download/OLYCITY-Live.zip" download class="live-download-link">
           ↓ Télécharger la dernière version
         </a>
-        <div class="live-client-list" id="live-client-list"></div>
+        <details class="live-client-details" id="live-client-details">
+          <summary>
+            <span id="live-client-toggle-label">Voir les scripts connectés</span>
+            <span class="live-client-toggle-icon" aria-hidden="true">⌄</span>
+          </summary>
+          <div class="live-client-list" id="live-client-list"></div>
+        </details>
       </div>
       <div class="live-waiting" id="live-waiting">
         <div style="font-size:40px;margin-bottom:16px">🎮</div>
@@ -463,7 +469,7 @@
           <span class="lol-live-pulse">LIVE</span>
         </div>
         <div id="lol-live-content" class="lol-live-grid">
-          <div class="lol-empty-state"><span class="lol-empty-rune">L</span><strong>Connexion au live LoL…</strong><small>Synchronisation avec les scripts OLYCITY</small></div>
+          <div class="data-state-card is-loading"><span class="data-state-pulse" aria-hidden="true"></span><div><strong>Connexion au Live LoL</strong><small>Synchronisation avec les scripts OLYCITY</small></div><span class="data-state-lines" aria-hidden="true"><i></i><i></i></span></div>
         </div>
       </div>
     </div>
@@ -494,6 +500,6 @@
   <!-- Firebase SDK -->
   <!-- Présence Firebase -->
   <script src="./js/presence.js?v=20260720-avatars"></script>
-  <script type="module" src="./js/main.js?v=20260823-home-art-buttons-fix"></script>
+  <script type="module" src="./js/main.js?v=20260824-live-history-density"></script>
 </body>
 </html>

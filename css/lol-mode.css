@@ -58,7 +58,7 @@
 .lol-match-live-header { display:flex; align-items:center; justify-content:space-between; gap:12px; padding:15px 18px; border-bottom:1px solid var(--border); }
 .lol-match-live-header > div:first-child { display:grid; gap:4px; }
 .lol-match-live-header span { color:var(--gold); font:700 8px/1 'Tomorrow',sans-serif; letter-spacing:2px; text-transform:uppercase; }
-.lol-match-live-header strong { color:var(--text); font:600 16px/1.2 'Tomorrow',sans-serif; letter-spacing:1px; }
+.lol-match-live-header strong { color:var(--text); font:650 16px/1.2 'DM Sans',sans-serif; }
 .lol-region-badge { padding:7px 10px; border:1px solid var(--border2); color:var(--gold); font:700 9px 'Tomorrow',sans-serif; letter-spacing:2px; }
 .lol-live-players { display:grid; }
 .lol-live-player { display:grid; grid-template-columns:54px minmax(180px,1fr) minmax(130px,.7fr) minmax(90px,.4fr); align-items:center; gap:14px; padding:12px 18px; border-bottom:1px solid var(--border); }
@@ -68,7 +68,7 @@
 .lol-champion-frame span { display:grid;place-items:center;height:100%;color:var(--dim);font:700 20px 'Tomorrow'; }
 .lol-live-player-main,.lol-matchup,.lol-rank { display:grid; gap:2px; min-width:0; }
 .lol-live-player-main small,.lol-matchup small,.lol-rank small { color:var(--dim); font-size:9px; letter-spacing:1.4px; text-transform:uppercase; }
-.lol-live-player-main strong,.lol-matchup strong,.lol-rank strong { overflow:hidden; color:var(--text); font:600 11px 'Tomorrow',sans-serif; letter-spacing:.5px; text-overflow:ellipsis; white-space:nowrap; }
+.lol-live-player-main strong,.lol-matchup strong,.lol-rank strong { overflow:hidden; color:var(--text); font:650 13px 'DM Sans',sans-serif; text-overflow:ellipsis; white-space:nowrap; }
 .lol-live-player-main span { color:var(--gold); font-size:12px; }
 .lol-matchup { grid-template-columns:28px 1fr; grid-template-rows:auto auto; }
 .lol-matchup img { grid-row:1 / 3; width:28px;height:28px;object-fit:cover;border-radius:50%; }
@@ -83,8 +83,15 @@
 .lol-history-periods { display:flex;gap:5px; }
 .lol-history-periods button { padding:8px 12px;border:1px solid var(--border);background:var(--bg);color:var(--muted);font:600 12px 'DM Sans',sans-serif;cursor:pointer; }
 .lol-history-periods button.active { border-color:var(--red);background:var(--red-low);color:var(--gold); }
-.lol-day-recap { display:grid;gap:6px;margin-bottom:24px; }
-.lol-day-recap > span { margin-bottom:3px;color:var(--muted);font-size:13px;font-weight:600; }
+.lol-history-recap { margin-bottom:16px;border:1px solid var(--border);background:var(--surf); }
+.lol-history-recap > summary { display:grid;grid-template-columns:1fr auto auto;align-items:center;gap:12px;padding:12px 14px;list-style:none;cursor:pointer; }
+.lol-history-recap > summary::-webkit-details-marker { display:none; }
+.lol-history-recap > summary span { color:var(--text);font-size:13px;font-weight:650; }
+.lol-history-recap > summary small { color:var(--muted);font-size:11px; }
+.lol-history-recap > summary i { color:var(--muted);font-size:16px;font-style:normal;transition:transform .2s; }
+.lol-history-recap[open] > summary i { transform:rotate(180deg); }
+.lol-day-recap { display:grid;gap:6px;margin:0;padding:0 12px 12px;border-top:1px solid var(--border); }
+.lol-day-recap > div:first-child { margin-top:12px; }
 .lol-day-recap > div { display:grid;grid-template-columns:minmax(130px,1fr) 90px 90px 60px;gap:12px;align-items:center;padding:10px 14px;border:1px solid var(--border);border-left:3px solid var(--gold);background:var(--surf); }
 .lol-day-recap strong { color:var(--text);font-size:13px; }.lol-day-recap span,.lol-day-recap small { color:var(--muted);font-size:12px; }.lol-day-recap b { color:var(--gold);font-size:12px; }
 .lol-history-list { display:grid;gap:7px; }
@@ -101,7 +108,7 @@
 .lol-history-detail > div { display:grid;gap:5px;align-content:start; }.lol-history-detail small { color:var(--dim);font-size:9px;letter-spacing:1px;text-transform:uppercase; }.lol-history-detail strong { color:var(--text);font-size:12px; }
 .lol-items { display:flex;gap:4px;flex-wrap:wrap; }.lol-items img { width:30px;height:30px;object-fit:cover;border:1px solid var(--border2); }
 .lol-empty-state { grid-column:1/-1;display:grid;justify-items:center;gap:8px;padding:70px 24px;border:1px solid var(--border);background:radial-gradient(circle at center,var(--red-low),transparent 52%),var(--surf);text-align:center; }
-.lol-empty-state strong { color:var(--text);font:700 13px 'Tomorrow',sans-serif;letter-spacing:2px;text-transform:uppercase; }.lol-empty-state small { max-width:500px;color:var(--muted);font-size:12px;line-height:1.5; }
+.lol-empty-state strong { color:var(--text);font:650 14px 'DM Sans',sans-serif; }.lol-empty-state small { max-width:500px;color:var(--muted);font-size:12px;line-height:1.5; }
 .lol-empty-rune { display:grid;place-items:center;width:48px;height:48px;border:1px solid var(--red-mid);color:var(--gold);font:700 22px 'Tomorrow';transform:rotate(45deg);box-shadow:inset 0 0 20px var(--red-low),0 0 25px rgba(19,105,151,.16); }.lol-empty-rune::first-letter { transform:rotate(-45deg); }
 
 /* League home ranks + roster */

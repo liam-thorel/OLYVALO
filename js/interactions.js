@@ -453,6 +453,8 @@ export function initLivePage() {
     const detail = document.getElementById('live-diagnostic-detail');
     const version = document.getElementById('live-diagnostic-version');
     const list = document.getElementById('live-client-list');
+    const clientDetails = document.getElementById('live-client-details');
+    const clientToggleLabel = document.getElementById('live-client-toggle-label');
     if (!panel || !label || !detail || !version || !list) return;
 
     ensureRosterCache();
@@ -472,8 +474,15 @@ export function initLivePage() {
           : 'Les membres actifs apparaîtront ici';
       version.textContent = '—';
       list.innerHTML = '';
+      if (clientDetails) {
+        clientDetails.hidden = true;
+        clientDetails.open = false;
+      }
       return;
     }
+
+    if (clientDetails) clientDetails.hidden = false;
+    if (clientToggleLabel) clientToggleLabel.textContent = `${summary.total} membre${summary.total > 1 ? 's' : ''} connecté${summary.total > 1 ? 's' : ''}`;
 
     panel.dataset.state = summary.inGame ? 'in-game'
       : summary.agentSelect ? 'agent-select'
@@ -1229,7 +1238,7 @@ export async function initHistoryPage() {
   const el = document.getElementById('history-content');
   if (!el) return;
   const loadSequence = ++historyLoadSequence;
-  el.innerHTML = '<div style="font-family:Tomorrow,sans-serif;font-size:10px;letter-spacing:3px;color:var(--dim);text-transform:uppercase;padding:32px 0">Chargement</div>';
+  el.innerHTML = '<div class="data-state-card is-loading"><span class="data-state-pulse" aria-hidden="true"></span><div><strong>Chargement de l’historique</strong><small>Récupération des dernières parties Valorant</small></div><span class="data-state-lines" aria-hidden="true"><i></i><i></i></span></div>';
 
   let games = [];
   let pagerState = valorantHistoryPager.snapshot();
@@ -1240,9 +1249,9 @@ export async function initHistoryPage() {
     games = normalizeHistoryEntries(pagerState.data);
   } catch {
     if (loadSequence !== historyLoadSequence) return;
-    el.innerHTML = `<div style="border:1px solid var(--border);background:var(--surf);padding:40px 24px;text-align:center">
-      <div style="font-family:Tomorrow,sans-serif;font-size:12px;letter-spacing:2px;text-transform:uppercase;color:var(--muted);margin-bottom:10px">Historique indisponible</div>
-      <div style="font-size:12px;color:var(--dim);margin-bottom:18px">Le chargement a pris trop de temps ou la connexion a été interrompue.</div>
+    el.innerHTML = `<div class="data-state-card is-error">
+      <span class="data-state-pulse" aria-hidden="true"></span><div><strong>Historique indisponible</strong>
+      <small>Le chargement a pris trop de temps ou la connexion a été interrompue.</small></div>
       <button type="button" data-history-retry class="btn btn-primary">Réessayer</button>
     </div>`;
     el.querySelector('[data-history-retry]')?.addEventListener('click', initHistoryPage);
@@ -1250,9 +1259,9 @@ export async function initHistoryPage() {
   }
 
   if (!games.length) {
-    el.innerHTML = `<div style="border:1px solid var(--border);background:var(--surf);padding:40px 24px;text-align:center">
-      <div style="font-family:Tomorrow,sans-serif;font-size:12px;letter-spacing:3px;text-transform:uppercase;color:var(--muted);margin-bottom:8px">Aucune game enregistrée</div>
-      <div style="font-family:Tomorrow,sans-serif;font-size:9px;letter-spacing:1px;color:var(--dim);line-height:1.6">Les parties se sauvegardent automatiquement à la fin de chaque game.<br>Script v4.3 minimum requis.</div>
+    el.innerHTML = `<div class="data-state-card is-empty">
+      <span class="data-state-pulse" aria-hidden="true"></span><div><strong>Aucune partie enregistrée</strong>
+      <small>Les parties se sauvegardent automatiquement à la fin de chaque game. Script v4.3 minimum requis.</small></div>
     </div>`;
     return;
   }
@@ -1268,7 +1277,7 @@ export async function initHistoryPage() {
     }))).values()].sort((a,b) => a.label.localeCompare(b.label, 'fr'));
   };
   updateOwnerOptions();
-  const historyUI = { view:'summary', owner:'all', period:'all', mode:'all' };
+  const historyUI = { view:'matches', owner:'all', period:'all', mode:'all', limit:20 };
   const visibleGames = () => filterHistoryGames(allGames, historyUI)
     .map(game => historyUI.owner === 'all' ? game : historyGameForOwner(game, historyUI.owner));
   const refreshHistory = () => renderHistory(visibleGames());
@@ -1463,17 +1472,21 @@ export async function initHistoryPage() {
       <div class="history-game-detail" data-history-detail>${detail}</div>
     </details>`;
   };
-  const gameSection = (title, sectionGames, className) => sectionGames.length ? `
+  const displayedGames = games.slice(0, historyUI.limit);
+  const displayedComp = displayedGames.filter(game => historyMode(game) === 'competitive');
+  const displayedDeathmatches = displayedGames.filter(game => historyMode(game) === 'deathmatch');
+  const displayedOtherGames = displayedGames.filter(game => historyMode(game) === 'other');
+  const gameSection = (title, sectionGames, className, total) => sectionGames.length ? `
     <section class="history-mode-section ${className}">
-      ${sectionTitle(`${title} · ${sectionGames.length}`)}
-      <div class="history-game-list">${sectionGames.slice(0,40).map(gameCard).join('')}</div>
+      ${sectionTitle(`${title} · ${total}`)}
+      <div class="history-game-list">${sectionGames.map(gameCard).join('')}</div>
     </section>` : '';
   const filterButton = (group, value, label, active) => `
     <button type="button" class="history-filter-button ${active ? 'active' : ''}" data-history-${group}="${value}">${label}</button>`;
 
   el.innerHTML = `
     <div class="history-view-tabs" role="tablist" aria-label="Vue de l'historique">
-      ${filterButton('view', 'summary', 'Résumé', historyUI.view === 'summary')}
+      ${filterButton('view', 'summary', 'Statistiques', historyUI.view === 'summary')}
       ${filterButton('view', 'matches', 'Parties', historyUI.view === 'matches')}
     </div>
 
@@ -1606,14 +1619,18 @@ export async function initHistoryPage() {
 
     <section class="history-view-panel matches ${historyUI.view === 'matches' ? 'active' : ''}">
     <div class="history-latest-sections">
-      ${gameSection('Compétitif', comp, 'competitive')}
-      ${gameSection('Deathmatch', deathmatches, 'deathmatch')}
-      ${gameSection('Autres modes', otherGames, 'other')}
+      ${gameSection('Compétitif', displayedComp, 'competitive', comp.length)}
+      ${gameSection('Deathmatch', displayedDeathmatches, 'deathmatch', deathmatches.length)}
+      ${gameSection('Autres modes', displayedOtherGames, 'other', otherGames.length)}
       ${games.length ? '' : '<div class="history-empty-filter">Aucune partie ne correspond à ces filtres.</div>'}
     </div>
     </section>
     <div class="history-load-more-wrap">
-      ${pagerState.hasMore ? `<button type="button" class="btn btn-primary" data-history-load-more>Charger les anciennes · ${pagerState.loaded}/${pagerState.total}</button>` : `<span>${pagerState.loaded} partie${pagerState.loaded > 1 ? 's' : ''} chargée${pagerState.loaded > 1 ? 's' : ''}</span>`}
+      ${historyUI.limit < games.length
+        ? `<button type="button" class="btn btn-primary" data-history-show-more>Afficher 20 parties de plus · ${Math.min(historyUI.limit, games.length)}/${games.length}</button>`
+        : pagerState.hasMore
+          ? `<button type="button" class="btn btn-primary" data-history-load-more>Charger les anciennes · ${pagerState.loaded}/${pagerState.total}</button>`
+          : `<span>${pagerState.loaded} partie${pagerState.loaded > 1 ? 's' : ''} chargée${pagerState.loaded > 1 ? 's' : ''}</span>`}
     </div>`;
 
     el.querySelectorAll('[data-history-view]').forEach(button => button.addEventListener('click', () => {
@@ -1622,16 +1639,23 @@ export async function initHistoryPage() {
     }));
     el.querySelectorAll('[data-history-owner]').forEach(button => button.addEventListener('click', () => {
       historyUI.owner = button.dataset.historyOwner;
+      historyUI.limit = 20;
       refreshHistory();
     }));
     el.querySelectorAll('[data-history-period]').forEach(button => button.addEventListener('click', () => {
       historyUI.period = button.dataset.historyPeriod;
+      historyUI.limit = 20;
       refreshHistory();
     }));
     el.querySelectorAll('[data-history-mode]').forEach(button => button.addEventListener('click', () => {
       historyUI.mode = button.dataset.historyMode;
+      historyUI.limit = 20;
       refreshHistory();
     }));
+    el.querySelector('[data-history-show-more]')?.addEventListener('click', () => {
+      historyUI.limit += 20;
+      refreshHistory();
+    });
     el.querySelector('[data-history-load-more]')?.addEventListener('click', async event => {
       const button = event.currentTarget;
       button.disabled = true;

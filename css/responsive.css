@@ -176,6 +176,7 @@
   .live-diagnostic-copy span { font-size: 10px; line-height: 1.35; white-space: normal; }
   .live-diagnostic-version, .live-client-chip-version { display: none; }
   .live-client-list { grid-template-columns: 1fr; }
+  .live-client-details > summary { min-height: 44px; }
   .live-client-group { grid-column: auto; }
   .live-client-group-members { grid-template-columns: 1fr; }
   .live-download-link {
@@ -223,6 +224,8 @@
     background: var(--red-low); color: var(--text); font: 650 12px 'DM Sans', sans-serif;
     cursor: pointer;
   }
+  .data-state-card { grid-template-columns: auto minmax(0,1fr); min-height: 92px; padding: 16px; }
+  .data-state-lines { display: none; }
   .history-analysis > summary { grid-template-columns: 1fr auto; }
   .history-analysis > summary small { display: none; }
   .history-duration { display: none; }

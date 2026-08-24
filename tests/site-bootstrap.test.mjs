@@ -8,6 +8,7 @@ const homeDashboard = fs.readFileSync(new URL('../js/home-dashboard.mjs', import
 const interactions = fs.readFileSync(new URL('../js/interactions.js', import.meta.url), 'utf8');
 const render = fs.readFileSync(new URL('../js/render.js', import.meta.url), 'utf8');
 const lolRoster = fs.readFileSync(new URL('../js/lol-roster.mjs', import.meta.url), 'utf8');
+const lolPages = fs.readFileSync(new URL('../js/lol-pages.mjs', import.meta.url), 'utf8');
 const page = fs.readFileSync(new URL('../index.html', import.meta.url), 'utf8');
 const liveDataStore = fs.readFileSync(new URL('../js/live-data-store.mjs', import.meta.url), 'utf8');
 const historyPager = fs.readFileSync(new URL('../js/history-pager.mjs', import.meta.url), 'utf8');
@@ -57,7 +58,7 @@ test('home is one live priority, three visual worlds and a compact member strip'
   assert.match(page, /data-home-world="lol"/);
   assert.match(page, /data-home-world="coop"/);
   assert.match(page, /data-home-world="valorant" data-home-page="maps"/);
-  assert.match(page, /data-home-world="lol" data-home-page="live"/);
+  assert.match(page, /data-home-world="lol" data-home-page="roster"/);
   assert.match(homeDashboard, /addEventListener\('click', handleWorldClick\)/);
   assert.match(main, /import \{ getGameMode, initGameMode, setGameMode \} from '\.\/game-mode\.mjs/);
   assert.match(homeStyles, /valorant-keyart\.webp/);
@@ -124,7 +125,7 @@ test('mobile data pages keep readable spacing, controls and roster details', () 
   assert.match(responsive, /\.section-inner\s*\{\s*padding:\s*0/);
   assert.match(lolStyles, /\.lol-roster-champion strong\{font-size:10px\}/);
   assert.match(coopStyles, /\.coop-cover\{aspect-ratio:16\/7\}/);
-  assert.match(page, /lol-mode\.css\?v=20260823-mobile-sections/);
+  assert.match(page, /lol-mode\.css\?v=20260824-live-history-density/);
   assert.match(page, /coop-games\.css\?v=20260823-mobile-sections/);
 });
 
@@ -152,6 +153,14 @@ test('history and admin requests cannot stay pending forever', () => {
   assert.match(historyPager, /timeoutMs:8_000/);
   assert.match(historyPager, /timeoutMs:12_000/);
   assert.match(admin, /fetchJsonWithTimeout\(`\$\{FIREBASE_URL\}\/\$\{path\}\.json`/);
+});
+
+test('history prioritizes recent matches and reveals secondary data progressively', () => {
+  assert.match(interactions, /view:'matches'/);
+  assert.match(interactions, /limit:20/);
+  assert.match(interactions, /data-history-show-more/);
+  assert.match(lolPages, /class="lol-history-recap"/);
+  assert.match(page, /class="live-client-details"/);
 });
 
 test('Live and Admin share one realtime Firebase store', () => {
