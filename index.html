@@ -5,6 +5,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>OLYCITY</title>
   <link rel="icon" type="image/svg+xml" href="./assets/logo.svg">
+  <link rel="apple-touch-icon" href="./assets/pwa-icon-192.png">
+  <link rel="manifest" href="./manifest.webmanifest">
+  <meta name="theme-color" content="#0a0c10">
   <meta name="description" content="OLYCITY : Valorant, League of Legends, jeux coop, historique et live du Discord.">
   <meta name="application-name" content="OLYCITY">
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
@@ -16,13 +19,13 @@
   <link rel="stylesheet" href="./css/tokens.css?v=20260720-avatars">
   <link rel="stylesheet" href="./css/layout.css?v=20260824-live-history-density">
   <link rel="stylesheet" href="./css/components.css?v=20260823-mobile-design">
-  <link rel="stylesheet" href="./css/home.css?v=20260824-peak-coop-art">
+  <link rel="stylesheet" href="./css/home.css?v=20260824-home-group-pwa">
   <link rel="stylesheet" href="./css/agent-page.css?v=20260720-avatars">
   <link rel="stylesheet" href="./css/responsive.css?v=20260824-live-history-density">
   <link rel="stylesheet" href="./css/lol-mode.css?v=20260824-live-history-density">
   <link rel="stylesheet" href="./css/curse.css?v=20260818-curse-lifecycle">
   <link rel="stylesheet" href="./css/coop-games.css?v=20260823-mobile-sections">
-  <link rel="stylesheet" href="./css/design-system.css?v=20260824-ux-polish">
+  <link rel="stylesheet" href="./css/design-system.css?v=20260824-readable-pwa">
 </head>
 <body>
 
@@ -70,27 +73,10 @@
   <div id="profile-picker" class="profile-picker" role="dialog" aria-modal="true" aria-labelledby="profile-picker-title" hidden></div>
 
   <!-- LOADING SCREEN -->
-  <div id="loading-screen" style="
-    position:fixed;inset:0;z-index:9999;
-    background:#0a0c10;
-    display:flex;flex-direction:column;align-items:center;justify-content:center;gap:20px;
-    transition:opacity .5s ease;
-  ">
-    <div style="
-      font-family:'Tomorrow',sans-serif;font-size:42px;font-weight:700;
-      letter-spacing:6px;color:#fff;
-    ">OLYCITY</div>
-    <div style="width:200px;height:2px;background:rgba(255,255,255,.1);position:relative;overflow:hidden;">
-      <div id="loading-bar" style="
-        position:absolute;left:-100%;top:0;height:100%;width:100%;
-        background:linear-gradient(90deg,transparent,#ff4656,transparent);
-        animation:loadingScan 1s ease-in-out infinite;
-      "></div>
-    </div>
-    <div style="
-      font-family:'Tomorrow',sans-serif;font-size:10px;letter-spacing:3px;
-      text-transform:uppercase;color:rgba(255,255,255,.3);
-    ">Chargement des données…</div>
+  <div id="loading-screen" class="startup-screen" aria-live="polite">
+    <strong>OLYCITY</strong>
+    <span class="startup-progress"><i id="loading-bar"></i></span>
+    <small>Préparation de l’accueil…</small>
   </div>
   <style>
     @keyframes logoSpin {
@@ -102,6 +88,15 @@
       to   { left: 100%;  }
     }
   </style>
+  <script>
+    // Le shell ne doit jamais rester caché à cause d'une API lente.
+    window.setTimeout(() => {
+      const screen = document.getElementById('loading-screen');
+      if (!screen) return;
+      screen.classList.add('is-dismissed');
+      window.setTimeout(() => screen.remove(), 320);
+    }, 1400);
+  </script>
 
   <!-- MAP ARROWS — must be before any transform/filter elements -->
 
@@ -256,8 +251,57 @@
         <span class="home-member-faces" id="home-member-faces"></span>
         <span id="home-online-label">Connexion…</span>
       </button>
+
+      <div class="home-group-grid">
+        <section class="home-group-panel home-tonight-panel" aria-labelledby="home-tonight-title">
+          <div class="home-group-heading">
+            <span>Ce soir</span>
+            <button id="home-tonight-open" type="button">Organiser</button>
+          </div>
+          <div class="home-tonight-content" id="home-tonight-content">
+            <div><strong id="home-tonight-title">On se retrouve quand ?</strong><small>Choisis une heure et un jeu avec le groupe.</small></div>
+          </div>
+        </section>
+        <section class="home-group-panel home-activity-panel" aria-labelledby="home-activity-title">
+          <div class="home-group-heading"><span id="home-activity-title">Activité récente</span><small id="home-activity-count"></small></div>
+          <div class="home-activity-list" id="home-activity-list">
+            <span class="home-inline-loading">Synchronisation du groupe…</span>
+          </div>
+        </section>
+      </div>
+
+      <button class="home-install-band" id="pwa-install-band" type="button" hidden>
+        <span class="home-install-icon" aria-hidden="true">↓</span>
+        <span><strong>Installer OLYCITY</strong><small id="pwa-install-summary">Accès rapide depuis ton écran d’accueil.</small></span>
+        <i>Voir comment</i>
+      </button>
     </section>
 
+  </div>
+
+  <div class="home-sheet" id="home-tonight-modal" role="dialog" aria-modal="true" aria-labelledby="home-tonight-modal-title" hidden>
+    <form class="home-sheet-card" id="home-tonight-form">
+      <header><div><span>Le groupe</span><h2 id="home-tonight-modal-title">Organiser ce soir</h2></div><button type="button" data-home-sheet-close aria-label="Fermer">×</button></header>
+      <label class="home-sheet-field"><span>Heure proposée</span><input id="home-tonight-time" type="time" value="21:30" required></label>
+      <label class="home-sheet-field"><span>Jeu</span><select id="home-tonight-game"><option value="">À décider ensemble</option></select></label>
+      <fieldset class="home-response-field"><legend>Tu seras là ?</legend><div>
+        <button type="button" data-night-response="yes">✓ Oui</button>
+        <button type="button" data-night-response="maybe">~ Peut-être</button>
+        <button type="button" data-night-response="no">× Non</button>
+      </div></fieldset>
+      <div class="home-night-attendees" id="home-night-attendees"></div>
+      <p class="home-sheet-status" id="home-tonight-status" aria-live="polite"></p>
+      <footer><button class="home-sheet-primary" type="submit">Enregistrer la soirée</button></footer>
+    </form>
+  </div>
+
+  <div class="home-sheet" id="pwa-install-modal" role="dialog" aria-modal="true" aria-labelledby="pwa-install-title" hidden>
+    <div class="home-sheet-card pwa-install-card">
+      <header><div><span>Accès rapide</span><h2 id="pwa-install-title">Installer OLYCITY</h2></div><button type="button" data-pwa-close aria-label="Fermer">×</button></header>
+      <div class="pwa-install-device" id="pwa-install-device"></div>
+      <ol class="pwa-install-steps" id="pwa-install-steps"></ol>
+      <button class="home-sheet-primary" id="pwa-install-action" type="button" hidden>Installer maintenant</button>
+    </div>
   </div>
 
   <!-- MAP NAVIGATION ARROWS (global, outside sections) -->
@@ -491,14 +535,9 @@
     </div>
   </footer>
 
-  <script>
-    if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.getRegistrations().then(regs => regs.forEach(r => r.unregister()));
-    }
-  </script>
   <!-- Firebase SDK -->
   <!-- Présence Firebase -->
   <script src="./js/presence.js?v=20260720-avatars"></script>
-  <script type="module" src="./js/main.js?v=20260824-home-world-art"></script>
+  <script type="module" src="./js/main.js?v=20260824-group-pwa-2"></script>
 </body>
 </html>

@@ -4,8 +4,9 @@
  */
 
 import { valorantApi } from './api.js';
+import { fetchJsonWithTimeout } from './request-utils.mjs?v=20260809-route-load-stable';
 
-const SITE_VERSION = '20260823-home-art-buttons-fix';
+const SITE_VERSION = '20260824-home-group-pwa';
 import { syncPlayer as henrikSyncPlayer, syncAllPlayers as henrikSyncAll, persistPlayerStats } from './henrik.js?v=20260809-val-roster-season';
 import { setStoredKey, storedKey, forgetCachedKey } from './henrik-key.mjs';
 import { rosterHTML, guestCardHTML, mapSectionHTML, agentPageHTML } from './render.js?v=20260823-home-art-buttons-fix';
@@ -21,23 +22,34 @@ import { initLolRosterPages } from './lol-roster.mjs?v=20260809-lol-sync';
 import { state } from './state.mjs?v=20260806-lol-roster';
 import { memberId, mergeMemberProfiles, resolveMemberProfile } from './member-profiles.mjs?v=20260823-profile-picker';
 import { initHomeDashboard } from './home-dashboard.mjs?v=20260823-home-art-buttons-fix';
+import { initHomeGroup } from './home-group.mjs?v=20260824-home-group-2';
+import { initPwaInstall } from './pwa-install.mjs?v=20260824-pwa';
 export { state };
 
 // ─── STATE ─────────────────────────────────────────
 
 // ─── LOAD JSON DATA ───────────────────────────────
 async function loadData() {
-  const [comps, roster, members, memberOverlay, roles, agentsFr, lineups, meta] = await Promise.all([
-    fetch(`./data/comps.json?v=${SITE_VERSION}`).then(r => r.json()),
-    fetch(`./data/roster.json?v=${SITE_VERSION}`).then(r => r.json()),
-    fetch(`./data/members.json?v=${SITE_VERSION}`).then(r => r.json()),
-    fetch('https://realtime-database-5bb9f-default-rtdb.europe-west1.firebasedatabase.app/rosterOverlay.json')
-      .then(r => r.ok ? r.json() : null).catch(() => null),
-    fetch(`./data/roles.json?v=${SITE_VERSION}`).then(r => r.json()),
-    fetch('./data/agents-fr.json').then(r => r.json()),
-    fetch('./data/lineups.json').then(r => r.json()),
-    fetch(`./data/meta.json?v=${SITE_VERSION}`).then(r => r.json()),
-  ]);
+  const cacheKey = 'olycity-static-data-cache';
+  let bundle;
+  try {
+    bundle = await Promise.all([
+      fetchJsonWithTimeout(`./data/comps.json?v=${SITE_VERSION}`, { timeoutMs:4_000 }),
+      fetchJsonWithTimeout(`./data/roster.json?v=${SITE_VERSION}`, { timeoutMs:4_000 }),
+      fetchJsonWithTimeout(`./data/members.json?v=${SITE_VERSION}`, { timeoutMs:4_000 }),
+      fetchJsonWithTimeout(`./data/roles.json?v=${SITE_VERSION}`, { timeoutMs:4_000 }),
+      fetchJsonWithTimeout('./data/agents-fr.json', { timeoutMs:4_000 }),
+      fetchJsonWithTimeout('./data/lineups.json', { timeoutMs:4_000 }),
+      fetchJsonWithTimeout(`./data/meta.json?v=${SITE_VERSION}`, { timeoutMs:4_000 }),
+    ]);
+    localStorage.setItem(cacheKey, JSON.stringify(bundle));
+  } catch (error) {
+    try { bundle = JSON.parse(localStorage.getItem(cacheKey) || 'null'); } catch {}
+    if (!Array.isArray(bundle) || bundle.length !== 7) throw error;
+    console.warn('[OLYCITY] Données statiques restaurées depuis le cache');
+  }
+  const [comps, roster, members, roles, agentsFr, lineups, meta] = bundle;
+  const memberOverlay = await fetchJsonWithTimeout('https://realtime-database-5bb9f-default-rtdb.europe-west1.firebasedatabase.app/rosterOverlay.json', { timeoutMs:2_500 }).catch(() => null);
 
   state.COMPS_DATA = comps;
   state.ROSTER = roster;
@@ -672,13 +684,17 @@ function renderAll() {
 
 // ─── BOOT ─────────────────────────────────────────
 async function boot() {
+  const visualAssetsPromise = valorantApi.load().catch(error => {
+    console.warn('[OLYCITY] Visuels distants ignorés', error);
+    return false;
+  });
   const savedPage = sessionStorage.getItem('olycity-page');
   // Auto-clear localStorage if version changed
   const storedVersion = localStorage.getItem('olycity-version');
   if (storedVersion !== SITE_VERSION) {
     // Clear cache but KEEP player stats (expensive to re-sync, don't change with code updates)
     const keys = Object.keys(localStorage).filter(k =>
-      k.startsWith('olycity-') && k !== 'olycity-player-stats' && k !== 'olycity-profile' && k !== 'olycity-member-id' && k !== 'olycity-game'
+      k.startsWith('olycity-') && !['olycity-player-stats','olycity-profile','olycity-member-id','olycity-game','olycity-static-data-cache','olycity-valorant-visuals','olycity-home-activity-seen'].includes(k)
     );
     keys.forEach(k => localStorage.removeItem(k));
     localStorage.setItem('olycity-version', SITE_VERSION);
@@ -691,6 +707,7 @@ async function boot() {
   initGameMode();
   initParallax();
   initKeyboard(() => window.OLYCITY.closeAgentPage());
+  initPwaInstall();
 
   // Clear stale localStorage from old versions (different data format)
   try {
@@ -712,14 +729,16 @@ async function boot() {
   document.getElementById('main').innerHTML = `<div class="loading">Chargement des données…</div>`;
 
   try {
-    await Promise.all([loadData(), valorantApi.load()]);
+    await loadData();
   } catch (e) {
     console.error('[OLYCITY] Load error', e);
     document.getElementById('main').innerHTML = `<div class="loading" style="color:var(--D)">Erreur de chargement — vérifie ta connexion et recharge.</div>`;
+    document.getElementById('loading-screen')?.classList.add('is-dismissed');
     return;
   }
 
   renderAll();
+  document.getElementById('loading-screen')?.classList.add('is-dismissed');
   if (!window._homeDashboardCleanup) {
     window._homeDashboardCleanup = initHomeDashboard({
       members: state.MEMBERS,
@@ -727,6 +746,7 @@ async function boot() {
       openUniverse: window.OLYCITY.openUniverse.bind(window.OLYCITY),
     });
   }
+  if (!window._homeGroupCleanup) window._homeGroupCleanup = initHomeGroup(state.MEMBERS);
   if (!window._lolRosterCleanup) window._lolRosterCleanup = initLolRosterPages();
   initSearch((name) => window.OLYCITY.showAgentPage(name));
 
@@ -821,6 +841,12 @@ async function boot() {
   }
   window.OLYCITY._refreshHenrikKeyBtn();
   window.OLYCITY.showMap(0, null);
+  void visualAssetsPromise.then(loaded => {
+    if (!loaded) return;
+    renderAll();
+    window.OLYCITY.showMap(state.currentMapIdx || 0, document.querySelector(`[data-map-idx="${state.currentMapIdx || 0}"]`));
+    if (state.currentProfile) window.OLYCITY._applyProfileIndicator(state.currentProfile);
+  });
   console.log('[OLYCITY] Ready ✓');
 }
 

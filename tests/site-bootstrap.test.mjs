@@ -5,6 +5,8 @@ import fs from 'node:fs';
 const main = fs.readFileSync(new URL('../js/main.js', import.meta.url), 'utf8');
 const gameMode = fs.readFileSync(new URL('../js/game-mode.mjs', import.meta.url), 'utf8');
 const homeDashboard = fs.readFileSync(new URL('../js/home-dashboard.mjs', import.meta.url), 'utf8');
+const homeGroup = fs.readFileSync(new URL('../js/home-group.mjs', import.meta.url), 'utf8');
+const pwaInstall = fs.readFileSync(new URL('../js/pwa-install.mjs', import.meta.url), 'utf8');
 const interactions = fs.readFileSync(new URL('../js/interactions.js', import.meta.url), 'utf8');
 const render = fs.readFileSync(new URL('../js/render.js', import.meta.url), 'utf8');
 const lolRoster = fs.readFileSync(new URL('../js/lol-roster.mjs', import.meta.url), 'utf8');
@@ -64,21 +66,25 @@ test('home is one live priority, three visual worlds and a compact member strip'
   assert.match(homeStyles, /valorant-keyart\.webp/);
   assert.match(homeStyles, /league-champions-group\.webp/);
   assert.match(homeStyles, /peak-keyart\.webp/);
-  assert.match(page, /home\.css\?v=20260824-peak-coop-art/);
-  assert.match(page, /design-system\.css\?v=20260824-ux-polish/);
+  assert.match(page, /home\.css\?v=20260824-home-group-pwa/);
+  assert.match(page, /design-system\.css\?v=20260824-readable-pwa/);
   assert.match(page, /id="home-member-faces"/);
   assert.doesNotMatch(page, /Agents prioritaires|id="stier-row"|id="mini-roster"/);
   assert.match(main, /initHomeDashboard\(/);
   assert.match(homeDashboard, /liveDataStore\.subscribe\(render\)/);
   assert.match(homeStyles, /\.home-world-grid\{display:grid;grid-template-columns:repeat\(3,minmax\(0,1fr\)\)/);
   assert.match(homeStyles, /@media\(max-width:768px\)/);
+  assert.match(page, /id="home-tonight-content"/);
+  assert.match(page, /id="home-activity-list"/);
+  assert.match(homeGroup, /groupNight\/current/);
+  assert.match(main, /initHomeGroup\(state\.MEMBERS\)/);
 });
 
 test('profile selection is accessible, stable and does not reload the site', () => {
   assert.match(page, /id="profile-picker"[\s\S]*role="dialog"[\s\S]*aria-modal="true"/);
   assert.match(page, /<button class="profile-indicator"/);
   assert.match(main, /localStorage\.setItem\('olycity-member-id', profile\.id\)/);
-  assert.match(main, /k !== 'olycity-member-id'/);
+  assert.match(main, /'olycity-member-id'/);
   assert.match(main, /window\._changePresence\?\.\(profile\.name\)/);
   assert.doesNotMatch(main, /setTimeout\(\(\) => location\.reload\(\), 300\)/);
   assert.match(components, /\.profile-grid[\s\S]*grid-template-columns/);
@@ -161,6 +167,17 @@ test('history and admin requests cannot stay pending forever', () => {
   assert.match(historyPager, /timeoutMs:8_000/);
   assert.match(historyPager, /timeoutMs:12_000/);
   assert.match(admin, /fetchJsonWithTimeout\(`\$\{FIREBASE_URL\}\/\$\{path\}\.json`/);
+});
+
+test('startup reveals the shell before optional APIs and supports installation', () => {
+  assert.match(page, /window\.setTimeout\([\s\S]*loading-screen[\s\S]*1400/);
+  assert.match(main, /await loadData\(\)/);
+  assert.doesNotMatch(main, /await Promise\.all\(\[loadData\(\), valorantApi\.load\(\)\]\)/);
+  assert.match(main, /olycity-static-data-cache/);
+  assert.match(page, /rel="manifest" href="\.\/manifest\.webmanifest"/);
+  assert.match(page, /id="pwa-install-band"/);
+  assert.match(pwaInstall, /serviceWorker\.register\('\.\/sw\.js'/);
+  assert.doesNotMatch(page, /getRegistrations\(\)[\s\S]*unregister/);
 });
 
 test('Live and Coop explain loading, empty and recovery states', () => {

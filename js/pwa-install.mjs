@@ -1,0 +1,83 @@
+let installPrompt = null;
+
+function isStandalone() {
+  return window.matchMedia?.('(display-mode: standalone)').matches || window.navigator.standalone === true;
+}
+
+export function installInstructions(userAgent = navigator.userAgent) {
+  const agent = String(userAgent || '');
+  if (/iphone|ipad|ipod/i.test(agent)) return {
+    device:'Sur iPhone ou iPad',
+    summary:'Ajoute OLYCITY à ton écran d’accueil depuis Safari.',
+    steps:['Ouvre cette page dans Safari.', 'Appuie sur le bouton Partager.', 'Choisis « Sur l’écran d’accueil », puis « Ajouter ».'],
+  };
+  if (/android/i.test(agent)) return {
+    device:'Sur Android',
+    summary:'Installe OLYCITY comme une application depuis Chrome.',
+    steps:['Ouvre le menu ⋮ de Chrome.', 'Choisis « Installer l’application » ou « Ajouter à l’écran d’accueil ».', 'Confirme avec « Installer ».'],
+  };
+  return {
+    device:'Sur ordinateur',
+    summary:'Ouvre OLYCITY dans sa propre fenêtre depuis ton navigateur.',
+    steps:['Ouvre le menu de Chrome ou Edge.', 'Choisis « Installer OLYCITY » ou « Applications → Installer ce site ».', 'Confirme pour créer le raccourci.'],
+  };
+}
+
+function closeModal() {
+  document.getElementById('pwa-install-modal').hidden = true;
+}
+
+function openModal() {
+  const guide = installInstructions();
+  document.getElementById('pwa-install-device').textContent = guide.device;
+  document.getElementById('pwa-install-steps').innerHTML = guide.steps.map(step => `<li>${step}</li>`).join('');
+  const action = document.getElementById('pwa-install-action');
+  action.hidden = !installPrompt;
+  document.getElementById('pwa-install-modal').hidden = false;
+}
+
+async function installNow() {
+  if (!installPrompt) return;
+  const prompt = installPrompt;
+  installPrompt = null;
+  await prompt.prompt();
+  await prompt.userChoice.catch(() => null);
+  closeModal();
+  refreshBanner();
+}
+
+function refreshBanner() {
+  const banner = document.getElementById('pwa-install-band');
+  if (!banner) return;
+  banner.hidden = isStandalone();
+  const summary = document.getElementById('pwa-install-summary');
+  if (summary) summary.textContent = installInstructions().summary;
+}
+
+async function registerServiceWorker() {
+  if (!('serviceWorker' in navigator)) return;
+  try {
+    const registration = await navigator.serviceWorker.register('./sw.js', { scope:'./' });
+    registration.update().catch(() => {});
+  } catch (error) {
+    console.warn('[OLYCITY] Installation hors ligne indisponible', error);
+  }
+}
+
+export function initPwaInstall() {
+  document.getElementById('pwa-install-band')?.addEventListener('click', openModal);
+  document.getElementById('pwa-install-action')?.addEventListener('click', installNow);
+  document.querySelectorAll('[data-pwa-close]').forEach(button => button.addEventListener('click', closeModal));
+  document.getElementById('pwa-install-modal')?.addEventListener('click', event => { if (event.target.id === 'pwa-install-modal') closeModal(); });
+  window.addEventListener('beforeinstallprompt', event => {
+    event.preventDefault();
+    installPrompt = event;
+    refreshBanner();
+  });
+  window.addEventListener('appinstalled', () => {
+    installPrompt = null;
+    refreshBanner();
+  });
+  refreshBanner();
+  void registerServiceWorker();
+}

@@ -4,18 +4,36 @@
  */
 
 const BASE = 'https://valorant-api.com/v1';
+const CACHE_KEY = 'olycity-valorant-visuals';
 
 export const valorantApi = {
   agents: {},
   maps: {},
 
-  async load() {
-    const [agRes, mapRes] = await Promise.all([
-      fetch(`${BASE}/agents?isPlayableCharacter=true`),
-      fetch(`${BASE}/maps`),
-    ]);
-    if (!agRes.ok || !mapRes.ok) throw new Error('valorant-api unreachable');
-    const [agJson, mapJson] = await Promise.all([agRes.json(), mapRes.json()]);
+  async load({ timeoutMs = 3_500 } = {}) {
+    try {
+      const cached = JSON.parse(localStorage.getItem(CACHE_KEY) || 'null');
+      if (cached?.agents && cached?.maps) {
+        this.agents = cached.agents;
+        this.maps = cached.maps;
+      }
+    } catch {}
+
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), timeoutMs);
+    let agJson;
+    let mapJson;
+    try {
+      const [agRes, mapRes] = await Promise.all([
+        fetch(`${BASE}/agents?isPlayableCharacter=true`, { signal:controller.signal }),
+        fetch(`${BASE}/maps`, { signal:controller.signal }),
+      ]);
+      if (!agRes.ok || !mapRes.ok) throw new Error('valorant-api unreachable');
+      [agJson, mapJson] = await Promise.all([agRes.json(), mapRes.json()]);
+    } catch (error) {
+      console.warn('[OLYCITY] Visuels Valorant en cache ou indisponibles', error);
+      return Boolean(Object.keys(this.agents).length || Object.keys(this.maps).length);
+    } finally { clearTimeout(timer); }
 
     agJson.data.forEach(a => {
       this.agents[a.displayName] = {
@@ -36,6 +54,8 @@ export const valorantApi = {
         icon: m.displayIcon,
       };
     });
+    try { localStorage.setItem(CACHE_KEY, JSON.stringify({ agents:this.agents, maps:this.maps })); } catch {}
+    return true;
   },
 
   agentImg(name) {
