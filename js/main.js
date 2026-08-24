@@ -6,7 +6,7 @@
 import { valorantApi } from './api.js';
 import { fetchJsonWithTimeout } from './request-utils.mjs?v=20260809-route-load-stable';
 
-const SITE_VERSION = '20260824-boot-recovery';
+const SITE_VERSION = '20260824-refresh-recovery';
 const BOOT_RETRY_KEY = 'olycity-boot-retry';
 import { syncPlayer as henrikSyncPlayer, syncAllPlayers as henrikSyncAll, persistPlayerStats } from './henrik.js?v=20260809-val-roster-season';
 import { setStoredKey, storedKey, forgetCachedKey } from './henrik-key.mjs';
@@ -711,6 +711,17 @@ async function boot() {
   initKeyboard(() => window.OLYCITY.closeAgentPage());
   initPwaInstall();
 
+  // Live presence is independent from the larger static data bundle. Starting
+  // it immediately keeps the home status useful even when another asset is
+  // slow or a browser is recovering from an old cached module graph.
+  if (!window._homeDashboardCleanup) {
+    window._homeDashboardCleanup = initHomeDashboard({
+      members: [],
+      navigate: window.OLYCITY.nav.bind(window.OLYCITY),
+      openUniverse: window.OLYCITY.openUniverse.bind(window.OLYCITY),
+    });
+  }
+
   // Clear stale localStorage from old versions (different data format)
   try {
     const raw = localStorage.getItem('olycity-player-stats');
@@ -741,13 +752,12 @@ async function boot() {
 
   renderAll();
   document.getElementById('loading-screen')?.classList.add('is-dismissed');
-  if (!window._homeDashboardCleanup) {
-    window._homeDashboardCleanup = initHomeDashboard({
-      members: state.MEMBERS,
-      navigate: window.OLYCITY.nav.bind(window.OLYCITY),
-      openUniverse: window.OLYCITY.openUniverse.bind(window.OLYCITY),
-    });
-  }
+  window._homeDashboardCleanup?.();
+  window._homeDashboardCleanup = initHomeDashboard({
+    members: state.MEMBERS,
+    navigate: window.OLYCITY.nav.bind(window.OLYCITY),
+    openUniverse: window.OLYCITY.openUniverse.bind(window.OLYCITY),
+  });
   if (!window._homeGroupCleanup) window._homeGroupCleanup = initHomeGroup(state.MEMBERS);
   if (!window._pushNotificationsReady) {
     window._pushNotificationsReady = true;

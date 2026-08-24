@@ -181,8 +181,9 @@ test('startup reveals the shell before optional APIs and supports installation',
   assert.match(pwaInstall, /updateViaCache:'none'/);
   assert.match(pwaInstall, /controllerchange/);
   const worker = fs.readFileSync(new URL('../sw.js', import.meta.url), 'utf8');
-  assert.match(worker, /fetch\(request, \{ cache:'no-store' \}\)/);
-  assert.doesNotMatch(worker, /return cached \|\| network/);
+  assert.doesNotMatch(worker, /addEventListener\('fetch'/);
+  assert.match(worker, /notification-only/);
+  assert.match(main, /initHomeDashboard\(\{[\s\S]*members: \[\]/);
   assert.doesNotMatch(page, /getRegistrations\(\)[\s\S]*unregister/);
   assert.match(main, /boot\(\)\.catch\(showBootFailure\)/);
   assert.match(main, /Connexion interrompue/);

@@ -1,40 +1,16 @@
-const CACHE_NAME = 'olycity-shell-20260824-boot-recovery';
-const APP_SHELL = [
-  './', './index.html', './manifest.webmanifest', './assets/logo.svg',
-  './assets/pwa-icon-192.png', './assets/pwa-icon-512.png',
-  './assets/home/valorant-keyart.webp', './assets/home/league-champions-group.webp', './assets/home/peak-keyart.webp',
-  './data/comps.json', './data/roster.json', './data/members.json', './data/roles.json',
-  './data/agents-fr.json', './data/lineups.json', './data/meta.json',
-];
+const CACHE_NAME = 'olycity-shell-20260824-refresh-recovery';
 
 self.addEventListener('install', event => {
-  event.waitUntil(caches.open(CACHE_NAME).then(cache => cache.addAll(APP_SHELL)).then(() => self.skipWaiting()));
+  event.waitUntil(self.skipWaiting());
 });
 
 self.addEventListener('activate', event => {
   event.waitUntil(caches.keys().then(keys => Promise.all(keys.filter(key => key !== CACHE_NAME).map(key => caches.delete(key)))).then(() => self.clients.claim()));
 });
 
-self.addEventListener('fetch', event => {
-  const request = event.request;
-  if (request.method !== 'GET') return;
-  const url = new URL(request.url);
-  if (url.origin !== self.location.origin) return;
-
-  if (request.mode === 'navigate') {
-    event.respondWith(fetch(request, { cache:'no-store' }).then(response => {
-      const copy = response.clone();
-      caches.open(CACHE_NAME).then(cache => cache.put('./index.html', copy));
-      return response;
-    }).catch(() => caches.match('./index.html')));
-    return;
-  }
-
-  event.respondWith(fetch(request, { cache:'no-store' }).then(response => {
-    if (response.ok) caches.open(CACHE_NAME).then(cache => cache.put(request, response.clone()));
-    return response;
-  }).catch(() => caches.match(request).then(cached => cached || Response.error())));
-});
+// The worker is intentionally notification-only. Let the browser load every
+// page, module and JSON file directly: intercepting them made some Chromium
+// sessions keep an incomplete application shell after a normal refresh.
 
 self.addEventListener('push', event => {
   let payload = {};
