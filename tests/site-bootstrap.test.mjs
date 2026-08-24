@@ -195,6 +195,8 @@ test('PWA exposes opt-in notifications and admin test controls without touching 
   assert.match(page, /id="home-app-modal"/);
   assert.match(page, /id="push-notification-band"/);
   assert.match(main, /initPushNotifications/);
+  assert.doesNotMatch(main, /^import .*push-notifications/m);
+  assert.match(main, /import\('\.\/push-notifications\.mjs\?v=20260824-optional'\)[\s\S]*\.catch/);
   assert.match(fs.readFileSync(new URL('../sw.js', import.meta.url), 'utf8'), /addEventListener\('push'/);
   assert.match(fs.readFileSync(new URL('../sw.js', import.meta.url), 'utf8'), /self\.registration\.scope/);
   assert.match(fs.readFileSync(new URL('../js\/admin.mjs', import.meta.url), 'utf8'), /admin-test-notification/);

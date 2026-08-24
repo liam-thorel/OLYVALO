@@ -6,7 +6,7 @@
 import { valorantApi } from './api.js';
 import { fetchJsonWithTimeout } from './request-utils.mjs?v=20260809-route-load-stable';
 
-const SITE_VERSION = '20260824-refresh-recovery';
+const SITE_VERSION = '20260824-optional-notifications';
 const BOOT_RETRY_KEY = 'olycity-boot-retry';
 import { syncPlayer as henrikSyncPlayer, syncAllPlayers as henrikSyncAll, persistPlayerStats } from './henrik.js?v=20260809-val-roster-season';
 import { setStoredKey, storedKey, forgetCachedKey } from './henrik-key.mjs';
@@ -25,7 +25,6 @@ import { memberId, mergeMemberProfiles, resolveMemberProfile } from './member-pr
 import { initHomeDashboard } from './home-dashboard.mjs?v=20260824-home-online';
 import { initHomeGroup } from './home-group.mjs?v=20260824-notifications';
 import { initPwaInstall } from './pwa-install.mjs?v=20260824-network-first';
-import { initPushNotifications } from './push-notifications.mjs?v=20260824-push';
 export { state };
 
 // ─── STATE ─────────────────────────────────────────
@@ -761,7 +760,9 @@ async function boot() {
   if (!window._homeGroupCleanup) window._homeGroupCleanup = initHomeGroup(state.MEMBERS);
   if (!window._pushNotificationsReady) {
     window._pushNotificationsReady = true;
-    initPushNotifications();
+    void import('./push-notifications.mjs?v=20260824-optional')
+      .then(({ initPushNotifications }) => initPushNotifications())
+      .catch(error => console.warn('[OLYCITY] Notifications indisponibles', error));
   }
   if (!window._lolRosterCleanup) window._lolRosterCleanup = initLolRosterPages();
   initSearch((name) => window.OLYCITY.showAgentPage(name));
