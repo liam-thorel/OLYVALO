@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { lolRank, rankPromotion, valorantRank } from '../js/rank-promotion.mjs';
-import { notificationMessage, reminderDue } from '../workers/notifications/rules.mjs';
+import { dueReminderMinutes, notificationMessage, reminderDue } from '../workers/notifications/rules.mjs';
 
 test('Valorant notifies only a real upward rank tier change', () => {
   assert.equal(valorantRank(9).name, 'Silver');
@@ -27,10 +27,14 @@ test('League ignores divisions and detects only promotion to a higher tier', () 
   }).after, 'Gold');
 });
 
-test('session reminder opens only in the two-minute window at T minus 15', () => {
+test('session reminders open once around T minus 30 and T minus 15', () => {
   const startsAt = Date.UTC(2026, 7, 24, 20, 0);
-  assert.equal(reminderDue({ startsAt }, startsAt - 16 * 60_000), false);
+  assert.deepEqual(dueReminderMinutes({ startsAt }, startsAt - 31 * 60_000), []);
+  assert.deepEqual(dueReminderMinutes({ startsAt }, startsAt - 30 * 60_000), [30]);
+  assert.deepEqual(dueReminderMinutes({ startsAt }, startsAt - 28 * 60_000), []);
   assert.equal(reminderDue({ startsAt }, startsAt - 15 * 60_000), true);
+  assert.deepEqual(dueReminderMinutes({ startsAt }, startsAt - 15 * 60_000), [15]);
   assert.equal(reminderDue({ startsAt }, startsAt - 12 * 60_000), false);
-  assert.match(notificationMessage('reminder', { gameTitle:'PEAK', time:'22:00' }).title, /15 minutes/);
+  assert.match(notificationMessage('reminder', { gameTitle:'PEAK', time:'22:00', reminderMinutes:30 }).title, /30 minutes/);
+  assert.match(notificationMessage('reminder', { gameTitle:'PEAK', time:'22:00', reminderMinutes:15 }).title, /15 minutes/);
 });

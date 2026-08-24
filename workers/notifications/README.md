@@ -3,7 +3,7 @@
 Worker Web Push indépendant du bot Discord. Il conserve les abonnements dans
 Cloudflare KV, vérifie Firebase chaque minute et envoie :
 
-- le rappel d’une soirée 15 minutes avant ;
+- les rappels d’une soirée 30 minutes puis 15 minutes avant ;
 - les promotions de palier Valorant et League ;
 - un test manuel réservé aux profils Nico et Liam.
 

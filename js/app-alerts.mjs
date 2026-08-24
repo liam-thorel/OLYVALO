@@ -1,3 +1,5 @@
+// Neutral filename: some content blockers reject modules whose URL contains
+// "push-notifications", even though this feature is explicitly user-initiated.
 const PROFILE_ID_KEY = 'olycity-member-id';
 const PROFILE_NAME_KEY = 'olycity-profile';
 
@@ -39,7 +41,7 @@ export async function currentPushState() {
   const subscription = await (await registration()).pushManager.getSubscription();
   return subscription
     ? { state:'enabled', label:'Notifications activées sur cet appareil' }
-    : { state:'disabled', label:'Activer les rappels et les rank-ups' };
+    : { state:'disabled', label:'Rappels à 30 et 15 min, plus les rank-ups' };
 }
 
 export async function enablePushNotifications() {
@@ -65,6 +67,23 @@ export async function enablePushNotifications() {
     body:JSON.stringify({ ...profile, subscription:subscription.toJSON(), userAgent:navigator.userAgent }),
   });
   if (!response.ok) throw new Error('Impossible d’enregistrer cet appareil.');
+  window.dispatchEvent(new CustomEvent('olycity:push-state'));
+  return currentPushState();
+}
+
+export async function disablePushNotifications() {
+  if (!pushSupported()) return { state:'unsupported', label:'Notifications non compatibles' };
+  const worker = await registration();
+  const subscription = await worker.pushManager.getSubscription();
+  if (subscription) {
+    const remote = await config();
+    if (remote) await fetch(`${remote.endpoint}/subscriptions`, {
+      method:'DELETE',
+      headers:{ 'Content-Type':'application/json' },
+      body:JSON.stringify({ endpoint:subscription.endpoint }),
+    }).catch(() => null);
+    await subscription.unsubscribe();
+  }
   window.dispatchEvent(new CustomEvent('olycity:push-state'));
   return currentPushState();
 }
@@ -102,9 +121,10 @@ export function initPushNotifications() {
   };
   band.addEventListener('click', async () => {
     band.disabled = true;
-    if (summary) summary.textContent = 'Activation…';
     try {
-      const state = await enablePushNotifications();
+      const current = await currentPushState();
+      if (summary) summary.textContent = current.state === 'enabled' ? 'Désactivation…' : 'Activation…';
+      const state = current.state === 'enabled' ? await disablePushNotifications() : await enablePushNotifications();
       if (summary) summary.textContent = state.label;
     } catch (error) {
       if (summary) summary.textContent = error.message;

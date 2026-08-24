@@ -22,9 +22,13 @@ import { filterHistoryGames, historyDailyPerformances, historyGameForOwner, hist
 import { initCurse } from './curse.mjs?v=20260818-curse-lifecycle';
 import { fetchJsonWithTimeout } from './request-utils.mjs?v=20260809-route-load-stable';
 import { liveDataStore, liveTimestamp } from './live-data-store.mjs?v=20260810-firebase-connection-fix';
-import { createHistoryPager } from './history-pager.mjs?v=20260810-history-progressive';
+import { createHistoryPager } from './history-pager.mjs?v=20260824-all-history-cache';
 
+const VALORANT_HISTORY_CACHE_KEY = 'olycity-valorant-history-cache-v1';
 let historyLoadSequence = 0;
+let valorantHistoryReady = false;
+let lastValorantHistoryState = null;
+let lastValorantHistorySavedAt = 0;
 const valorantHistoryPager = createHistoryPager({
   firebaseUrl:'https://realtime-database-5bb9f-default-rtdb.europe-west1.firebasedatabase.app',
   indexPath:'historyIndex/valorant',
@@ -32,6 +36,33 @@ const valorantHistoryPager = createHistoryPager({
   pageSize:30,
 });
 const historyEscape = value => String(value ?? '').replace(/[&<>"']/g, char => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[char]));
+
+function readValorantHistoryCache() {
+  try {
+    const cached = JSON.parse(localStorage.getItem(VALORANT_HISTORY_CACHE_KEY) || 'null');
+    if (!cached || typeof cached.savedAt !== 'number' || !cached.state?.data || typeof cached.state.data !== 'object' || !Object.keys(cached.state.data).length) return null;
+    return cached;
+  } catch { return null; }
+}
+
+function rememberValorantHistory(state) {
+  lastValorantHistoryState = state;
+  lastValorantHistorySavedAt = Date.now();
+  try {
+    localStorage.setItem(VALORANT_HISTORY_CACHE_KEY, JSON.stringify({ savedAt:lastValorantHistorySavedAt, state }));
+  } catch { /* Le stockage peut être indisponible ou plein sur mobile. */ }
+}
+
+function historySyncMarkup(syncState) {
+  if (!syncState) return '';
+  const offline = syncState.state === 'offline';
+  const elapsed = Math.max(0, Date.now() - Number(syncState.savedAt || 0));
+  const age = elapsed < 60_000 ? 'à l’instant'
+    : elapsed < 3_600_000 ? `il y a ${Math.max(1, Math.round(elapsed / 60_000))} min`
+      : elapsed < 86_400_000 ? `il y a ${Math.round(elapsed / 3_600_000)} h`
+        : new Date(syncState.savedAt).toLocaleDateString('fr-FR', { day:'numeric', month:'short' });
+  return `<div class="history-cache-note is-${offline ? 'offline' : 'syncing'}" role="status"><span></span><strong>${offline ? 'Mode hors connexion' : 'Historique enregistré affiché'}</strong><small>${offline ? 'Dernière copie' : 'Actualisation en cours'} · ${historyEscape(age)}</small></div>`;
+}
 
 // ─── THEME TOGGLE ─────────────────────────────────
 export function initTheme() {
@@ -1248,24 +1279,39 @@ export async function initHistoryPage() {
   const el = document.getElementById('history-content');
   if (!el) return;
   const loadSequence = ++historyLoadSequence;
-  el.innerHTML = '<div class="data-state-card is-loading"><span class="data-state-pulse" aria-hidden="true"></span><div><strong>Chargement de l’historique</strong><small>Récupération des dernières parties Valorant</small></div><span class="data-state-lines" aria-hidden="true"><i></i><i></i></span></div>';
+  const cached = lastValorantHistoryState && Object.keys(lastValorantHistoryState.data || {}).length
+    ? { savedAt:lastValorantHistorySavedAt, state:lastValorantHistoryState }
+    : readValorantHistoryCache();
+  let syncState = cached ? { state:'syncing', savedAt:cached.savedAt } : null;
+  let backgroundRefresh = null;
+  const agentMapPromise = ensureAgentMap();
+  if (!cached) el.innerHTML = '<div class="data-state-card is-loading"><span class="data-state-pulse" aria-hidden="true"></span><div><strong>Chargement de l’historique</strong><small>Récupération des dernières parties Valorant</small></div><span class="data-state-lines" aria-hidden="true"><i></i><i></i></span></div>';
 
   let games = [];
   let pagerState = valorantHistoryPager.snapshot();
-  try {
-    ensureAgentMap();
-    pagerState = await valorantHistoryPager.loadNext();
-    if (loadSequence !== historyLoadSequence) return;
+  if (cached?.state) {
+    lastValorantHistoryState = cached.state;
+    lastValorantHistorySavedAt = cached.savedAt;
+    pagerState = cached.state;
     games = normalizeHistoryEntries(pagerState.data);
-  } catch {
-    if (loadSequence !== historyLoadSequence) return;
-    el.innerHTML = `<div class="data-state-card is-error">
-      <span class="data-state-pulse" aria-hidden="true"></span><div><strong>Historique indisponible</strong>
-      <small>Le chargement a pris trop de temps ou la connexion a été interrompue.</small></div>
-      <button type="button" data-history-retry class="btn btn-primary">Réessayer</button>
-    </div>`;
-    el.querySelector('[data-history-retry]')?.addEventListener('click', initHistoryPage);
-    return;
+    backgroundRefresh = valorantHistoryReady ? valorantHistoryPager.refresh() : valorantHistoryPager.loadNext();
+  } else {
+    try {
+      pagerState = await valorantHistoryPager.loadNext();
+      if (loadSequence !== historyLoadSequence) return;
+      valorantHistoryReady = true;
+      rememberValorantHistory(pagerState);
+      games = normalizeHistoryEntries(pagerState.data);
+    } catch {
+      if (loadSequence !== historyLoadSequence) return;
+      el.innerHTML = `<div class="data-state-card is-error">
+        <span class="data-state-pulse" aria-hidden="true"></span><div><strong>Historique indisponible</strong>
+        <small>Le chargement a pris trop de temps ou la connexion a été interrompue.</small></div>
+        <button type="button" data-history-retry class="btn btn-primary">Réessayer</button>
+      </div>`;
+      el.querySelector('[data-history-retry]')?.addEventListener('click', initHistoryPage);
+      return;
+    }
   }
 
   if (!games.length) {
@@ -1494,7 +1540,7 @@ export async function initHistoryPage() {
   const filterButton = (group, value, label, active) => `
     <button type="button" class="history-filter-button ${active ? 'active' : ''}" data-history-${group}="${value}">${label}</button>`;
 
-  el.innerHTML = `
+  el.innerHTML = `${historySyncMarkup(syncState)}
     <div class="history-view-tabs" role="tablist" aria-label="Vue de l'historique">
       ${filterButton('view', 'summary', 'Statistiques', historyUI.view === 'summary')}
       ${filterButton('view', 'matches', 'Parties', historyUI.view === 'matches')}
@@ -1672,6 +1718,7 @@ export async function initHistoryPage() {
       button.textContent = 'Chargement…';
       try {
         pagerState = await valorantHistoryPager.loadNext();
+        rememberValorantHistory(pagerState);
         allGames = normalizeHistoryEntries(pagerState.data).sort((a,b) => (b.ts||0) - (a.ts||0));
         updateOwnerOptions();
         refreshHistory();
@@ -1699,6 +1746,23 @@ export async function initHistoryPage() {
   };
 
   refreshHistory();
+  void agentMapPromise.then(() => {
+    if (loadSequence === historyLoadSequence) refreshHistory();
+  });
+  if (backgroundRefresh) void backgroundRefresh.then(nextState => {
+    if (loadSequence !== historyLoadSequence) return;
+    valorantHistoryReady = true;
+    pagerState = nextState;
+    rememberValorantHistory(nextState);
+    allGames = normalizeHistoryEntries(nextState.data).sort((a,b) => (b.ts||0) - (a.ts||0));
+    syncState = null;
+    updateOwnerOptions();
+    refreshHistory();
+  }).catch(() => {
+    if (loadSequence !== historyLoadSequence) return;
+    syncState = { state:'offline', savedAt:cached.savedAt };
+    refreshHistory();
+  });
 }
 
 async function ensureAgentMap() {

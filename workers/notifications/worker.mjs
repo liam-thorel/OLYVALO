@@ -1,4 +1,4 @@
-import { notificationMessage, rankPromotion, reminderDue } from './rules.mjs';
+import { dueReminderMinutes, notificationMessage, rankPromotion } from './rules.mjs';
 
 const DEFAULT_FIREBASE = 'https://realtime-database-5bb9f-default-rtdb.europe-west1.firebasedatabase.app';
 const ADMIN_TESTERS = new Set(['nico', 'liam']);
@@ -82,11 +82,14 @@ async function firebaseGet(env, path, query = '') {
 
 async function processReminder(env, now) {
   const plan = await firebaseGet(env, 'groupNight/current');
-  if (!reminderDue(plan, now)) return 0;
-  const marker = 'sent:session:' + plan.startsAt + ':' + (plan.updatedAt || 0);
-  if (await env.PUSH_SUBSCRIPTIONS.get(marker)) return 0;
-  const sent = await broadcast(env, notificationMessage('reminder', plan));
-  await env.PUSH_SUBSCRIPTIONS.put(marker, String(now), { expirationTtl:7 * 86400 });
+  const reminders = dueReminderMinutes(plan, now);
+  let sent = 0;
+  for (const reminderMinutes of reminders) {
+    const marker = 'sent:session:' + plan.startsAt + ':' + (plan.updatedAt || 0) + ':' + reminderMinutes;
+    if (await env.PUSH_SUBSCRIPTIONS.get(marker)) continue;
+    sent += await broadcast(env, notificationMessage('reminder', { ...plan, reminderMinutes }));
+    await env.PUSH_SUBSCRIPTIONS.put(marker, String(now), { expirationTtl:7 * 86400 });
+  }
   return sent;
 }
 
@@ -150,6 +153,13 @@ export async function handleRequest(request, env) {
       updatedAt:Date.now(),
     }));
     return json({ ok:true }, 201, cors);
+  }
+  if (request.method === 'DELETE' && url.pathname === '/subscriptions') {
+    const payload = await requestBody(request);
+    const endpoint = String(payload.endpoint || '');
+    if (!/^https:\/\//.test(endpoint)) return json({ error:'Abonnement invalide' }, 400, cors);
+    await env.PUSH_SUBSCRIPTIONS.delete('sub:' + await digest(endpoint));
+    return json({ ok:true }, 200, cors);
   }
   if (request.method === 'POST' && url.pathname === '/notifications/test') {
     const payload = await requestBody(request);

@@ -6,24 +6,24 @@
 import { valorantApi } from './api.js';
 import { fetchJsonWithTimeout } from './request-utils.mjs?v=20260809-route-load-stable';
 
-const SITE_VERSION = '20260824-mobile-data-cache';
+const SITE_VERSION = '20260824-sessions-history';
 const BOOT_RETRY_KEY = 'olycity-boot-retry';
 import { syncPlayer as henrikSyncPlayer, syncAllPlayers as henrikSyncAll, persistPlayerStats } from './henrik.js?v=20260809-val-roster-season';
 import { setStoredKey, storedKey, forgetCachedKey } from './henrik-key.mjs';
 import { rosterHTML, guestCardHTML, mapSectionHTML, agentPageHTML, navMapsHTML } from './render.js?v=20260823-home-art-buttons-fix';
-import { initTheme, initTilt, initParallax, initSearch, initKeyboard, initHeroParticles, initWheelLogos, initLivePage, initHistoryPage } from './interactions.js?v=20260824-ux-polish';
+import { initTheme, initTilt, initParallax, initSearch, initKeyboard, initHeroParticles, initWheelLogos, initLivePage, initHistoryPage } from './interactions.js?v=20260824-sessions-history';
 import { storage } from './storage.js';
 import { avatarLayersHTML } from './avatars.mjs';
 import { initAdminPage } from './admin.mjs?v=20260824-mobile-controls';
 import { initBettingPage } from './betting-page.mjs';
 import { initCoopGamesPage } from './coop-games-page.mjs?v=20260824-mobile-data-cache';
 import { getGameMode, initGameMode, setGameMode } from './game-mode.mjs?v=20260824-home-title';
-import { initLolHistoryPage, initLolLivePage } from './lol-pages.mjs?v=20260824-mobile-data-cache';
+import { initLolHistoryPage, initLolLivePage } from './lol-pages.mjs?v=20260824-sessions-history';
 import { initLolRosterPages } from './lol-roster.mjs?v=20260809-lol-sync';
 import { state } from './state.mjs?v=20260806-lol-roster';
 import { memberId, mergeMemberProfiles, resolveMemberProfile } from './member-profiles.mjs?v=20260823-profile-picker';
 import { initHomeDashboard } from './home-dashboard.mjs?v=20260824-game-name';
-import { initHomeGroup } from './home-group.mjs?v=20260824-game-name';
+import { initHomeGroup } from './home-group.mjs?v=20260824-session-planner';
 import { initPwaInstall } from './pwa-install.mjs?v=20260824-network-first';
 export { state };
 
@@ -163,8 +163,8 @@ window.OLYCITY = {
       if (!window._lolLiveCleanup) window._lolLiveCleanup = initLolLivePage();
     }
     if (page === 'history') {
-      initHistoryPage();
-      initLolHistoryPage();
+      if (getGameMode() === 'lol') initLolHistoryPage();
+      else initHistoryPage();
     }
     if (page === 'admin') {
       initAdminPage();
@@ -711,7 +711,7 @@ async function boot() {
   if (storedVersion !== SITE_VERSION) {
     // Clear cache but KEEP player stats (expensive to re-sync, don't change with code updates)
     const keys = Object.keys(localStorage).filter(k =>
-      k.startsWith('olycity-') && !['olycity-player-stats','olycity-profile','olycity-member-id','olycity-game','olycity-static-data-cache','olycity-valorant-visuals','olycity-home-activity-seen','olycity-lol-history-cache-v1','olycity-coop-games-cache-v1'].includes(k)
+      k.startsWith('olycity-') && !['olycity-player-stats','olycity-profile','olycity-member-id','olycity-game','olycity-static-data-cache','olycity-valorant-visuals','olycity-home-activity-seen','olycity-lol-history-cache-v1','olycity-valorant-history-cache-v1','olycity-coop-games-cache-v1'].includes(k)
     );
     keys.forEach(k => localStorage.removeItem(k));
     localStorage.setItem('olycity-version', SITE_VERSION);
@@ -776,7 +776,7 @@ async function boot() {
   if (!window._homeGroupCleanup) window._homeGroupCleanup = initHomeGroup(state.MEMBERS);
   if (!window._pushNotificationsReady) {
     window._pushNotificationsReady = true;
-    void import('./push-notifications.mjs?v=20260824-optional')
+    void import('./app-alerts.mjs?v=20260824-reminder-controls')
       .then(({ initPushNotifications }) => initPushNotifications())
       .catch(error => console.warn('[OLYCITY] Notifications indisponibles', error));
   }

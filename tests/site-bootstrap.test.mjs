@@ -67,8 +67,8 @@ test('home is one live priority, three visual worlds and a compact member strip'
   assert.match(homeStyles, /valorant-keyart\.webp/);
   assert.match(homeStyles, /league-champions-group\.webp/);
   assert.match(homeStyles, /peak-keyart\.webp/);
-  assert.match(page, /home\.css\?v=20260824-home-breathing/);
-  assert.match(page, /design-system\.css\?v=20260824-home-breathing/);
+  assert.match(page, /home\.css\?v=20260824-session-planner/);
+  assert.match(page, /design-system\.css\?v=20260824-sessions-history/);
   assert.match(page, /<span class="hero-title-frame">OLYCITY<\/span>/);
   assert.doesNotMatch(page, /id="hero-eyebrow"/);
   assert.match(page, /id="home-member-faces"/);
@@ -178,9 +178,16 @@ test('history and admin requests cannot stay pending forever', () => {
   assert.match(historyPager, /timeoutMs:8_000/);
   assert.match(historyPager, /timeoutMs:12_000/);
   assert.match(admin, /fetchJsonWithTimeout\(`\$\{FIREBASE_URL\}\/\$\{path\}\.json`/);
+  assert.match(main, /getGameMode\(\) === 'lol'\) initLolHistoryPage\(\);[\s\S]*else initHistoryPage\(\)/);
+  assert.doesNotMatch(main, /initHistoryPage\(\);\s*initLolHistoryPage\(\);/);
 });
 
 test('mobile data pages render their last good copy before background refresh', () => {
+  assert.match(interactions, /olycity-valorant-history-cache-v1/);
+  assert.match(interactions, /const agentMapPromise = ensureAgentMap\(\)/);
+  assert.doesNotMatch(interactions, /await ensureAgentMap\(\)/);
+  assert.match(interactions, /valorantHistoryPager\.refresh\(\)/);
+  assert.match(interactions, /Mode hors connexion/);
   assert.match(lolPages, /olycity-lol-history-cache-v1/);
   assert.match(lolPages, /lolHistoryPager\.refresh\(\)/);
   assert.match(lolPages, /Mode hors connexion/);
@@ -215,10 +222,11 @@ test('PWA exposes opt-in notifications and admin test controls without touching 
   assert.match(page, /id="home-app-modal"/);
   assert.match(page, /id="push-notification-band"/);
   assert.match(main, /initPushNotifications/);
-  assert.doesNotMatch(main, /^import .*push-notifications/m);
-  assert.match(main, /import\('\.\/push-notifications\.mjs\?v=20260824-optional'\)[\s\S]*\.catch/);
-  assert.doesNotMatch(admin, /^import .*push-notifications/m);
+  assert.doesNotMatch(main, /push-notifications\.mjs/);
+  assert.match(main, /import\('\.\/app-alerts\.mjs\?v=20260824-reminder-controls'\)[\s\S]*\.catch/);
+  assert.doesNotMatch(admin, /push-notifications\.mjs/);
   assert.match(admin, /loadPushModule\(\)[\s\S]*Notifications bloquées par le navigateur/);
+  assert.match(admin, /app-alerts\.mjs\?v=20260824-reminder-controls/);
   assert.match(fs.readFileSync(new URL('../sw.js', import.meta.url), 'utf8'), /addEventListener\('push'/);
   assert.match(fs.readFileSync(new URL('../sw.js', import.meta.url), 'utf8'), /self\.registration\.scope/);
   assert.match(fs.readFileSync(new URL('../js\/admin.mjs', import.meta.url), 'utf8'), /admin-test-notification/);

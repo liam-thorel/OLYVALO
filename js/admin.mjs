@@ -44,7 +44,7 @@ let pushModulePromise = null;
 
 function loadPushModule() {
   if (!pushModulePromise) {
-    pushModulePromise = import('./push-notifications.mjs?v=20260824-optional')
+    pushModulePromise = import('./app-alerts.mjs?v=20260824-reminder-controls')
       .catch(error => {
         pushModulePromise = null;
         throw error;

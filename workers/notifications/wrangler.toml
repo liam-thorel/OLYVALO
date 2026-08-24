@@ -12,4 +12,4 @@ crons = ["* * * * *"]
 
 [[kv_namespaces]]
 binding = "PUSH_SUBSCRIPTIONS"
-id = "CONFIGURE_BEFORE_DEPLOY"
+id = "29fae651d9ff4f03b5ed01813b9d2e3f"

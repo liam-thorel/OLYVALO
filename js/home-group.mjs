@@ -1,5 +1,5 @@
 import { fetchJsonWithTimeout } from './request-utils.mjs?v=20260809-route-load-stable';
-import { buildHomeActivity, localDateKey, normalizeGroupNight, relativeActivityTime, responseCounts } from './home-group-utils.mjs?v=20260824-game-name';
+import { buildHomeActivity, groupNightCalendar, groupNightDateLabel, localDateKey, normalizeGroupNight, relativeActivityTime, responseCounts } from './home-group-utils.mjs?v=20260824-session-planner';
 
 const FIREBASE_ROOT = 'https://realtime-database-5bb9f-default-rtdb.europe-west1.firebasedatabase.app';
 const LAST_SEEN_KEY = 'olycity-home-activity-seen';
@@ -67,8 +67,8 @@ function renderPlan() {
   }
   const counts = responseCounts(plan);
   const people = Object.values(plan.responses || {}).filter(item => item.status !== 'no');
-  open.textContent = 'Répondre';
-  root.innerHTML = `<div><strong id="home-tonight-title">${escapeHTML(plan.gameTitle)}</strong><small>${counts.yes} présent${counts.yes > 1 ? 's' : ''}${counts.maybe ? ` · ${counts.maybe} peut-être` : ''}</small><span class="home-tonight-people">${people.map(item => personAvatar(item, item.status)).join('')}${people.length ? '' : '<span class="home-activity-empty">En attente des réponses</span>'}</span></div><time class="home-tonight-time" datetime="${escapeHTML(`${plan.date}T${plan.time}`)}">${escapeHTML(plan.time)}</time>`;
+  open.textContent = 'Voir / répondre';
+  root.innerHTML = `<div><strong id="home-tonight-title">${escapeHTML(plan.gameTitle)}</strong><small>${escapeHTML(groupNightDateLabel(plan))} · ${counts.yes} présent${counts.yes > 1 ? 's' : ''}${counts.maybe ? ` · ${counts.maybe} peut-être` : ''}</small><span class="home-tonight-people">${people.map(item => personAvatar(item, item.status)).join('')}${people.length ? '' : '<span class="home-activity-empty">En attente des réponses</span>'}</span></div><div class="home-tonight-schedule"><time class="home-tonight-time" datetime="${escapeHTML(`${plan.date}T${plan.time}`)}">${escapeHTML(plan.time)}</time><span>Rappels −30 · −15 min</span></div>`;
 }
 
 function renderActivity(events = []) {
@@ -135,16 +135,26 @@ async function loadHomeGroup() {
 }
 
 function syncForm() {
+  const date = document.getElementById('home-tonight-date');
   const time = document.getElementById('home-tonight-time');
   const select = document.getElementById('home-tonight-game');
+  if (date) {
+    const today = localDateKey();
+    const max = localDateKey(new Date(Date.now() + 30 * 86_400_000));
+    date.min = today;
+    date.max = max;
+    date.value = plan?.date || today;
+  }
   if (time) time.value = plan?.time || '21:30';
   if (select) {
     select.innerHTML = `<option value="">À décider ensemble</option>${games.map(game => `<option value="${escapeHTML(game.id)}">${escapeHTML(game.title || 'Sans titre')}</option>`).join('')}`;
     select.value = plan?.gameId && games.some(game => game.id === plan.gameId) ? plan.gameId : '';
   }
   const current = profile();
-  pendingResponse = current ? String(plan?.responses?.[profileKey(current.id || current.name)]?.status || '') : '';
+  pendingResponse = current ? String(plan?.responses?.[profileKey(current.id || current.name)]?.status || (!plan ? 'yes' : '')) : '';
   document.querySelectorAll('[data-night-response]').forEach(button => button.classList.toggle('is-active', button.dataset.nightResponse === pendingResponse));
+  const calendar = document.getElementById('home-night-calendar');
+  if (calendar) calendar.hidden = !plan;
   renderAttendees();
   setStatus('');
 }
@@ -170,7 +180,7 @@ async function submitPlan(event) {
   if (!current) return window.OLYCITY?._showProfilePicker?.();
   const submit = event.currentTarget.querySelector('[type="submit"]');
   const time = document.getElementById('home-tonight-time')?.value || '21:30';
-  const date = localDateKey();
+  const date = document.getElementById('home-tonight-date')?.value || localDateKey();
   const startsAt = new Date(`${date}T${time}:00`).getTime();
   const select = document.getElementById('home-tonight-game');
   const game = games.find(item => item.id === select?.value);
@@ -192,6 +202,16 @@ async function submitPlan(event) {
   } finally { submit.disabled = false; }
 }
 
+function downloadCalendar() {
+  const content = groupNightCalendar(plan);
+  if (!content) return;
+  const link = document.createElement('a');
+  link.href = URL.createObjectURL(new Blob([content], { type:'text/calendar;charset=utf-8' }));
+  link.download = `olycity-${plan.date}.ics`;
+  link.click();
+  setTimeout(() => URL.revokeObjectURL(link.href), 0);
+}
+
 function scheduleReload() {
   clearTimeout(reloadTimer);
   reloadTimer = setTimeout(() => loadHomeGroup().catch(() => {}), 180);
@@ -208,6 +228,7 @@ export function initHomeGroup(nextMembers = []) {
   members = nextMembers;
   document.getElementById('home-tonight-open')?.addEventListener('click', openModal);
   document.getElementById('home-tonight-form')?.addEventListener('submit', submitPlan);
+  document.getElementById('home-night-calendar')?.addEventListener('click', downloadCalendar);
   document.querySelectorAll('[data-home-sheet-close]').forEach(button => button.addEventListener('click', closeModal));
   document.getElementById('home-tonight-modal')?.addEventListener('click', event => { if (event.target.id === 'home-tonight-modal') closeModal(); });
   document.querySelectorAll('[data-night-response]').forEach(button => button.addEventListener('click', () => {

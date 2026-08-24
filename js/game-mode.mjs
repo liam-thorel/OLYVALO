@@ -50,6 +50,9 @@ export function setGameMode(mode, { navigate = true } = {}) {
     window.OLYCITY.nav('home');
   }
   document.dispatchEvent(new CustomEvent('olycity:gamechange', { detail: { mode: next } }));
+  if (navigate && document.getElementById('page-history')?.classList.contains('active')) {
+    window.OLYCITY?.nav?.('history', false);
+  }
   return next;
 }
 

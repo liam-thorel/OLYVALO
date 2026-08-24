@@ -19,13 +19,13 @@
   <link rel="stylesheet" href="./css/tokens.css?v=20260824-page-shell">
   <link rel="stylesheet" href="./css/layout.css?v=20260824-footer-spacing">
   <link rel="stylesheet" href="./css/components.css?v=20260824-mobile-map-admin">
-  <link rel="stylesheet" href="./css/home.css?v=20260824-home-breathing">
+  <link rel="stylesheet" href="./css/home.css?v=20260824-session-planner">
   <link rel="stylesheet" href="./css/agent-page.css?v=20260720-avatars">
-  <link rel="stylesheet" href="./css/responsive.css?v=20260824-mobile-map-admin">
+  <link rel="stylesheet" href="./css/responsive.css?v=20260824-sessions-history">
   <link rel="stylesheet" href="./css/lol-mode.css?v=20260824-mobile-data-cache">
   <link rel="stylesheet" href="./css/curse.css?v=20260818-curse-lifecycle">
   <link rel="stylesheet" href="./css/coop-games.css?v=20260824-mobile-data-cache">
-  <link rel="stylesheet" href="./css/design-system.css?v=20260824-home-breathing">
+  <link rel="stylesheet" href="./css/design-system.css?v=20260824-sessions-history">
 </head>
 <body>
 
@@ -269,7 +269,8 @@
 
   <div class="home-sheet" id="home-tonight-modal" role="dialog" aria-modal="true" aria-labelledby="home-tonight-modal-title" hidden>
     <form class="home-sheet-card" id="home-tonight-form">
-      <header><div><span>Le groupe</span><h2 id="home-tonight-modal-title">Organiser ce soir</h2></div><button type="button" data-home-sheet-close aria-label="Fermer">×</button></header>
+      <header><div><span>Le groupe</span><h2 id="home-tonight-modal-title">Planifier une session</h2></div><button type="button" data-home-sheet-close aria-label="Fermer">×</button></header>
+      <label class="home-sheet-field"><span>Date</span><input id="home-tonight-date" type="date" required></label>
       <label class="home-sheet-field"><span>Heure proposée</span><input id="home-tonight-time" type="time" value="21:30" required></label>
       <label class="home-sheet-field"><span>Jeu</span><select id="home-tonight-game"><option value="">À décider ensemble</option></select></label>
       <fieldset class="home-response-field"><legend>Tu seras là ?</legend><div>
@@ -278,8 +279,9 @@
         <button type="button" data-night-response="no">× Non</button>
       </div></fieldset>
       <div class="home-night-attendees" id="home-night-attendees"></div>
+      <p class="home-reminder-hint"><span aria-hidden="true">●</span> Les appareils inscrits recevront un rappel 30 puis 15 minutes avant.</p>
       <p class="home-sheet-status" id="home-tonight-status" aria-live="polite"></p>
-      <footer><button class="home-sheet-primary" type="submit">Enregistrer la soirée</button></footer>
+      <footer><button id="home-night-calendar" class="home-sheet-secondary" type="button" hidden>Ajouter au calendrier</button><button class="home-sheet-primary" type="submit">Enregistrer la session</button></footer>
     </form>
   </div>
 
@@ -295,7 +297,7 @@
         </button>
         <button class="home-install-band home-notification-band" id="push-notification-band" type="button" hidden>
           <span class="home-install-icon" aria-hidden="true">●</span>
-          <span><strong>Notifications OLYCITY</strong><small id="push-notification-summary">Activer les rappels et les rank-ups.</small></span>
+          <span><strong>Notifications OLYCITY</strong><small id="push-notification-summary">Rappels à 30 et 15 min, plus les rank-ups.</small></span>
           <i>Activer</i>
         </button>
       </div>
@@ -546,6 +548,6 @@
   <!-- Firebase SDK -->
   <!-- Présence Firebase -->
   <script src="./js/presence.js?v=20260720-avatars"></script>
-  <script type="module" src="./js/main.js?v=20260824-mobile-data-cache"></script>
+  <script type="module" src="./js/main.js?v=20260824-sessions-history"></script>
 </body>
 </html>

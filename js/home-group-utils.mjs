@@ -7,17 +7,40 @@ export function localDateKey(now = new Date()) {
 }
 
 export function normalizeGroupNight(value = {}, today = localDateKey()) {
-  if (!value || typeof value !== 'object' || value.date !== today) return null;
+  if (!value || typeof value !== 'object' || !/^\d{4}-\d{2}-\d{2}$/.test(String(value.date || '')) || value.date < today) return null;
   const responses = value.responses && typeof value.responses === 'object' ? value.responses : {};
   return {
-    date:today,
+    date:value.date,
     time:/^\d{2}:\d{2}$/.test(String(value.time || '')) ? value.time : '21:30',
+    startsAt:Number(value.startsAt) || new Date(`${value.date}T${value.time || '21:30'}:00`).getTime(),
     gameId:String(value.gameId || ''),
     gameTitle:String(value.gameTitle || 'Jeu à décider'),
     createdBy:String(value.createdBy || ''),
     updatedAt:Number(value.updatedAt) || 0,
     responses,
   };
+}
+
+export function groupNightDateLabel(plan = null, now = new Date()) {
+  if (!plan?.date) return '';
+  const today = localDateKey(now);
+  const tomorrow = localDateKey(new Date(new Date(`${today}T12:00:00`).getTime() + 86_400_000));
+  if (plan.date === today) return 'Ce soir';
+  if (plan.date === tomorrow) return 'Demain';
+  return new Date(`${plan.date}T12:00:00`).toLocaleDateString('fr-FR', { weekday:'short', day:'numeric', month:'short' });
+}
+
+export function groupNightCalendar(plan = null) {
+  if (!plan?.date || !plan?.time) return '';
+  const start = new Date(`${plan.date}T${plan.time}:00`);
+  if (!Number.isFinite(start.getTime())) return '';
+  const end = new Date(start.getTime() + 3 * 3_600_000);
+  const stamp = date => date.toISOString().replace(/[-:]/g, '').replace(/\.\d{3}/, '');
+  const text = value => String(value || '').replace(/\\/g, '\\\\').replace(/\n/g, '\\n').replace(/,/g, '\\,').replace(/;/g, '\\;');
+  return ['BEGIN:VCALENDAR','VERSION:2.0','PRODID:-//OLYCITY//Session//FR','BEGIN:VEVENT',
+    `UID:${Number(plan.updatedAt) || start.getTime()}@olycity`, `DTSTAMP:${stamp(new Date())}`,
+    `DTSTART:${stamp(start)}`, `DTEND:${stamp(end)}`, `SUMMARY:${text(plan.gameTitle || 'Session OLYCITY')}`,
+    'DESCRIPTION:Rappels OLYCITY 30 et 15 minutes avant la session.','END:VEVENT','END:VCALENDAR'].join('\r\n');
 }
 
 export function responseCounts(plan = null) {

@@ -21,7 +21,7 @@ const name = value => typeof value === 'object' ? value?.name : value;
 function readHistoryCache() {
   try {
     const cached = JSON.parse(localStorage.getItem(LOL_HISTORY_CACHE_KEY) || 'null');
-    if (!cached || typeof cached.savedAt !== 'number' || !cached.state?.data || typeof cached.state.data !== 'object') return null;
+    if (!cached || typeof cached.savedAt !== 'number' || !cached.state?.data || typeof cached.state.data !== 'object' || !Object.keys(cached.state.data).length) return null;
     return cached;
   } catch { return null; }
 }
@@ -188,7 +188,9 @@ export async function initLolHistoryPage() {
   const el = document.getElementById('lol-history-content');
   if (!el) return;
   const loadSequence = ++historyLoadSequence;
-  const cached = lastHistoryState ? { savedAt:lastHistorySavedAt, state:lastHistoryState } : readHistoryCache();
+  const cached = lastHistoryState && Object.keys(lastHistoryState.data || {}).length
+    ? { savedAt:lastHistorySavedAt, state:lastHistoryState }
+    : readHistoryCache();
   if (cached?.state) {
     lastHistoryState = cached.state;
     lastHistorySavedAt = cached.savedAt;

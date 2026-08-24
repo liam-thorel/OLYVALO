@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { buildHomeActivity, localDateKey, normalizeGroupNight, responseCounts } from '../js/home-group-utils.mjs';
+import { buildHomeActivity, groupNightCalendar, groupNightDateLabel, localDateKey, normalizeGroupNight, responseCounts } from '../js/home-group-utils.mjs';
 import { installInstructions } from '../js/pwa-install.mjs';
 
 test('today plan stays active and responses are summarized', () => {
@@ -9,6 +9,10 @@ test('today plan stays active and responses are summarized', () => {
   assert.equal(plan.gameTitle, 'PEAK');
   assert.deepEqual(responseCounts(plan), { yes:1, maybe:1, no:0 });
   assert.equal(normalizeGroupNight({ date:'2020-01-01' }, today), null);
+  const tomorrow = normalizeGroupNight({ date:'2026-08-25', time:'20:00', gameTitle:'PEAK' }, today);
+  assert.equal(groupNightDateLabel(tomorrow, new Date(2026, 7, 24, 12)), 'Demain');
+  assert.match(groupNightCalendar(tomorrow), /SUMMARY:PEAK/);
+  assert.match(groupNightCalendar(tomorrow), /DTSTART:20260825T/);
 });
 
 test('home activity combines both games and coop without exceeding the limit', () => {

@@ -185,6 +185,16 @@
 .history-game-main small,.lol-history-meta,.lol-history-duration { color: var(--muted); }
 .live-diagnostic { background: rgba(255,255,255,.025); }
 .data-state-card { background-image: none; }
+.history-cache-note {
+  display:grid; grid-template-columns:8px auto 1fr; align-items:center; gap:8px 10px;
+  margin-bottom:12px; padding:10px 12px; border:1px solid var(--border);
+  border-radius:var(--ui-radius-sm); background:var(--surface-soft); color:var(--muted); font-size:11px;
+}
+.history-cache-note > span { width:7px; height:7px; border-radius:50%; background:var(--red); box-shadow:0 0 12px var(--red-mid); }
+.history-cache-note > strong { color:var(--text); font-size:11px; }
+.history-cache-note > small { justify-self:end; color:var(--muted); font-size:10px; }
+.history-cache-note.is-syncing > span { animation:pulse 1.2s ease-in-out infinite; }
+.history-cache-note.is-offline { border-color:rgba(224,166,61,.28); }
 .live-waiting { min-height: clamp(280px,48vh,440px); padding: 34px 24px; }
 .live-waiting-icon { margin-bottom: 12px; font-size: 32px; }
 .live-waiting > strong {

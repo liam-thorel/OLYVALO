@@ -245,6 +245,8 @@
   }
   .data-state-card { grid-template-columns: auto minmax(0,1fr); min-height: 92px; padding: 16px; }
   .data-state-lines { display: none; }
+  .history-cache-note { grid-template-columns:8px 1fr; min-height:44px; }
+  .history-cache-note > small { grid-column:2; justify-self:start; }
   .history-analysis > summary { grid-template-columns: 1fr auto; }
   .history-analysis > summary small { display: none; }
   .history-duration { display: none; }
