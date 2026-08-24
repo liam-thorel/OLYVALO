@@ -15,7 +15,7 @@ import { avatarLayersHTML } from './avatars.mjs';
 import { initAdminPage } from './admin.mjs?v=20260814-admin-current-script';
 import { initBettingPage } from './betting-page.mjs';
 import { initCoopGamesPage } from './coop-games-page.mjs?v=20260823-coop-steam-reviews';
-import { getGameMode, initGameMode, setGameMode } from './game-mode.mjs?v=20260823-patch-1304';
+import { getGameMode, initGameMode, setGameMode } from './game-mode.mjs?v=20260824-home-world-art';
 import { initLolHistoryPage, initLolLivePage } from './lol-pages.mjs?v=20260824-live-history-density';
 import { initLolRosterPages } from './lol-roster.mjs?v=20260809-lol-sync';
 import { state } from './state.mjs?v=20260806-lol-roster';

@@ -16,12 +16,13 @@
   <link rel="stylesheet" href="./css/tokens.css?v=20260720-avatars">
   <link rel="stylesheet" href="./css/layout.css?v=20260824-live-history-density">
   <link rel="stylesheet" href="./css/components.css?v=20260823-mobile-design">
-  <link rel="stylesheet" href="./css/home.css?v=20260823-home-art-buttons-fix">
+  <link rel="stylesheet" href="./css/home.css?v=20260824-home-world-art-4">
   <link rel="stylesheet" href="./css/agent-page.css?v=20260720-avatars">
   <link rel="stylesheet" href="./css/responsive.css?v=20260824-live-history-density">
   <link rel="stylesheet" href="./css/lol-mode.css?v=20260824-live-history-density">
   <link rel="stylesheet" href="./css/curse.css?v=20260818-curse-lifecycle">
   <link rel="stylesheet" href="./css/coop-games.css?v=20260823-mobile-sections">
+  <link rel="stylesheet" href="./css/design-system.css?v=20260824-visual-system-2">
 </head>
 <body>
 
@@ -121,7 +122,6 @@
         </div>
         <div class="brand-text">
           <span class="brand-title">OLYCITY</span>
-          <span class="brand-sub" id="brand-subtitle">Valorant · League · Coop</span>
         </div>
       </div>
 
@@ -146,10 +146,10 @@
         <button class="page-nav-btn" data-page="history" onclick="window.OLYCITY?.nav('history')">
           <span class="page-nav-icon">◇</span> Historique
         </button>
-        <button class="page-nav-btn" data-page="games" onclick="window.OLYCITY?.nav('games')">
+        <button class="page-nav-btn" data-page="games" data-nav-scope="shared" onclick="window.OLYCITY?.nav('games')">
           <span class="page-nav-icon">✦</span> Jeux
         </button>
-        <button class="page-nav-btn" data-page="betting" onclick="window.OLYCITY?.nav('betting')">
+        <button class="page-nav-btn" data-page="betting" data-nav-scope="shared" onclick="window.OLYCITY?.nav('betting')">
           <span class="page-nav-icon">🎲</span> Paris
         </button>
         <button class="page-nav-btn mobile-nav-more-trigger" id="mobile-nav-more-trigger" type="button"
@@ -216,7 +216,6 @@
       <h1 class="hero-title" style="position:relative;z-index:1">
         <div class="hero-title-frame">OLYCITY</div>
       </h1>
-      <div class="hero-sub" id="hero-subtitle">Valorant · Comps, Live & Historique</div>
       <div class="hero-meta" id="hero-meta">
         <span><span class="dot"></span>7 maps · Patch 13.04</span>
         <span><span class="dot"></span>Ranked + VCT 2026</span>
@@ -500,6 +499,6 @@
   <!-- Firebase SDK -->
   <!-- Présence Firebase -->
   <script src="./js/presence.js?v=20260720-avatars"></script>
-  <script type="module" src="./js/main.js?v=20260824-live-history-density"></script>
+  <script type="module" src="./js/main.js?v=20260824-home-world-art"></script>
 </body>
 </html>

@@ -13,9 +13,7 @@ function setText(id, value) {
 
 function applyHomeCopy(mode) {
   const lol = mode === 'lol';
-  setText('brand-subtitle', 'Valorant · League · Coop');
   setText('hero-eyebrow', 'OLYCITY · Le Discord');
-  setText('hero-subtitle', 'Valorant · League · Coop');
   const meta = document.getElementById('hero-meta');
   if (meta) meta.style.display = 'none';
   const primary = document.getElementById('hero-primary-cta');

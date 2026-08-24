@@ -1,0 +1,245 @@
+/* OLYCITY visual system — quiet surfaces, clear hierarchy, contextual navigation */
+:root {
+  --content-max: 1420px;
+  --ui-radius: 6px;
+  --ui-radius-sm: 4px;
+  --ui-space: clamp(16px, 2vw, 28px);
+}
+
+:root[data-theme="dark"] {
+  --muted: #9298ab;
+  --dim: #62697e;
+  --border: rgba(255,255,255,.075);
+  --border2: rgba(255,255,255,.14);
+  --surface-soft: rgba(18,21,29,.78);
+  --surface-raised: #151922;
+  --shadow-card: 0 12px 32px rgba(0,0,0,.2);
+}
+
+:root[data-game="lol"] {
+  --surface-soft: rgba(8,24,36,.78);
+  --surface-raised: #0b1b28;
+}
+
+.bg-grid { opacity: .22; }
+.bg-glow-1,.bg-glow-2 { opacity: .72; }
+
+/* Navigation: game sections first, Discord-wide tools after the divider. */
+.topbar-row { max-width: var(--content-max); padding-block: 11px; }
+.page-nav { align-items: center; gap: 2px; }
+.page-nav-btn {
+  position: relative;
+  min-height: 38px;
+  padding: 8px 13px;
+  border: 0;
+  border-radius: var(--ui-radius-sm);
+  clip-path: none;
+  font-family: 'DM Sans',sans-serif;
+  font-size: 12px;
+  font-weight: 650;
+  letter-spacing: .15px;
+  text-transform: none;
+}
+.page-nav-btn:hover { background: rgba(255,255,255,.045); }
+.page-nav-btn.active {
+  background: var(--red-low);
+  color: var(--red);
+  box-shadow: inset 0 -2px 0 var(--red);
+}
+.page-nav-btn[data-page="games"][data-nav-scope="shared"] { margin-left: 10px; }
+.page-nav-btn[data-page="games"][data-nav-scope="shared"]::before {
+  content: '';
+  position: absolute;
+  top: 8px;
+  bottom: 8px;
+  left: -6px;
+  width: 1px;
+  background: var(--border2);
+}
+.page-nav-icon { opacity: .78; }
+:root[data-game="lol"] .page-nav-btn.active {
+  background: rgba(201,155,63,.12);
+  color: #f0d58a;
+  box-shadow: inset 0 -2px 0 var(--gold);
+}
+
+/* Shared layout rhythm. */
+.main,.section-inner,.roster-page-inner,.roster-header { max-width: var(--content-max); }
+.section { padding: 42px var(--ui-space); border-top-color: rgba(255,255,255,.045); }
+.section-header { margin-bottom: 22px; }
+.section-title { font-size: clamp(23px,2.2vw,30px); letter-spacing: -.2px; }
+.section-tag { font-size: 10px; letter-spacing: 2.2px; }
+.section-line { opacity: .55; }
+.loading { color: var(--muted); }
+
+.comp-tab,.map-section-tab,.history-filter-btn,.history-period-btn,
+.lol-history-periods button,.coop-status-tabs button {
+  border-radius: var(--ui-radius-sm);
+  clip-path: none;
+  font-family: 'DM Sans',sans-serif;
+  letter-spacing: .2px;
+  text-transform: none;
+}
+
+/* Typography: Tomorrow identifies sections; DM Sans carries people and data. */
+.player-name,.player-role,.history-game-main strong,
+.lol-roster-card > header h3,.coop-card-body h3,
+.live-client-info strong,.lol-match-live-header strong {
+  font-family: 'DM Sans',sans-serif;
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+/* Reusable surface language. */
+.comp-card,.player-card,.lol-roster-card,.lol-home-rank-card,
+.coop-game-card,.history-game,.lol-history-match,.lol-match-live,
+.live-diagnostic,.data-state-card,.home-now-card,.home-world,.home-member-strip,
+.map-notes-card,.tip-box {
+  border-color: var(--border);
+  border-radius: var(--ui-radius);
+  box-shadow: none;
+}
+.comp-card,.player-card,.lol-roster-card,.lol-home-rank-card,
+.history-game,.lol-history-match,.lol-match-live,.data-state-card {
+  background-color: var(--surface-soft);
+}
+.comp-card:hover,.player-card:hover,.lol-roster-card:hover,.coop-game-card:hover {
+  transform: translateY(-2px);
+  border-color: var(--border2);
+  box-shadow: 0 10px 28px rgba(0,0,0,.18);
+}
+.comp-card { margin-bottom: 16px; padding: 22px 24px; }
+.comp-card::before { width: 2px; opacity: .8; }
+.player-card:hover { border-color: var(--red-mid); }
+.lol-roster-card:hover { border-color: color-mix(in srgb,var(--rank) 42%,var(--border)); }
+.portrait-frame,.agent-footer { border-color: var(--border); }
+.agent-card:hover .portrait-frame { box-shadow: 0 10px 24px rgba(0,0,0,.28); }
+.tip-box { background: rgba(168,127,255,.045); }
+
+/* Home: one obvious live action, then three compact worlds. */
+#page-home .hero { padding: 44px 32px 32px; }
+#page-home .hero-title { font-size: clamp(56px,7.5vw,96px); }
+#page-home .hero-title-frame::before,#page-home .hero-title-frame::after { opacity: .65; }
+#page-home .hero-eyebrow { border: 0; padding: 0; margin-bottom: 20px; }
+#page-home .hero-sub { margin-top: 16px; font-size: 13px; letter-spacing: 4px; }
+.hero-cta-primary,.hero-cta-secondary,.home-now-action {
+  border-radius: var(--ui-radius-sm);
+  clip-path: none;
+  font-family: 'DM Sans',sans-serif;
+  font-size: 12px;
+  letter-spacing: .2px;
+  text-transform: none;
+}
+.hero-cta-primary:hover { transform: translateY(-1px); box-shadow: 0 8px 20px rgba(255,70,86,.2); }
+.home-dashboard { max-width: 1260px; padding-top: 18px; }
+.home-now-card { min-height: 154px; padding: 24px 26px; }
+.home-now-card::after { opacity: .25; }
+.home-now-copy > strong { font-family: 'DM Sans',sans-serif; font-size: clamp(28px,3.3vw,42px); letter-spacing: -.8px; }
+.home-now-copy > span { letter-spacing: 1.8px; }
+.home-world-grid { gap: 14px; margin-top: 14px; }
+.home-world { min-height: 168px; border: 0; }
+.home-world::after { background: linear-gradient(to top,rgba(5,7,11,.96),rgba(5,7,11,.04) 82%); }
+.home-world:hover { transform: translateY(-2px); }
+.home-world-copy { left: 18px; bottom: 16px; }
+.home-world-copy strong { font-family: 'DM Sans',sans-serif; font-size: 20px; letter-spacing: -.2px; }
+.home-world-copy small { font-family: 'DM Sans',sans-serif; font-size: 10px; letter-spacing: .3px; text-transform: none; }
+.home-member-strip { border: 0; background: rgba(16,19,26,.52); }
+
+/* Dense data views stay readable without turning every row into a box. */
+.history-game-list,.lol-history-list { gap: 8px; }
+.history-game-summary,.lol-history-match > summary { min-height: 58px; }
+.history-game-detail,.lol-history-detail { border-top-color: rgba(255,255,255,.055); }
+.history-game-main small,.lol-history-meta,.lol-history-duration { color: var(--muted); }
+.live-diagnostic { background: rgba(255,255,255,.025); }
+.data-state-card { background-image: none; }
+.lol-roster-card > header { border-bottom-color: rgba(255,255,255,.06); }
+.lol-roster-card > header > div:nth-child(2) > span { color: var(--muted); font-size: 10px; }
+.lol-roster-rank small,.lol-roster-stats small,.lol-roster-mains-title span {
+  color: var(--muted);
+  font-family: 'DM Sans',sans-serif;
+  letter-spacing: .15px;
+  text-transform: none;
+}
+.lol-roster-rank strong,.lol-roster-stats strong,.lol-roster-champion strong,
+.lol-roster-champion > b,.lol-roster-champion > b small {
+  font-family: 'DM Sans',sans-serif;
+}
+.lol-roster-rank small { font-size: 9px; }
+.lol-roster-stats small { font-size: 9px; }
+.lol-roster-stats strong { font-size: 13px; }
+.lol-roster-stats span { font-size: 9px; }
+.lol-roster-mains-title span { font-size: 10px; }
+.lol-roster-champion strong { font-size: 11px; }
+.lol-roster-champion small { font-size: 9px; }
+
+/* The first-visit picker feels like a people chooser, not another dashboard. */
+.profile-picker { background: radial-gradient(circle at 50% 10%,color-mix(in srgb,var(--red) 10%,transparent),transparent 38%),#090b0f; }
+.profile-grid { gap: 10px; }
+.profile-card { border-radius: var(--ui-radius); }
+.profile-card:hover,.profile-card:focus-visible { transform: translateY(-2px); border-color: transparent; background: rgba(255,255,255,.045); }
+.profile-avatar { border-width: 1px; border-radius: 8px; }
+.profile-name { font-family: 'DM Sans',sans-serif; font-size: 13px; letter-spacing: 0; text-transform: none; }
+.profile-status { letter-spacing: .4px; text-transform: none; }
+.profile-guest-btn { border-radius: var(--ui-radius-sm); font-family: 'DM Sans',sans-serif; letter-spacing: .2px; text-transform: none; }
+
+/* Coop has its own warm accent but follows the same card and type system. */
+.coop-page { background: transparent; }
+.coop-hero { border-bottom-color: var(--border); }
+.coop-games-grid { gap: 14px; }
+.coop-game-card { background: var(--surface-soft); }
+.coop-card-body h3 { font-size: 19px; }
+.coop-filter-field,.coop-toolbar input,.coop-toolbar select,
+.coop-field input,.coop-field select,.coop-field textarea { background: var(--surface-soft); }
+
+@media (max-width: 1180px) and (min-width: 769px) {
+  .brand-sub { display: none; }
+  .topbar-row { gap: 12px; padding-inline: 18px; }
+  .page-nav-btn { padding-inline: 9px; }
+  .page-nav-icon { display: none; }
+}
+
+@media (max-width: 768px) {
+  body { padding-bottom: 66px; }
+  .bg-grid { opacity: .12; }
+  .topbar-row { padding: 9px 14px; }
+  .page-nav-btn[data-page="games"][data-nav-scope="shared"] { margin-left: 0; }
+  .page-nav-btn[data-page="games"][data-nav-scope="shared"]::before { display: none; }
+  .page-nav-btn { font-family: 'DM Sans',sans-serif; font-size: 10px; }
+  .page-nav-btn.active { box-shadow: none; }
+
+  /* Five useful destinations, selected for the active game. */
+  :root[data-game="lol"] .page-nav > .page-nav-btn[data-page="roster"] { display: flex !important; }
+  :root[data-game="lol"] .nav-maps-dropdown { display: none !important; }
+  :root[data-game="lol"] .mobile-nav-more-sheet > [data-mobile-page="roster"] { display: none; }
+
+  .mobile-nav-more-sheet { border-radius: 12px; }
+  .mobile-nav-more-sheet > button { border-top-color: rgba(255,255,255,.06); }
+  .section { padding: 30px 15px; }
+  .section-header { margin-bottom: 17px; }
+  .section-title { font-size: 23px; }
+
+  #page-home .hero { padding: 30px 16px 22px; }
+  #page-home .hero-title { font-size: clamp(42px,13vw,58px); }
+  #page-home .hero-sub { font-size: 10px; letter-spacing: 2.1px; }
+  .home-dashboard { padding: 10px 14px 34px; }
+  .home-now-card { min-height: 142px; padding: 19px; }
+  .home-now-copy > strong { font-size: 27px; }
+  .home-world-grid { grid-template-columns: 1fr 1fr; gap: 9px; }
+  .home-world { min-height: 126px; }
+  .home-world[data-home-world="valorant"] { grid-row: span 2; min-height: 261px; }
+  .home-world-copy { left: 12px; bottom: 11px; }
+  .home-world-copy strong { font-size: 15px; }
+  .home-world-copy small { font-size: 9px; }
+
+  .comp-card { padding: 16px; }
+  .comp-card:hover,.player-card:hover,.lol-roster-card:hover,.coop-game-card:hover { transform: none; box-shadow: none; }
+  .history-game-summary,.lol-history-match > summary { min-height: 54px; }
+  .lol-roster-card > header > div:nth-child(2) > span { font-size: 10px; }
+  .coop-page { padding-inline: 14px; }
+}
+
+@media (max-width: 380px) {
+  .home-world[data-home-world="valorant"] { min-height: 237px; }
+  .home-world-grid { grid-template-columns: minmax(0,1.05fr) minmax(0,.95fr); }
+  .home-world-copy small { display: none; }
+}
