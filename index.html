@@ -16,16 +16,16 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Tomorrow:wght@400;500;600;700&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="./css/tokens.css?v=20260720-avatars">
-  <link rel="stylesheet" href="./css/layout.css?v=20260824-live-history-density">
+  <link rel="stylesheet" href="./css/tokens.css?v=20260824-page-shell">
+  <link rel="stylesheet" href="./css/layout.css?v=20260824-footer-spacing">
   <link rel="stylesheet" href="./css/components.css?v=20260823-mobile-design">
-  <link rel="stylesheet" href="./css/home.css?v=20260824-balanced-app">
+  <link rel="stylesheet" href="./css/home.css?v=20260824-home-breathing">
   <link rel="stylesheet" href="./css/agent-page.css?v=20260720-avatars">
   <link rel="stylesheet" href="./css/responsive.css?v=20260824-live-history-density">
   <link rel="stylesheet" href="./css/lol-mode.css?v=20260824-live-history-density">
   <link rel="stylesheet" href="./css/curse.css?v=20260818-curse-lifecycle">
   <link rel="stylesheet" href="./css/coop-games.css?v=20260823-mobile-sections">
-  <link rel="stylesheet" href="./css/design-system.css?v=20260824-balanced-app">
+  <link rel="stylesheet" href="./css/design-system.css?v=20260824-home-breathing">
 </head>
 <body>
 
@@ -79,10 +79,6 @@
     <small>Préparation de l’accueil…</small>
   </div>
   <style>
-    @keyframes logoSpin {
-      from { transform: rotate(0deg); }
-      to   { transform: rotate(360deg); }
-    }
     @keyframes loadingScan {
       from { left: -100%; }
       to   { left: 100%;  }
@@ -203,18 +199,10 @@
   <div id="page-home" class="spa-page active">
 
     <header class="hero">
-      <!-- Grande Roue OLYCITY -->
-      <div style="position:absolute;right:5%;top:50%;transform:translateY(-50%);z-index:0;pointer-events:none">
-      </div>
       <canvas id="hero-canvas" style="position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:0"></canvas>
-      <div class="hero-eyebrow" id="hero-eyebrow" style="position:relative;z-index:1">OLYCITY · Five Stack · EU</div>
-      <h1 class="hero-title" style="position:relative;z-index:1">
-        <div class="hero-title-frame">OLYCITY</div>
+      <h1 class="hero-title home-hero-title" style="position:relative;z-index:1">
+        <span class="hero-title-frame">OLYCITY</span>
       </h1>
-      <div class="hero-meta" id="hero-meta">
-        <span><span class="dot"></span>7 maps · Patch 13.04</span>
-        <span><span class="dot"></span>Ranked + VCT 2026</span>
-      </div>
       <div class="hero-ctas">
         <button class="hero-cta-primary" id="hero-primary-cta" onclick="window.OLYCITY?.nav('maps')">
           ◈ Explorer les maps
@@ -240,7 +228,7 @@
           <span class="home-world-copy"><small>Comps & Live</small><strong>Valorant</strong></span>
         </button>
         <button class="home-world" data-home-world="lol" data-home-page="roster" type="button">
-          <span class="home-world-copy"><small>Roster & Rangs</small><strong>League</strong></span>
+          <span class="home-world-copy"><small>Roster & Rangs</small><strong>League of Legends</strong></span>
         </button>
         <button class="home-world" data-home-world="coop" data-home-page="games" type="button">
           <span class="home-world-copy"><small>Votes du groupe</small><strong>Coop</strong></span>
@@ -349,7 +337,7 @@
       <div class="roster-grid" id="roster-grid" data-game-panel="valorant"></div>
       <div class="roster-header lol-roster-header" data-game-panel="lol">
         <span class="roster-eyebrow">Solo Queue · Saison 2026</span>
-        <h2 class="roster-title">Le roster League</h2>
+        <h2 class="roster-title">Le roster League of Legends</h2>
         <span class="roster-sub">Ranks · Rôle principal estimé · Top 3 champions SoloQ</span>
         <button class="sync-all-btn lol-sync-all-btn" id="lol-sync-all-btn" type="button">
           <span class="sync-spin">↻</span> Actualiser tout
@@ -557,6 +545,6 @@
   <!-- Firebase SDK -->
   <!-- Présence Firebase -->
   <script src="./js/presence.js?v=20260720-avatars"></script>
-  <script type="module" src="./js/main.js?v=20260824-optional-notifications-2"></script>
+  <script type="module" src="./js/main.js?v=20260824-home-breathing"></script>
 </body>
 </html>

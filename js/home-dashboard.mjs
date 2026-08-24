@@ -37,7 +37,7 @@ export function homeDashboardState(snapshot = {}, now = Date.now()) {
   if (leagueSessions.length) {
     const players = new Set(leagueSessions.map(item => item.memberId).filter(Boolean)).size || leagueSessions.length;
     return {
-      state:'lol', kicker:'Live · League', title:'Partie en cours',
+      state:'lol', kicker:'Live · League of Legends', title:'Partie en cours',
       detail:`${players} membre${players > 1 ? 's' : ''} sur la Faille`, action:'Voir le Live', page:'live', onlineIds,
     };
   }

@@ -81,11 +81,9 @@
 .pwa-install-device{margin-bottom:13px;color:var(--text);font:700 15px 'DM Sans',sans-serif}.pwa-install-steps{display:grid;gap:10px;margin:0 0 18px;padding-left:22px;color:var(--muted);font-size:13px;line-height:1.45}.pwa-install-steps li::marker{color:#c8adff;font-weight:700}.pwa-install-card .home-sheet-primary{background:#8f6bd8;border-color:#b397ec}
 
 @media(max-width:768px){
-  #page-home .hero{padding:34px 16px 24px}
-  #page-home .hero-eyebrow{margin-bottom:18px;padding:5px 12px;font-size:8px;letter-spacing:2.4px}
+  #page-home .hero{padding:32px 16px 26px}
   #page-home .hero-title{font-size:clamp(44px,14vw,58px)}
-  #page-home .hero-sub{margin-top:14px;font-size:10px;letter-spacing:2.4px}
-  #page-home .hero-meta,#page-home .hero-cta-secondary{display:none}
+  #page-home .hero-cta-secondary{display:none}
   #page-home .hero-ctas{margin-top:22px}
   #page-home .hero-cta-primary{min-height:46px;padding:10px 24px}
   .home-dashboard{padding:12px 16px 38px}

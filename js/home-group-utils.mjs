@@ -63,7 +63,7 @@ export function buildHomeActivity({ valorant = {}, lol = {}, coop = {}, plan = n
     const champion = match.champion?.name || match.championName || match.champion || 'League';
     events.push({ id:`lol-${id}`, kind:'lol', ts, fresh:ts > lastSeen, text:`${name} a ${match.win ? 'gagné' : 'joué'} avec ${champion}` });
     const promotion = rankPromotion('lol', match);
-    if (promotion) events.push({ id:`rank-lol-${id}`, kind:'rank', ts:ts + 1, fresh:ts > lastSeen, text:`${name} est passé ${promotion.after} sur League` });
+    if (promotion) events.push({ id:`rank-lol-${id}`, kind:'rank', ts:ts + 1, fresh:ts > lastSeen, text:`${name} est passé ${promotion.after} sur League of Legends` });
   });
   Object.entries(coop || {}).forEach(([id, game]) => {
     const submittedAt = normalizeTimestamp(game?.submittedAt);

@@ -67,8 +67,10 @@ test('home is one live priority, three visual worlds and a compact member strip'
   assert.match(homeStyles, /valorant-keyart\.webp/);
   assert.match(homeStyles, /league-champions-group\.webp/);
   assert.match(homeStyles, /peak-keyart\.webp/);
-  assert.match(page, /home\.css\?v=20260824-balanced-app/);
-  assert.match(page, /design-system\.css\?v=20260824-balanced-app/);
+  assert.match(page, /home\.css\?v=20260824-home-breathing/);
+  assert.match(page, /design-system\.css\?v=20260824-home-breathing/);
+  assert.match(page, /<span class="hero-title-frame">OLYCITY<\/span>/);
+  assert.doesNotMatch(page, /id="hero-eyebrow"/);
   assert.match(page, /id="home-member-faces"/);
   assert.match(homeStyles, /\.home-member-face\.online\{border-color:#4bd07b/);
   assert.doesNotMatch(page, /Agents prioritaires|id="stier-row"|id="mini-roster"/);

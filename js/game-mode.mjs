@@ -13,9 +13,6 @@ function setText(id, value) {
 
 function applyHomeCopy(mode) {
   const lol = mode === 'lol';
-  setText('hero-eyebrow', 'OLYCITY · Le Discord');
-  const meta = document.getElementById('hero-meta');
-  if (meta) meta.style.display = 'none';
   const primary = document.getElementById('hero-primary-cta');
   if (primary) {
     primary.textContent = '● Voir le Live';

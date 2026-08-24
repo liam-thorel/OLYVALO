@@ -33,7 +33,7 @@ html { scroll-behavior:smooth; }
 body{
   background:var(--bg); color:var(--text);
   font-family:'DM Sans', sans-serif; font-size:14px;
-  min-height:100vh; overflow-x:hidden;
+  display:flex; min-height:100vh; flex-direction:column; overflow-x:hidden;
   transition:background .4s, color .4s;
 }
 

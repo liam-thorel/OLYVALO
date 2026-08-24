@@ -1,5 +1,5 @@
 import { fetchJsonWithTimeout } from './request-utils.mjs?v=20260809-route-load-stable';
-import { buildHomeActivity, localDateKey, normalizeGroupNight, relativeActivityTime, responseCounts } from './home-group-utils.mjs?v=20260824-push';
+import { buildHomeActivity, localDateKey, normalizeGroupNight, relativeActivityTime, responseCounts } from './home-group-utils.mjs?v=20260824-game-name';
 
 const FIREBASE_ROOT = 'https://realtime-database-5bb9f-default-rtdb.europe-west1.firebasedatabase.app';
 const LAST_SEEN_KEY = 'olycity-home-activity-seen';

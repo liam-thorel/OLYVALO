@@ -128,11 +128,18 @@
 .tip-box { background: rgba(168,127,255,.045); }
 
 /* Home: one obvious live action, then three compact worlds. */
-#page-home .hero { padding: 44px 32px 32px; }
+#page-home .hero { padding: 38px 32px 30px; }
 #page-home .hero-title { font-size: clamp(56px,7.5vw,96px); }
 #page-home .hero-title-frame::before,#page-home .hero-title-frame::after { opacity: .65; }
-#page-home .hero-eyebrow { border: 0; padding: 0; margin-bottom: 20px; }
-#page-home .hero-sub { margin-top: 16px; font-size: 13px; letter-spacing: 4px; }
+#page-home .home-hero-title .hero-title-frame {
+  padding: 4px 20px 7px;
+  filter: drop-shadow(0 12px 24px rgba(0,0,0,.34));
+  text-shadow: 0 1px 0 rgba(255,255,255,.12), 0 0 34px rgba(255,70,86,.13);
+}
+#page-home .home-hero-title .hero-title-frame::before,
+#page-home .home-hero-title .hero-title-frame::after { width:28px; height:28px; opacity:.82; }
+#page-home .home-hero-title .hero-title-frame::before { top:-4px; left:0; }
+#page-home .home-hero-title .hero-title-frame::after { right:0; bottom:-4px; }
 .hero-cta-primary,.hero-cta-secondary,.home-now-action {
   border-radius: var(--ui-radius-sm);
   clip-path: none;
@@ -156,35 +163,19 @@
 .home-world-copy small { font-family: 'DM Sans',sans-serif; font-size: 10px; letter-spacing: .3px; text-transform: none; }
 .home-member-strip { border: 0; background: rgba(16,19,26,.52); }
 
-/* L’accueil desktop tient dans une fenêtre d’application 1080p sans sacrifier
-   les tailles tactiles ni la lisibilité des informations utiles. */
-@media (min-width:769px) and (min-height:720px) {
-  #page-home .hero { padding: 8px 32px 6px; }
-  #page-home .hero-eyebrow { margin-bottom: 5px; font-size: 9px; }
-  #page-home .hero-title { font-size: clamp(46px,4.5vw,58px); }
-  #page-home .hero-meta { display:none; }
-  #page-home .hero-ctas { margin-top: 8px; }
-  #page-home .hero-cta-primary,#page-home .hero-cta-secondary { min-height: 40px; padding-block: 8px; }
-  .home-dashboard { padding: 5px 32px 14px; }
-  .home-now-card { box-sizing:border-box;height:126px;min-height:0;padding:17px 20px; }
-  .home-now-copy > strong { font-size: clamp(25px,2.7vw,36px); }
+/* Les fenêtres desktop basses restent compactes sans écraser la hiérarchie. */
+@media (min-width:769px) and (max-height:800px) {
+  #page-home .hero { padding: 24px 32px 20px; }
+  #page-home .hero-title { font-size: clamp(54px,5.4vw,70px); }
+  #page-home .hero-ctas { margin-top: 16px; }
+  #page-home .hero-cta-primary,#page-home .hero-cta-secondary { min-height: 42px; padding-block: 9px; }
+  .home-dashboard { padding: 16px 32px 34px; }
+  .home-now-card { min-height:144px; padding:22px 24px; }
+  .home-now-copy > strong { font-size: clamp(28px,3vw,38px); }
   .home-now-copy > small { font-size: 13px; }
-  .home-world-grid { gap: 10px; margin-top: 8px; }
-  .home-world { min-height: 142px; }
-  .home-world-copy { left: 14px; bottom: 12px; }
-  .home-world-copy strong { font-size: 17px; }
-  .home-member-row { margin-top: 8px; }
-  .home-member-strip { padding: 7px 13px; }
-  .home-member-face { width: 30px; height: 30px; }
-  .home-group-grid { gap: 10px; margin-top: 8px; }
-  .home-group-panel { padding: 10px 13px; }
-  .home-group-heading { margin-bottom: 6px; }
-  .home-tonight-content { min-height: 40px; }
-  .home-activity-list { gap: 4px; }
-  .home-activity-item { min-height: 20px; }
-  .home-utility-grid { gap: 10px; }
-  .home-install-band { min-height: 46px; padding-block: 6px; }
-  .home-install-icon { width: 31px; height: 31px; }
+  .home-world-grid { gap:12px; margin-top:12px; }
+  .home-world { min-height:150px; }
+  .home-member-row,.home-group-grid { margin-top:12px; }
 }
 
 /* Dense data views stay readable without turning every row into a box. */
@@ -300,7 +291,6 @@
 
   #page-home .hero { padding: 30px 16px 22px; }
   #page-home .hero-title { font-size: clamp(42px,13vw,58px); }
-  #page-home .hero-sub { font-size: 10px; letter-spacing: 2.1px; }
   .home-dashboard { padding: 10px 14px 34px; }
   .home-now-card { min-height: 142px; padding: 19px; }
   .home-now-copy > strong { font-size: 27px; }
@@ -342,6 +332,8 @@
   .coop-search-field { flex: 1 0 100%; }
   .coop-filter-field { flex: 1 1 30%; min-width: 96px; }
   .coop-filter-field:last-child { flex-basis: 100%; }
+  .coop-filter-field select { min-height: 32px; }
+  [data-coop-reset] { min-height: 32px; padding: 5px 10px; }
   .coop-status-tabs { padding-bottom: 7px; }
   .coop-status-tabs button { min-height: 40px; padding-inline: 11px; }
   .coop-summary { margin: 7px 0 11px; }

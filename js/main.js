@@ -6,7 +6,7 @@
 import { valorantApi } from './api.js';
 import { fetchJsonWithTimeout } from './request-utils.mjs?v=20260809-route-load-stable';
 
-const SITE_VERSION = '20260824-optional-notifications';
+const SITE_VERSION = '20260824-home-breathing';
 const BOOT_RETRY_KEY = 'olycity-boot-retry';
 import { syncPlayer as henrikSyncPlayer, syncAllPlayers as henrikSyncAll, persistPlayerStats } from './henrik.js?v=20260809-val-roster-season';
 import { setStoredKey, storedKey, forgetCachedKey } from './henrik-key.mjs';
@@ -14,16 +14,16 @@ import { rosterHTML, guestCardHTML, mapSectionHTML, agentPageHTML } from './rend
 import { initTheme, initTilt, initParallax, initSearch, initKeyboard, initHeroParticles, initWheelLogos, initLivePage, initHistoryPage } from './interactions.js?v=20260824-ux-polish';
 import { storage } from './storage.js';
 import { avatarLayersHTML } from './avatars.mjs';
-import { initAdminPage } from './admin.mjs?v=20260824-optional-notifications';
+import { initAdminPage } from './admin.mjs?v=20260824-mobile-controls';
 import { initBettingPage } from './betting-page.mjs';
 import { initCoopGamesPage } from './coop-games-page.mjs?v=20260824-ux-polish';
-import { getGameMode, initGameMode, setGameMode } from './game-mode.mjs?v=20260824-home-world-art';
+import { getGameMode, initGameMode, setGameMode } from './game-mode.mjs?v=20260824-home-title';
 import { initLolHistoryPage, initLolLivePage } from './lol-pages.mjs?v=20260824-live-history-density';
 import { initLolRosterPages } from './lol-roster.mjs?v=20260809-lol-sync';
 import { state } from './state.mjs?v=20260806-lol-roster';
 import { memberId, mergeMemberProfiles, resolveMemberProfile } from './member-profiles.mjs?v=20260823-profile-picker';
-import { initHomeDashboard } from './home-dashboard.mjs?v=20260824-home-online';
-import { initHomeGroup } from './home-group.mjs?v=20260824-notifications';
+import { initHomeDashboard } from './home-dashboard.mjs?v=20260824-game-name';
+import { initHomeGroup } from './home-group.mjs?v=20260824-game-name';
 import { initPwaInstall } from './pwa-install.mjs?v=20260824-network-first';
 export { state };
 

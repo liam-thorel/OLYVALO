@@ -194,16 +194,6 @@
 }
 
 
-.hero-eyebrow{
-  display:inline-flex; align-items:center; gap:8px;
-  font-family:'Tomorrow',sans-serif; font-size:10px; font-weight:700;
-  letter-spacing:4px; text-transform:uppercase; color:var(--red);
-  border:1px solid var(--red-mid); padding:5px 18px; margin-bottom:24px;
-}
-.hero-eyebrow::before{
-  content:''; width:5px; height:5px; background:var(--red); border-radius:50%;
-  animation:pulse 2s ease-in-out infinite;
-}
 .hero-title{
   font-family:'Tomorrow',sans-serif;
   font-size:clamp(60px, 9vw, 120px); font-weight:700;
@@ -215,17 +205,6 @@
 }
 .hero-title-frame::before{ top:-8px; left:-8px; border-right:none; border-bottom:none; }
 .hero-title-frame::after{ bottom:-8px; right:-8px; border-left:none; border-top:none; }
-
-.hero-sub{
-  margin-top:18px; font-family:'Tomorrow',sans-serif; font-size:14px;
-  letter-spacing:6px; text-transform:uppercase; color:var(--muted); font-weight:500;
-}
-.hero-meta{
-  margin-top:16px; display:flex; gap:24px; justify-content:center; flex-wrap:wrap;
-  font-size:11px; color:var(--dim); letter-spacing:1px;
-}
-.hero-meta span{ display:flex; align-items:center; gap:6px; }
-.hero-meta .dot{ width:5px; height:5px; border-radius:50%; background:var(--red); }
 
 /* MAIN */
 .main{ position:relative; z-index:2; max-width:1600px; margin:0 auto; padding:0 32px 40px; }
@@ -272,7 +251,7 @@
 
 /* FOOTER */
 .footer{
-  padding:24px 32px; border-top:1px solid var(--border);
+  margin-top:auto; padding:18px 32px; border-top:1px solid var(--border);
   background:var(--bg-deep); position:relative; z-index:2;
 }
 .footer-inner{
