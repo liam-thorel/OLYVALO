@@ -1,136 +1,140 @@
 # OLYCITY
 
-Site privé du Discord OLYCITY : Valorant, League of Legends, jeux coop, historique, live et outils de groupe.
+<p align="center">
+  <img src="assets/logo.svg" width="92" alt="Logo OLYCITY">
+</p>
 
-**→ [olycity.gg](https://liam-thorel.github.io/OLYVALO)**
+<p align="center">
+  Le hub du Discord OLYCITY pour suivre Valorant et League of Legends,<br>
+  choisir les prochains jeux coop et organiser les sessions du groupe.
+</p>
 
----
+<p align="center">
+  <a href="https://liam-thorel.github.io/OLYVALO/"><strong>Ouvrir OLYCITY</strong></a>
+  ·
+  <a href="https://github.com/liam-thorel/OLYVALO/releases/latest"><strong>Télécharger OLYCITY Live</strong></a>
+</p>
 
-## Features
+<p align="center">
+  <a href="https://github.com/liam-thorel/OLYVALO/actions/workflows/tests.yml"><img src="https://github.com/liam-thorel/OLYVALO/actions/workflows/tests.yml/badge.svg" alt="Tests"></a>
+  <a href="https://github.com/liam-thorel/OLYVALO/actions/workflows/pages.yml"><img src="https://github.com/liam-thorel/OLYVALO/actions/workflows/pages.yml/badge.svg" alt="Déploiement du site"></a>
+</p>
 
-**Comps & Meta**
-- 7 maps suivies — Haven, Abyss, Lotus, Split, Ascent, Sunset et Summit
-- 3 choix lisibles par map : Ranked, Pro et Fun
-- Comps PRO issues des compétitions récentes et recommandations Ranked adaptées au five stack
-- Agent clé ★ par comp · Badge patch ⚠ si une source doit être révisée
-- Conseils de map intégrés et lineups YouTube conservées uniquement sur les maps couvertes
+## Le projet
 
-**Live 🔴**
-- Agents, noms et rangs des joueurs en temps réel
-- Peak historique par actes, y compris avec un pseudo masqué quand Riot fournit l'historique du PUUID
-- Image de la map et serveur Riot
-- Mode streamer géré (affiche l'agent + ANONYME)
-- Bouton Tracker.gg par joueur
-- Multi-sessions : plusieurs membres peuvent lancer une game simultanément
-- Groupement automatique si deux joueurs sont dans la même game
+OLYCITY réunit dans une même application web les outils utilisés par le groupe : compositions Valorant, rosters et rangs, parties en direct, historiques séparés par jeu, votes coop, organisation des soirées et classement des points Discord.
 
-**Roster & Profils**
-- 5 profils joueurs avec présence Firebase (point vert en temps réel)
-- Page **Admin** cachée (`#admin`) : comptes secondaires par membre, ajout de
-  joueurs, assignation des comptes Valorant/LoL détectés en live
+Le site est une PWA responsive installable sur ordinateur et téléphone. Il fonctionne en JavaScript natif, sans framework ni étape de compilation, et est publié automatiquement avec GitHub Pages.
 
-**Agents**
-- Fiche complète accessible depuis les portraits des compositions
-- Compétences, présence dans les trois types de compos et lineups disponibles
+## Fonctionnalités
 
-**Paris 🎲**
-- Page publique (`#betting`) affichant le classement des points du bot Discord
-  — voir `discord-bot/`
+### Valorant
 
-**Jeux du Discord**
-- Suggestions et votes associés aux profils OLYCITY
-- Recherche automatique IGDB/Steam : titre, jaquette, genres, sortie et plage
-  de joueurs préremplis, avec correction manuelle possible
-- Statuts À faire / Prévu / Joué / Mise à jour à refaire
-- Service de catalogue indépendant dans `workers/game-catalog/` : aucune
-  dépendance au bot Discord
+- rotation compétitive du patch courant et trois compositions par map : **Ranked**, **Pro** et **Fun** ;
+- conseils de map et lineups vidéo utiles ;
+- roster avec rang actuel, peak historique, statistiques de l’acte et trois agents les plus joués ;
+- détection du sélecteur d’agents, du côté attaque/défense, de la partie et du serveur Riot ;
+- regroupement automatique des amis présents dans la même partie et prise en charge de plusieurs sessions simultanées ;
+- historique progressif séparant compétitif, deathmatch et autres modes, avec filtres par joueur et période.
 
----
+### League of Legends
+
+- roster avec rang SoloQ, bilan de saison, rôle principal et top 3 champions SoloQ ;
+- détection du compte connecté et des parties via le client League ;
+- Live et historique indépendants de Valorant ;
+- synchronisation globale des statistiques depuis le roster.
+
+### Vie du groupe
+
+- profils OLYCITY communs au Live, aux votes et aux réponses de soirée ;
+- catalogue de jeux coop enrichi avec IGDB et Steam : jaquette, genres, joueurs et avis Steam ;
+- statuts **À faire**, **Prévu**, **Joué** et **À rejouer**, votes et tri par ajouts récents ;
+- planification d’une session à une date et une heure, réponses Oui/Peut-être/Non et export calendrier ;
+- notifications Web Push 30 puis 15 minutes avant une session et lors d’un vrai changement de palier ;
+- activité récente sur l’accueil et classement des points du bot Discord.
+
+### Administration
+
+Le panneau `#admin`, réservé au groupe, centralise les installations Live, les comptes Riot détectés, les associations avec les membres, les diagnostics de version et le test des notifications. Les comptes secondaires restent rattachés au bon profil même après un changement de Riot ID.
 
 ## OLYCITY Live
 
-Script Node.js qui lit l'API locale Valorant **et League of Legends** (LCU) et
-envoie les données en temps réel sur le site et sur Discord via Firebase.
-Le profil LoL publié comprend le rang SoloQ, le bilan de saison, le rôle
-principal et le top 3 champions avec les portraits Riot Data Dragon.
+OLYCITY Live est le compagnon Windows distribué dans les [Releases GitHub](https://github.com/liam-thorel/OLYVALO/releases/latest). Il lit uniquement les API locales des clients Riot puis publie dans Firebase les informations nécessaires au site.
 
+- runtime Node.js et dépendances inclus dans le ZIP ;
+- installation en un clic avec `INSTALLER.bat` ;
+- démarrage silencieux avec Windows et verrou anti-doublon ;
+- identification du membre une seule fois, modifiable avec `IDENTITE.bat` ;
+- mises à jour automatiques, différées jusqu’à la fin de la partie si nécessaire ;
+- outils `VERIFIER.bat`, `REINSTALLER.bat` et `DESINSTALLER.bat` pour le dépannage.
+
+Consultez [la documentation du Live](live/README.md) pour le fonctionnement détaillé.
+
+## Bot Discord
+
+Le dossier [`discord-bot/`](discord-bot/) contient un service distinct du site. Il publie les débuts et fins de parties Valorant/LoL, les récaps, les variations de rang et gère les paris fictifs ainsi que leur classement. Son déploiement possède son propre workflow et n’est pas nécessaire au fonctionnement du site ou du catalogue coop.
+
+## Architecture
+
+```text
+OLYVALO/
+├── index.html                  Application web monopage
+├── css/                        Design system et responsive
+├── js/                         Pages, Firebase, Live et interactions
+├── data/                       Compositions, roster et métadonnées
+├── assets/                     Identité visuelle et illustrations
+├── live/                       Compagnon Windows autonome
+├── workers/
+│   ├── game-catalog/           Recherche IGDB + Steam
+│   └── notifications/          Web Push, rappels et rank-ups
+├── discord-bot/                Bot Discord indépendant
+├── tests/                      Suite Node.js sans dépendances
+└── .github/workflows/          Tests, Pages, Live et bot
 ```
-live/
-├── index.js           Script principal
-├── lol-watcher.js     Détection des games League of Legends (LCU)
-├── rank-utils.js      Calcul du rang actuel et du peak historique
-├── identity.js        Membre OLYCITY associé à cette installation
-├── ask-identity.js    Invite « qui es-tu ? » (une fois, à l'installation)
-├── account-binding.js Rattache le compte Riot courant au membre choisi
-├── updater.js         Mise à jour automatique depuis les releases GitHub
-├── runtime/node.exe   Runtime Node.js LTS autonome
-├── INSTALLER.bat      Installation + tâche planifiée Windows
-├── IDENTITE.bat       Changer la personne associée à ce PC
-├── VERIFIER.bat       Vérifier si le script tourne + voir les logs
-├── REINSTALLER.bat    Clean reinstall
-├── DESINSTALLER.bat   Tout supprimer
-└── silent.vbs         Lanceur silencieux (no window)
+
+### Technologies
+
+- HTML, CSS et modules ES JavaScript ;
+- Firebase Realtime Database pour la présence, les sessions, les historiques et les données du groupe ;
+- API locales Riot Client, PVP.net et League Client ;
+- Riot Data Dragon, HenrikDev, IGDB et Steam pour les données enrichies ;
+- Cloudflare Workers et KV pour le catalogue et les notifications ;
+- GitHub Actions, GitHub Pages et Releases.
+
+## Développement local
+
+Le site n’a pas de build. Depuis la racine du dépôt :
+
+```powershell
+python -m http.server 43173 --bind 127.0.0.1
 ```
 
-**Identification :** à la première installation, le script demande qui joue sur
-ce PC (liste du roster + option « Autre » pour ajouter quelqu'un). Le membre
-choisi est mémorisé et publié avec chaque session, ce qui garde le suivi valide
-même après un changement de pseudo Riot ou un changement de compte.
+Puis ouvrir `http://127.0.0.1:43173/`.
 
-**Setup :**
-1. Décompresser complètement le ZIP de la dernière release.
-2. Double-cliquer sur `INSTALLER.bat`.
-3. C'est tout — le script démarre automatiquement à chaque allumage Windows.
+Lancer toute la suite de tests :
 
-Node.js et les dépendances sont inclus : aucune installation globale ni commande npm.
+```powershell
+node --test
+```
 
----
+Les changements du site déployés sur `main` passent d’abord par les tests, puis par le workflow GitHub Pages. Le Live, les Workers et le bot disposent de procédures de déploiement séparées.
 
-## OLYCITY Discord Bot
+## Configuration du déploiement
 
-Bot Discord (`discord-bot/`) qui notifie le lancement et la fin des games
-Valorant/LoL suivies (résumé KDA, build, variation de rang), avec un système
-de paris entre membres du serveur sur l'issue de chaque game suivie (cotes
-basées sur le rang et l'historique perso, points quotidiens, classement
-hebdomadaire). Détails d'installation et de déploiement dans
-[`discord-bot/README.md`](discord-bot/README.md).
+Le workflow Pages génère `config.js` à partir de la configuration GitHub :
 
----
+- secret `HENRIK_API_KEY` pour la clé HenrikDev partagée facultative ;
+- variable `GAME_CATALOG_ENDPOINT` pour le Worker de recherche coop ;
+- variable `NOTIFICATION_ENDPOINT` pour le Worker Web Push.
 
-## Stack
+Une clé HenrikDev personnelle peut également être renseignée depuis le roster et reste stockée dans le navigateur. Le site continue de fonctionner sans clé partagée, sans catalogue distant ou sans notifications : ces intégrations sont chargées comme des améliorations facultatives.
 
-- Vanilla JS (ES modules) · CSS custom properties
-- Firebase Realtime Database (présence + live data + dessin + paris)
-- Valorant API : Riot Client lockfile · PVP.net `glz-eu-1.eu.a.pvp.net` · `pd.eu.a.pvp.net`
-- League API : League Client (LCU) lockfile · Data Dragon (champions/items)
-- Discord.js (bot Node.js séparé, voir `discord-bot/`)
-- GitHub Pages
+## Données et crédits
 
----
+- compositions et tendances Valorant : VLR.gg, RIB.gg et MetaBot ;
+- agents et illustrations associées : valorant-api.com et Riot Games ;
+- League of Legends : API locales Riot et Data Dragon ;
+- catalogue coop : IGDB et Steam ;
+- visuels d’accueil : sources détaillées dans [`assets/home/SOURCES.md`](assets/home/SOURCES.md).
 
-## Données
-
-- Comps : VLR.gg · EWC Americas Qualifier 2026 · VCT Stage 1 2026
-- Agents : valorant-api.com
-- Stats joueurs : HenrikDev API
-
----
-
-## Configuration
-
-**Clé API HenrikDev.** Elle n'est plus dans le dépôt. Deux sources, dans cet
-ordre de priorité :
-
-1. **La clé personnelle** du visiteur, saisie depuis la page Roster (bouton
-   🔑) et conservée dans son navigateur. Elle a son propre quota.
-2. **La clé partagée**, injectée au déploiement depuis le secret GitHub
-   `HENRIK_API_KEY` (voir `.github/workflows/pages.yml`). Elle sert de valeur
-   par défaut pour qui n'a rien saisi.
-
-⚠️ Le site est statique : la clé partagée est **téléchargée par le navigateur**
-et donc lisible par tout visiteur. Le secret GitHub la sort du dépôt et de son
-historique, et permet de la changer en un seul endroit — il ne la rend pas
-confidentielle. La clé doit rester gratuite, rate-limitée et révocable.
-
-Sans secret configuré, le site fonctionne : chacun renseigne simplement la
-sienne.
+OLYCITY est un projet communautaire non affilié à Riot Games, Valve, Twitch ou Discord.
