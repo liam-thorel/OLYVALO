@@ -14,7 +14,7 @@ import { rosterHTML, guestCardHTML, mapSectionHTML, agentPageHTML } from './rend
 import { initTheme, initTilt, initParallax, initSearch, initKeyboard, initHeroParticles, initWheelLogos, initLivePage, initHistoryPage } from './interactions.js?v=20260824-ux-polish';
 import { storage } from './storage.js';
 import { avatarLayersHTML } from './avatars.mjs';
-import { initAdminPage } from './admin.mjs?v=20260824-push';
+import { initAdminPage } from './admin.mjs?v=20260824-optional-notifications';
 import { initBettingPage } from './betting-page.mjs';
 import { initCoopGamesPage } from './coop-games-page.mjs?v=20260824-ux-polish';
 import { getGameMode, initGameMode, setGameMode } from './game-mode.mjs?v=20260824-home-world-art';

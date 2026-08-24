@@ -17,7 +17,6 @@ import { buildScriptHealth, scriptDiagnosticText, scriptHealthSummary } from './
 import { fetchJsonWithTimeout } from './request-utils.mjs?v=20260809-route-load-stable';
 import { isLiveRecordExpired, liveDataStore, staleLiveRecords } from './live-data-store.mjs?v=20260810-firebase-connection-fix';
 import { mergeMemberProfiles } from './member-profiles.mjs?v=20260823-profile-picker';
-import { currentPushState, enablePushNotifications, sendTestPush } from './push-notifications.mjs?v=20260824-push';
 
 const FIREBASE_URL = 'https://realtime-database-5bb9f-default-rtdb.europe-west1.firebasedatabase.app';
 // SHA-256 du mot de passe admin. Pour le changer : recalcule le hash d'un
@@ -41,6 +40,18 @@ let liveStoreStatus = {};
 let adminLiveCleanup = null;
 let adminLoadSequence = 0;
 let adminDataLoaded = false;
+let pushModulePromise = null;
+
+function loadPushModule() {
+  if (!pushModulePromise) {
+    pushModulePromise = import('./push-notifications.mjs?v=20260824-optional')
+      .catch(error => {
+        pushModulePromise = null;
+        throw error;
+      });
+  }
+  return pushModulePromise;
+}
 
 function slugify(name) {
   return String(name || '')
@@ -382,11 +393,18 @@ function wireEvents(root) {
   const testNotification = root.querySelector('#admin-test-notification');
   const notificationStatus = root.querySelector('#admin-notification-status');
   if (testNotification) {
-    currentPushState().then(state => { if (notificationStatus) notificationStatus.textContent = state.label; });
+    loadPushModule()
+      .then(({ currentPushState }) => currentPushState())
+      .then(state => { if (notificationStatus) notificationStatus.textContent = state.label; })
+      .catch(() => {
+        if (notificationStatus) notificationStatus.textContent = 'Notifications bloquées par le navigateur.';
+        testNotification.disabled = true;
+      });
     testNotification.addEventListener('click', async () => {
       testNotification.disabled = true;
       if (notificationStatus) notificationStatus.textContent = 'Préparation du test…';
       try {
+        const { currentPushState, enablePushNotifications, sendTestPush } = await loadPushModule();
         const state = await currentPushState();
         if (state.state !== 'enabled') await enablePushNotifications();
         const result = await sendTestPush();

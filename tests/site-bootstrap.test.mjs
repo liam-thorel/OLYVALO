@@ -22,6 +22,7 @@ const lolStyles = fs.readFileSync(new URL('../css/lol-mode.css', import.meta.url
 const homeStyles = fs.readFileSync(new URL('../css/home.css', import.meta.url), 'utf8');
 const designSystem = fs.readFileSync(new URL('../css/design-system.css', import.meta.url), 'utf8');
 const presence = fs.readFileSync(new URL('../js/presence.js', import.meta.url), 'utf8');
+const admin = fs.readFileSync(new URL('../js/admin.mjs', import.meta.url), 'utf8');
 const coopPage = fs.readFileSync(new URL('../js/coop-games-page.mjs', import.meta.url), 'utf8');
 
 test('shared state does not import the versioned entry module twice', () => {
@@ -197,6 +198,8 @@ test('PWA exposes opt-in notifications and admin test controls without touching 
   assert.match(main, /initPushNotifications/);
   assert.doesNotMatch(main, /^import .*push-notifications/m);
   assert.match(main, /import\('\.\/push-notifications\.mjs\?v=20260824-optional'\)[\s\S]*\.catch/);
+  assert.doesNotMatch(admin, /^import .*push-notifications/m);
+  assert.match(admin, /loadPushModule\(\)[\s\S]*Notifications bloquées par le navigateur/);
   assert.match(fs.readFileSync(new URL('../sw.js', import.meta.url), 'utf8'), /addEventListener\('push'/);
   assert.match(fs.readFileSync(new URL('../sw.js', import.meta.url), 'utf8'), /self\.registration\.scope/);
   assert.match(fs.readFileSync(new URL('../js\/admin.mjs', import.meta.url), 'utf8'), /admin-test-notification/);
