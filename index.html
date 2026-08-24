@@ -16,13 +16,13 @@
   <link rel="stylesheet" href="./css/tokens.css?v=20260720-avatars">
   <link rel="stylesheet" href="./css/layout.css?v=20260824-live-history-density">
   <link rel="stylesheet" href="./css/components.css?v=20260823-mobile-design">
-  <link rel="stylesheet" href="./css/home.css?v=20260824-home-world-art-4">
+  <link rel="stylesheet" href="./css/home.css?v=20260824-peak-coop-art">
   <link rel="stylesheet" href="./css/agent-page.css?v=20260720-avatars">
   <link rel="stylesheet" href="./css/responsive.css?v=20260824-live-history-density">
   <link rel="stylesheet" href="./css/lol-mode.css?v=20260824-live-history-density">
   <link rel="stylesheet" href="./css/curse.css?v=20260818-curse-lifecycle">
   <link rel="stylesheet" href="./css/coop-games.css?v=20260823-mobile-sections">
-  <link rel="stylesheet" href="./css/design-system.css?v=20260824-visual-system-2">
+  <link rel="stylesheet" href="./css/design-system.css?v=20260824-ux-polish">
 </head>
 <body>
 
@@ -430,9 +430,9 @@
         </details>
       </div>
       <div class="live-waiting" id="live-waiting">
-        <div style="font-size:40px;margin-bottom:16px">🎮</div>
-        <div style="font-family:Tomorrow,sans-serif;font-size:14px;font-weight:700;letter-spacing:4px;text-transform:uppercase;color:var(--text);margin-bottom:8px">Aucune game en cours</div>
-        <div style="font-size:12px;color:var(--dim);letter-spacing:1px;margin-bottom:24px">Lance le script OLYCITY Live sur ton PC, puis entre dans une partie</div>
+        <span class="live-waiting-icon" aria-hidden="true">🎮</span>
+        <strong id="live-waiting-title">Aucune game en cours</strong>
+        <span id="live-waiting-detail">Le Live apparaîtra automatiquement dès qu’une partie commencera.</span>
       </div>
       <div class="live-content" id="live-content" style="display:none">
         <!-- Map + players -->

@@ -186,6 +186,16 @@ function gameSection(status, sectionGames) {
   </section>`;
 }
 
+function coopStateMarkup(state, title, detail, action = '') {
+  return `<div class="data-state-card is-${state} coop-data-state">
+    <span class="data-state-pulse" aria-hidden="true"></span>
+    <div><strong>${escapeHTML(title)}</strong><small>${escapeHTML(detail)}</small></div>
+    ${state === 'loading'
+      ? '<span class="data-state-lines" aria-hidden="true"><i></i><i></i></span>'
+      : action}
+  </div>`;
+}
+
 function render() {
   const root = document.getElementById('coop-games-grid');
   const identity = document.getElementById('coop-current-profile');
@@ -201,12 +211,21 @@ function render() {
     ? grouped
       ? STATUS_ORDER.map(status => gameSection(status, visible.filter(game => game.status === status))).join('')
       : `<div class="coop-games-grid">${visible.map(gameCard).join('')}</div>`
-    : `<div class="coop-empty"><strong>Aucun jeu ici</strong><span>Change les filtres ou propose le premier.</span></div>`;
+    : coopStateMarkup(
+      'empty',
+      'Aucun jeu ne correspond',
+      'Retire un filtre pour retrouver toute la liste.',
+      '<button type="button" class="btn btn-primary" data-coop-reset>Réinitialiser</button>',
+    );
 }
 
 async function loadGames({ quiet = false } = {}) {
   const root = document.getElementById('coop-games-grid');
-  if (!quiet && root && !games.length) root.innerHTML = '<div class="coop-empty">Chargement de la liste…</div>';
+  if (!quiet && root && !games.length) root.innerHTML = coopStateMarkup(
+    'loading',
+    'Chargement des jeux',
+    'Synchronisation des propositions et des votes du groupe.',
+  );
   try {
     const data = await firebaseRequest('coopGames');
     games = Object.entries(data || {}).map(([id, value]) => normalizeCoopGame(id, value));
@@ -214,7 +233,12 @@ async function loadGames({ quiet = false } = {}) {
     render();
     void loadSteamReviews();
   } catch (error) {
-    if (root) root.innerHTML = `<div class="coop-empty coop-error">Impossible de charger la liste. ${escapeHTML(error.message)}</div>`;
+    if (root) root.innerHTML = coopStateMarkup(
+      'error',
+      'Liste indisponible',
+      'La connexion a été interrompue. Les jeux existants ne sont pas modifiés.',
+      '<button type="button" class="btn btn-primary" data-coop-retry>Réessayer</button>',
+    );
   }
 }
 
@@ -539,6 +563,23 @@ function bindControls() {
     if (event.key === 'Enter') { event.preventDefault(); runCatalogSearch(); }
   });
   document.getElementById('coop-games-grid')?.addEventListener('click', handleCardAction);
+  document.getElementById('coop-games-grid')?.addEventListener('click', event => {
+    if (event.target.closest('[data-coop-retry]')) {
+      loadGames();
+      return;
+    }
+    if (!event.target.closest('[data-coop-reset]')) return;
+    Object.assign(filters, { search:'', players:0, genre:'all', status:'all', sort:'recent' });
+    const search = document.getElementById('coop-search');
+    const players = document.getElementById('coop-players');
+    const genre = document.getElementById('coop-genre');
+    const sort = document.getElementById('coop-sort');
+    if (search) search.value = '';
+    if (players) players.value = '0';
+    if (genre) genre.value = 'all';
+    if (sort) sort.value = 'recent';
+    render();
+  });
   document.addEventListener('click', event => {
     if (event.target.closest('.coop-status-control')) return;
     document.querySelectorAll('.coop-status-menu').forEach(menu => { menu.hidden = true; });

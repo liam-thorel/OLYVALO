@@ -455,6 +455,8 @@ export function initLivePage() {
     const list = document.getElementById('live-client-list');
     const clientDetails = document.getElementById('live-client-details');
     const clientToggleLabel = document.getElementById('live-client-toggle-label');
+    const waitingTitle = document.getElementById('live-waiting-title');
+    const waitingDetail = document.getElementById('live-waiting-detail');
     if (!panel || !label || !detail || !version || !list) return;
 
     ensureRosterCache();
@@ -478,6 +480,10 @@ export function initLivePage() {
         clientDetails.hidden = true;
         clientDetails.open = false;
       }
+      if (waitingTitle) waitingTitle.textContent = loading ? 'Connexion au Live…' : 'Aucun script connecté';
+      if (waitingDetail) waitingDetail.textContent = loading
+        ? 'Vérification des membres connectés.'
+        : 'Lance OLYCITY Live : la prochaine partie apparaîtra ici automatiquement.';
       return;
     }
 
@@ -496,6 +502,10 @@ export function initLivePage() {
     ].filter(Boolean).join(' · ');
     const versions = [...new Set(clients.map(client => client.version).filter(Boolean))];
     version.textContent = versions.length === 1 ? `v${versions[0]}` : `${versions.length} versions`;
+    if (waitingTitle) waitingTitle.textContent = summary.ready
+      ? `${summary.ready} membre${summary.ready > 1 ? 's' : ''} prêt${summary.ready > 1 ? 's' : ''}`
+      : 'Aucune game en cours';
+    if (waitingDetail) waitingDetail.textContent = 'Le Live apparaîtra automatiquement dès qu’une partie commencera.';
 
     const renderClient = (client, compactContext = false) => {
       const profile = profileForEntry(client);

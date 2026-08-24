@@ -152,6 +152,24 @@
 .history-game-main small,.lol-history-meta,.lol-history-duration { color: var(--muted); }
 .live-diagnostic { background: rgba(255,255,255,.025); }
 .data-state-card { background-image: none; }
+.live-waiting { min-height: clamp(280px,48vh,440px); padding: 34px 24px; }
+.live-waiting-icon { margin-bottom: 12px; font-size: 32px; }
+.live-waiting > strong {
+  margin-bottom: 6px; color: var(--text); font-family: 'DM Sans',sans-serif;
+  font-size: 18px; letter-spacing: -.1px;
+}
+.live-waiting > span:last-child { max-width: 480px; color: var(--muted); font-size: 12px; line-height: 1.5; }
+
+/* Data pages: the answer appears before decoration and secondary controls. */
+#page-history > .container { padding-top: 24px !important; }
+.history-page-subtitle { margin-bottom: 15px; }
+.history-view-tabs { margin-bottom: 9px; padding-bottom: 9px; }
+.history-view-tabs .history-filter-button { min-width: 104px; padding: 8px 15px; font-size: 13px; }
+.history-filters { gap: 14px; margin-bottom: 16px; padding: 9px 11px; }
+.history-filter-group { gap: 5px; }
+.history-filter-button { padding: 6px 9px; }
+.history-latest-sections { gap: 22px; }
+.history-section-title { margin-bottom: 9px; padding-bottom: 7px; }
 .lol-roster-card > header { border-bottom-color: rgba(255,255,255,.06); }
 .lol-roster-card > header > div:nth-child(2) > span { color: var(--muted); font-size: 10px; }
 .lol-roster-rank small,.lol-roster-stats small,.lol-roster-mains-title span {
@@ -184,10 +202,15 @@
 
 /* Coop has its own warm accent but follows the same card and type system. */
 .coop-page { background: transparent; }
-.coop-hero { border-bottom-color: var(--border); }
+.coop-hero { align-items: center; padding-block: 18px; border-bottom-color: var(--border); }
+.coop-hero h2 { margin-block: 4px 5px; font-size: clamp(25px,3vw,36px); }
+.coop-hero p { max-width: 680px; line-height: 1.45; }
+.coop-toolbar { padding-block: 12px 9px; }
+.coop-summary { margin: 8px 0 14px; }
 .coop-games-grid { gap: 14px; }
 .coop-game-card { background: var(--surface-soft); }
 .coop-card-body h3 { font-size: 19px; }
+.coop-data-state { width: 100%; }
 .coop-filter-field,.coop-toolbar input,.coop-toolbar select,
 .coop-field input,.coop-field select,.coop-field textarea { background: var(--surface-soft); }
 
@@ -234,8 +257,34 @@
   .comp-card { padding: 16px; }
   .comp-card:hover,.player-card:hover,.lol-roster-card:hover,.coop-game-card:hover { transform: none; box-shadow: none; }
   .history-game-summary,.lol-history-match > summary { min-height: 54px; }
+  #page-history > .container { padding-top: 17px !important; }
+  .history-page-title { font-size: 23px; }
+  .history-page-subtitle { margin-bottom: 12px; font-size: 12px; }
+  .history-view-tabs { margin-bottom: 8px; padding-bottom: 8px; }
+  .history-view-tabs .history-filter-button { min-height: 42px; padding: 8px 12px; }
+  .history-filters { display: grid; gap: 7px; margin-bottom: 13px; padding: 9px; }
+  .history-filter-group { grid-template-columns: 55px minmax(0,1fr); align-items: center; gap: 7px; }
+  .history-filter-group > div { flex-wrap: nowrap; overflow-x: auto; padding-bottom: 2px; scrollbar-width: none; }
+  .history-filter-group > div::-webkit-scrollbar { display: none; }
+  .history-filter-button { flex: 0 0 auto; min-height: 38px; }
+  .history-latest-sections { gap: 18px; }
+  .history-section-title { font-size: 12px; }
+  .live-waiting { min-height: 320px; padding: 28px 18px; }
+  .live-waiting > strong { font-size: 17px; }
   .lol-roster-card > header > div:nth-child(2) > span { font-size: 10px; }
-  .coop-page { padding-inline: 14px; }
+  .coop-page { padding: 14px 14px 42px; }
+  .coop-hero { display: grid; grid-template-columns: minmax(0,1fr) auto; gap: 10px; padding: 8px 0 14px; }
+  .coop-hero > div { min-width: 0; }
+  .coop-hero h2 { margin: 3px 0 0; font-size: 24px; line-height: 1.08; }
+  .coop-hero p { display: none; }
+  .coop-add-btn { width: auto; min-height: 44px; padding-inline: 13px; }
+  .coop-toolbar { display: flex; flex-wrap: wrap; gap: 7px; padding: 10px 0 8px; }
+  .coop-search-field { flex: 1 0 100%; }
+  .coop-filter-field { flex: 1 1 30%; min-width: 96px; }
+  .coop-filter-field:last-child { flex-basis: 100%; }
+  .coop-status-tabs { padding-bottom: 7px; }
+  .coop-status-tabs button { min-height: 40px; padding-inline: 11px; }
+  .coop-summary { margin: 7px 0 11px; }
 }
 
 @media (max-width: 380px) {

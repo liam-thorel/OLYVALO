@@ -63,9 +63,9 @@ test('home is one live priority, three visual worlds and a compact member strip'
   assert.match(main, /import \{ getGameMode, initGameMode, setGameMode \} from '\.\/game-mode\.mjs/);
   assert.match(homeStyles, /valorant-keyart\.webp/);
   assert.match(homeStyles, /league-champions-group\.webp/);
-  assert.match(homeStyles, /coop-classics-collage\.webp/);
-  assert.match(page, /home\.css\?v=20260824-home-world-art-4/);
-  assert.match(page, /design-system\.css\?v=20260824-visual-system-2/);
+  assert.match(homeStyles, /peak-keyart\.webp/);
+  assert.match(page, /home\.css\?v=20260824-peak-coop-art/);
+  assert.match(page, /design-system\.css\?v=20260824-ux-polish/);
   assert.match(page, /id="home-member-faces"/);
   assert.doesNotMatch(page, /Agents prioritaires|id="stier-row"|id="mini-roster"/);
   assert.match(main, /initHomeDashboard\(/);
@@ -133,6 +133,8 @@ test('mobile data pages keep readable spacing, controls and roster details', () 
   assert.match(coopStyles, /\.coop-cover\{aspect-ratio:16\/7\}/);
   assert.match(page, /lol-mode\.css\?v=20260824-live-history-density/);
   assert.match(page, /coop-games\.css\?v=20260823-mobile-sections/);
+  assert.match(designSystem, /\.history-filter-group\s*\{\s*grid-template-columns:\s*55px minmax\(0,1fr\)/);
+  assert.match(designSystem, /\.coop-filter-field:last-child\s*\{\s*flex-basis:\s*100%/);
 });
 
 test('coop games expose explicit categories and cache-safe search modules', () => {
@@ -159,6 +161,15 @@ test('history and admin requests cannot stay pending forever', () => {
   assert.match(historyPager, /timeoutMs:8_000/);
   assert.match(historyPager, /timeoutMs:12_000/);
   assert.match(admin, /fetchJsonWithTimeout\(`\$\{FIREBASE_URL\}\/\$\{path\}\.json`/);
+});
+
+test('Live and Coop explain loading, empty and recovery states', () => {
+  assert.match(page, /id="live-waiting-title"/);
+  assert.match(page, /id="live-waiting-detail"/);
+  assert.match(interactions, /waitingTitle\.textContent = summary\.ready/);
+  assert.match(coopPage, /coopStateMarkup\(/);
+  assert.match(coopPage, /data-coop-retry/);
+  assert.match(coopPage, /data-coop-reset/);
 });
 
 test('history prioritizes recent matches and reveals secondary data progressively', () => {
