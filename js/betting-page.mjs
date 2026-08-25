@@ -4,16 +4,38 @@
  * (voir discord-bot/). Lecture seule — les paris se placent depuis Discord.
  */
 
+import { mergeFirebaseEvent } from './lol-utils.mjs?v=20260810-firebase-connection-fix';
+import { fetchJsonWithRetry } from './request-utils.mjs?v=20260825-first-load-recovery';
+
 const FIREBASE_URL = 'https://realtime-database-5bb9f-default-rtdb.europe-west1.firebasedatabase.app';
+const BETTING_CACHE_KEY = 'olycity-betting-wallets-cache-v1';
+let walletsState = {};
+let initialized = false;
+let stream = null;
+let loadSequence = 0;
+let realtimeRevision = 0;
 
 function escapeHTML(value) {
   return String(value ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 }
 
 async function fbGet(path) {
-  const res = await fetch(`${FIREBASE_URL}/${path}.json`);
-  if (!res.ok) throw new Error(`Firebase GET ${path} — ${res.status}`);
-  return res.json();
+  return fetchJsonWithRetry(`${FIREBASE_URL}/${path}.json`, {
+    timeoutMs:8_000,
+    init:{ cache:'no-store' },
+  });
+}
+
+function readCache() {
+  try {
+    const cached = JSON.parse(localStorage.getItem(BETTING_CACHE_KEY) || 'null');
+    return cached?.wallets && typeof cached.wallets === 'object' ? cached : null;
+  } catch { return null; }
+}
+
+function writeCache() {
+  try { localStorage.setItem(BETTING_CACHE_KEY, JSON.stringify({ savedAt:Date.now(), wallets:walletsState })); }
+  catch { /* Le stockage local peut être indisponible. */ }
 }
 
 function renderLeaderboard(title, rows, emptyText) {
@@ -28,14 +50,10 @@ function renderLeaderboard(title, rows, emptyText) {
   return `<div class="betting-board"><h3>${title}</h3>${items}</div>`;
 }
 
-async function loadAndRender() {
+function renderWallets({ offline = false } = {}) {
   const root = document.getElementById('betting-content');
   if (!root) return;
-  root.innerHTML = '<p class="betting-dim">Chargement…</p>';
-
-  try {
-    const wallets = await fbGet('betting/wallets');
-    const entries = Object.values(wallets || {});
+  const entries = Object.values(walletsState || {});
 
     const overall = entries
       .filter(w => (w.balance || 0) > 0)
@@ -56,8 +74,9 @@ async function loadAndRender() {
       .slice(0, 5)
       .map(w => ({ name: w.username || '???', value: `🔥 ${w.bestStreak}` }));
 
-    root.innerHTML = `
+  root.innerHTML = `
       <div class="betting-wrap">
+        ${offline ? '<div class="betting-sync-note" role="status"><strong>Copie enregistrée</strong><span>La synchronisation reprendra automatiquement.</span></div>' : ''}
         <p class="betting-intro">
           Chaque membre du serveur Discord gagne 500 points par jour et peut parier sur les games
           Valorant/LoL du roster OLYCITY suivies par le bot (<code>/bet</code> ou les boutons sur la
@@ -69,9 +88,56 @@ async function loadAndRender() {
           ${renderLeaderboard('🔥 Meilleures séries', bestStreak, 'Aucune série gagnante enregistrée.')}
         </div>
       </div>`;
+}
+
+async function loadAndRender({ quiet = false } = {}) {
+  const root = document.getElementById('betting-content');
+  if (!root) return;
+  const sequence = ++loadSequence;
+  const revision = realtimeRevision;
+  if (!quiet && !Object.keys(walletsState).length) root.innerHTML = '<p class="betting-dim">Chargement…</p>';
+
+  try {
+    const wallets = await fbGet('betting/wallets');
+    if (sequence !== loadSequence || revision !== realtimeRevision) return;
+    walletsState = wallets || {};
+    writeCache();
+    renderWallets();
   } catch (error) {
-    root.innerHTML = `<p class="betting-dim">Erreur de chargement : ${escapeHTML(error.message)}</p>`;
+    if (Object.keys(walletsState).length) {
+      renderWallets({ offline:true });
+      return;
+    }
+    if (root) root.innerHTML = `<div class="betting-load-error"><strong>Classements indisponibles</strong><span>La connexion a été interrompue.</span><button type="button" data-betting-retry>Réessayer</button></div>`;
   }
+}
+
+function applyRealtimeWallets(event) {
+  try {
+    realtimeRevision += 1;
+    loadSequence += 1;
+    walletsState = mergeFirebaseEvent(walletsState, JSON.parse(event.data));
+    writeCache();
+    renderWallets();
+  } catch (error) {
+    console.warn('[OLYCITY] Mise à jour Paris illisible', error);
+  }
+}
+
+function startRealtime() {
+  if (stream || typeof EventSource === 'undefined') return;
+  stream = new EventSource(`${FIREBASE_URL}/betting/wallets.json`);
+  stream.addEventListener('put', applyRealtimeWallets);
+  stream.addEventListener('patch', applyRealtimeWallets);
+  stream.addEventListener('error', () => {
+    if (Object.keys(walletsState).length) renderWallets({ offline:true });
+  });
+}
+
+function restartRealtime() {
+  stream?.close();
+  stream = null;
+  startRealtime();
 }
 
 let stylesInjected = false;
@@ -85,7 +151,24 @@ function injectStylesOnce() {
 
 export async function initBettingPage() {
   injectStylesOnce();
-  await loadAndRender();
+  if (!initialized) {
+    initialized = true;
+    const cached = readCache();
+    if (cached) {
+      walletsState = cached.wallets;
+      renderWallets({ offline:true });
+    }
+    document.getElementById('betting-content')?.addEventListener('click', event => {
+      if (event.target.closest('[data-betting-retry]')) {
+        restartRealtime();
+        void loadAndRender();
+      }
+    });
+    startRealtime();
+  } else if (Object.keys(walletsState).length) {
+    renderWallets();
+  }
+  await loadAndRender({ quiet:Object.keys(walletsState).length > 0 });
 }
 
 const BETTING_CSS = `
@@ -101,4 +184,9 @@ const BETTING_CSS = `
 .betting-name{flex:1;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .betting-value{color:var(--S,#3fcfcf);font-weight:700;font-size:13px}
 .betting-empty,.betting-dim{color:rgba(232,232,236,.5);font-size:13px}
+.betting-sync-note,.betting-load-error{display:flex;align-items:center;gap:10px;margin:0 0 16px;padding:12px 14px;border:1px solid rgba(255,255,255,.1);border-radius:8px;color:rgba(232,232,236,.72);font-size:12px}
+.betting-sync-note strong,.betting-load-error strong{color:#f1f1f4}
+.betting-sync-note span,.betting-load-error span{flex:1}
+.betting-load-error{flex-wrap:wrap}
+.betting-load-error button{margin-left:auto;padding:8px 12px;border:1px solid var(--S,#3fcfcf);background:transparent;color:var(--S,#3fcfcf);cursor:pointer}
 `;

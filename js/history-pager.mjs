@@ -1,4 +1,4 @@
-import { fetchJsonWithTimeout } from './request-utils.mjs?v=20260809-route-load-stable';
+import { fetchJsonWithRetry } from './request-utils.mjs?v=20260825-first-load-recovery';
 
 export function historyIndexTimestamp(value = {}) {
   const reports = value?.reports && typeof value.reports === 'object' ? Object.values(value.reports) : [];
@@ -22,7 +22,7 @@ export function createHistoryPager({
   dataPath,
   pageSize = 30,
   cacheMs = 60_000,
-  fetchJson = fetchJsonWithTimeout,
+  fetchJson = fetchJsonWithRetry,
 } = {}) {
   let index = [];
   let indexedAt = 0;

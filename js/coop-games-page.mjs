@@ -9,6 +9,8 @@ import {
   steamCover,
 } from './coop-games-utils.mjs?v=20260823-coop-steam-reviews';
 import { fetchSteamReviewSummaries, searchGameCatalog } from './coop-game-catalog.mjs?v=20260823-coop-steam-reviews';
+import { mergeFirebaseEvent } from './lol-utils.mjs?v=20260810-firebase-connection-fix';
+import { fetchJsonWithRetry } from './request-utils.mjs?v=20260825-first-load-recovery';
 
 const FIREBASE_ROOT = 'https://realtime-database-5bb9f-default-rtdb.europe-west1.firebasedatabase.app';
 const COOP_GAMES_CACHE_KEY = 'olycity-coop-games-cache-v1';
@@ -23,10 +25,13 @@ const STATUS_LABELS = Object.fromEntries(Object.entries(STATUS_META).map(([key, 
 const STATUS_ORDER = ['open', 'planned', 'replay', 'played'];
 
 let games = [];
+let rawGames = {};
 let roster = [];
 let initialized = false;
 let stream = null;
 let reloadTimer = null;
+let loadSequence = 0;
+let realtimeRevision = 0;
 let catalogSearchTimer = null;
 let catalogSearchSequence = 0;
 let catalogAbortController = null;
@@ -76,6 +81,14 @@ function safeHttpsUrl(value, allowedHosts = null) {
 
 async function firebaseRequest(path, options = {}) {
   const { timeoutMs = 8_000, signal, ...fetchOptions } = options;
+  const method = String(fetchOptions.method || 'GET').toUpperCase();
+  if (method === 'GET') {
+    return fetchJsonWithRetry(`${FIREBASE_ROOT}/${path}.json`, {
+      timeoutMs,
+      signal,
+      init:{ ...fetchOptions, cache:'no-store', headers:{ 'Content-Type':'application/json', ...(fetchOptions.headers || {}) } },
+    });
+  }
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), timeoutMs);
   try {
@@ -252,6 +265,8 @@ function render() {
 }
 
 async function loadGames({ quiet = false } = {}) {
+  const sequence = ++loadSequence;
+  const revision = realtimeRevision;
   const root = document.getElementById('coop-games-grid');
   if (!quiet && root && !games.length) root.innerHTML = coopStateMarkup(
     'loading',
@@ -260,7 +275,9 @@ async function loadGames({ quiet = false } = {}) {
   );
   try {
     const data = await firebaseRequest('coopGames');
-    games = Object.entries(data || {}).map(([id, value]) => normalizeCoopGame(id, value));
+    if (sequence !== loadSequence || revision !== realtimeRevision) return;
+    rawGames = data || {};
+    games = Object.entries(rawGames).map(([id, value]) => normalizeCoopGame(id, value));
     syncNotice = null;
     writeGamesCache();
     syncGenreOptions();
@@ -306,11 +323,41 @@ function scheduleReload() {
   reloadTimer = setTimeout(() => loadGames({ quiet: true }), 120);
 }
 
+function applyRealtimeGames(event) {
+  try {
+    const update = JSON.parse(event.data);
+    realtimeRevision += 1;
+    loadSequence += 1;
+    rawGames = mergeFirebaseEvent(rawGames, update);
+    games = Object.entries(rawGames || {}).map(([id, value]) => normalizeCoopGame(id, value));
+    syncNotice = null;
+    writeGamesCache();
+    syncGenreOptions();
+    render();
+    void loadSteamReviews();
+  } catch (error) {
+    console.warn('[OLYCITY] Mise à jour Jeux illisible', error);
+    scheduleReload();
+  }
+}
+
 function startRealtime() {
   if (stream || typeof EventSource === 'undefined') return;
   stream = new EventSource(`${FIREBASE_ROOT}/coopGames.json`);
-  stream.addEventListener('put', scheduleReload);
-  stream.addEventListener('patch', scheduleReload);
+  stream.addEventListener('put', applyRealtimeGames);
+  stream.addEventListener('patch', applyRealtimeGames);
+  stream.addEventListener('error', () => {
+    if (games.length) {
+      syncNotice = { state:'offline' };
+      render();
+    }
+  });
+}
+
+function restartRealtime() {
+  stream?.close();
+  stream = null;
+  startRealtime();
 }
 
 function openForm() {
@@ -604,6 +651,7 @@ function bindControls() {
   document.getElementById('coop-games-grid')?.addEventListener('click', handleCardAction);
   document.getElementById('coop-games-grid')?.addEventListener('click', event => {
     if (event.target.closest('[data-coop-retry]')) {
+      restartRealtime();
       loadGames();
       return;
     }
@@ -639,6 +687,7 @@ export function initCoopGamesPage(nextRoster = []) {
     const cached = readGamesCache();
     if (cached?.games.length) {
       games = cached.games;
+      rawGames = Object.fromEntries(games.map(game => [game.id, game]));
       syncNotice = { state:'syncing', savedAt:cached.savedAt };
     }
     bindControls();

@@ -1,6 +1,6 @@
 import { groupLolSessions, lolKda, normalizeLolHistory, summarizeLolDays } from './lol-utils.mjs?v=20260810-firebase-connection-fix';
 import { liveDataStore } from './live-data-store.mjs?v=20260810-firebase-connection-fix';
-import { createHistoryPager } from './history-pager.mjs?v=20260824-mobile-history-cache';
+import { createHistoryPager } from './history-pager.mjs?v=20260825-first-load-recovery';
 
 const FIREBASE_URL = 'https://realtime-database-5bb9f-default-rtdb.europe-west1.firebasedatabase.app';
 const LOL_HISTORY_CACHE_KEY = 'olycity-lol-history-cache-v1';

@@ -22,7 +22,7 @@ import { filterHistoryGames, historyDailyPerformances, historyGameForOwner, hist
 import { initCurse } from './curse.mjs?v=20260818-curse-lifecycle';
 import { fetchJsonWithTimeout } from './request-utils.mjs?v=20260809-route-load-stable';
 import { liveDataStore, liveTimestamp } from './live-data-store.mjs?v=20260810-firebase-connection-fix';
-import { createHistoryPager } from './history-pager.mjs?v=20260824-all-history-cache';
+import { createHistoryPager } from './history-pager.mjs?v=20260825-first-load-recovery';
 
 const VALORANT_HISTORY_CACHE_KEY = 'olycity-valorant-history-cache-v1';
 let historyLoadSequence = 0;
