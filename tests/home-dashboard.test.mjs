@@ -26,3 +26,12 @@ test('home dashboard falls back from League live to online members then coop', (
   assert.equal(empty.title, 'On joue à quoi ?');
   assert.equal(empty.page, 'games');
 });
+
+test('home dashboard asks the selected member to answer the next group night', () => {
+  const model = homeDashboardState({}, now, {
+    plan:{ gameTitle:'PEAK', options:[{ id:'one' }, { id:'two' }], games:[{ id:'peak' }] }, needsResponse:true,
+  });
+  assert.equal(model.state, 'night');
+  assert.equal(model.title, 'Tu es disponible quand ?');
+  assert.equal(model.actionType, 'group-night');
+});

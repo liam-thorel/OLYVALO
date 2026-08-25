@@ -28,6 +28,8 @@
 }
 .startup-screen.is-dismissed { opacity: 0; visibility: hidden; pointer-events: none; }
 .startup-screen > strong { color: #fff; font: 700 clamp(32px,6vw,42px) 'Tomorrow',sans-serif; letter-spacing: 5px; }
+.app-status-banner{position:fixed;z-index:1500;right:18px;bottom:18px;display:grid;grid-template-columns:9px minmax(0,1fr) auto auto;align-items:center;gap:10px;width:min(440px,calc(100vw - 36px));box-sizing:border-box;padding:12px 13px;border:1px solid rgba(244,202,82,.3);border-radius:8px;background:rgba(15,17,23,.96);box-shadow:0 18px 50px rgba(0,0,0,.42);backdrop-filter:blur(14px)}
+.app-status-banner[hidden]{display:none}.app-status-dot{width:8px;height:8px;border-radius:50%;background:#f4ca52;box-shadow:0 0 12px rgba(244,202,82,.55)}.app-status-banner>span:nth-child(2){display:grid;gap:2px;min-width:0}.app-status-banner strong{color:var(--text);font:700 12px 'DM Sans',sans-serif}.app-status-banner small{overflow:hidden;color:var(--muted);font-size:10px;text-overflow:ellipsis;white-space:nowrap}.app-status-banner button{min-height:36px;border:1px solid var(--border2);border-radius:4px;background:rgba(255,255,255,.04);padding:0 11px;color:var(--text);font:650 11px 'DM Sans',sans-serif;cursor:pointer}.app-status-banner #app-status-close{min-width:36px;padding:0;color:var(--muted);font-size:18px}.app-status-banner[data-state="online"]{border-color:rgba(75,208,123,.3)}.app-status-banner[data-state="online"] .app-status-dot{background:#4bd07b;box-shadow:0 0 12px rgba(75,208,123,.5)}.app-status-banner[data-state="update"]{border-color:rgba(168,127,255,.38)}.app-status-banner[data-state="update"] .app-status-dot{background:#a87fff;box-shadow:0 0 12px rgba(168,127,255,.55)}
 .startup-screen > small { color: #747b90; font: 600 11px 'DM Sans',sans-serif; }
 .startup-progress { position: relative; width: 180px; height: 2px; overflow: hidden; background: rgba(255,255,255,.1); }
 .startup-progress > i { position: absolute; top: 0; left: -100%; width: 100%; height: 100%; background: linear-gradient(90deg,transparent,var(--red),transparent); animation: loadingScan 1s ease-in-out infinite; }
@@ -352,4 +354,26 @@
   .home-world[data-home-world="valorant"] { min-height: 237px; }
   .home-world-grid { grid-template-columns: minmax(0,1.05fr) minmax(0,.95fr); }
   .home-world-copy small { display: none; }
+}
+
+/* Keyboard, touch and motion are first-class inputs across every page. */
+:where(a,button,input,select,textarea,summary,[tabindex]):focus-visible {
+  outline: 2px solid color-mix(in srgb,var(--accent,#ff4656) 82%,white);
+  outline-offset: 3px;
+}
+
+@media (any-pointer: coarse) {
+  :where(button,.btn,.page-nav-btn,.mobile-nav-more-btn,.game-switch button,summary) { touch-action: manipulation; }
+  :where(.page-nav-btn,.mobile-nav-more-sheet>button,.home-now-action,.home-sheet-primary,.home-sheet-secondary) { min-height: 48px; }
+}
+
+@media (max-width: 768px) {
+  .app-status-banner { right:10px;bottom:76px;width:calc(100vw - 20px);grid-template-columns:9px minmax(0,1fr) auto;padding:11px; }
+  .app-status-banner #app-status-close { position:absolute;right:3px;top:-40px;background:rgba(15,17,23,.96); }
+  .app-status-banner small { white-space:normal; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior:auto!important; }
+  *,*::before,*::after { animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important;scroll-behavior:auto!important; }
 }

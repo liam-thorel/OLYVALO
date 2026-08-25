@@ -1,4 +1,22 @@
 let installPrompt = null;
+let waitingWorker = null;
+
+function showAppStatus({ title, detail, action = '', state = 'offline' }) {
+  const banner = document.getElementById('app-status-banner');
+  if (!banner) return;
+  banner.dataset.state = state;
+  document.getElementById('app-status-title').textContent = title;
+  document.getElementById('app-status-detail').textContent = detail;
+  const button = document.getElementById('app-status-action');
+  button.textContent = action;
+  button.hidden = !action;
+  banner.hidden = false;
+}
+
+function hideAppStatus() {
+  const banner = document.getElementById('app-status-banner');
+  if (banner) banner.hidden = true;
+}
 
 function isStandalone() {
   return window.matchMedia?.('(display-mode: standalone)').matches || window.navigator.standalone === true;
@@ -80,6 +98,22 @@ async function registerServiceWorker() {
       window.location.reload();
     }, { once:true });
     const registration = await navigator.serviceWorker.register('./sw.js', { scope:'./', updateViaCache:'none' });
+    const announceUpdate = worker => {
+      if (!worker || !navigator.serviceWorker.controller) return;
+      waitingWorker = worker;
+      showAppStatus({
+        title:'Nouvelle version disponible',
+        detail:'La mise à jour est prête sans interrompre ce que tu regardes.',
+        action:'Mettre à jour', state:'update',
+      });
+    };
+    announceUpdate(registration.waiting);
+    registration.addEventListener('updatefound', () => {
+      const worker = registration.installing;
+      worker?.addEventListener('statechange', () => {
+        if (worker.state === 'installed') announceUpdate(worker);
+      });
+    });
     registration.update().catch(() => {});
   } catch (error) {
     console.warn('[OLYCITY] Installation hors ligne indisponible', error);
@@ -87,6 +121,21 @@ async function registerServiceWorker() {
 }
 
 export function initPwaInstall() {
+  document.getElementById('app-status-action')?.addEventListener('click', () => {
+    if (waitingWorker) waitingWorker.postMessage({ type:'SKIP_WAITING' });
+    else window.location.reload();
+  });
+  document.getElementById('app-status-close')?.addEventListener('click', hideAppStatus);
+  window.addEventListener('offline', () => showAppStatus({
+    title:'Mode hors connexion', detail:'La dernière copie disponible reste accessible.', state:'offline',
+  }));
+  window.addEventListener('online', () => {
+    showAppStatus({ title:'Connexion rétablie', detail:'Les données se synchronisent en arrière-plan.', state:'online' });
+    window.setTimeout(() => { if (!waitingWorker) hideAppStatus(); }, 2600);
+  });
+  if (!navigator.onLine) showAppStatus({
+    title:'Mode hors connexion', detail:'La dernière copie disponible reste accessible.', state:'offline',
+  });
   document.getElementById('home-app-launcher')?.addEventListener('click', () => {
     const modal = document.getElementById('home-app-modal');
     if (modal) modal.hidden = false;

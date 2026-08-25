@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { lolRank, rankPromotion, valorantRank } from '../js/rank-promotion.mjs';
-import { dueReminderMinutes, notificationMessage, reminderDue } from '../workers/notifications/rules.mjs';
+import { dueReminderMinutes, notificationMessage, reminderDue, selectedGroupNight } from '../workers/notifications/rules.mjs';
 
 test('Valorant notifies only a real upward rank tier change', () => {
   assert.equal(valorantRank(9).name, 'Silver');
@@ -50,4 +50,16 @@ test('session reminders open once around T minus 30 and T minus 15', () => {
   assert.match(reminder30.body, /PEAK dans 30 minutes/);
   assert.equal(reminder15.title, 'OLYCITY');
   assert.match(reminder15.body, /PEAK dans 15 minutes/);
+});
+
+test('session reminders follow the final slot and game selected by the group', () => {
+  const startsAt = Date.UTC(2026, 7, 24, 20, 0);
+  const selected = selectedGroupNight({
+    options:{ early:{ id:'early', startsAt:startsAt - 3_600_000, time:'19:00' }, late:{ id:'late', startsAt, time:'20:00' } },
+    games:{ a:{ id:'a', title:'PEAK' }, b:{ id:'b', title:'Lethal Company' } },
+    final:{ optionId:'late', gameId:'b' },
+  });
+  assert.equal(selected.startsAt, startsAt);
+  assert.equal(selected.gameTitle, 'Lethal Company');
+  assert.deepEqual(dueReminderMinutes(selected, startsAt - 30 * 60_000), [30]);
 });

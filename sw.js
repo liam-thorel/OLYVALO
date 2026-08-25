@@ -1,16 +1,39 @@
-const CACHE_NAME = 'olycity-shell-20260824-refresh-recovery';
+const CACHE_NAME = 'olycity-runtime-20260825-offline-first';
+const SHELL_URLS = ['./', './index.html', './manifest.webmanifest'];
 
 self.addEventListener('install', event => {
-  event.waitUntil(self.skipWaiting());
+  event.waitUntil(caches.open(CACHE_NAME).then(cache => cache.addAll(SHELL_URLS)));
 });
 
 self.addEventListener('activate', event => {
   event.waitUntil(caches.keys().then(keys => Promise.all(keys.filter(key => key !== CACHE_NAME).map(key => caches.delete(key)))).then(() => self.clients.claim()));
 });
 
-// The worker is intentionally notification-only. Let the browser load every
-// page, module and JSON file directly: intercepting them made some Chromium
-// sessions keep an incomplete application shell after a normal refresh.
+self.addEventListener('message', event => {
+  if (event.data?.type === 'SKIP_WAITING') self.skipWaiting();
+});
+
+async function networkFirst(request) {
+  const cache = await caches.open(CACHE_NAME);
+  try {
+    const response = await fetch(request);
+    if (response.ok && response.type === 'basic') await cache.put(request, response.clone());
+    return response;
+  } catch (error) {
+    const cached = await cache.match(request, { ignoreSearch:false })
+      || (request.mode === 'navigate' ? await cache.match('./index.html') : null);
+    if (cached) return cached;
+    throw error;
+  }
+}
+
+self.addEventListener('fetch', event => {
+  const request = event.request;
+  if (request.method !== 'GET') return;
+  const url = new URL(request.url);
+  if (url.origin !== self.location.origin) return;
+  event.respondWith(networkFirst(request));
+});
 
 self.addEventListener('push', event => {
   let payload = {};

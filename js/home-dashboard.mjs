@@ -21,7 +21,7 @@ function onlineMemberIds(snapshot, now = Date.now()) {
   return new Set([...valorant, ...league].map(client => String(client.memberId || '').toLowerCase()).filter(Boolean));
 }
 
-export function homeDashboardState(snapshot = {}, now = Date.now()) {
+export function homeDashboardState(snapshot = {}, now = Date.now(), context = {}) {
   const valorantSessions = activeValorantSessions(snapshot.valorantSessions, now);
   const leagueSessions = activeLolSessions(snapshot.lolSessions, now);
   const onlineIds = onlineMemberIds(snapshot, now);
@@ -39,6 +39,16 @@ export function homeDashboardState(snapshot = {}, now = Date.now()) {
     return {
       state:'lol', kicker:'Live · League of Legends', title:'Partie en cours',
       detail:`${players} membre${players > 1 ? 's' : ''} sur la Faille`, action:'Voir le Live', page:'live', onlineIds,
+    };
+  }
+  if (context.plan) {
+    const optionCount = context.plan.options?.length || 1;
+    const gameCount = context.plan.games?.length || (context.plan.gameId ? 1 : 0);
+    return {
+      state:'night', kicker:context.needsResponse ? 'Ta réponse est attendue' : context.plan.final ? 'Soirée validée' : 'Prochaine soirée',
+      title:context.plan.final ? context.plan.gameTitle : context.needsResponse ? 'Tu es disponible quand ?' : context.plan.gameTitle,
+      detail:`${optionCount} créneau${optionCount > 1 ? 'x' : ''}${gameCount ? ` · ${gameCount} jeu${gameCount > 1 ? 'x' : ''}` : ''}`,
+      action:context.needsResponse ? 'Donner mon avis' : 'Voir la soirée', page:'home', actionType:'group-night', onlineIds,
     };
   }
   if (onlineIds.size) return {
@@ -59,7 +69,7 @@ function memberFaces(members, onlineIds) {
     </span>`).join('');
 }
 
-function renderSnapshot(snapshot, members) {
+function renderSnapshot(snapshot, members, context = {}) {
   const card = document.getElementById('home-now-card');
   const kicker = document.getElementById('home-now-kicker');
   const title = document.getElementById('home-now-title');
@@ -69,7 +79,7 @@ function renderSnapshot(snapshot, members) {
   const onlineLabel = document.getElementById('home-online-label');
   if (!card || !kicker || !title || !detail || !action || !faces || !onlineLabel) return;
 
-  const model = homeDashboardState(snapshot);
+  const model = homeDashboardState(snapshot, Date.now(), context);
   faces.innerHTML = memberFaces(members, model.onlineIds);
   onlineLabel.textContent = `${model.onlineIds.size} en ligne`;
   card.dataset.state = model.state;
@@ -77,10 +87,13 @@ function renderSnapshot(snapshot, members) {
   title.textContent = model.title;
   detail.textContent = model.detail;
   action.textContent = model.action;
-  card.onclick = () => window.OLYCITY?.nav(model.page);
+  card.onclick = () => model.actionType === 'group-night'
+    ? document.getElementById('home-tonight-open')?.click()
+    : window.OLYCITY?.nav(model.page);
 }
 
 export function initHomeDashboard({ members = [], navigate, openUniverse } = {}) {
+  let context = {};
   const worldButtons = [...document.querySelectorAll('[data-home-world][data-home-page]')];
   const handleWorldClick = event => {
     const { homeWorld, homePage } = event.currentTarget.dataset;
@@ -88,11 +101,14 @@ export function initHomeDashboard({ members = [], navigate, openUniverse } = {})
     else (openUniverse || window.OLYCITY?.openUniverse?.bind(window.OLYCITY))?.(homeWorld, homePage);
   };
   worldButtons.forEach(button => button.addEventListener('click', handleWorldClick));
-  const render = snapshot => renderSnapshot(snapshot, members);
+  const render = snapshot => renderSnapshot(snapshot, members, context);
+  const handlePlan = event => { context = event.detail || {}; render(liveDataStore.snapshot()); };
+  window.addEventListener('olycity:group-plan', handlePlan);
   const unsubscribe = liveDataStore.subscribe(render);
   const timer = window.setInterval(() => render(liveDataStore.snapshot()), 10_000);
   return () => {
     worldButtons.forEach(button => button.removeEventListener('click', handleWorldClick));
+    window.removeEventListener('olycity:group-plan', handlePlan);
     unsubscribe();
     window.clearInterval(timer);
   };

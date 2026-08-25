@@ -1,21 +1,29 @@
-import { fetchJsonWithTimeout } from './request-utils.mjs?v=20260809-route-load-stable';
-import { buildHomeActivity, groupNightCalendar, groupNightDateLabel, localDateKey, normalizeGroupNight, relativeActivityTime, responseCounts } from './home-group-utils.mjs?v=20260824-session-planner';
+import { fetchJsonWithRetry } from './request-utils.mjs?v=20260825-first-load-recovery';
+import { buildHomeActivity, groupNightCalendar, groupNightDateLabel, groupNightNeedsResponse, groupNightVoteSummary, localDateKey, normalizeGroupNight, relativeActivityTime, responseCounts } from './home-group-utils.mjs?v=20260825-group-night-v2';
 
 const FIREBASE_ROOT = 'https://realtime-database-5bb9f-default-rtdb.europe-west1.firebasedatabase.app';
 const LAST_SEEN_KEY = 'olycity-home-activity-seen';
 const GAMES_CACHE_KEY = 'olycity-home-coop-games';
+const PLAN_CACHE_KEY = 'olycity-home-group-night-v2';
 const RESPONSE_LABELS = { yes:'présent', maybe:'peut-être', no:'absent' };
 
 let members = [];
 let plan = null;
 let games = [];
-let pendingResponse = '';
+let pendingAvailability = {};
+let pendingGameVotes = new Set();
 let stream = null;
 let reloadTimer = null;
+let coopCarouselTimer = null;
 
 function cachedGames() {
   try { return JSON.parse(localStorage.getItem(GAMES_CACHE_KEY) || '{}') || {}; }
   catch { return {}; }
+}
+
+function cachedPlan() {
+  try { return JSON.parse(localStorage.getItem(PLAN_CACHE_KEY) || 'null'); }
+  catch { return null; }
 }
 
 const escapeHTML = value => String(value ?? '')
@@ -56,6 +64,32 @@ function renderAttendees() {
     : '<span class="home-activity-empty">Personne n’a encore répondu.</span>';
 }
 
+function startCoopCarousel() {
+  clearInterval(coopCarouselTimer);
+  const tile = document.querySelector('.home-world[data-home-world="coop"]');
+  const label = tile?.querySelector('.home-world-copy small');
+  if (!tile || !label) return;
+  const slides = games.filter(game => safeAvatar(game.coverUrl || '')).slice(0, 8);
+  if (!slides.length) return;
+  let index = 0;
+  const show = () => {
+    const game = slides[index % slides.length];
+    tile.classList.remove('is-slide-ready');
+    const image = new Image();
+    image.onload = () => {
+      tile.style.setProperty('--home-world-image', `url("${String(game.coverUrl).replaceAll('"', '%22')}")`);
+      label.textContent = `Dans la liste · ${game.title || 'Coop'}`;
+      tile.classList.add('is-slide-ready');
+    };
+    image.src = game.coverUrl;
+    index += 1;
+  };
+  show();
+  if (!window.matchMedia?.('(prefers-reduced-motion: reduce)').matches && slides.length > 1) {
+    coopCarouselTimer = window.setInterval(show, 6_500);
+  }
+}
+
 function renderPlan() {
   const root = document.getElementById('home-tonight-content');
   const open = document.getElementById('home-tonight-open');
@@ -63,12 +97,17 @@ function renderPlan() {
   if (!plan) {
     open.textContent = 'Organiser';
     root.innerHTML = '<div><strong id="home-tonight-title">On se retrouve quand ?</strong><small>Choisis une heure et un jeu avec le groupe.</small></div>';
+    window.dispatchEvent(new CustomEvent('olycity:group-plan', { detail:{ plan:null, needsResponse:false } }));
     return;
   }
   const counts = responseCounts(plan);
   const people = Object.values(plan.responses || {}).filter(item => item.status !== 'no');
   open.textContent = 'Voir / répondre';
   root.innerHTML = `<div><strong id="home-tonight-title">${escapeHTML(plan.gameTitle)}</strong><small>${escapeHTML(groupNightDateLabel(plan))} · ${counts.yes} présent${counts.yes > 1 ? 's' : ''}${counts.maybe ? ` · ${counts.maybe} peut-être` : ''}</small><span class="home-tonight-people">${people.map(item => personAvatar(item, item.status)).join('')}${people.length ? '' : '<span class="home-activity-empty">En attente des réponses</span>'}</span></div><div class="home-tonight-schedule"><time class="home-tonight-time" datetime="${escapeHTML(`${plan.date}T${plan.time}`)}">${escapeHTML(plan.time)}</time><span>Rappels −30 · −15 min</span></div>`;
+  const current = profile();
+  window.dispatchEvent(new CustomEvent('olycity:group-plan', { detail:{
+    plan, needsResponse:groupNightNeedsResponse(plan, current?.id || current?.name || ''),
+  } }));
 }
 
 function renderActivity(events = []) {
@@ -105,12 +144,14 @@ async function firebaseWrite(path, method, body) {
 async function loadHomeGroup() {
   const historyQuery = '?orderBy=%22%24key%22&limitToLast=6';
   const [nightResult, gamesResult, valorantResult, lolResult] = await Promise.allSettled([
-    fetchJsonWithTimeout(`${FIREBASE_ROOT}/groupNight/current.json`, { timeoutMs:3_500 }),
-    fetchJsonWithTimeout(`${FIREBASE_ROOT}/coopGames.json`, { timeoutMs:3_500 }),
-    fetchJsonWithTimeout(`${FIREBASE_ROOT}/historyIndex/valorant.json${historyQuery}`, { timeoutMs:3_500 }),
-    fetchJsonWithTimeout(`${FIREBASE_ROOT}/live/lolHistory.json${historyQuery}`, { timeoutMs:3_500 }),
+    fetchJsonWithRetry(`${FIREBASE_ROOT}/groupNight/current.json`, { timeoutMs:3_500 }),
+    fetchJsonWithRetry(`${FIREBASE_ROOT}/coopGames.json`, { timeoutMs:3_500 }),
+    fetchJsonWithRetry(`${FIREBASE_ROOT}/historyIndex/valorant.json${historyQuery}`, { timeoutMs:3_500 }),
+    fetchJsonWithRetry(`${FIREBASE_ROOT}/live/lolHistory.json${historyQuery}`, { timeoutMs:3_500 }),
   ]);
-  plan = normalizeGroupNight(nightResult.status === 'fulfilled' ? nightResult.value : null);
+  const rawPlan = nightResult.status === 'fulfilled' ? nightResult.value : cachedPlan();
+  plan = normalizeGroupNight(rawPlan);
+  if (nightResult.status === 'fulfilled') localStorage.setItem(PLAN_CACHE_KEY, JSON.stringify(nightResult.value || null));
   const fetchedGames = gamesResult.status === 'fulfilled' ? gamesResult.value || {} : {};
   const rawGames = Object.keys(fetchedGames).length ? fetchedGames : cachedGames();
   if (Object.keys(fetchedGames).length) localStorage.setItem(GAMES_CACHE_KEY, JSON.stringify(fetchedGames));
@@ -121,6 +162,7 @@ async function loadHomeGroup() {
         || Object.keys(b.interests || {}).length - Object.keys(a.interests || {}).length
         || Number(b.submittedAt || 0) - Number(a.submittedAt || 0);
     });
+  startCoopCarousel();
   renderPlan();
   const lastSeen = Number(localStorage.getItem(LAST_SEEN_KEY)) || 0;
   renderActivity(buildHomeActivity({
@@ -135,28 +177,47 @@ async function loadHomeGroup() {
 }
 
 function syncForm() {
-  const date = document.getElementById('home-tonight-date');
-  const time = document.getElementById('home-tonight-time');
-  const select = document.getElementById('home-tonight-game');
-  if (date) {
-    const today = localDateKey();
-    const max = localDateKey(new Date(Date.now() + 30 * 86_400_000));
-    date.min = today;
-    date.max = max;
-    date.value = plan?.date || today;
-  }
-  if (time) time.value = plan?.time || '21:30';
-  if (select) {
-    select.innerHTML = `<option value="">À décider ensemble</option>${games.map(game => `<option value="${escapeHTML(game.id)}">${escapeHTML(game.title || 'Sans titre')}</option>`).join('')}`;
-    select.value = plan?.gameId && games.some(game => game.id === plan.gameId) ? plan.gameId : '';
-  }
+  const today = localDateKey();
+  const max = localDateKey(new Date(Date.now() + 30 * 86_400_000));
+  const slots = plan?.options?.length ? plan.options : [{ id:'slot-1', date:today, time:'21:30' }];
+  const slotRoot = document.getElementById('home-night-slot-editors');
+  if (slotRoot) slotRoot.innerHTML = [0,1,2].map(index => {
+    const slot = slots[index] || {};
+    return `<div class="home-slot-editor" data-slot-editor="${index}"><span>${index + 1}</span><input type="date" data-slot-date min="${today}" max="${max}" value="${escapeHTML(slot.date || '')}" ${index ? '' : 'required'}><input type="time" data-slot-time value="${escapeHTML(slot.time || (index ? '' : '21:30'))}" ${index ? '' : 'required'}></div>`;
+  }).join('');
+  const gameRoot = document.getElementById('home-night-game-editors');
+  const options = `<option value="">— aucun —</option>${games.map(game => `<option value="${escapeHTML(game.id)}">${escapeHTML(game.title || 'Sans titre')}</option>`).join('')}`;
+  if (gameRoot) gameRoot.innerHTML = [0,1,2].map(index => `<select data-night-game-select aria-label="Jeu proposé ${index + 1}">${options}</select>`).join('');
+  gameRoot?.querySelectorAll('[data-night-game-select]').forEach((select, index) => { select.value = plan?.games?.[index]?.id || (index === 0 ? plan?.gameId || '' : ''); });
   const current = profile();
-  pendingResponse = current ? String(plan?.responses?.[profileKey(current.id || current.name)]?.status || (!plan ? 'yes' : '')) : '';
-  document.querySelectorAll('[data-night-response]').forEach(button => button.classList.toggle('is-active', button.dataset.nightResponse === pendingResponse));
+  const response = current ? plan?.responses?.[profileKey(current.id || current.name)] : null;
+  pendingAvailability = { ...(response?.availability || {}) };
+  pendingGameVotes = new Set(Object.entries(response?.gameVotes || {}).filter(([, value]) => value).map(([id]) => id));
+  renderVoteControls(slots, plan?.games || []);
   const calendar = document.getElementById('home-night-calendar');
   if (calendar) calendar.hidden = !plan;
+  const finalize = document.getElementById('home-night-finalize');
+  if (finalize) {
+    finalize.hidden = !plan || !['nico','liam'].includes(String(current?.id || '').toLowerCase());
+    finalize.textContent = plan?.final ? 'Rouvrir les votes' : 'Valider le meilleur choix';
+  }
   renderAttendees();
   setStatus('');
+}
+
+function renderVoteControls(slots = [], gameChoices = []) {
+  const root = document.getElementById('home-night-vote');
+  if (!root) return;
+  if (!plan) {
+    root.innerHTML = '<p>Crée les propositions : les membres pourront ensuite voter pour chaque horaire et chaque jeu.</p>';
+    return;
+  }
+  const summary = groupNightVoteSummary(plan);
+  root.innerHTML = `<h3>Mes disponibilités</h3><div class="home-vote-slots">${slots.map(slot => {
+    const selected = pendingAvailability[slot.id] || '';
+    const tally = summary.optionVotes[slot.id] || { yes:0, maybe:0 };
+    return `<article><span><strong>${escapeHTML(groupNightDateLabel(slot))} · ${escapeHTML(slot.time)}</strong><small>${tally.yes} oui${tally.maybe ? ` · ${tally.maybe} peut-être` : ''}</small></span><div>${[['yes','Oui'],['maybe','Peut-être'],['no','Non']].map(([status,label]) => `<button type="button" data-vote-slot="${escapeHTML(slot.id)}" data-vote-status="${status}" class="${selected === status ? 'is-active' : ''}">${label}</button>`).join('')}</div></article>`;
+  }).join('')}</div>${gameChoices.length ? `<h3>Jeux qui me tentent</h3><div class="home-vote-games">${gameChoices.map(game => `<button type="button" data-vote-game="${escapeHTML(game.id)}" class="${pendingGameVotes.has(game.id) ? 'is-active' : ''}"><strong>${escapeHTML(game.title)}</strong><small>${summary.gameVotes[game.id] || 0} vote${summary.gameVotes[game.id] === 1 ? '' : 's'}</small></button>`).join('')}</div>` : ''}${plan.final ? '<p class="home-night-locked">✓ Le choix final est validé. Les réponses restent visibles.</p>' : ''}`;
 }
 
 async function openModal() {
@@ -167,7 +228,7 @@ async function openModal() {
   if (!games.length) await loadHomeGroup().catch(() => {});
   syncForm();
   document.getElementById('home-tonight-modal').hidden = false;
-  document.getElementById('home-tonight-time')?.focus();
+  document.querySelector('[data-slot-time]')?.focus();
 }
 
 function closeModal() {
@@ -179,27 +240,64 @@ async function submitPlan(event) {
   const current = profile();
   if (!current) return window.OLYCITY?._showProfilePicker?.();
   const submit = event.currentTarget.querySelector('[type="submit"]');
-  const time = document.getElementById('home-tonight-time')?.value || '21:30';
-  const date = document.getElementById('home-tonight-date')?.value || localDateKey();
-  const startsAt = new Date(`${date}T${time}:00`).getTime();
-  const select = document.getElementById('home-tonight-game');
-  const game = games.find(item => item.id === select?.value);
+  const options = [...document.querySelectorAll('[data-slot-editor]')].map((row, index) => {
+    const date = row.querySelector('[data-slot-date]')?.value || '';
+    const time = row.querySelector('[data-slot-time]')?.value || '';
+    if (!date || !time) return null;
+    return { id:plan?.options?.[index]?.id || `slot-${index + 1}`, date, time, startsAt:new Date(`${date}T${time}:00`).getTime() };
+  }).filter(Boolean);
+  const selectedIds = [...new Set([...document.querySelectorAll('[data-night-game-select]')].map(select => select.value).filter(Boolean))];
+  const gameChoices = selectedIds.map(id => games.find(game => game.id === id)).filter(Boolean).map(game => ({ id:game.id, title:game.title || 'Sans titre', coverUrl:game.coverUrl || '' }));
+  const firstSlot = options[0];
+  const firstGame = gameChoices[0];
+  if (!firstSlot) { setStatus('Ajoute au moins un créneau complet.', true); return; }
   submit.disabled = true;
   setStatus('Enregistrement…');
   try {
     const updatedAt = Date.now();
     await firebaseWrite('groupNight/current', 'PATCH', {
-      date, time, startsAt, gameId:game?.id || '', gameTitle:game?.title || 'Jeu à décider',
-      createdBy:current.name, updatedAt,
+      date:firstSlot.date, time:firstSlot.time, startsAt:firstSlot.startsAt,
+      gameId:firstGame?.id || '', gameTitle:firstGame?.title || 'Jeu à décider',
+      options:Object.fromEntries(options.map(option => [option.id, option])),
+      games:Object.fromEntries(gameChoices.map(game => [game.id, game])), final:null,
+      createdBy:plan?.createdBy || current.name, updatedAt,
     });
-    if (pendingResponse) await firebaseWrite(`groupNight/current/responses/${profileKey(current.id || current.name)}`, 'PUT', {
-      memberId:current.id || '', name:current.name, avatar:current.avatar || '', status:pendingResponse, updatedAt,
+    const availability = plan ? pendingAvailability : { [firstSlot.id]:'yes' };
+    const selectedVotes = pendingGameVotes.size ? pendingGameVotes : new Set(firstGame ? [firstGame.id] : []);
+    const statuses = Object.values(availability);
+    const status = statuses.includes('yes') ? 'yes' : statuses.includes('maybe') ? 'maybe' : statuses.includes('no') ? 'no' : '';
+    await firebaseWrite(`groupNight/current/responses/${profileKey(current.id || current.name)}`, 'PUT', {
+      memberId:current.id || '', name:current.name, avatar:current.avatar || '', status, availability,
+      gameVotes:Object.fromEntries([...selectedVotes].map(id => [id, true])), updatedAt,
     });
     await loadHomeGroup();
     closeModal();
   } catch (error) {
     setStatus('Impossible d’enregistrer pour le moment. Réessaie.', true);
   } finally { submit.disabled = false; }
+}
+
+async function toggleFinalChoice() {
+  const current = profile();
+  if (!plan || !['nico','liam'].includes(String(current?.id || '').toLowerCase())) return;
+  const button = document.getElementById('home-night-finalize');
+  button.disabled = true;
+  setStatus(plan.final ? 'Réouverture des votes…' : 'Validation du meilleur choix…');
+  try {
+    if (plan.final) {
+      await firebaseWrite('groupNight/current/final', 'PUT', null);
+    } else {
+      const summary = groupNightVoteSummary(plan);
+      await firebaseWrite('groupNight/current/final', 'PUT', {
+        optionId:summary.bestOption?.id || plan.options?.[0]?.id || '',
+        gameId:summary.bestGame?.id || plan.games?.[0]?.id || '', lockedAt:Date.now(), lockedBy:current.name,
+      });
+    }
+    await loadHomeGroup();
+    syncForm();
+  } catch {
+    setStatus('Impossible de modifier le choix final.', true);
+  } finally { button.disabled = false; }
 }
 
 function downloadCalendar() {
@@ -229,17 +327,27 @@ export function initHomeGroup(nextMembers = []) {
   document.getElementById('home-tonight-open')?.addEventListener('click', openModal);
   document.getElementById('home-tonight-form')?.addEventListener('submit', submitPlan);
   document.getElementById('home-night-calendar')?.addEventListener('click', downloadCalendar);
+  document.getElementById('home-night-finalize')?.addEventListener('click', toggleFinalChoice);
+  document.getElementById('home-night-vote')?.addEventListener('click', event => {
+    const slot = event.target.closest('[data-vote-slot]');
+    if (slot) {
+      pendingAvailability[slot.dataset.voteSlot] = slot.dataset.voteStatus;
+      renderVoteControls(plan?.options || [], plan?.games || []);
+      return;
+    }
+    const game = event.target.closest('[data-vote-game]');
+    if (!game) return;
+    if (pendingGameVotes.has(game.dataset.voteGame)) pendingGameVotes.delete(game.dataset.voteGame);
+    else pendingGameVotes.add(game.dataset.voteGame);
+    renderVoteControls(plan?.options || [], plan?.games || []);
+  });
   document.querySelectorAll('[data-home-sheet-close]').forEach(button => button.addEventListener('click', closeModal));
   document.getElementById('home-tonight-modal')?.addEventListener('click', event => { if (event.target.id === 'home-tonight-modal') closeModal(); });
-  document.querySelectorAll('[data-night-response]').forEach(button => button.addEventListener('click', () => {
-    pendingResponse = button.dataset.nightResponse;
-    document.querySelectorAll('[data-night-response]').forEach(item => item.classList.toggle('is-active', item === button));
-  }));
   window.addEventListener('olycity:profile-change', () => { renderPlan(); if (!document.getElementById('home-tonight-modal')?.hidden) syncForm(); });
   startRealtime();
   loadHomeGroup().catch(() => {
     renderPlan();
     renderActivity([]);
   });
-  return () => { stream?.close(); stream = null; clearTimeout(reloadTimer); };
+  return () => { stream?.close(); stream = null; clearTimeout(reloadTimer); clearInterval(coopCarouselTimer); };
 }

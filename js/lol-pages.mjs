@@ -146,10 +146,24 @@ function renderHistory(matches, player = 'all', period = 'all', pagerState = lol
   const filtered = matches.filter(match => (player === 'all' || match.playerName === player) && now - Number(match.ts || 0) <= maxAge);
   const players = [...new Set(matches.map(match => match.playerName).filter(Boolean))];
   const days = summarizeLolDays(filtered);
+  const wins = filtered.filter(match => match.win).length;
+  const totalSeconds = filtered.reduce((sum, match) => sum + Number(match.gameLengthSeconds || match.durationSeconds || 0), 0);
+  const championCounts = filtered.reduce((counts, match) => {
+    const champion = name(match.champion) || 'Inconnu';
+    counts[champion] = (counts[champion] || 0) + 1;
+    return counts;
+  }, {});
+  const favoriteChampion = Object.entries(championCounts).sort((a,b) => b[1] - a[1] || a[0].localeCompare(b[0], 'fr'))[0];
+  const recap = filtered.length ? `<section class="history-group-recap lol" aria-label="Récapitulatif League of Legends">
+    <div><small>Parties</small><strong>${filtered.length}</strong><span>${players.length} joueur${players.length > 1 ? 's' : ''} suivi${players.length > 1 ? 's' : ''}</span></div>
+    <div><small>Victoires</small><strong>${Math.round(wins / filtered.length * 100)}%</strong><span>${wins}V · ${filtered.length - wins}D</span></div>
+    <div><small>Temps joué</small><strong>${totalSeconds ? `${Math.floor(totalSeconds / 3600)}h${String(Math.round(totalSeconds / 60) % 60).padStart(2, '0')}` : '—'}</strong><span>sur la période</span></div>
+    <div><small>Champion phare</small><strong>${esc(favoriteChampion?.[0] || '—')}</strong><span>${favoriteChampion ? `${favoriteChampion[1]} partie${favoriteChampion[1] > 1 ? 's' : ''}` : 'aucune donnée'}</span></div>
+  </section>` : '';
   el.innerHTML = `<div class="lol-history-toolbar">
     <div class="lol-filter-group"><span>Joueur</span><select id="lol-history-player"><option value="all">Tous</option>${players.map(value => `<option value="${esc(value)}" ${value === player ? 'selected' : ''}>${esc(value)}</option>`).join('')}</select></div>
     <div class="lol-history-periods">${[['all','Tout'],['7d','7 jours'],['today','Aujourd’hui']].map(([value,label]) => `<button data-lol-period="${value}" class="${period === value ? 'active' : ''}">${label}</button>`).join('')}</div>
-  </div>
+  </div>${recap}
   ${filtered.length ? `<details class="lol-history-recap"><summary><span>Résumé de la période</span><small>${filtered.length} partie${filtered.length > 1 ? 's' : ''}</small><i>⌄</i></summary><section class="lol-day-recap">${days.map(day => `<div><strong>${esc(day.date)}</strong><span>${day.games} game${day.games > 1 ? 's' : ''}</span><b>${day.wins}V · ${day.games-day.wins}D</b><small>${day.games ? Math.round(day.wins/day.games*100) : 0}% WR</small></div>`).join('')}</section></details><div class="lol-history-list">${filtered.map(matchRow).join('')}</div>` : '<div class="lol-empty-state"><span class="lol-empty-rune">L</span><strong>Aucune partie dans cette période</strong><small>L’historique LoL est indépendant de Valorant.</small></div>'}`;
   el.insertAdjacentHTML('beforeend', `<div class="history-load-more-wrap">${pagerState.hasMore ? `<button type="button" class="btn btn-primary" data-lol-history-load-more>Charger les anciennes · ${pagerState.loaded}/${pagerState.total}</button>` : `<span>${pagerState.loaded} partie${pagerState.loaded > 1 ? 's' : ''} chargée${pagerState.loaded > 1 ? 's' : ''}</span>`}</div>`);
   document.getElementById('lol-history-player')?.addEventListener('change', event => renderHistory(matches, event.target.value, period, pagerState));

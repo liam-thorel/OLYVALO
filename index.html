@@ -17,15 +17,15 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Tomorrow:wght@400;500;600;700&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="./css/tokens.css?v=20260824-page-shell">
-  <link rel="stylesheet" href="./css/layout.css?v=20260824-topbar-brand">
+  <link rel="stylesheet" href="./css/layout.css?v=20260825-community-foundation">
   <link rel="stylesheet" href="./css/components.css?v=20260824-mobile-map-admin">
-  <link rel="stylesheet" href="./css/home.css?v=20260824-session-planner">
+  <link rel="stylesheet" href="./css/home.css?v=20260825-human-banner">
   <link rel="stylesheet" href="./css/agent-page.css?v=20260720-avatars">
   <link rel="stylesheet" href="./css/responsive.css?v=20260824-topbar-brand">
-  <link rel="stylesheet" href="./css/lol-mode.css?v=20260824-topbar-brand">
+  <link rel="stylesheet" href="./css/lol-mode.css?v=20260825-community-foundation">
   <link rel="stylesheet" href="./css/curse.css?v=20260818-curse-lifecycle">
   <link rel="stylesheet" href="./css/coop-games.css?v=20260824-mobile-data-cache">
-  <link rel="stylesheet" href="./css/design-system.css?v=20260824-topbar-brand">
+  <link rel="stylesheet" href="./css/design-system.css?v=20260825-accessible-mobile">
 </head>
 <body>
 
@@ -77,6 +77,12 @@
     <strong>OLYCITY</strong>
     <span class="startup-progress"><i id="loading-bar"></i></span>
     <small>Préparation de l’accueil…</small>
+  </div>
+  <div class="app-status-banner" id="app-status-banner" role="status" aria-live="polite" hidden>
+    <span class="app-status-dot" aria-hidden="true"></span>
+    <span><strong id="app-status-title">Mode hors connexion</strong><small id="app-status-detail">La dernière copie disponible reste accessible.</small></span>
+    <button id="app-status-action" type="button" hidden>Actualiser</button>
+    <button id="app-status-close" type="button" aria-label="Masquer">×</button>
   </div>
   <style>
     @keyframes loadingScan {
@@ -267,18 +273,13 @@
   <div class="home-sheet" id="home-tonight-modal" role="dialog" aria-modal="true" aria-labelledby="home-tonight-modal-title" hidden>
     <form class="home-sheet-card" id="home-tonight-form">
       <header><div><span>Le groupe</span><h2 id="home-tonight-modal-title">Planifier une session</h2></div><button type="button" data-home-sheet-close aria-label="Fermer">×</button></header>
-      <label class="home-sheet-field"><span>Date</span><input id="home-tonight-date" type="date" required></label>
-      <label class="home-sheet-field"><span>Heure proposée</span><input id="home-tonight-time" type="time" value="21:30" required></label>
-      <label class="home-sheet-field"><span>Jeu</span><select id="home-tonight-game"><option value="">À décider ensemble</option></select></label>
-      <fieldset class="home-response-field"><legend>Tu seras là ?</legend><div>
-        <button type="button" data-night-response="yes">✓ Oui</button>
-        <button type="button" data-night-response="maybe">~ Peut-être</button>
-        <button type="button" data-night-response="no">× Non</button>
-      </div></fieldset>
+      <fieldset class="home-candidate-field"><legend>Créneaux proposés <small>jusqu’à 3</small></legend><div id="home-night-slot-editors"></div></fieldset>
+      <fieldset class="home-candidate-field"><legend>Jeux proposés <small>jusqu’à 3</small></legend><div class="home-game-candidates" id="home-night-game-editors"></div></fieldset>
+      <section class="home-night-vote" id="home-night-vote" aria-label="Mon vote"></section>
       <div class="home-night-attendees" id="home-night-attendees"></div>
       <p class="home-reminder-hint"><span aria-hidden="true">●</span> Les appareils inscrits recevront un rappel 30 puis 15 minutes avant.</p>
       <p class="home-sheet-status" id="home-tonight-status" aria-live="polite"></p>
-      <footer><button id="home-night-calendar" class="home-sheet-secondary" type="button" hidden>Ajouter au calendrier</button><button class="home-sheet-primary" type="submit">Enregistrer la session</button></footer>
+      <footer><button id="home-night-calendar" class="home-sheet-secondary" type="button" hidden>Calendrier</button><button id="home-night-finalize" class="home-sheet-secondary" type="button" hidden>Valider le meilleur choix</button><button class="home-sheet-primary" type="submit">Enregistrer mes choix</button></footer>
     </form>
   </div>
 
@@ -545,6 +546,6 @@
   <!-- Firebase SDK -->
   <!-- Présence Firebase -->
   <script src="./js/presence.js?v=20260720-avatars"></script>
-  <script type="module" src="./js/main.js?v=20260825-first-load-recovery"></script>
+  <script type="module" src="./js/main.js?v=20260825-community-foundation"></script>
 </body>
 </html>

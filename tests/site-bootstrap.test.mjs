@@ -70,8 +70,8 @@ test('home is one live priority, three visual worlds and a compact member strip'
   assert.match(homeStyles, /valorant-keyart\.webp/);
   assert.match(homeStyles, /league-champions-group\.webp/);
   assert.match(homeStyles, /peak-keyart\.webp/);
-  assert.match(page, /home\.css\?v=20260824-session-planner/);
-  assert.match(page, /design-system\.css\?v=20260824-topbar-brand/);
+  assert.match(page, /home\.css\?v=20260825-human-banner/);
+  assert.match(page, /design-system\.css\?v=20260825-accessible-mobile/);
   assert.match(page, /<span class="hero-title-frame">OLYCITY<\/span>/);
   assert.doesNotMatch(page, /id="hero-eyebrow"/);
   assert.match(page, /id="home-member-faces"/);
@@ -151,7 +151,7 @@ test('mobile data pages keep readable spacing, controls and roster details', () 
   assert.match(responsive, /\.section-inner\s*\{\s*padding:\s*0/);
   assert.match(lolStyles, /\.lol-roster-champion strong\{font-size:10px\}/);
   assert.match(coopStyles, /\.coop-cover\{aspect-ratio:16\/7\}/);
-  assert.match(page, /lol-mode\.css\?v=20260824-topbar-brand/);
+  assert.match(page, /lol-mode\.css\?v=20260825-community-foundation/);
   assert.match(page, /coop-games\.css\?v=20260824-mobile-data-cache/);
   assert.match(designSystem, /\.history-filter-group\s*\{\s*grid-template-columns:\s*55px minmax\(0,1fr\)/);
   assert.match(designSystem, /\.coop-filter-field:last-child\s*\{\s*flex-basis:\s*100%/);
@@ -211,8 +211,10 @@ test('startup reveals the shell before optional APIs and supports installation',
   assert.match(pwaInstall, /updateViaCache:'none'/);
   assert.match(pwaInstall, /controllerchange/);
   const worker = fs.readFileSync(new URL('../sw.js', import.meta.url), 'utf8');
-  assert.doesNotMatch(worker, /addEventListener\('fetch'/);
-  assert.match(worker, /notification-only/);
+  assert.match(worker, /addEventListener\('fetch'/);
+  assert.match(worker, /networkFirst/);
+  assert.match(worker, /SKIP_WAITING/);
+  assert.match(pwaInstall, /showAppStatus/);
   assert.match(main, /initHomeDashboard\(\{[\s\S]*members: \[\]/);
   assert.doesNotMatch(page, /getRegistrations\(\)[\s\S]*unregister/);
   assert.match(main, /boot\(\)\.catch\(showBootFailure\)/);

@@ -1,4 +1,4 @@
-import { dueReminderMinutes, notificationMessage, rankPromotion } from './rules.mjs';
+import { dueReminderMinutes, notificationMessage, rankPromotion, selectedGroupNight } from './rules.mjs';
 
 const DEFAULT_FIREBASE = 'https://realtime-database-5bb9f-default-rtdb.europe-west1.firebasedatabase.app';
 const ADMIN_TESTERS = new Set(['nico', 'liam']);
@@ -81,7 +81,7 @@ async function firebaseGet(env, path, query = '') {
 }
 
 async function processReminder(env, now) {
-  const plan = await firebaseGet(env, 'groupNight/current');
+  const plan = selectedGroupNight(await firebaseGet(env, 'groupNight/current'));
   const reminders = dueReminderMinutes(plan, now);
   let sent = 0;
   for (const reminderMinutes of reminders) {

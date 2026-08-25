@@ -728,7 +728,13 @@ body.agent-mode .footer{ display:none; }
   color: var(--muted); font-size: 14px; font-weight: 600; letter-spacing: .2px;
 }
 .history-daily-section { margin-bottom: 32px; }
+.history-group-recap { display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:1px;margin:0 0 18px;border:1px solid var(--border);background:var(--border); }
+.history-group-recap>div { display:grid;gap:3px;min-width:0;padding:14px 16px;background:var(--surf); }
+.history-group-recap small { color:var(--muted);font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase; }
+.history-group-recap strong { overflow:hidden;color:var(--text);font-size:20px;line-height:1.15;text-overflow:ellipsis;white-space:nowrap; }
+.history-group-recap span { color:var(--dim);font-size:11px; }
 .history-daily-grid { display: grid; gap: 7px; }
+@media(max-width:700px){.history-group-recap{grid-template-columns:repeat(2,minmax(0,1fr));}.history-group-recap>div{padding:12px}.history-group-recap strong{font-size:17px}}
 .history-day-card {
   position: relative; overflow: hidden; border: 1px solid var(--border); background: var(--surf);
 }

@@ -1532,6 +1532,15 @@ export async function initHistoryPage() {
   const displayedComp = displayedGames.filter(game => historyMode(game) === 'competitive');
   const displayedDeathmatches = displayedGames.filter(game => historyMode(game) === 'deathmatch');
   const displayedOtherGames = displayedGames.filter(game => historyMode(game) === 'other');
+  const groupWinrate = withResult.length ? Math.round(withResult.filter(game => game.result === 'win').length / withResult.length * 100) : null;
+  const groupMinutes = Math.round(games.reduce((total, game) => total + (game.durationMs || Math.max(0, (game.endTs||0) - (game.ts||0))), 0) / 60_000);
+  const favoriteMap = mapStats[0];
+  const groupRecap = games.length ? `<section class="history-group-recap" aria-label="Récapitulatif du groupe">
+    <div><small>Parties</small><strong>${games.length}</strong><span>${comp.length} comp · ${deathmatches.length} DM</span></div>
+    <div><small>Résultats compétitifs</small><strong>${groupWinrate === null ? '—' : `${groupWinrate}%`}</strong><span>${withResult.filter(game => game.result === 'win').length}V · ${withResult.filter(game => game.result === 'loss').length}D</span></div>
+    <div><small>Temps joué</small><strong>${groupMinutes >= 60 ? `${Math.floor(groupMinutes / 60)}h${String(groupMinutes % 60).padStart(2, '0')}` : `${groupMinutes} min`}</strong><span>sur la période</span></div>
+    <div><small>Map la plus jouée</small><strong>${historyEscape(favoriteMap?.map || '—')}</strong><span>${favoriteMap ? `${favoriteMap.n} partie${favoriteMap.n > 1 ? 's' : ''}` : 'aucune donnée'}</span></div>
+  </section>` : '';
   const gameSection = (title, sectionGames, className, total) => sectionGames.length ? `
     <section class="history-mode-section ${className}">
       ${sectionTitle(`${title} · ${total}`)}
@@ -1540,7 +1549,7 @@ export async function initHistoryPage() {
   const filterButton = (group, value, label, active) => `
     <button type="button" class="history-filter-button ${active ? 'active' : ''}" data-history-${group}="${value}">${label}</button>`;
 
-  el.innerHTML = `${historySyncMarkup(syncState)}
+  el.innerHTML = `${historySyncMarkup(syncState)}${groupRecap}
     <div class="history-view-tabs" role="tablist" aria-label="Vue de l'historique">
       ${filterButton('view', 'summary', 'Statistiques', historyUI.view === 'summary')}
       ${filterButton('view', 'matches', 'Parties', historyUI.view === 'matches')}

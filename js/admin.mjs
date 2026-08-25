@@ -17,6 +17,7 @@ import { buildScriptHealth, scriptDiagnosticText, scriptHealthSummary } from './
 import { fetchJsonWithTimeout } from './request-utils.mjs?v=20260809-route-load-stable';
 import { isLiveRecordExpired, liveDataStore, staleLiveRecords } from './live-data-store.mjs?v=20260810-firebase-connection-fix';
 import { mergeMemberProfiles } from './member-profiles.mjs?v=20260823-profile-picker';
+import { readSiteVitals } from './site-telemetry.mjs?v=20260825-site-health';
 
 const FIREBASE_URL = 'https://realtime-database-5bb9f-default-rtdb.europe-west1.firebasedatabase.app';
 // SHA-256 du mot de passe admin. Pour le changer : recalcule le hash d'un
@@ -41,6 +42,7 @@ let adminLiveCleanup = null;
 let adminLoadSequence = 0;
 let adminDataLoaded = false;
 let pushModulePromise = null;
+let serviceHealth = [];
 
 function loadPushModule() {
   if (!pushModulePromise) {
@@ -161,6 +163,39 @@ function timeAgo(ts) {
   if (seconds < 3600) return `${Math.floor(seconds / 60)}min`;
   if (seconds < 86400) return `${Math.floor(seconds / 3600)}h`;
   return `${Math.floor(seconds / 86400)}j`;
+}
+
+async function checkEndpoint(id, label, url) {
+  const startedAt = performance.now();
+  try {
+    await fetchJsonWithTimeout(url, { timeoutMs:3_500 });
+    return { id, label, state:'ok', detail:`${Math.round(performance.now() - startedAt)} ms` };
+  } catch (error) {
+    return { id, label, state:'error', detail:error?.name === 'TimeoutError' ? 'Délai dépassé' : 'Indisponible' };
+  }
+}
+
+async function refreshServiceHealth(root) {
+  const button = root.querySelector('#admin-services-refresh');
+  if (button) { button.disabled = true; button.textContent = 'Vérification…'; }
+  const vitals = readSiteVitals();
+  const liveErrors = Object.values(liveStoreStatus).filter(status => status?.error).length;
+  serviceHealth = await Promise.all([
+    checkEndpoint('site', 'Site et mises à jour', `./live/update-manifest.json?v=${Date.now()}`),
+    checkEndpoint('firebase', 'Base de données', `${FIREBASE_URL}/groupNight/current.json?shallow=true`),
+    Promise.resolve({ id:'realtime', label:'Données Live', state:liveErrors ? 'warning' : 'ok', detail:liveErrors ? `${liveErrors} flux en reconnexion` : 'Flux connectés' }),
+    Promise.resolve({ id:'performance', label:'Affichage local', state:vitals?.lcpMs > 2500 || vitals?.cls > .1 ? 'warning' : 'ok', detail:vitals ? `LCP ${vitals.lcpMs || '—'} ms · CLS ${vitals.cls ?? '—'}` : 'Mesure au prochain affichage' }),
+  ]);
+  renderServiceHealth(root);
+  if (button) { button.disabled = false; button.textContent = '↻ Vérifier'; }
+}
+
+function renderServiceHealth(root) {
+  const target = root.querySelector('#admin-services-grid');
+  if (!target) return;
+  target.innerHTML = serviceHealth.length ? serviceHealth.map(service => `<article class="admin-service-card" data-state="${service.state}">
+    <span aria-hidden="true"></span><div><strong>${escapeHTML(service.label)}</strong><small>${escapeHTML(service.detail)}</small></div>
+  </article>`).join('') : '<p class="admin-dim">Vérification des services…</p>';
 }
 
 function scriptHealthRows() {
@@ -352,6 +387,14 @@ function render() {
         <div id="admin-health-dashboard">${renderHealthDashboardHTML()}</div>
       </section>
 
+      <section class="admin-section admin-services-section">
+        <div class="admin-section-head">
+          <div><h3>Santé du site et des données</h3><p class="admin-dim">Disponibilité, latence et stabilité visuelle sur cet appareil</p></div>
+          <button type="button" class="admin-btn admin-btn-small" id="admin-services-refresh">↻ Vérifier</button>
+        </div>
+        <div class="admin-services-grid" id="admin-services-grid"><p class="admin-dim">Vérification des services…</p></div>
+      </section>
+
       ${['nico', 'liam'].includes(localStorage.getItem('olycity-member-id') || '') ? `
       <section class="admin-section admin-notification-section">
         <div class="admin-section-head">
@@ -379,6 +422,7 @@ function render() {
     </div>`;
   wireEvents(root);
   startHealthRefresh(root);
+  void refreshServiceHealth(root);
 }
 
 async function reloadAndRender(root) {
@@ -389,6 +433,7 @@ async function reloadAndRender(root) {
 
 function wireEvents(root) {
   root.querySelector('#admin-refresh-btn')?.addEventListener('click', () => reloadAndRender(root));
+  root.querySelector('#admin-services-refresh')?.addEventListener('click', () => refreshServiceHealth(root));
 
   const testNotification = root.querySelector('#admin-test-notification');
   const notificationStatus = root.querySelector('#admin-notification-status');
@@ -658,6 +703,7 @@ const ADMIN_CSS = `
 .admin-section-head{display:flex;align-items:center;justify-content:space-between}
 .admin-health-section{margin-top:14px;padding:20px;border:1px solid var(--border,rgba(255,255,255,.08));background:linear-gradient(145deg,rgba(255,255,255,.035),rgba(255,255,255,.012));border-radius:10px}
 .admin-notification-section{padding:16px;border:1px solid rgba(63,207,207,.18);background:rgba(63,207,207,.035);border-radius:8px}.admin-notification-section h3{margin:0 0 5px}.admin-notification-section p{margin:0}
+.admin-services-section h3{margin:0 0 5px}.admin-services-section p{margin:0}.admin-services-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;margin-top:14px}.admin-service-card{display:grid;grid-template-columns:8px minmax(0,1fr);gap:9px;align-items:center;padding:12px;border:1px solid var(--border,rgba(255,255,255,.08));background:rgba(0,0,0,.14);border-radius:7px}.admin-service-card>span{width:8px;height:8px;border-radius:50%;background:#44d17a;box-shadow:0 0 9px rgba(68,209,122,.35)}.admin-service-card[data-state="warning"]>span{background:#f5c842}.admin-service-card[data-state="error"]>span{background:#ff5f6d}.admin-service-card div{display:grid;gap:3px;min-width:0}.admin-service-card strong{overflow:hidden;font-size:11px;text-overflow:ellipsis;white-space:nowrap}.admin-service-card small{color:var(--dim);font-size:9px}
 .admin-health-heading h3{margin:0 0 4px;font:700 14px Tomorrow,sans-serif;letter-spacing:1.4px;text-transform:uppercase}.admin-health-heading p{margin:0}
 .admin-health-actions{display:flex;align-items:flex-end;gap:8px;flex-direction:column}.admin-health-actions .admin-btn:disabled{opacity:.45;cursor:default}
 .admin-health-summary{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin:18px 0 14px}.admin-health-summary>div{display:grid;gap:2px;padding:12px 14px;border:1px solid var(--border,rgba(255,255,255,.08));background:rgba(0,0,0,.16);border-radius:7px}.admin-health-summary strong{font:700 22px Tomorrow,sans-serif;color:var(--text)}.admin-health-summary span{font-size:10px;text-transform:uppercase;letter-spacing:1px;color:var(--dim)}.admin-health-summary .attention strong{color:#f5c842}
@@ -692,5 +738,5 @@ const ADMIN_CSS = `
 .admin-gate{max-width:360px;text-align:center;padding-top:120px}
 .admin-gate input{width:100%;background:#161a22;color:inherit;border:1px solid rgba(255,255,255,.15);border-radius:4px;padding:10px 12px;margin-bottom:10px}
 .admin-gate form{display:flex;flex-direction:column;gap:10px}
-@media(max-width:700px){.admin-wrap{padding-inline:14px}.admin-btn,.admin-select-member,.admin-add-account-form input,.admin-add-account-form select,.admin-add-member-form input{min-height:40px}.admin-gate input,.admin-gate .admin-btn{min-height:44px}.admin-row .admin-select-member{flex:1}.admin-section-head{align-items:flex-start;gap:10px}.admin-members-grid,.admin-health-grid{grid-template-columns:1fr}.admin-health-summary{grid-template-columns:1fr 1fr}.admin-health-section{padding:14px}.admin-health-heading{flex-direction:column}.admin-health-card-head{grid-template-columns:34px minmax(0,1fr)}.admin-health-state{grid-column:1/3;justify-self:start}.admin-health-facts{grid-template-columns:1fr}}
+@media(max-width:700px){.admin-wrap{padding-inline:14px}.admin-btn,.admin-select-member,.admin-add-account-form input,.admin-add-account-form select,.admin-add-member-form input{min-height:44px}.admin-gate input,.admin-gate .admin-btn{min-height:48px}.admin-row .admin-select-member{flex:1}.admin-section-head{align-items:flex-start;gap:10px}.admin-members-grid,.admin-health-grid{grid-template-columns:1fr}.admin-services-grid{grid-template-columns:1fr 1fr}.admin-health-summary{grid-template-columns:1fr 1fr}.admin-health-section{padding:14px}.admin-health-heading{flex-direction:column}.admin-health-card-head{grid-template-columns:34px minmax(0,1fr)}.admin-health-state{grid-column:1/3;justify-self:start}.admin-health-facts{grid-template-columns:1fr}}
 `;
