@@ -14,6 +14,8 @@ let initialized = false;
 let stream = null;
 let loadSequence = 0;
 let realtimeRevision = 0;
+let recoveryAttempts = 0;
+let recoveryTimer = null;
 
 function escapeHTML(value) {
   return String(value ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -101,11 +103,20 @@ async function loadAndRender({ quiet = false } = {}) {
     const wallets = await fbGet('betting/wallets');
     if (sequence !== loadSequence || revision !== realtimeRevision) return;
     walletsState = wallets || {};
+    recoveryAttempts = 0;
+    clearTimeout(recoveryTimer);
     writeCache();
     renderWallets();
   } catch (error) {
     if (Object.keys(walletsState).length) {
       renderWallets({ offline:true });
+      return;
+    }
+    if (recoveryAttempts < 2 && document.getElementById('page-betting')?.classList.contains('active')) {
+      recoveryAttempts += 1;
+      if (root) root.innerHTML = `<div class="betting-sync-note" role="status"><strong>Reconnexion aux classements</strong><span>Nouvelle tentative automatique ${recoveryAttempts}/2…</span></div>`;
+      clearTimeout(recoveryTimer);
+      recoveryTimer = setTimeout(() => loadAndRender(), 700 * recoveryAttempts);
       return;
     }
     if (root) root.innerHTML = `<div class="betting-load-error"><strong>Classements indisponibles</strong><span>La connexion a été interrompue.</span><button type="button" data-betting-retry>Réessayer</button></div>`;

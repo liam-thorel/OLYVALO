@@ -178,11 +178,15 @@ test('history and admin requests cannot stay pending forever', () => {
   assert.match(interactions, /valorantHistoryPager\.loadNext/);
   assert.match(interactions, /data-history-load-more/);
   assert.match(lolPages, /lolHistoryPager\.loadNext/);
-  assert.match(historyPager, /timeoutMs:8_000/);
-  assert.match(historyPager, /timeoutMs:12_000/);
+  assert.match(historyPager, /timeoutMs:6_000, attempts:2/);
+  assert.match(historyPager, /timeoutMs:8_000, attempts:2/);
   assert.match(admin, /fetchJsonWithTimeout\(`\$\{FIREBASE_URL\}\/\$\{path\}\.json`/);
   assert.match(main, /getGameMode\(\) === 'lol'\) initLolHistoryPage\(\);[\s\S]*else initHistoryPage\(\)/);
   assert.doesNotMatch(main, /initHistoryPage\(\);\s*initLolHistoryPage\(\);/);
+  assert.match(main, /fetchJsonWithRetry\(`\.\/data\/comps\.json/);
+  assert.match(interactions, /Nouvelle tentative automatique/);
+  assert.match(lolPages, /Nouvelle tentative automatique/);
+  assert.match(coopPage, /Reconnexion à la liste/);
 });
 
 test('mobile data pages render their last good copy before background refresh', () => {
@@ -214,6 +218,8 @@ test('startup reveals the shell before optional APIs and supports installation',
   assert.match(worker, /addEventListener\('fetch'/);
   assert.match(worker, /networkFirst/);
   assert.match(worker, /SKIP_WAITING/);
+  assert.match(worker, /event\.waitUntil\(cache\.put/);
+  assert.doesNotMatch(worker, /await cache\.put/);
   assert.match(pwaInstall, /showAppStatus/);
   assert.match(main, /initHomeDashboard\(\{[\s\S]*members: \[\]/);
   assert.doesNotMatch(page, /getRegistrations\(\)[\s\S]*unregister/);

@@ -39,6 +39,8 @@ let selectedCatalogGame = null;
 let steamReviews = new Map();
 let steamReviewIds = '';
 let syncNotice = null;
+let recoveryAttempts = 0;
+let recoveryTimer = null;
 const filters = { search: '', players: 0, genre:'all', status: 'all', sort: 'recent' };
 
 const escapeHTML = value => String(value ?? '')
@@ -279,6 +281,8 @@ async function loadGames({ quiet = false } = {}) {
     rawGames = data || {};
     games = Object.entries(rawGames).map(([id, value]) => normalizeCoopGame(id, value));
     syncNotice = null;
+    recoveryAttempts = 0;
+    clearTimeout(recoveryTimer);
     writeGamesCache();
     syncGenreOptions();
     render();
@@ -287,6 +291,17 @@ async function loadGames({ quiet = false } = {}) {
     if (games.length) {
       syncNotice = { state:'offline' };
       render();
+      return;
+    }
+    if (recoveryAttempts < 2 && document.getElementById('page-games')?.classList.contains('active')) {
+      recoveryAttempts += 1;
+      if (root) root.innerHTML = coopStateMarkup(
+        'loading',
+        'Reconnexion à la liste',
+        `Nouvelle tentative automatique ${recoveryAttempts}/2…`,
+      );
+      clearTimeout(recoveryTimer);
+      recoveryTimer = setTimeout(() => loadGames(), 700 * recoveryAttempts);
       return;
     }
     if (root) root.innerHTML = coopStateMarkup(

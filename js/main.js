@@ -4,21 +4,21 @@
  */
 
 import { valorantApi } from './api.js';
-import { fetchJsonWithTimeout } from './request-utils.mjs?v=20260809-route-load-stable';
+import { fetchJsonWithRetry, fetchJsonWithTimeout } from './request-utils.mjs?v=20260825-first-load-recovery';
 
-const SITE_VERSION = '20260825-community-foundation';
+const SITE_VERSION = '20260826-cold-load-recovery';
 const BOOT_RETRY_KEY = 'olycity-boot-retry';
 import { syncPlayer as henrikSyncPlayer, syncAllPlayers as henrikSyncAll, persistPlayerStats } from './henrik.js?v=20260809-val-roster-season';
 import { setStoredKey, storedKey, forgetCachedKey } from './henrik-key.mjs';
 import { rosterHTML, guestCardHTML, mapSectionHTML, agentPageHTML, navMapsHTML } from './render.js?v=20260823-home-art-buttons-fix';
-import { initTheme, initTilt, initParallax, initSearch, initKeyboard, initHeroParticles, initWheelLogos, initLivePage, initHistoryPage } from './interactions.js?v=20260825-community-foundation';
+import { initTheme, initTilt, initParallax, initSearch, initKeyboard, initHeroParticles, initWheelLogos, initLivePage, initHistoryPage } from './interactions.js?v=20260826-cold-load-recovery';
 import { storage } from './storage.js';
 import { avatarLayersHTML } from './avatars.mjs';
-import { initAdminPage } from './admin.mjs?v=20260825-site-health';
-import { initBettingPage } from './betting-page.mjs?v=20260825-first-load-recovery';
-import { initCoopGamesPage } from './coop-games-page.mjs?v=20260825-first-load-recovery';
+import { initAdminPage } from './admin.mjs?v=20260826-cold-load-recovery';
+import { initBettingPage } from './betting-page.mjs?v=20260826-cold-load-recovery';
+import { initCoopGamesPage } from './coop-games-page.mjs?v=20260826-cold-load-recovery';
 import { getGameMode, initGameMode, setGameMode } from './game-mode.mjs?v=20260824-home-title';
-import { initLolHistoryPage, initLolLivePage } from './lol-pages.mjs?v=20260825-community-foundation';
+import { initLolHistoryPage, initLolLivePage } from './lol-pages.mjs?v=20260826-cold-load-recovery';
 import { initLolRosterPages } from './lol-roster.mjs?v=20260809-lol-sync';
 import { state } from './state.mjs?v=20260806-lol-roster';
 import { memberId, mergeMemberProfiles, resolveMemberProfile } from './member-profiles.mjs?v=20260823-profile-picker';
@@ -38,13 +38,13 @@ async function loadData() {
   let bundle;
   try {
     bundle = await Promise.all([
-      fetchJsonWithTimeout(`./data/comps.json?v=${SITE_VERSION}`, { timeoutMs:4_000 }),
-      fetchJsonWithTimeout(`./data/roster.json?v=${SITE_VERSION}`, { timeoutMs:4_000 }),
-      fetchJsonWithTimeout(`./data/members.json?v=${SITE_VERSION}`, { timeoutMs:4_000 }),
-      fetchJsonWithTimeout(`./data/roles.json?v=${SITE_VERSION}`, { timeoutMs:4_000 }),
-      fetchJsonWithTimeout('./data/agents-fr.json', { timeoutMs:4_000 }),
-      fetchJsonWithTimeout('./data/lineups.json', { timeoutMs:4_000 }),
-      fetchJsonWithTimeout(`./data/meta.json?v=${SITE_VERSION}`, { timeoutMs:4_000 }),
+      fetchJsonWithRetry(`./data/comps.json?v=${SITE_VERSION}`, { timeoutMs:6_000, attempts:2 }),
+      fetchJsonWithRetry(`./data/roster.json?v=${SITE_VERSION}`, { timeoutMs:6_000, attempts:2 }),
+      fetchJsonWithRetry(`./data/members.json?v=${SITE_VERSION}`, { timeoutMs:6_000, attempts:2 }),
+      fetchJsonWithRetry(`./data/roles.json?v=${SITE_VERSION}`, { timeoutMs:6_000, attempts:2 }),
+      fetchJsonWithRetry('./data/agents-fr.json', { timeoutMs:6_000, attempts:2 }),
+      fetchJsonWithRetry('./data/lineups.json', { timeoutMs:6_000, attempts:2 }),
+      fetchJsonWithRetry(`./data/meta.json?v=${SITE_VERSION}`, { timeoutMs:6_000, attempts:2 }),
     ]);
     localStorage.setItem(cacheKey, JSON.stringify(bundle));
   } catch (error) {

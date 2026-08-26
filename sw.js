@@ -1,4 +1,4 @@
-const CACHE_NAME = 'olycity-runtime-20260825-offline-first';
+const CACHE_NAME = 'olycity-runtime-20260826-cold-load';
 const SHELL_URLS = ['./', './index.html', './manifest.webmanifest'];
 
 self.addEventListener('install', event => {
@@ -13,11 +13,16 @@ self.addEventListener('message', event => {
   if (event.data?.type === 'SKIP_WAITING') self.skipWaiting();
 });
 
-async function networkFirst(request) {
+async function networkFirst(request, event) {
   const cache = await caches.open(CACHE_NAME);
   try {
     const response = await fetch(request);
-    if (response.ok && response.type === 'basic') await cache.put(request, response.clone());
+    // Never delay the page while CacheStorage writes a copy. Waiting here made
+    // a cold start serialize dozens of disk writes; F5 then looked magically
+    // faster only because the cache had finally been populated.
+    if (response.ok && response.type === 'basic') {
+      event.waitUntil(cache.put(request, response.clone()).catch(() => {}));
+    }
     return response;
   } catch (error) {
     const cached = await cache.match(request, { ignoreSearch:false })
@@ -32,7 +37,7 @@ self.addEventListener('fetch', event => {
   if (request.method !== 'GET') return;
   const url = new URL(request.url);
   if (url.origin !== self.location.origin) return;
-  event.respondWith(networkFirst(request));
+  event.respondWith(networkFirst(request, event));
 });
 
 self.addEventListener('push', event => {

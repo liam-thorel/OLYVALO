@@ -22,13 +22,15 @@ import { filterHistoryGames, historyDailyPerformances, historyGameForOwner, hist
 import { initCurse } from './curse.mjs?v=20260818-curse-lifecycle';
 import { fetchJsonWithTimeout } from './request-utils.mjs?v=20260809-route-load-stable';
 import { liveDataStore, liveTimestamp } from './live-data-store.mjs?v=20260810-firebase-connection-fix';
-import { createHistoryPager } from './history-pager.mjs?v=20260825-first-load-recovery';
+import { createHistoryPager } from './history-pager.mjs?v=20260826-cold-load-recovery';
 
 const VALORANT_HISTORY_CACHE_KEY = 'olycity-valorant-history-cache-v1';
 let historyLoadSequence = 0;
 let valorantHistoryReady = false;
 let lastValorantHistoryState = null;
 let lastValorantHistorySavedAt = 0;
+let valorantHistoryRecoveryAttempts = 0;
+let valorantHistoryRecoveryTimer = null;
 const valorantHistoryPager = createHistoryPager({
   firebaseUrl:'https://realtime-database-5bb9f-default-rtdb.europe-west1.firebasedatabase.app',
   indexPath:'historyIndex/valorant',
@@ -1300,10 +1302,19 @@ export async function initHistoryPage() {
       pagerState = await valorantHistoryPager.loadNext();
       if (loadSequence !== historyLoadSequence) return;
       valorantHistoryReady = true;
+      valorantHistoryRecoveryAttempts = 0;
+      clearTimeout(valorantHistoryRecoveryTimer);
       rememberValorantHistory(pagerState);
       games = normalizeHistoryEntries(pagerState.data);
     } catch {
       if (loadSequence !== historyLoadSequence) return;
+      if (valorantHistoryRecoveryAttempts < 2 && document.getElementById('page-history')?.classList.contains('active') && document.documentElement.dataset.game !== 'lol') {
+        valorantHistoryRecoveryAttempts += 1;
+        el.innerHTML = `<div class="data-state-card is-loading"><span class="data-state-pulse" aria-hidden="true"></span><div><strong>Reconnexion à l’historique</strong><small>Nouvelle tentative automatique ${valorantHistoryRecoveryAttempts}/2…</small></div><span class="data-state-lines" aria-hidden="true"><i></i><i></i></span></div>`;
+        clearTimeout(valorantHistoryRecoveryTimer);
+        valorantHistoryRecoveryTimer = setTimeout(initHistoryPage, 700 * valorantHistoryRecoveryAttempts);
+        return;
+      }
       el.innerHTML = `<div class="data-state-card is-error">
         <span class="data-state-pulse" aria-hidden="true"></span><div><strong>Historique indisponible</strong>
         <small>Le chargement a pris trop de temps ou la connexion a été interrompue.</small></div>
@@ -1755,6 +1766,8 @@ export async function initHistoryPage() {
   };
 
   refreshHistory();
+  valorantHistoryRecoveryAttempts = 0;
+  clearTimeout(valorantHistoryRecoveryTimer);
   void agentMapPromise.then(() => {
     if (loadSequence === historyLoadSequence) refreshHistory();
   });

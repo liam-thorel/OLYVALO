@@ -44,13 +44,13 @@ export function createHistoryPager({
     if (!force && index.length && Date.now() - indexedAt < cacheMs) return index;
     if (indexPromise) return indexPromise;
     indexPromise = (async () => {
-      const rawIndex = await fetchJson(url(indexPath), { timeoutMs:8_000 });
+      const rawIndex = await fetchJson(url(indexPath), { timeoutMs:6_000, attempts:2, retryDelays:[500] });
       if (rawIndex && Object.keys(rawIndex).length) return rebuildIndex(rawIndex);
 
       // Compatibilité de secours avant/pendant une migration d'index : une
       // lecture complète reste fonctionnelle, puis les détails sont gardés en
       // mémoire afin de ne pas être retéléchargés.
-      const legacy = await fetchJson(url(dataPath), { timeoutMs:12_000 });
+      const legacy = await fetchJson(url(dataPath), { timeoutMs:8_000, attempts:2, retryDelays:[500] });
       Object.entries(legacy || {}).forEach(([id, value]) => detailCache.set(id, value));
       return rebuildIndex(legacy || {});
     })().finally(() => { indexPromise = null; });
@@ -78,7 +78,7 @@ export function createHistoryPager({
 
   async function loadDetail(id) {
     if (detailCache.has(id)) return detailCache.get(id);
-    const detail = await fetchJson(url(`${dataPath}/${encodeURIComponent(id)}`), { timeoutMs:8_000 });
+    const detail = await fetchJson(url(`${dataPath}/${encodeURIComponent(id)}`), { timeoutMs:6_000, attempts:2, retryDelays:[500] });
     if (detail) detailCache.set(id, detail);
     return detail;
   }

@@ -1,6 +1,6 @@
 import { groupLolSessions, lolKda, normalizeLolHistory, summarizeLolDays } from './lol-utils.mjs?v=20260810-firebase-connection-fix';
 import { liveDataStore } from './live-data-store.mjs?v=20260810-firebase-connection-fix';
-import { createHistoryPager } from './history-pager.mjs?v=20260825-first-load-recovery';
+import { createHistoryPager } from './history-pager.mjs?v=20260826-cold-load-recovery';
 
 const FIREBASE_URL = 'https://realtime-database-5bb9f-default-rtdb.europe-west1.firebasedatabase.app';
 const LOL_HISTORY_CACHE_KEY = 'olycity-lol-history-cache-v1';
@@ -8,6 +8,8 @@ let historyLoadSequence = 0;
 let historyReady = false;
 let lastHistoryState = null;
 let lastHistorySavedAt = 0;
+let historyRecoveryAttempts = 0;
+let historyRecoveryTimer = null;
 const lolHistoryPager = createHistoryPager({
   firebaseUrl:FIREBASE_URL,
   indexPath:'historyIndex/lol',
@@ -217,6 +219,8 @@ export async function initLolHistoryPage() {
     const pagerState = historyReady ? await lolHistoryPager.refresh() : await lolHistoryPager.loadNext();
     if (loadSequence !== historyLoadSequence) return;
     historyReady = true;
+    historyRecoveryAttempts = 0;
+    clearTimeout(historyRecoveryTimer);
     rememberHistoryState(pagerState);
     const matches = normalizeLolHistory(pagerState.data);
     renderHistory(matches, 'all', 'all', pagerState);
@@ -225,6 +229,13 @@ export async function initLolHistoryPage() {
     if (cached?.state) {
       renderHistory(normalizeLolHistory(cached.state.data), 'all', 'all', cached.state);
       showHistorySyncNote(cached.savedAt, 'offline');
+      return;
+    }
+    if (historyRecoveryAttempts < 2 && document.getElementById('page-history')?.classList.contains('active') && document.documentElement.dataset.game === 'lol') {
+      historyRecoveryAttempts += 1;
+      el.innerHTML = `<div class="data-state-card is-loading"><span class="data-state-pulse" aria-hidden="true"></span><div><strong>Reconnexion à l’historique</strong><small>Nouvelle tentative automatique ${historyRecoveryAttempts}/2…</small></div><span class="data-state-lines" aria-hidden="true"><i></i><i></i></span></div>`;
+      clearTimeout(historyRecoveryTimer);
+      historyRecoveryTimer = setTimeout(initLolHistoryPage, 700 * historyRecoveryAttempts);
       return;
     }
     el.innerHTML = '<div class="data-state-card is-error"><span class="data-state-pulse" aria-hidden="true"></span><div><strong>Historique indisponible</strong><small>La connexion a pris trop de temps.</small></div><button type="button" data-lol-history-retry class="btn btn-primary">Réessayer</button></div>';

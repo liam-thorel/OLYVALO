@@ -14,7 +14,7 @@
 
 import { accountLiveState, accountRiotId, discoveryRows, normalizeGames } from './admin-account-utils.mjs?v=20260810-firebase-connection-fix';
 import { buildScriptHealth, scriptDiagnosticText, scriptHealthSummary } from './admin-health-utils.mjs?v=20260814-admin-current-script';
-import { fetchJsonWithTimeout } from './request-utils.mjs?v=20260809-route-load-stable';
+import { fetchJsonWithRetry, fetchJsonWithTimeout } from './request-utils.mjs?v=20260825-first-load-recovery';
 import { isLiveRecordExpired, liveDataStore, staleLiveRecords } from './live-data-store.mjs?v=20260810-firebase-connection-fix';
 import { mergeMemberProfiles } from './member-profiles.mjs?v=20260823-profile-picker';
 import { readSiteVitals } from './site-telemetry.mjs?v=20260825-site-health';
@@ -134,8 +134,8 @@ function applyLiveSnapshot(snapshot = {}) {
 
 async function loadAll(signal) {
   const [roster, members, overlay, discoveredData, liveSnapshot, updateManifest] = await Promise.all([
-    fetchJsonWithTimeout(`./data/roster.json?v=${Date.now()}`, { signal, timeoutMs: ADMIN_LOAD_TIMEOUT_MS }),
-    fetchJsonWithTimeout(`./data/members.json?v=${Date.now()}`, { signal, timeoutMs: ADMIN_LOAD_TIMEOUT_MS }),
+    fetchJsonWithRetry(`./data/roster.json?v=${Date.now()}`, { signal, timeoutMs:6_000, attempts:2 }),
+    fetchJsonWithRetry(`./data/members.json?v=${Date.now()}`, { signal, timeoutMs:6_000, attempts:2 }),
     fbGet('rosterOverlay', signal).catch(() => null),
     fbGet('discovered', signal).catch(() => null),
     liveDataStore.refresh({ timeoutMs:ADMIN_LOAD_TIMEOUT_MS }).catch(() => liveDataStore.snapshot()),
