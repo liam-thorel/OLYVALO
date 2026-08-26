@@ -180,8 +180,11 @@
     box-shadow: inset -18px 0 18px -20px var(--red);
   }
 
-  .live-header { flex-wrap: wrap; }
-  .live-server { order: 5; width: 100%; max-width: none; }
+  .live-header { align-items:stretch; flex-direction:column; gap:9px; padding:10px; }
+  .live-match-context{ display:grid; grid-template-columns:minmax(0,1fr) auto; gap:8px; }
+  .live-server { grid-column:1 / -1; grid-row:2; width:100%; max-width:none; }
+  .live-phase{ align-self:center; }
+  .curse-controls{ width:100%; margin-left:0; justify-content:flex-end; }
   .live-body { grid-template-columns: minmax(0, 1fr); }
   .live-minimap-wrap { width: 100%; max-width: 100%; }
   .live-players { grid-template-columns: 1fr; min-width: 0; }
@@ -215,6 +218,7 @@
   .history-teams { grid-template-columns: 1fr; }
   .history-detail-layout { grid-template-columns: 1fr; }
   .history-map-visual { min-height: 220px; }
+  .history-tracker-link { min-height:44px; }
   .history-match-overview { grid-template-columns: 1fr; }
   .history-performance-card.self { grid-template-columns: 1fr; }
   .history-performance-metrics { grid-template-columns: repeat(2,1fr); }

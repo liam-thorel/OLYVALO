@@ -18,7 +18,7 @@ import { buildLiveIdentityIndex, resolveLiveIdentity } from './live-identities.m
 import { PLAYERS as LOL_ROSTER_PLAYERS } from './lol-roster.mjs?v=20260809-lol-sync';
 import { serverVisual } from './server-visuals.mjs?v=20260809-live-server-local';
 import { avatarLayersHTML } from './avatars.mjs?v=20260720-avatars';
-import { filterHistoryGames, historyDailyPerformances, historyGameForOwner, historyMode, historyOwnerKey, historyOwnerLabel, historyPlayerName, historyPlayerPerformance, historyPlayerPerformances, historyRankedPlayers, historyReports, isHistorySelf, normalizeHistoryEntries } from './history-utils.mjs?v=20260720-history-multi';
+import { filterHistoryGames, historyDailyPerformances, historyGameForOwner, historyMode, historyOwnerKey, historyOwnerLabel, historyPlayerName, historyPlayerPerformance, historyPlayerPerformances, historyRankedPlayers, historyReports, historyTrackerUrl, isHistorySelf, normalizeHistoryEntries } from './history-utils.mjs?v=20260827-riot-ids-tracker';
 import { initCurse } from './curse.mjs?v=20260818-curse-lifecycle';
 import { fetchJsonWithTimeout } from './request-utils.mjs?v=20260809-route-load-stable';
 import { liveDataStore, liveTimestamp } from './live-data-store.mjs?v=20260810-firebase-connection-fix';
@@ -949,18 +949,9 @@ export function initLivePage() {
       }
     }
 
-    // Player tag — guard
-    const header = document.getElementById('live-header');
-    if (header && data.playerName) {
-      let playerEl = document.getElementById('live-player-tag');
-      if (!playerEl) {
-        playerEl = document.createElement('div');
-        playerEl.id = 'live-player-tag';
-        playerEl.style.cssText = 'font-family:Tomorrow,sans-serif;font-size:10px;letter-spacing:2px;color:var(--muted);text-transform:uppercase;margin-left:auto';
-        header.appendChild(playerEl);
-      }
-      if (playerEl.textContent !== data.playerName) playerEl.textContent = data.playerName;
-    }
+    // L'identité de l'observateur est déjà visible dans le sélecteur de
+    // sessions : ne pas la répéter dans l'en-tête du match.
+    document.getElementById('live-player-tag')?.remove();
 
     // Pregame — show map comps during agent select
     let compsEl = document.getElementById('live-comps-panel');
@@ -1461,17 +1452,11 @@ export async function initHistoryPage() {
   const playerRow = (game, player, index, rank = '') => {
     const deathmatch = historyMode(game) === 'deathmatch';
     const lastMetric = deathmatch ? player.stats?.score : player.stats?.acs;
-    const selfReport = historyReports(game).find(report =>
-      (report.playerPuuid && player.puuid && report.playerPuuid === player.puuid)
-      || (report.player && player.name && report.player === player.name)
-    );
-    const playerName = selfReport
-      ? historyOwnerLabel(selfReport, state.ROSTER)
-      : historyPlayerName(game, player, index);
+    const playerName = historyPlayerName(game, player, index);
     return `
     <div class="history-player ${isHistorySelf(game, player) ? 'self' : ''}">
       ${rank ? `<span class="history-player-rank">${rank}</span>` : `<img src="${agentIconFromName(player.agent)}" alt="${player.agent||''}" onerror="this.style.visibility='hidden'">`}
-      <span class="history-player-name">${playerName}<small>${player.agent||'?'}</small></span>
+      <span class="history-player-name">${historyEscape(playerName)}<small>${historyEscape(player.agent||'?')}</small></span>
       <strong>${player.stats?.kills||0}/${player.stats?.deaths||0}/${player.stats?.assists||0}</strong>
       <span>${Number.isFinite(lastMetric) ? lastMetric : '—'} ${deathmatch ? 'PTS' : 'ACS'}</span>
     </div>`;
@@ -1498,6 +1483,7 @@ export async function initHistoryPage() {
     const rrDelta = kind === 'competitive' ? game.rr?.delta : null;
     const selfName = historyOwnerLabel(game, state.ROSTER);
     const mvpIndex = mvp ? rankedPlayers.indexOf(mvp) : -1;
+    const trackerUrl = historyTrackerUrl(game);
 
     const overviewHTML = performances.length ? `<div class="history-match-overview">
       ${performances.map(entry => {
@@ -1506,7 +1492,7 @@ export async function initHistoryPage() {
         return `<section class="history-performance-card self">
           <div class="history-performance-player">
             <img src="${agentIconFromName(tracked.agent)}" alt="${tracked.agent||''}" onerror="this.style.display='none'">
-            <span><small>Performance suivie</small><strong>${historyOwnerLabel(entry.report, state.ROSTER)}</strong><em>${tracked.agent||'Agent inconnu'}</em></span>
+            <span><small>Performance suivie</small><strong>${historyOwnerLabel(entry.report, state.ROSTER)}</strong><em>${historyEscape(historyPlayerName(entry.report, tracked))} · ${historyEscape(tracked.agent||'Agent inconnu')}</em></span>
           </div>
           <div class="history-performance-metrics">
             <div><strong>${tracked.stats?.kills||0}/${tracked.stats?.deaths||0}/${tracked.stats?.assists||0}</strong><span>K / D / A</span></div>
@@ -1551,6 +1537,7 @@ export async function initHistoryPage() {
           ${Number.isFinite(game.rounds) && kind === 'competitive' ? `<span>Manches <strong>${game.rounds}</strong></span>` : ''}
           ${Number.isFinite(rrDelta) ? `<span>RR <strong class="${rrDelta >= 0 ? 'positive' : 'negative'}">${rrDelta >= 0 ? '+' : ''}${rrDelta}</strong></span>` : ''}
         </div>
+        ${trackerUrl ? `<a class="history-tracker-link" href="${trackerUrl}" target="_blank" rel="noopener noreferrer">Voir sur Tracker.gg <span aria-hidden="true">↗</span></a>` : ''}
       </aside>
       <div class="history-detail-content">${overviewHTML}<div class="history-detail-players">${playersHTML}</div></div>
     </div>`;

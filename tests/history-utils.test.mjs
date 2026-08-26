@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { filterHistoryGames, historyDailyPerformances, historyGameForOwner, historyMode, historyOwnerKey, historyOwnerKeys, historyOwnerLabel, historyPlayerName, historyPlayerPerformance, historyPlayerPerformances, historyRankedPlayers, isHistorySelf, isOpaquePlayerName, normalizeHistoryEntries } from '../js/history-utils.mjs';
+import { filterHistoryGames, historyDailyPerformances, historyGameForOwner, historyMatchId, historyMode, historyOwnerKey, historyOwnerKeys, historyOwnerLabel, historyPlayerName, historyPlayerPerformance, historyPlayerPerformances, historyRankedPlayers, historyTrackerUrl, isHistorySelf, isOpaquePlayerName, normalizeHistoryEntries } from '../js/history-utils.mjs';
 
 assert.equal(historyMode({ mode: 'competitive' }), 'competitive');
 assert.equal(historyMode({ mode: 'deathmatch' }), 'deathmatch');
@@ -8,11 +8,15 @@ assert.equal(historyMode({ mode: 'swiftplay' }), 'other');
 assert.equal(isOpaquePlayerName('b2f303f9'), true);
 assert.equal(isOpaquePlayerName('Nico#XOOO'), false);
 assert.equal(historyPlayerName({}, { name: 'b2f303f9' }, 2), 'Joueur 3');
-assert.equal(historyPlayerName({ player: 'Nico#XOOO' }, { name: 'Nico#XOOO' }), 'Nico');
+assert.equal(historyPlayerName({ player: 'Nico#XOOO' }, { name: 'Nico#XOOO' }), 'Nico#XOOO');
 assert.equal(historyPlayerName(
   { player: 'b2f303f9', playerPuuid: 'self-id' },
   { name: 'b2f303f9', puuid: 'self-id' },
 ), 'Vous');
+assert.equal(historyPlayerName({}, { name:'RayBaz#OLY' }), 'RayBaz#OLY');
+assert.equal(historyMatchId({ historyId:'12402c06-2111-419e-be84-51f849101a46' }), '12402c06-2111-419e-be84-51f849101a46');
+assert.equal(historyTrackerUrl({ matchId:'12402c06-2111-419e-be84-51f849101a46' }), 'https://tracker.gg/valorant/match/12402c06-2111-419e-be84-51f849101a46');
+assert.equal(historyTrackerUrl({ historyId:'legacy' }), '');
 
 const now = new Date('2026-07-20T12:00:00').getTime();
 const history = [

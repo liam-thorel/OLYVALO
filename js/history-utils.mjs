@@ -62,12 +62,24 @@ export function historyPlayerName(game, player, index = 0) {
       || (report.player && player?.name && report.player === player.name)
     ) || historyReports(game)[0];
     const owner = String(matchingReport?.player || '').trim();
-    if (owner && !isOpaquePlayerName(owner)) return owner.split('#')[0];
-    if (!isOpaquePlayerName(raw)) return raw.split('#')[0];
+    if (owner && !isOpaquePlayerName(owner)) return owner;
+    if (!isOpaquePlayerName(raw)) return raw;
     return 'Vous';
   }
   if (!raw || isOpaquePlayerName(raw)) return `Joueur ${index + 1}`;
-  return raw.split('#')[0];
+  return raw;
+}
+
+export function historyMatchId(game = {}) {
+  const matchId = String(game.matchId || game.historyId || '').trim();
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(matchId)
+    ? matchId
+    : '';
+}
+
+export function historyTrackerUrl(game = {}) {
+  const matchId = historyMatchId(game);
+  return matchId ? `https://tracker.gg/valorant/match/${encodeURIComponent(matchId)}` : '';
 }
 
 export function historyOwnerKey(game) {

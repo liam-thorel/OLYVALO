@@ -118,9 +118,6 @@ export function buildHomeActivity({ valorant = {}, lol = {}, coop = {}, plan = n
   Object.entries(valorant || {}).forEach(([id, match]) => {
     const ts = normalizeTimestamp(match?.endTs || match?.ts);
     if (!ts) return;
-    const name = memberName(match, members);
-    const won = String(match.result || '').toLowerCase() === 'win';
-    events.push({ id:`valorant-${id}`, kind:'valorant', ts, fresh:ts > lastSeen, text:`${name} a ${won ? 'gagné' : 'terminé'} sur ${match.map || 'Valorant'}` });
     const reports = Object.values(match?.reports || {});
     reports.forEach((report, index) => {
       const promotion = rankPromotion('valorant', report);
@@ -133,19 +130,33 @@ export function buildHomeActivity({ valorant = {}, lol = {}, coop = {}, plan = n
     const ts = normalizeTimestamp(match?.ts);
     if (!ts) return;
     const name = memberName(match, members);
-    const champion = match.champion?.name || match.championName || match.champion || 'League';
-    events.push({ id:`lol-${id}`, kind:'lol', ts, fresh:ts > lastSeen, text:`${name} a ${match.win ? 'gagné' : 'joué'} avec ${champion}` });
     const promotion = rankPromotion('lol', match);
     if (promotion) events.push({ id:`rank-lol-${id}`, kind:'rank', ts:ts + 1, fresh:ts > lastSeen, text:`${name} est passé ${promotion.after} sur League of Legends` });
   });
   Object.entries(coop || {}).forEach(([id, game]) => {
     const submittedAt = normalizeTimestamp(game?.submittedAt);
-    if (submittedAt) events.push({ id:`coop-add-${id}`, kind:'coop', ts:submittedAt, fresh:submittedAt > lastSeen, text:`${game.title || 'Un jeu'} a rejoint la liste Coop` });
+    if (submittedAt) {
+      const submittedBy = String(game.submittedBy || '').trim();
+      events.push({
+        id:`coop-add-${id}`, kind:'coop-add', ts:submittedAt, fresh:submittedAt > lastSeen,
+        text:`${submittedBy || 'Un membre'} a ajouté ${game.title || 'un jeu'} à la liste Coop`,
+      });
+    }
     const statusAt = normalizeTimestamp(game?.statusAt);
-    if (statusAt && statusAt !== submittedAt) events.push({ id:`coop-status-${id}`, kind:'coop', ts:statusAt, fresh:statusAt > lastSeen, text:`${game.title || 'Un jeu'} · ${game.status === 'replay' ? 'à rejouer' : game.status === 'planned' ? 'planifié' : 'liste actualisée'}` });
+    if (statusAt && ['replay','planned'].includes(game.status)) {
+      const statusBy = String(game.statusBy || '').trim();
+      const action = game.status === 'replay' ? 'marqué à rejouer' : 'planifié';
+      events.push({ id:`coop-status-${id}`, kind:'coop', ts:statusAt, fresh:statusAt > lastSeen, text:`${game.title || 'Un jeu'} ${action}${statusBy ? ` par ${statusBy}` : ''}` });
+    }
   });
   if (plan?.updatedAt) events.push({ id:'night-plan', kind:'coop', ts:plan.updatedAt, fresh:plan.updatedAt > lastSeen, text:`${plan.createdBy || 'Le groupe'} propose ${plan.gameTitle} à ${plan.time}` });
-  return events.sort((left, right) => right.ts - left.ts).slice(0, Math.max(1, limit));
+  let coopAddShown = false;
+  return events.sort((left, right) => right.ts - left.ts).filter(event => {
+    if (event.kind !== 'coop-add') return true;
+    if (coopAddShown) return false;
+    coopAddShown = true;
+    return true;
+  }).slice(0, Math.max(1, limit));
 }
 
 export function relativeActivityTime(timestamp, now = Date.now()) {

@@ -34,17 +34,41 @@ test('group night supports several slots, game votes and a deterministic best ch
   assert.equal(groupNightNeedsResponse(plan, 'rayhan'), true);
 });
 
-test('home activity combines both games and coop without exceeding the limit', () => {
+test('home activity keeps only important events without exceeding the limit', () => {
   const events = buildHomeActivity({
     valorant:{ a:{ ts:300, memberId:'nico', result:'win', map:'Lotus' } },
-    lol:{ b:{ ts:200, memberId:'liam', win:false, champion:'Teemo' } },
-    coop:{ c:{ submittedAt:100, title:'PEAK' } },
+    lol:{ b:{ ts:200, memberId:'liam', win:false, champion:'Teemo', rankBefore:{tier:'SILVER'}, rankAfter:{tier:'GOLD'} } },
+    coop:{ c:{ submittedAt:100, submittedBy:'Nico', title:'PEAK' }, d:{ statusAt:150, status:'planned', statusBy:'Liam', title:'Lethal Company' } },
     members:[{ id:'nico', name:'Nico' }, { id:'liam', name:'Liam' }],
     limit:2,
   });
   assert.equal(events.length, 2);
-  assert.match(events[0].text, /Nico.*Lotus/);
-  assert.match(events[1].text, /Liam.*Teemo/);
+  assert.doesNotMatch(events.map(event => event.text).join(' '), /Nico.*Lotus/);
+  assert.doesNotMatch(events.map(event => event.text).join(' '), /Teemo|PEAK/);
+  assert.match(events[0].text, /Liam.*Gold/);
+  assert.match(events[1].text, /Lethal Company.*planifié par Liam/);
+});
+
+test('home activity ignores ordinary Valorant match endings', () => {
+  const events = buildHomeActivity({
+    valorant:{ a:{ ts:300, memberId:'nico', result:'loss', map:'Sunset' } },
+    members:[{ id:'nico', name:'Nico' }],
+  });
+  assert.deepEqual(events, []);
+});
+
+test('home activity ignores ordinary League matches and names the latest Coop submitter', () => {
+  const events = buildHomeActivity({
+    lol:{ a:{ ts:300, memberId:'liam', win:true, champion:'Teemo' } },
+    coop:{
+      b:{ submittedAt:250, submittedBy:'Nico', title:'PEAK', status:'open' },
+      c:{ submittedAt:200, submittedBy:'Rayhan', title:'Lethal Company', status:'open' },
+    },
+    members:[{ id:'liam', name:'Liam' }],
+  });
+  assert.equal(events.length, 1, 'seul le dernier ajout Coop est affiché pour éviter le flood');
+  assert.equal(events[0].text, 'Nico a ajouté PEAK à la liste Coop');
+  assert.doesNotMatch(events[0].text, /Teemo|Lethal Company/);
 });
 
 test('home activity highlights real rank promotions but ignores divisions', () => {

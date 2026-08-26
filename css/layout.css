@@ -509,10 +509,11 @@ body.agent-mode .footer{ display:none; }
 @keyframes dataPulse { 50% { opacity: .45; transform: scale(.82); } }
 @keyframes dataShimmer { to { transform: translateX(100%); } }
 .live-header {
-  display: flex; align-items: center; gap: 18px; padding: 12px 18px;
+  display: flex; align-items: center; justify-content:space-between; gap: 18px; padding: 10px 14px;
   background: var(--surf); border: 1px solid var(--border);
   margin-bottom: 10px;
 }
+.live-match-context{ display:flex; align-items:center; gap:14px; min-width:0; }
 .live-map-name {
   font-family: 'Tomorrow', sans-serif; font-size: 18px; font-weight: 700;
   letter-spacing: 4px; text-transform: uppercase; color: var(--text);
@@ -885,6 +886,13 @@ body.agent-mode .footer{ display:none; }
 .history-match-facts > span > strong { margin: 0; color: #fff; font-size: 12px; }
 .history-match-facts > span > strong.positive { color: #3fcf6b; }
 .history-match-facts > span > strong.negative { color: #ff4656; }
+.history-tracker-link {
+  position:relative; z-index:1; align-self:flex-start; display:inline-flex; align-items:center; gap:7px;
+  min-height:34px; box-sizing:border-box; margin-top:9px; padding:7px 10px;
+  border:1px solid rgba(255,70,86,.45); background:rgba(7,9,14,.74); color:#fff;
+  font:650 10px 'Tomorrow',sans-serif; letter-spacing:.8px; text-decoration:none; text-transform:uppercase;
+}
+.history-tracker-link:hover,.history-tracker-link:focus-visible{ border-color:#ff4656; background:rgba(255,70,86,.16); outline:none; }
 .history-detail-content { display: grid; align-content: start; gap: 12px; min-width: 0; }
 .history-match-overview { display: grid; grid-template-columns: minmax(0,1fr); gap: 8px; }
 .history-performance-card { min-width: 0; border: 1px solid var(--border); background: var(--bg); }

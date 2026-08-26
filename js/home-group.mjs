@@ -1,5 +1,5 @@
 import { fetchJsonWithRetry } from './request-utils.mjs?v=20260825-first-load-recovery';
-import { buildHomeActivity, groupNightCalendar, groupNightDateLabel, groupNightNeedsResponse, groupNightVoteSummary, localDateKey, normalizeGroupNight, relativeActivityTime, responseCounts } from './home-group-utils.mjs?v=20260825-group-night-v2';
+import { buildHomeActivity, groupNightCalendar, groupNightDateLabel, groupNightNeedsResponse, groupNightVoteSummary, localDateKey, normalizeGroupNight, relativeActivityTime, responseCounts } from './home-group-utils.mjs?v=20260827-useful-activity';
 
 const FIREBASE_ROOT = 'https://realtime-database-5bb9f-default-rtdb.europe-west1.firebasedatabase.app';
 const LAST_SEEN_KEY = 'olycity-home-activity-seen';

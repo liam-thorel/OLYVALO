@@ -155,6 +155,14 @@ test('professional team logos remain visible on dark cards', () => {
   assert.match(render, /class="comp-tab-short"/);
 });
 
+test('Live avoids duplicate observer identity and history links Riot matches', () => {
+  assert.match(page, /class="live-match-context"/);
+  assert.doesNotMatch(page, /id="live-player-tag"/);
+  assert.match(interactions, /document\.getElementById\('live-player-tag'\)\?\.remove\(\)/);
+  assert.match(interactions, /class="history-tracker-link"/);
+  assert.match(interactions, /historyTrackerUrl\(game\)/);
+});
+
 test('maps keep only useful composition and lineup controls', () => {
   assert.match(render, /class="map-notes-card"/);
   assert.match(render, /switchMapTab\('\$\{idx\}','lineups'/);
