@@ -207,6 +207,11 @@
   .live-pregame-header { flex-direction: column; min-height: 0; padding: 16px; }
   .live-side-card { min-width: 0; width: 100%; box-sizing: border-box; }
   .live-pregame-heading strong { letter-spacing: 3px; }
+  .live-pregame-comps{ display:flex; margin:0 -16px; padding:0 16px; gap:8px; overflow-x:auto; scroll-snap-type:x mandatory; scrollbar-width:none; }
+  .live-pregame-comps::-webkit-scrollbar{ display:none; }
+  .live-pregame-comp{ flex:0 0 min(78vw,290px); padding:11px 12px; scroll-snap-align:start; }
+  .live-pro-preset-btn{ min-width:44px; }
+  .live-comp-agent-names{ font-size:8px; }
   .history-teams { grid-template-columns: 1fr; }
   .history-detail-layout { grid-template-columns: 1fr; }
   .history-map-visual { min-height: 220px; }
@@ -317,6 +322,15 @@
   .comp-name { min-width: 0; overflow: hidden; text-overflow: ellipsis; font-size: 15px; white-space: nowrap; }
   .comp-updated, .comp-outdated, .comp-card-actions { display: none; }
 
+  .pro-team-picker{ margin:0 -16px 12px; padding:0 16px; gap:7px; scroll-snap-type:x proximity; }
+  .pro-team-btn{ min-width:92px; min-height:44px; padding:6px 8px; gap:7px; scroll-snap-align:start; }
+  .pro-team-btn img{ width:25px; height:25px; }
+  .pro-team-btn small{ display:none; }
+  .pro-match-meta{ margin:0 0 12px; padding:7px 9px; }
+  .pro-match-meta > img{ width:28px; height:28px; }
+  .pro-match-meta strong{ font-size:10px; }
+  .pro-match-meta span{ font-size:9px; }
+
   .agents-grid { grid-template-columns: repeat(6,minmax(0,1fr)); gap: 9px 7px; }
   .agents-grid > .agent-card { grid-column: span 2; min-width: 0; }
   .agents-grid > .agent-card:nth-child(4) { grid-column: 2 / span 2; }
@@ -346,7 +360,7 @@
   .tip-box { margin-top: 0; padding: 12px; gap: 10px; }
   .tip-icon { padding: 2px 6px; font-size: 8px; letter-spacing: 1px; }
   .tip-text { font-size: 12px; line-height: 1.5; }
-  .comp-card-footer { margin-top: 12px; }
+  .comp-card-footer { margin-top: 12px; align-items:flex-start; flex-wrap:wrap; }
   .comp-source { display: block; margin-top: 0; font-size: 10px; line-height: 1.4; }
 
   .comp-agents { gap: 4px; }

@@ -50,6 +50,34 @@
 /* AGENT CARDS (3D tilt) */
 .agents-grid{ display:grid; grid-template-columns:repeat(5, 1fr); gap:12px; }
 
+.pro-team-picker{
+  display:flex; gap:8px; margin:-4px 0 16px; overflow-x:auto;
+  scrollbar-width:none;
+}
+.pro-team-picker::-webkit-scrollbar{ display:none; }
+.pro-team-btn{
+  min-width:132px; min-height:48px; padding:7px 10px; display:flex; align-items:center; gap:9px;
+  border:1px solid var(--border2); background:rgba(255,255,255,.018); color:var(--muted);
+  cursor:pointer; text-align:left; transition:border-color .18s,background .18s,color .18s;
+}
+.pro-team-btn:hover,.pro-team-btn.active{
+  border-color:#4d9fff; background:rgba(30,120,255,.1); color:var(--text);
+}
+.pro-team-btn img{ width:30px; height:30px; object-fit:contain; flex:0 0 auto; }
+.pro-team-btn span{ min-width:0; display:grid; gap:2px; }
+.pro-team-btn strong{
+  font:700 10px 'Tomorrow',sans-serif; letter-spacing:1.2px; text-transform:uppercase;
+}
+.pro-team-btn small{ overflow:hidden; color:var(--dim); font-size:9px; text-overflow:ellipsis; white-space:nowrap; }
+.pro-match-meta{
+  min-height:50px; margin:-8px 0 16px; padding:8px 10px; display:flex; align-items:center; gap:10px;
+  border-left:2px solid #4d9fff; background:rgba(30,120,255,.045);
+}
+.pro-match-meta > img{ width:34px; height:34px; object-fit:contain; }
+.pro-match-meta > div{ min-width:0; display:grid; gap:3px; }
+.pro-match-meta strong{ font:700 11px 'Tomorrow',sans-serif; color:var(--text); text-transform:uppercase; }
+.pro-match-meta span{ color:var(--muted); font-size:11px; line-height:1.35; }
+
 .agent-card{
   position:relative; cursor:pointer;
   transform-style:preserve-3d; perspective:800px;
@@ -141,6 +169,15 @@
 }
 .tip-text{ font-size:13px; color:var(--text); line-height:1.6; flex:1; }
 .tip-text strong{ color:var(--C); font-weight:500; }
+.comp-reference{
+  margin-left:auto;
+  color:var(--C);
+  font-size:11px;
+  font-weight:700;
+  letter-spacing:.06em;
+  text-transform:uppercase;
+}
+.comp-reference:hover{ color:var(--text); }
 
 /* META NOTES PER MAP */
 .map-notes-card{
@@ -553,6 +590,7 @@
 .comp-mobile-details { display: none; }
 
 .comp-card-footer {
+  display:flex; align-items:center; gap:12px;
   padding-top: 8px;
   border-top: 1px solid var(--border);
 }

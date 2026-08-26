@@ -987,6 +987,36 @@ export function initLivePage() {
           if (!mapData) { compsEl.innerHTML = ''; return; }
           const pick = (...tiers) => mapData.comps.find(c => tiers.includes(c.tier));
           const show = [pick('S'), pick('PRO'), pick('FUN', 'F')].filter(Boolean);
+          const agentIcons = agents => agents.map(a => {
+            const uuid = (window._agentNameToUuid || {})[a];
+            return uuid
+              ? `<img src="https://media.valorant-api.com/agents/${uuid}/displayicon.png" title="${a}" alt="${a}">`
+              : `<span>${a}</span>`;
+          }).join('');
+          const liveCompCard = comp => {
+            const presets = Array.isArray(comp.teamPresets) ? comp.teamPresets : [];
+            const presetIndex = Math.min(comp.selectedPreset || 0, Math.max(0, presets.length - 1));
+            const preset = presets[presetIndex];
+            const agents = preset?.agents || comp.agents;
+            const teamPicker = presets.length ? `
+              <div class="live-pro-team-picker" role="tablist" aria-label="Équipe professionnelle">
+                ${presets.map((team, index) => `
+                  <button type="button" class="live-pro-preset-btn ${index === presetIndex ? 'active' : ''}"
+                    data-live-pro-preset="${index}" aria-selected="${index === presetIndex}" title="${team.team}">
+                    <img src="${team.logo}" alt=""><span>${team.tag}</span>
+                  </button>`).join('')}
+              </div>
+              <div class="live-comp-team-meta">
+                <img src="${preset.logo}" alt=""><span><strong>${preset.team}</strong><small>vs ${preset.opponent} · ${preset.score}</small></span>
+              </div>` : '';
+            return `
+              <div class="live-pregame-comp" data-live-comp-tier="${comp.tier}">
+                <div class="live-pregame-comp-label">${comp.label || comp.tier}</div>
+                ${teamPicker}
+                <div class="live-comp-agents">${agentIcons(agents)}</div>
+                <div class="live-comp-agent-names">${agents.join(' · ')}</div>
+              </div>`;
+          };
           compsEl.innerHTML = `
             <div class="live-pregame-header ${sideClass}">
               <div class="live-pregame-heading">
@@ -1002,17 +1032,30 @@ export function initLivePage() {
                 </span>
               </div>
             </div>
-            <div style="display:flex;gap:10px;flex-wrap:wrap">
-            ${show.map(c => `
-              <div style="flex:1;min-width:210px;background:var(--surf);border:1px solid var(--border);padding:12px 14px">
-                <div style="font-family:Tomorrow,sans-serif;font-size:8px;letter-spacing:2px;color:var(--muted);text-transform:uppercase;margin-bottom:8px">${c.label || c.tier}</div>
-                <div style="display:flex;gap:6px;align-items:center;margin-bottom:8px">
-                  ${c.agents.map(a => { const u = (window._agentNameToUuid||{})[a]; return u ? `<img src="https://media.valorant-api.com/agents/${u}/displayicon.png" style="width:30px;height:30px;object-fit:cover" title="${a}">` : `<span style="font-size:9px;color:var(--dim)">${a}</span>`; }).join('')}
-                </div>
-                <div style="font-family:Tomorrow,sans-serif;font-size:9px;color:var(--dim);letter-spacing:1px">${c.agents.join(' · ')}</div>
-              </div>
-            `).join('')}
+            <div class="live-pregame-comps">
+              ${show.map(liveCompCard).join('')}
             </div>`;
+          compsEl.querySelectorAll('[data-live-pro-preset]').forEach(button => {
+            button.addEventListener('click', () => {
+              const proComp = pick('PRO');
+              const index = Number(button.dataset.liveProPreset);
+              const selected = proComp?.teamPresets?.[index];
+              const card = button.closest('.live-pregame-comp');
+              if (!selected || !card) return;
+              proComp.selectedPreset = index;
+              card.querySelectorAll('.live-pro-preset-btn').forEach((item, itemIndex) => {
+                const active = itemIndex === index;
+                item.classList.toggle('active', active);
+                item.setAttribute('aria-selected', String(active));
+              });
+              const agentRow = card.querySelector('.live-comp-agents');
+              const names = card.querySelector('.live-comp-agent-names');
+              const meta = card.querySelector('.live-comp-team-meta');
+              if (agentRow) agentRow.innerHTML = agentIcons(selected.agents);
+              if (names) names.textContent = selected.agents.join(' · ');
+              if (meta) meta.innerHTML = `<img src="${selected.logo}" alt=""><span><strong>${selected.team}</strong><small>vs ${selected.opponent} · ${selected.score}</small></span>`;
+            });
+          });
         }).catch(()=>{});
       }
     } else if (!isPregame && compsEl) {

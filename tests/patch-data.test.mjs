@@ -53,7 +53,17 @@ test('every map separates a sourced ranked recommendation from an observed pro c
 
     assert.equal(pro.label, 'Joue comme un pro', `${map.map} doit proposer une comp professionnelle`);
     assert.equal(pro.tier, 'PRO', `${map.map} doit identifier la comp professionnelle`);
-    assert.match(pro.vods?.[0]?.url || '', /rib\.gg/, `${map.map} doit lier le match professionnel observé`);
+    assert.match(pro.vods?.[0]?.url || '', /vlr\.gg/, `${map.map} doit lier le match professionnel observé`);
+    assert.equal(pro.tip, undefined, `${map.map} ne doit pas attribuer une stratégie non sourcée aux pros`);
+    assert.equal(pro.teamPresets?.length, 3, `${map.map} doit proposer trois équipes professionnelles`);
+    assert.equal(pro.teamPresets[0].id, 'kc', `${map.map} doit donner la priorité à KC`);
+    if (map.map !== 'Abyss') assert.equal(pro.teamPresets[1].id, 'm8', `${map.map} doit proposer Gentle Mates`);
+    for (const preset of pro.teamPresets) {
+      assert.equal(preset.agents.length, 5, `${map.map} / ${preset.team} doit avoir cinq agents`);
+      assert.match(preset.url, /vlr\.gg/, `${map.map} / ${preset.team} doit lier la feuille de match`);
+      assert.match(preset.date, /^2026-0[7-8]-/, `${map.map} / ${preset.team} doit venir de la méta récente`);
+      assert.ok(preset.logo?.startsWith('./assets/teams/'), `${map.map} / ${preset.team} doit utiliser un logo local`);
+    }
 
     for (const comp of [ranked, pro]) {
       assert.equal(comp.patch, '13.04', `${map.map} / ${comp.label} doit être à jour`);

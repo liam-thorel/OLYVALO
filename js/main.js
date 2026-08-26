@@ -6,12 +6,12 @@
 import { valorantApi } from './api.js';
 import { fetchJsonWithRetry, fetchJsonWithTimeout } from './request-utils.mjs?v=20260825-first-load-recovery';
 
-const SITE_VERSION = '20260826-cold-load-recovery';
+const SITE_VERSION = '20260826-pro-team-presets';
 const BOOT_RETRY_KEY = 'olycity-boot-retry';
 import { syncPlayer as henrikSyncPlayer, syncAllPlayers as henrikSyncAll, persistPlayerStats } from './henrik.js?v=20260809-val-roster-season';
 import { setStoredKey, storedKey, forgetCachedKey } from './henrik-key.mjs';
-import { rosterHTML, guestCardHTML, mapSectionHTML, agentPageHTML, navMapsHTML } from './render.js?v=20260823-home-art-buttons-fix';
-import { initTheme, initTilt, initParallax, initSearch, initKeyboard, initHeroParticles, initWheelLogos, initLivePage, initHistoryPage } from './interactions.js?v=20260826-cold-load-recovery';
+import { rosterHTML, guestCardHTML, mapSectionHTML, agentPageHTML, navMapsHTML, compHTML } from './render.js?v=20260826-pro-team-presets';
+import { initTheme, initTilt, initParallax, initSearch, initKeyboard, initHeroParticles, initWheelLogos, initLivePage, initHistoryPage } from './interactions.js?v=20260826-pro-team-presets';
 import { storage } from './storage.js';
 import { avatarLayersHTML } from './avatars.mjs';
 import { initAdminPage } from './admin.mjs?v=20260826-cold-load-recovery';
@@ -260,6 +260,22 @@ window.OLYCITY = {
     setTimeout(() => initTilt(), 50);
   },
 
+  switchProPreset(mapIdx, compIdx, presetIdx) {
+    const comp = state.COMPS_DATA[mapIdx]?.comps[compIdx];
+    const preset = comp?.teamPresets?.[presetIdx];
+    if (!comp || !preset) return;
+    comp.selectedPreset = presetIdx;
+    const panel = document.getElementById(`panel-${mapIdx}-${compIdx}`);
+    if (!panel) return;
+    const wasActive = panel.classList.contains('active');
+    panel.outerHTML = compHTML(comp, mapIdx, compIdx);
+    const nextPanel = document.getElementById(`panel-${mapIdx}-${compIdx}`);
+    if (wasActive) nextPanel?.classList.add('active');
+    const lineupPanel = document.getElementById(`maptab-${mapIdx}-lineups`);
+    if (lineupPanel?.classList.contains('active')) window.OLYCITY._refreshLineupTabs(mapIdx);
+    setTimeout(() => initTilt(), 50);
+  },
+
   showAgentPage(name) {
     // Push agent page to history so back button works
     window.history.pushState({ page: 'agent', agent: name }, '', `${window.location.pathname}#agent-${encodeURIComponent(name)}`);
@@ -298,7 +314,9 @@ window.OLYCITY = {
 
   // ─── SHARE COMP ──────────────────────────────
   shareComp(mapIdx, compIdx, btn) {
-    const hash = `comp-${mapIdx}-${compIdx}`;
+    const comp = state.COMPS_DATA[mapIdx]?.comps[compIdx];
+    const presetId = comp?.teamPresets?.[comp.selectedPreset || 0]?.id;
+    const hash = `comp-${mapIdx}-${compIdx}${presetId ? `-${presetId}` : ''}`;
     const url = `${window.location.origin}${window.location.pathname}#${hash}`;
     navigator.clipboard.writeText(url).then(() => {
       if (btn) {
@@ -316,7 +334,7 @@ window.OLYCITY = {
     if (!mapName) return;
     const compIdx = state.currentCompIdx[mapIdx] ?? 0;
     const comp = state.COMPS_DATA[mapIdx]?.comps[compIdx];
-    const compAgents = comp?.agents || [];
+    const compAgents = comp?.teamPresets?.[comp.selectedPreset || 0]?.agents || comp?.agents || [];
     const mapLineups = state.LINEUPS[mapName] || {};
     const lineupAgents = Object.keys(mapLineups);
 
@@ -800,7 +818,7 @@ async function boot() {
 
   // URL hash — shared comp link
   if (window.location.hash) {
-    const m = window.location.hash.replace('#','').match(/comp-(\d+)-(\d+)/);
+    const m = window.location.hash.replace('#','').match(/comp-(\d+)-(\d+)(?:-([a-z0-9]+))?/);
     if (m) {
       const mi = +m[1], ci = +m[2];
       window.OLYCITY.nav('maps');
@@ -808,6 +826,10 @@ async function boot() {
       window.OLYCITY.showMap(mi, mapBtn);
       const tabBtns = document.querySelectorAll(`#map-${mi} .comp-tab`);
       if (tabBtns[ci]) window.OLYCITY.switchComp(mi, ci, tabBtns[ci]);
+      if (m[3]) {
+        const presetIndex = state.COMPS_DATA[mi]?.comps[ci]?.teamPresets?.findIndex(preset => preset.id === m[3]);
+        if (presetIndex >= 0) window.OLYCITY.switchProPreset(mi, ci, presetIndex);
+      }
     }
   }
   // Browser back/forward button support

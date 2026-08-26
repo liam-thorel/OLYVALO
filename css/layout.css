@@ -631,6 +631,32 @@ body.agent-mode .footer{ display:none; }
 .live-side-copy small { color: var(--dim); font-size: 7px; letter-spacing: 2px; }
 .live-side-copy strong { color: var(--side-color); font-size: 11px; line-height: 1.3; letter-spacing: 2px; }
 @keyframes live-side-pulse { 50% { opacity: .4; } }
+.live-pregame-comps{ display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:10px; }
+.live-pregame-comp{ min-width:0; padding:12px 14px; border:1px solid var(--border); background:var(--surf); }
+.live-pregame-comp-label{
+  margin-bottom:8px; color:var(--muted); font:700 8px 'Tomorrow',sans-serif;
+  letter-spacing:2px; text-transform:uppercase;
+}
+.live-comp-agents{ display:flex; align-items:center; gap:6px; min-height:30px; margin-bottom:8px; }
+.live-comp-agents img{ width:30px; height:30px; object-fit:cover; }
+.live-comp-agents > span{ color:var(--dim); font-size:9px; }
+.live-comp-agent-names{
+  overflow:hidden; color:var(--dim); font:600 9px 'Tomorrow',sans-serif;
+  letter-spacing:.7px; text-overflow:ellipsis; white-space:nowrap;
+}
+.live-pro-team-picker{ display:flex; gap:5px; margin:0 0 8px; }
+.live-pro-preset-btn{
+  min-width:47px; height:32px; padding:4px 6px; display:flex; align-items:center; justify-content:center; gap:4px;
+  border:1px solid var(--border2); background:transparent; color:var(--dim); cursor:pointer;
+}
+.live-pro-preset-btn:hover,.live-pro-preset-btn.active{ border-color:#4d9fff; color:var(--text); background:rgba(30,120,255,.1); }
+.live-pro-preset-btn img{ width:20px; height:20px; object-fit:contain; }
+.live-pro-preset-btn span{ font:700 8px 'Tomorrow',sans-serif; letter-spacing:.5px; }
+.live-comp-team-meta{ min-height:28px; margin-bottom:8px; display:flex; align-items:center; gap:7px; }
+.live-comp-team-meta > img{ width:26px; height:26px; object-fit:contain; }
+.live-comp-team-meta > span{ min-width:0; display:grid; gap:1px; }
+.live-comp-team-meta strong{ overflow:hidden; color:var(--text); font:700 9px 'Tomorrow',sans-serif; text-overflow:ellipsis; white-space:nowrap; }
+.live-comp-team-meta small{ overflow:hidden; color:var(--dim); font-size:8px; text-overflow:ellipsis; white-space:nowrap; }
 .live-players { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; min-width: 0; }
 .live-team { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
 .live-team-title {

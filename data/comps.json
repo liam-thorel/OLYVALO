@@ -43,18 +43,55 @@
         "updatedAt": "Août 2026",
         "patch": "13.04",
         "agents": [
-          "Neon",
-          "Sova",
           "Omen",
-          "Yoru",
-          "Killjoy"
+          "Sova",
+          "Cypher",
+          "Neon",
+          "Phoenix"
         ],
-        "source": "Sharper Esports · VCT Pacific Stage 2",
-        "tip": "Composition jouée par Sharper Esports lors de sa victoire 13-10 sur Haven contre RRQ : Neon ouvre l'espace, Yoru menace les rotations, Sova apporte l'information, Omen couvre les trois sites et Killjoy sécurise les extrémités.",
+        "source": "Karmine Corp · VCT EMEA Stage 2",
         "vods": [
           {
-            "label": "Sharper vs RRQ · Haven",
-            "url": "https://rib.gg/matches/707"
+            "label": "KC vs Enterprise · Haven",
+            "url": "https://www.vlr.gg/731399/karmine-corp-vs-enterprise-esports-vct-2026-emea-stage-2-ubsf/?game=279406"
+          }
+        ],
+        "teamPresets": [
+          {
+            "id": "kc",
+            "team": "Karmine Corp",
+            "tag": "KC",
+            "logo": "./assets/teams/kc.png",
+            "agents": ["Omen", "Sova", "Cypher", "Neon", "Phoenix"],
+            "event": "VCT EMEA Stage 2",
+            "opponent": "Enterprise Esports",
+            "date": "2026-08-21",
+            "score": "13-10",
+            "url": "https://www.vlr.gg/731399/karmine-corp-vs-enterprise-esports-vct-2026-emea-stage-2-ubsf/?game=279406"
+          },
+          {
+            "id": "m8",
+            "team": "Gentle Mates",
+            "tag": "M8",
+            "logo": "./assets/teams/m8.png",
+            "agents": ["Omen", "Sova", "Cypher", "Jett", "Phoenix"],
+            "event": "VCT EMEA Stage 2",
+            "opponent": "Eintracht Frankfurt",
+            "date": "2026-08-12",
+            "score": "9-13",
+            "url": "https://www.vlr.gg/729674/gentle-mates-vs-eintracht-frankfurt-vct-2026-emea-stage-2-lr1/?game=278939"
+          },
+          {
+            "id": "fut",
+            "team": "FUT Esports",
+            "tag": "FUT",
+            "logo": "./assets/teams/fut.png",
+            "agents": ["Omen", "Sova", "Cypher", "Neon", "Waylay"],
+            "event": "VCT EMEA Stage 2",
+            "opponent": "Team Liquid",
+            "date": "2026-08-20",
+            "score": "13-11",
+            "url": "https://www.vlr.gg/731396/team-liquid-vs-fut-esports-vct-2026-emea-stage-2-ur1/?game=279397"
           }
         ]
       },
@@ -134,21 +171,57 @@
         "updatedAt": "Août 2026",
         "patch": "13.04",
         "agents": [
-          "Waylay",
-          "Tejo",
-          "Breach",
           "Astra",
-          "Chamber"
+          "Omen",
+          "Sova",
+          "Chamber",
+          "Neon"
         ],
-        "source": "GIANTX · VCT EMEA Kickoff 2026",
-        "tip": "Composition jouée par GIANTX lors de sa victoire 13-10 sur Abyss contre Team Heretics : Waylay entre après les utilitaires de Tejo et Breach, Astra coupe les longues lignes et Chamber contrôle le mid.",
+        "source": "Karmine Corp · VCT EMEA Stage 2",
         "vods": [
           {
-            "label": "GIANTX vs Heretics · Abyss",
-            "url": "https://www.rib.gg/series/giantx-vs-team-heretics-vct-2026-emea-kickoff-playoffs/99622?match=227015"
+            "label": "KC vs Enterprise · Abyss",
+            "url": "https://www.vlr.gg/731399/karmine-corp-vs-enterprise-esports-vct-2026-emea-stage-2-ubsf/?game=279407"
           }
         ],
-        "key": "Waylay"
+        "teamPresets": [
+          {
+            "id": "kc",
+            "team": "Karmine Corp",
+            "tag": "KC",
+            "logo": "./assets/teams/kc.png",
+            "agents": ["Astra", "Omen", "Sova", "Chamber", "Neon"],
+            "event": "VCT EMEA Stage 2",
+            "opponent": "Enterprise Esports",
+            "date": "2026-08-21",
+            "score": "9-13",
+            "url": "https://www.vlr.gg/731399/karmine-corp-vs-enterprise-esports-vct-2026-emea-stage-2-ubsf/?game=279407"
+          },
+          {
+            "id": "liquid",
+            "team": "Team Liquid",
+            "tag": "TL",
+            "logo": "./assets/teams/liquid.png",
+            "agents": ["Omen", "Sova", "Tejo", "Vyse", "Jett"],
+            "event": "VCT EMEA Stage 2",
+            "opponent": "Enterprise Esports",
+            "date": "2026-08-23",
+            "score": "14-12",
+            "url": "https://www.vlr.gg/731404/enterprise-esports-vs-team-liquid-vct-2026-emea-stage-2-lr2/?game=279424"
+          },
+          {
+            "id": "fireflux",
+            "team": "Fire Flux Esports",
+            "tag": "FF",
+            "logo": "./assets/teams/fireflux.png",
+            "agents": ["Astra", "Harbor", "Sova", "Waylay", "Yoru"],
+            "event": "VCT EMEA Stage 2",
+            "opponent": "BBL Esports",
+            "date": "2026-08-23",
+            "score": "13-11",
+            "url": "https://www.vlr.gg/731406/bbl-esports-vs-fire-flux-esports-vct-2026-emea-stage-2-lr2/?game=279426"
+          }
+        ]
       },
       {
         "label": "Fun — Tous dans le vide",
@@ -221,18 +294,37 @@
         "updatedAt": "Août 2026",
         "patch": "13.04",
         "agents": [
-          "Neon",
-          "Raze",
-          "Fade",
           "Omen",
-          "Cypher"
+          "Viper",
+          "Fade",
+          "Chamber",
+          "Neon"
         ],
-        "source": "Joblife · VCT EMEA Stage 2",
-        "tip": "Composition jouée par Joblife lors de sa victoire 13-6 sur Lotus contre PCIFIC : Neon et Raze imposent un rythme très rapide, Fade prépare les entrées, Omen facilite les rotations et Cypher surveille les flancs.",
+        "source": "Karmine Corp · VCT EMEA Stage 2",
         "vods": [
           {
-            "label": "Joblife vs PCIFIC · Lotus",
-            "url": "https://rib.gg/matches/689"
+            "label": "KC vs Enterprise · Lotus",
+            "url": "https://www.vlr.gg/731399/karmine-corp-vs-enterprise-esports-vct-2026-emea-stage-2-ubsf/?game=279408"
+          }
+        ],
+        "teamPresets": [
+          {
+            "id": "kc", "team": "Karmine Corp", "tag": "KC", "logo": "./assets/teams/kc.png",
+            "agents": ["Omen", "Viper", "Fade", "Chamber", "Neon"],
+            "event": "VCT EMEA Stage 2", "opponent": "Enterprise Esports", "date": "2026-08-21", "score": "13-6",
+            "url": "https://www.vlr.gg/731399/karmine-corp-vs-enterprise-esports-vct-2026-emea-stage-2-ubsf/?game=279408"
+          },
+          {
+            "id": "m8", "team": "Gentle Mates", "tag": "M8", "logo": "./assets/teams/m8.png",
+            "agents": ["Omen", "Fade", "Cypher", "Neon", "Raze"],
+            "event": "VCT EMEA Stage 2", "opponent": "Enterprise Esports", "date": "2026-08-09", "score": "6-13",
+            "url": "https://www.vlr.gg/729671/gentle-mates-vs-enterprise-esports-vct-2026-emea-stage-2-ubqf/?game=278930"
+          },
+          {
+            "id": "liquid", "team": "Team Liquid", "tag": "TL", "logo": "./assets/teams/liquid.png",
+            "agents": ["Omen", "Fade", "Cypher", "Jett", "Raze"],
+            "event": "VCT EMEA Stage 2", "opponent": "Enterprise Esports", "date": "2026-08-23", "score": "13-4",
+            "url": "https://www.vlr.gg/731404/enterprise-esports-vs-team-liquid-vct-2026-emea-stage-2-lr2/?game=279423"
           }
         ]
       },
@@ -307,18 +399,37 @@
         "updatedAt": "Août 2026",
         "patch": "13.04",
         "agents": [
-          "Raze",
-          "Skye",
-          "Astra",
-          "Cypher",
-          "Deadlock"
+          "Omen",
+          "Viper",
+          "Fade",
+          "Sage",
+          "Raze"
         ],
-        "source": "FULL SENSE · VCT Pacific Stage 2",
-        "tip": "Composition jouée par FULL SENSE lors de sa victoire 13-7 sur Split contre QT DIG∞ : Raze entre avec les flashs de Skye, Astra contrôle Mid et le duo Cypher–Deadlock transforme les sites en forteresses.",
+        "source": "Karmine Corp · VCT EMEA Stage 2",
         "vods": [
           {
-            "label": "FULL SENSE vs QT DIG∞ · Split",
-            "url": "https://rib.gg/matches/708"
+            "label": "KC vs FNATIC · Split",
+            "url": "https://www.vlr.gg/712815/fnatic-vs-karmine-corp-vct-2026-emea-stage-2-w2/?game=276533"
+          }
+        ],
+        "teamPresets": [
+          {
+            "id": "kc", "team": "Karmine Corp", "tag": "KC", "logo": "./assets/teams/kc.png",
+            "agents": ["Omen", "Viper", "Fade", "Sage", "Raze"],
+            "event": "VCT EMEA Stage 2", "opponent": "FNATIC", "date": "2026-07-22", "score": "15-17",
+            "url": "https://www.vlr.gg/712815/fnatic-vs-karmine-corp-vct-2026-emea-stage-2-w2/?game=276533"
+          },
+          {
+            "id": "m8", "team": "Gentle Mates", "tag": "M8", "logo": "./assets/teams/m8.png",
+            "agents": ["Omen", "Viper", "Fade", "Jett", "Yoru"],
+            "event": "VCT EMEA Stage 2", "opponent": "Eintracht Frankfurt", "date": "2026-08-12", "score": "11-13",
+            "url": "https://www.vlr.gg/729674/gentle-mates-vs-eintracht-frankfurt-vct-2026-emea-stage-2-lr1/?game=278938"
+          },
+          {
+            "id": "liquid", "team": "Team Liquid", "tag": "TL", "logo": "./assets/teams/liquid.png",
+            "agents": ["Omen", "Viper", "Skye", "Jett", "Raze"],
+            "event": "VCT EMEA Stage 2", "opponent": "Eintracht Frankfurt", "date": "2026-08-22", "score": "13-1",
+            "url": "https://www.vlr.gg/731402/team-liquid-vs-eintracht-frankfurt-vct-2026-emea-stage-2-lr1/?game=279418"
           }
         ]
       },
@@ -398,18 +509,37 @@
         "updatedAt": "Août 2026",
         "patch": "13.04",
         "agents": [
-          "Phoenix",
-          "Sova",
-          "Fade",
           "Omen",
-          "Cypher"
+          "Sova",
+          "Cypher",
+          "Neon",
+          "Phoenix"
         ],
-        "source": "PCIFIC Esports · VCT EMEA Stage 2",
-        "tip": "Composition jouée par PCIFIC lors de sa victoire 13-8 sur Ascent contre Joblife : Phoenix ouvre les sites avec un double soutien d'information Sova–Fade, Omen contrôle les lignes centrales et Cypher verrouille les rotations.",
+        "source": "Karmine Corp · VCT EMEA Stage 2",
         "vods": [
           {
-            "label": "PCIFIC vs Joblife · Ascent",
-            "url": "https://rib.gg/matches/689"
+            "label": "KC vs FNATIC · Ascent",
+            "url": "https://www.vlr.gg/712815/fnatic-vs-karmine-corp-vct-2026-emea-stage-2-w2/?game=276532"
+          }
+        ],
+        "teamPresets": [
+          {
+            "id": "kc", "team": "Karmine Corp", "tag": "KC", "logo": "./assets/teams/kc.png",
+            "agents": ["Omen", "Sova", "Cypher", "Neon", "Phoenix"],
+            "event": "VCT EMEA Stage 2", "opponent": "FNATIC", "date": "2026-07-22", "score": "13-6",
+            "url": "https://www.vlr.gg/712815/fnatic-vs-karmine-corp-vct-2026-emea-stage-2-w2/?game=276532"
+          },
+          {
+            "id": "m8", "team": "Gentle Mates", "tag": "M8", "logo": "./assets/teams/m8.png",
+            "agents": ["Omen", "Sova", "Cypher", "Phoenix", "Yoru"],
+            "event": "VCT EMEA Stage 2", "opponent": "BBL Esports", "date": "2026-07-31", "score": "5-13",
+            "url": "https://www.vlr.gg/712828/bbl-esports-vs-gentle-mates-vct-2026-emea-stage-2-w3/?game=276571"
+          },
+          {
+            "id": "liquid", "team": "Team Liquid", "tag": "TL", "logo": "./assets/teams/liquid.png",
+            "agents": ["Omen", "Sova", "Cypher", "Jett", "Phoenix"],
+            "event": "VCT EMEA Stage 2", "opponent": "Eintracht Frankfurt", "date": "2026-08-22", "score": "13-1",
+            "url": "https://www.vlr.gg/731402/team-liquid-vs-eintracht-frankfurt-vct-2026-emea-stage-2-lr1/?game=279419"
           }
         ]
       },
@@ -464,21 +594,39 @@
         "tierLabel": "PRO",
         "label": "Joue comme un pro",
         "agents": [
-          "Neon",
-          "Phoenix",
-          "Sova",
           "Omen",
-          "Cypher"
+          "Viper",
+          "Fade",
+          "Chamber",
+          "Neon"
         ],
-        "key": "Sova",
-        "tip": "Composition jouée par Sharper Esports lors de sa victoire 13-1 sur Sunset contre RRQ : Neon et Phoenix mettent une pression constante, Sova révèle les reprises, Omen ferme Market et Cypher contrôle B et les rotations.",
         "patch": "13.04",
         "updatedAt": "Août 2026",
-        "source": "Sharper Esports · VCT Pacific Stage 2",
+        "source": "Karmine Corp · VCT EMEA Stage 2",
         "vods": [
           {
-            "label": "Sharper vs RRQ · Sunset",
-            "url": "https://rib.gg/matches/707"
+            "label": "KC vs Team Heretics · Sunset",
+            "url": "https://www.vlr.gg/712823/team-heretics-vs-karmine-corp-vct-2026-emea-stage-2-w2/?game=276555"
+          }
+        ],
+        "teamPresets": [
+          {
+            "id": "kc", "team": "Karmine Corp", "tag": "KC", "logo": "./assets/teams/kc.png",
+            "agents": ["Omen", "Viper", "Fade", "Chamber", "Neon"],
+            "event": "VCT EMEA Stage 2", "opponent": "Team Heretics", "date": "2026-07-26", "score": "13-4",
+            "url": "https://www.vlr.gg/712823/team-heretics-vs-karmine-corp-vct-2026-emea-stage-2-w2/?game=276555"
+          },
+          {
+            "id": "m8", "team": "Gentle Mates", "tag": "M8", "logo": "./assets/teams/m8.png",
+            "agents": ["Omen", "Sova", "Cypher", "Neon", "Phoenix"],
+            "event": "VCT EMEA Stage 2", "opponent": "BBL Esports", "date": "2026-07-31", "score": "10-13",
+            "url": "https://www.vlr.gg/712828/bbl-esports-vs-gentle-mates-vct-2026-emea-stage-2-w3/?game=276572"
+          },
+          {
+            "id": "fireflux", "team": "Fire Flux Esports", "tag": "FF", "logo": "./assets/teams/fireflux.png",
+            "agents": ["Omen", "KAY/O", "Cypher", "Neon", "Waylay"],
+            "event": "VCT EMEA Stage 2", "opponent": "Team Heretics", "date": "2026-08-09", "score": "13-2",
+            "url": "https://www.vlr.gg/729670/team-heretics-vs-fire-flux-esports-vct-2026-emea-stage-2-ubqf/?game=278927"
           }
         ]
       },
@@ -549,21 +697,39 @@
         "tierLabel": "PRO",
         "label": "Joue comme un pro",
         "agents": [
-          "Neon",
-          "Yoru",
-          "Fade",
           "Omen",
-          "Cypher"
+          "Viper",
+          "Fade",
+          "Chamber",
+          "Neon"
         ],
-        "key": "Fade",
-        "tip": "Composition jouée par FULL SENSE lors de sa victoire 13-4 sur Summit contre QT DIG∞ : Neon et Yoru attaquent les timings créés par les murs, Fade donne l'information, Omen coupe les longues lignes et Cypher garde les rotations.",
         "patch": "13.04",
         "updatedAt": "Août 2026",
-        "source": "FULL SENSE · VCT Pacific Stage 2",
+        "source": "Karmine Corp · VCT EMEA Stage 2",
         "vods": [
           {
-            "label": "FULL SENSE vs QT DIG∞ · Summit",
-            "url": "https://rib.gg/matches/708"
+            "label": "KC vs Team Liquid · Summit",
+            "url": "https://www.vlr.gg/712831/karmine-corp-vs-team-liquid-vct-2026-emea-stage-2-w3/?game=276580"
+          }
+        ],
+        "teamPresets": [
+          {
+            "id": "kc", "team": "Karmine Corp", "tag": "KC", "logo": "./assets/teams/kc.png",
+            "agents": ["Omen", "Viper", "Fade", "Chamber", "Neon"],
+            "event": "VCT EMEA Stage 2", "opponent": "Team Liquid", "date": "2026-08-01", "score": "11-13",
+            "url": "https://www.vlr.gg/712831/karmine-corp-vs-team-liquid-vct-2026-emea-stage-2-w3/?game=276580"
+          },
+          {
+            "id": "m8", "team": "Gentle Mates", "tag": "M8", "logo": "./assets/teams/m8.png",
+            "agents": ["Omen", "Fade", "Cypher", "Neon", "Phoenix"],
+            "event": "VCT EMEA Stage 2", "opponent": "Enterprise Esports", "date": "2026-08-09", "score": "9-13",
+            "url": "https://www.vlr.gg/729671/gentle-mates-vs-enterprise-esports-vct-2026-emea-stage-2-ubqf/?game=278929"
+          },
+          {
+            "id": "fireflux", "team": "Fire Flux Esports", "tag": "FF", "logo": "./assets/teams/fireflux.png",
+            "agents": ["Omen", "Sova", "Cypher", "Waylay", "Yoru"],
+            "event": "VCT EMEA Stage 2", "opponent": "BBL Esports", "date": "2026-08-23", "score": "13-11",
+            "url": "https://www.vlr.gg/731406/bbl-esports-vs-fire-flux-esports-vct-2026-emea-stage-2-lr2/?game=279427"
           }
         ]
       },

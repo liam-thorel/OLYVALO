@@ -26,6 +26,19 @@ const presence = fs.readFileSync(new URL('../js/presence.js', import.meta.url), 
 const admin = fs.readFileSync(new URL('../js/admin.mjs', import.meta.url), 'utf8');
 const coopPage = fs.readFileSync(new URL('../js/coop-games-page.mjs', import.meta.url), 'utf8');
 
+test('professional compositions show evidence instead of invented tactical copy', () => {
+  assert.match(render, /const plan = comp\.tip \?/);
+  assert.match(render, /class="comp-reference"/);
+  assert.match(render, /comp\.tier === 'PRO' \? 'Voir le match' : 'Voir la source'/);
+  assert.match(render, /class="pro-team-picker"/);
+  assert.match(render, /switchProPreset/);
+  assert.match(main, /switchProPreset\(mapIdx, compIdx, presetIdx\)/);
+  assert.match(main, /presetId = comp\?\.teamPresets/);
+  assert.match(main, /findIndex\(preset => preset\.id === m\[3\]\)/);
+  assert.match(interactions, /data-live-pro-preset/);
+  assert.match(interactions, /live-comp-team-meta/);
+});
+
 test('shared state does not import the versioned entry module twice', () => {
   assert.match(main, /from '\.\/state\.mjs/);
   assert.doesNotMatch(interactions, /from '\.\/main\.js/);

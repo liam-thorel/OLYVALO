@@ -107,14 +107,52 @@ export function agentCardHTML(name) {
 }
 // ─── COMP PANEL ──────────────────────────────────
 export function compHTML(comp, mapIdx, compIdx) {
-  const agents = comp.agents.map(n => {
-    const isKey = comp.key === n;
+  const presets = Array.isArray(comp.teamPresets) ? comp.teamPresets : [];
+  const presetIndex = Math.min(comp.selectedPreset || 0, Math.max(0, presets.length - 1));
+  const preset = presets[presetIndex];
+  const displayedAgents = preset?.agents || comp.agents;
+  const agents = displayedAgents.map(n => {
+    const isKey = !preset && comp.key === n;
     const card = agentCardHTML(n);
     if (!isKey) return card;
     // Wrap key agent with a "key pick" indicator
     return card.replace('class="agent-card"', 'class="agent-card key-agent"');
   }).join('');
   const tierCls = comp.tier === 'S' ? 'tier-s' : comp.tier === 'FUN' ? 'tier-f' : comp.tier === 'PRO' ? 'tier-pro' : 'tier-a';
+  const reference = preset?.url ? { url:preset.url } : comp.vods?.[0];
+  const source = preset ? `${preset.team} · ${preset.event}` : comp.source;
+  const presetDate = preset?.date
+    ? new Intl.DateTimeFormat('fr-FR', { day:'numeric', month:'short', year:'numeric' }).format(new Date(`${preset.date}T12:00:00`))
+    : '';
+  const presetPicker = presets.length ? `
+        <div class="pro-team-picker" role="tablist" aria-label="Choisir une composition professionnelle">
+          ${presets.map((team, index) => `
+            <button class="pro-team-btn ${index === presetIndex ? 'active' : ''}" type="button" role="tab"
+              aria-selected="${index === presetIndex}" title="Composition de ${team.team}"
+              onclick="window.OLYCITY.switchProPreset(${mapIdx},${compIdx},${index},this)">
+              <img src="${team.logo}" alt="" loading="lazy">
+              <span><strong>${team.tag}</strong><small>${team.team}</small></span>
+            </button>`).join('')}
+        </div>
+        <div class="pro-match-meta">
+          <img src="${preset.logo}" alt="Logo ${preset.team}">
+          <div><strong>${preset.team}</strong><span>${preset.event} · contre ${preset.opponent} · ${preset.score} · ${presetDate}</span></div>
+        </div>` : '';
+  const plan = comp.tip ? `
+        <details class="comp-mobile-details">
+          <summary><span>Plan de jeu</span><strong>Voir</strong></summary>
+        </details>
+        <div class="comp-bottom">
+          <div class="comp-bottom-left">
+            <div class="tip-box">
+              <span class="tip-icon">5-STACK</span>
+              <span class="tip-text">${comp.tip}</span>
+            </div>
+          </div>
+        </div>` : '';
+  const referenceLink = reference
+    ? `<a class="comp-reference" href="${reference.url}" target="_blank" rel="noopener noreferrer">${comp.tier === 'PRO' ? 'Voir le match' : 'Voir la source'} ↗</a>`
+    : '';
   return `
     <div class="comp-panel ${compIdx === 0 ? 'active' : ''}" id="panel-${mapIdx}-${compIdx}">
       <div class="comp-card">
@@ -127,23 +165,15 @@ export function compHTML(comp, mapIdx, compIdx) {
               : comp.updatedAt ? `<span class="comp-updated">Maj ${comp.updatedAt}</span>` : ''}
           </div>
         </div>
+        ${presetPicker}
         <div class="agents-grid">${agents}</div>
         <div class="comp-card-actions">
           <button class="share-comp-btn" onclick="window.OLYCITY.shareComp(${mapIdx},${compIdx},this)">↗ Partager</button>
         </div>
-        <details class="comp-mobile-details">
-          <summary><span>Plan de jeu</span><strong>Voir</strong></summary>
-        </details>
-        <div class="comp-bottom">
-          <div class="comp-bottom-left">
-            <div class="tip-box">
-              <span class="tip-icon">5-STACK</span>
-              <span class="tip-text">${comp.tip}</span>
-            </div>
-          </div>
-        </div>
+        ${plan}
         <div class="comp-card-footer">
-          <span class="comp-source">Source : ${comp.source}</span>
+          <span class="comp-source">Source : ${source}</span>
+          ${referenceLink}
         </div>
       </div>
     </div>`;
