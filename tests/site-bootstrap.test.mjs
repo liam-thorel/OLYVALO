@@ -140,9 +140,19 @@ test('mobile composition cards stay compact without hiding their details', () =>
   assert.match(render, /class="comp-mobile-details"/);
   assert.match(responsive, /\.agents-grid\s*\{[\s\S]*grid-template-columns:\s*repeat\(6,minmax\(0,1fr\)\)/);
   assert.match(responsive, /\.comp-mobile-details\[open\]\s*\+\s*\.comp-bottom\s*\{\s*display:\s*grid/);
-  assert.match(responsive, /\.comp-tabs\s*\{[\s\S]*overflow-x:\s*auto/);
+  assert.match(responsive, /\.comp-tabs\s*\{[\s\S]*grid-template-columns:\s*repeat\(3,minmax\(0,1fr\)\)/);
+  assert.match(responsive, /\.comp-tab-label\s*\{\s*display:\s*none/);
   assert.match(responsive, /\.lineup-agent-tab, \.map-notes-card summary,[\s\S]*min-height:\s*44px; touch-action:\s*manipulation/);
   assert.match(main, /const tabs = btn\.closest\('\.comp-tabs'\)/);
+});
+
+test('professional team logos remain visible on dark cards', () => {
+  assert.match(components, /\.pro-team-btn img\{[^}]*background:#edf1f7/);
+  assert.match(components, /\.pro-match-meta > img\{[^}]*background:#edf1f7/);
+  assert.match(layout, /\.live-pro-preset-btn img\{[^}]*background:#edf1f7/);
+  assert.match(layout, /\.live-comp-team-meta > img\{[^}]*background:#edf1f7/);
+  assert.match(components, /\.comp-tab\.pro-tab\.active\{[^}]*background:#247bd6 !important/);
+  assert.match(render, /class="comp-tab-short"/);
 });
 
 test('maps keep only useful composition and lineup controls', () => {

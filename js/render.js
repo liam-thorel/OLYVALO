@@ -261,9 +261,14 @@ export function mapSectionHTML(data, idx) {
     const isFun = c.tier === 'FUN' || c.tier === 'F';
     const isPro = c.tier === 'PRO';
     const cls = isFun ? 'fun-tab' : isPro ? 'pro-tab' : '';
-    const emoji = isFun ? '🎉 ' : isPro ? '🏆 ' : '';
+    const emoji = isFun ? '🎉' : isPro ? '🏆' : '◆';
+    const shortLabel = isFun ? 'Fun' : isPro ? 'Pro' : 'Ranked';
     return `<button class="comp-tab ${ci === 0 ? 'active' : ''} ${cls}"
-      onclick="window.OLYCITY.switchComp(${idx},${ci},this)">${emoji}${c.label}</button>`;
+      aria-label="${c.label}" onclick="window.OLYCITY.switchComp(${idx},${ci},this)">
+      <span class="comp-tab-icon" aria-hidden="true">${emoji}</span>
+      <span class="comp-tab-label">${c.label}</span>
+      <span class="comp-tab-short" aria-hidden="true">${shortLabel}</span>
+    </button>`;
   }).join('');
   const panels = data.comps.map((c, ci) => compHTML(c, idx, ci)).join('');
   const notes = data.notes.map(n =>

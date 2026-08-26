@@ -650,10 +650,10 @@ body.agent-mode .footer{ display:none; }
   border:1px solid var(--border2); background:transparent; color:var(--dim); cursor:pointer;
 }
 .live-pro-preset-btn:hover,.live-pro-preset-btn.active{ border-color:#4d9fff; color:var(--text); background:rgba(30,120,255,.1); }
-.live-pro-preset-btn img{ width:20px; height:20px; object-fit:contain; }
+.live-pro-preset-btn img{ width:20px; height:20px; padding:2px; object-fit:contain; box-sizing:border-box; border:1px solid rgba(255,255,255,.68); border-radius:4px; background:#edf1f7; }
 .live-pro-preset-btn span{ font:700 8px 'Tomorrow',sans-serif; letter-spacing:.5px; }
 .live-comp-team-meta{ min-height:28px; margin-bottom:8px; display:flex; align-items:center; gap:7px; }
-.live-comp-team-meta > img{ width:26px; height:26px; object-fit:contain; }
+.live-comp-team-meta > img{ width:26px; height:26px; padding:2px; object-fit:contain; box-sizing:border-box; border:1px solid rgba(255,255,255,.68); border-radius:5px; background:#edf1f7; }
 .live-comp-team-meta > span{ min-width:0; display:grid; gap:1px; }
 .live-comp-team-meta strong{ overflow:hidden; color:var(--text); font:700 9px 'Tomorrow',sans-serif; text-overflow:ellipsis; white-space:nowrap; }
 .live-comp-team-meta small{ overflow:hidden; color:var(--dim); font-size:8px; text-overflow:ellipsis; white-space:nowrap; }

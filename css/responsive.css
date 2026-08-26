@@ -304,17 +304,18 @@
   /* Comps */
   .map-section-panel { padding-top: 16px; }
   .comp-tabs {
-    flex-wrap: nowrap; gap: 8px; margin: 0 0 14px; overflow-x: auto;
-    box-shadow:none;
-    scrollbar-width: none; scroll-snap-type: x proximity; -webkit-overflow-scrolling: touch;
+    display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:6px;
+    margin:0 0 14px; overflow:visible; box-shadow:none;
   }
   .comp-tabs::-webkit-scrollbar { display: none; }
-  .comp-tabs::after { content: ''; flex: 0 0 16px; }
+  .comp-tabs::after { display:none; }
   .comp-tab {
-    flex: 0 0 auto; max-width: 240px; padding: 8px 14px; overflow: hidden;
-    white-space: nowrap; text-overflow: ellipsis; clip-path: none; font-size: 10px;
-    scroll-snap-align: center;
+    width:100%; min-width:0; max-width:none; padding:8px 6px; overflow:hidden;
+    white-space:nowrap; clip-path:none; font-size:9px; letter-spacing:.7px;
   }
+  .comp-tab-label{ display:none; }
+  .comp-tab-short{ display:inline; overflow:hidden; text-overflow:ellipsis; }
+  .comp-tab-icon{ flex:0 0 auto; }
   .comp-card { margin-bottom: 16px; padding: 16px; }
   .comp-header { margin-bottom: 14px; gap: 8px; }
   .comp-label-row { min-width: 0; gap: 8px; }

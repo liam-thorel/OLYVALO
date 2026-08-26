@@ -6,6 +6,7 @@
 /* COMP TABS */
 .comp-tabs{ display:flex; gap:6px; margin-bottom:24px; flex-wrap:wrap; }
 .comp-tab{
+  display:inline-flex; align-items:center; justify-content:center; gap:7px;
   font-family:'Tomorrow',sans-serif; font-size:11px; font-weight:600;
   letter-spacing:1.5px; text-transform:uppercase;
   padding:9px 22px 9px 18px;
@@ -13,6 +14,7 @@
   cursor:pointer; transition:all .2s;
   clip-path:polygon(0 0, calc(100% - 12px) 0, 100% 100%, 12px 100%);
 }
+.comp-tab-short{ display:none; }
 .comp-tab:hover{ color:var(--text); background:var(--surf3); }
 .comp-tab.active{ background:var(--red); border-color:var(--red); color:#fff; }
 
@@ -63,7 +65,7 @@
 .pro-team-btn:hover,.pro-team-btn.active{
   border-color:#4d9fff; background:rgba(30,120,255,.1); color:var(--text);
 }
-.pro-team-btn img{ width:30px; height:30px; object-fit:contain; flex:0 0 auto; }
+.pro-team-btn img{ width:30px; height:30px; padding:3px; object-fit:contain; flex:0 0 auto; box-sizing:border-box; border:1px solid rgba(255,255,255,.7); border-radius:6px; background:#edf1f7; }
 .pro-team-btn span{ min-width:0; display:grid; gap:2px; }
 .pro-team-btn strong{
   font:700 10px 'Tomorrow',sans-serif; letter-spacing:1.2px; text-transform:uppercase;
@@ -73,7 +75,7 @@
   min-height:50px; margin:-8px 0 16px; padding:8px 10px; display:flex; align-items:center; gap:10px;
   border-left:2px solid #4d9fff; background:rgba(30,120,255,.045);
 }
-.pro-match-meta > img{ width:34px; height:34px; object-fit:contain; }
+.pro-match-meta > img{ width:34px; height:34px; padding:3px; object-fit:contain; box-sizing:border-box; border:1px solid rgba(255,255,255,.7); border-radius:6px; background:#edf1f7; }
 .pro-match-meta > div{ min-width:0; display:grid; gap:3px; }
 .pro-match-meta strong{ font:700 11px 'Tomorrow',sans-serif; color:var(--text); text-transform:uppercase; }
 .pro-match-meta span{ color:var(--muted); font-size:11px; line-height:1.35; }
@@ -795,15 +797,24 @@
 }
 .comp-tab:has(.tier-f),
 .comp-tab[style*="fun"],
-button.comp-tab.pro-tab {
+.comp-tab.pro-tab {
   background: rgba(30,120,255,.08) !important;
   color: #4d9fff !important;
-  border-bottom-color: #4d9fff !important;
+  border-color: rgba(77,159,255,.45) !important;
+}
+.comp-tab.pro-tab.active{
+  background:#247bd6 !important; border-color:#62adff !important; color:#fff !important;
+  box-shadow:0 0 0 1px rgba(98,173,255,.2),0 6px 18px rgba(30,120,255,.16);
 }
 .fun-tab {
   background: linear-gradient(135deg, rgba(255,70,86,.15), rgba(168,127,255,.15));
   border-color: rgba(168,127,255,.4);
   color: var(--text);
+}
+.comp-tab.fun-tab.active{
+  background:linear-gradient(135deg,#c34672,#7653c7) !important;
+  border-color:#c08cff !important; color:#fff !important;
+  box-shadow:0 0 0 1px rgba(192,140,255,.18),0 6px 18px rgba(118,83,199,.16);
 }
 
 /* ════════════════════════════════════════════════
