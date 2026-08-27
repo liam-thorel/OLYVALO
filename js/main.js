@@ -6,7 +6,7 @@
 import { valorantApi } from './api.js';
 import { fetchJsonWithRetry, fetchJsonWithTimeout } from './request-utils.mjs?v=20260825-first-load-recovery';
 
-const SITE_VERSION = '20260826-pro-team-presets';
+const SITE_VERSION = '20260827-live-resume';
 const BOOT_RETRY_KEY = 'olycity-boot-retry';
 import { syncPlayer as henrikSyncPlayer, syncAllPlayers as henrikSyncAll, persistPlayerStats } from './henrik.js?v=20260809-val-roster-season';
 import { setStoredKey, storedKey, forgetCachedKey } from './henrik-key.mjs';
@@ -26,9 +26,30 @@ import { initHomeDashboard } from './home-dashboard.mjs?v=20260825-human-banner'
 import { initHomeGroup } from './home-group.mjs?v=20260827-useful-activity';
 import { initPwaInstall } from './pwa-install.mjs?v=20260825-offline-update';
 import { initSiteTelemetry } from './site-telemetry.mjs?v=20260825-site-health';
+import { liveDataStore, liveTimestamp } from './live-data-store.mjs?v=20260827-live-resume';
 export { state };
 
 initSiteTelemetry();
+
+function updateGameSwitchCounts(snapshot = liveDataStore.snapshot(), now = Date.now()) {
+  const counts = {
+    valorant:Object.values(snapshot.valorantClients || {}).filter(client => {
+      const timestamp = liveTimestamp(client, now);
+      return client?.online === true && timestamp > 0 && now - timestamp < 30_000;
+    }).length,
+    lol:Object.values(snapshot.lolClients || {}).filter(client => {
+      const timestamp = liveTimestamp(client, now);
+      return client?.connected !== false && timestamp > 0 && now - timestamp < 55_000;
+    }).length,
+  };
+  Object.entries(counts).forEach(([game, count]) => {
+    const badge = document.querySelector(`[data-game-count="${game}"]`);
+    if (!badge) return;
+    badge.textContent = String(count);
+    badge.setAttribute('aria-label', `${count} script${count > 1 ? 's' : ''} connecté${count > 1 ? 's' : ''}`);
+    badge.classList.toggle('is-online', count > 0);
+  });
+}
 
 // ─── STATE ─────────────────────────────────────────
 
@@ -164,6 +185,10 @@ window.OLYCITY = {
         window._liveCleanup = initLivePage();
       }
       if (!window._lolLiveCleanup) window._lolLiveCleanup = initLolLivePage();
+      // Une navigation SPA ne recrée pas la page comme un F5. Relire le petit
+      // nœud Live garantit donc un état frais même si le flux SSE du navigateur
+      // a été suspendu en arrière-plan ou pendant un changement de page.
+      void liveDataStore.refresh({ timeoutMs:3_500 });
     }
     if (page === 'history') {
       if (getGameMode() === 'lol') initLolHistoryPage();
@@ -746,6 +771,23 @@ async function boot() {
   initParallax();
   initKeyboard(() => window.OLYCITY.closeAgentPage());
   initPwaInstall();
+
+  if (!window._liveResumeBound) {
+    window._liveResumeBound = true;
+    const resumeLiveData = () => {
+      if (document.visibilityState !== 'visible') return;
+      const usefulPageVisible = ['page-home', 'page-live', 'page-admin']
+        .some(id => document.getElementById(id)?.classList.contains('active'));
+      if (usefulPageVisible) void liveDataStore.refresh({ timeoutMs:3_500 });
+    };
+    document.addEventListener('visibilitychange', resumeLiveData);
+    window.addEventListener('pageshow', resumeLiveData);
+  }
+
+  if (!window._gameSwitchCountsCleanup) {
+    window._gameSwitchCountsCleanup = liveDataStore.subscribe(updateGameSwitchCounts);
+    window.setInterval(() => updateGameSwitchCounts(), 10_000);
+  }
 
   // Live presence is independent from the larger static data bundle. Starting
   // it immediately keeps the home status useful even when another asset is

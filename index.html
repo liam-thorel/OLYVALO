@@ -157,8 +157,8 @@
 
       <div class="topbar-tools">
         <div class="game-switch" role="group" aria-label="Choisir le jeu">
-          <button class="game-switch-btn active" type="button" data-game-choice="valorant" aria-pressed="true">VAL</button>
-          <button class="game-switch-btn" type="button" data-game-choice="lol" aria-pressed="false">LoL</button>
+          <button class="game-switch-btn active" type="button" data-game-choice="valorant" aria-pressed="true">VAL <span class="game-switch-count" data-game-count="valorant" aria-label="aucun script connecté">0</span></button>
+          <button class="game-switch-btn" type="button" data-game-choice="lol" aria-pressed="false">LoL <span class="game-switch-count" data-game-count="lol" aria-label="aucun script connecté">0</span></button>
         </div>
         <!-- Profile indicator -->
         <button class="profile-indicator" id="profile-indicator" type="button" onclick="window.OLYCITY._showProfilePicker()" title="Changer de profil" aria-label="Changer de profil">
@@ -548,6 +548,6 @@
   <!-- Firebase SDK -->
   <!-- Présence Firebase -->
   <script src="./js/presence.js?v=20260720-avatars"></script>
-  <script type="module" src="./js/main.js?v=20260827-history-tracker"></script>
+  <script type="module" src="./js/main.js?v=20260827-live-resume"></script>
 </body>
 </html>

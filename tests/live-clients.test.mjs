@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { freshLiveClients, groupLiveClients, isVersionAtLeast, liveClientSummary } from '../js/live-clients.mjs';
+import { freshLiveClients, groupLiveClients, isVersionAtLeast, liveClientSummary, normalizeLiveClientState } from '../js/live-clients.mjs';
 
 const now = 100000;
 const clients = {
@@ -40,3 +40,14 @@ assert.deepEqual(grouped.map(group => group.clients.map(client => client.puuid))
 ]);
 
 console.log('live-clients: freshness, names and state summary validated');
+
+assert.deepEqual(
+  normalizeLiveClientState({ state:'error', error:'Presence: HTTP 404', riotClient:true }),
+  { state:'idle', error:'', riotClient:true, standby:true },
+  'a background Riot client without the chat endpoint is shown as standby',
+);
+assert.equal(
+  normalizeLiveClientState({ state:'error', error:'Presence: HTTP 500', riotClient:true }).state,
+  'error',
+  'unexpected Riot errors remain visible',
+);

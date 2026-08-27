@@ -3,6 +3,8 @@
 .game-switch-btn { min-width:42px; padding:6px 8px; border:0; background:transparent; color:var(--muted); font:700 9px/1 'Tomorrow',sans-serif; letter-spacing:1.2px; cursor:pointer; transition:.2s ease; }
 .game-switch-btn:hover { color:var(--text); }
 .game-switch-btn.active { background:var(--red); color:#fff; box-shadow:0 0 18px var(--red-glow); }
+.game-switch-count { display:inline-grid; place-items:center; min-width:16px; height:16px; margin-left:3px; padding:0 4px; border-radius:9px; background:rgba(255,255,255,.08); color:currentColor; font-size:8px; letter-spacing:0; }
+.game-switch-btn.active .game-switch-count { background:rgba(9,12,18,.28); }
 .page-nav-btn[data-page="live"] .page-nav-icon { color:var(--red)!important; }
 #live-dot { background:var(--red)!important; box-shadow:0 0 6px var(--red)!important; }
 [data-game-panel="lol"] { display:none; }

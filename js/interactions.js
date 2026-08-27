@@ -547,7 +547,7 @@ export function initLivePage() {
       const avatar = profile
         ? avatarLayersHTML(profile.member, profile.avatar)
         : `<span class="live-client-initial">${safeName.slice(0, 1).toUpperCase()}</span>`;
-      const stateLabel = DIAGNOSTIC_LABELS[client.state] || 'Script connecté';
+      const stateLabel = client.standby ? 'Riot Client en attente' : (DIAGNOSTIC_LABELS[client.state] || 'Script connecté');
       const safeState = DIAGNOSTIC_LABELS[client.state] ? client.state : 'online';
       const context = compactContext ? client.error || '' : [client.map, client.server, client.side, client.error].filter(Boolean).join(' · ');
       const riotId = escapeDiagnosticText(client.playerName || '');

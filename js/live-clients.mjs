@@ -2,6 +2,15 @@ import { liveTimestamp } from './live-data-store.mjs?v=20260810-firebase-connect
 
 export const LIVE_CLIENT_STALE_MS = 30000;
 
+export function normalizeLiveClientState(client = {}) {
+  const presenceUnavailable = client.riotClient === true
+    && client.state === 'error'
+    && /^Presence:\s*HTTP 404$/i.test(String(client.error || '').trim());
+  return presenceUnavailable
+    ? { ...client, state:'idle', standby:true, error:'' }
+    : client;
+}
+
 export function isVersionAtLeast(version, minimum) {
   const parts = value => String(value || '')
     .replace(/^v/i, '')
@@ -23,13 +32,13 @@ export function freshLiveClients(clients = {}, sessions = {}, now = Date.now()) 
     .map(([puuid, client]) => {
       const session = sessions?.[puuid] || {};
       const ts = liveTimestamp(client, now);
-      return {
+      return normalizeLiveClientState({
         puuid,
         ...client,
         matchId: client.matchId || session.matchId || '',
         playerName: client.playerName || session.playerName || '',
         age: ts ? Math.max(0, now - ts) : Infinity,
-      };
+      });
     })
     .filter(client => client.online && client.age < LIVE_CLIENT_STALE_MS)
     // Heartbeats arrive at slightly different times every few seconds. Sorting

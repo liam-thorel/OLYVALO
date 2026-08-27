@@ -123,6 +123,9 @@ test('mobile navigation keeps primary sections reachable with a compact more men
   assert.match(responsive, /\.page-nav-btn\s*\{[\s\S]*min-height:\s*54px/);
   assert.match(responsive, /\.page-nav > \.page-nav-btn\[data-page="roster"\][\s\S]*display:\s*none/);
   assert.match(responsive, /\.game-switch-btn, \.profile-indicator\s*\{\s*min-height:\s*44px/);
+  assert.match(page, /data-game-count="valorant"/);
+  assert.match(page, /data-game-count="lol"/);
+  assert.match(main, /liveDataStore\.refresh\(\{ timeoutMs:3_500 \}\)/);
   assert.match(main, /toggleMobileNavMenu\(\)/);
   assert.match(main, /morePages\.includes\(page\)/);
   assert.match(main, /navBtn\.setAttribute\('aria-current', 'page'\)/);
