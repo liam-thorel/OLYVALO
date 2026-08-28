@@ -1,6 +1,7 @@
 import {
   canDeleteCoopGame,
   catalogFields,
+  coopSelectedProfile,
   extractSteamAppId,
   filterCoopGames,
   normalizeCoopGame,
@@ -81,7 +82,7 @@ function safeHttpsUrl(value, allowedHosts = null) {
   }
 }
 
-async function firebaseRequest(path, options = {}) {
+export async function firebaseRequest(path, options = {}) {
   const { timeoutMs = 8_000, signal, ...fetchOptions } = options;
   const method = String(fetchOptions.method || 'GET').toUpperCase();
   if (method === 'GET') {
@@ -91,23 +92,49 @@ async function firebaseRequest(path, options = {}) {
       init:{ ...fetchOptions, cache:'no-store', headers:{ 'Content-Type':'application/json', ...(fetchOptions.headers || {}) } },
     });
   }
-  const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), timeoutMs);
-  try {
-    const response = await fetch(`${FIREBASE_ROOT}/${path}.json`, {
-      ...fetchOptions,
-      signal:signal || controller.signal,
-      headers: { 'Content-Type': 'application/json', ...(fetchOptions.headers || {}) },
-    });
-    if (!response.ok) throw new Error(`Firebase HTTP ${response.status}`);
-    return response.status === 204 ? null : response.json();
-  } finally { clearTimeout(timeout); }
+  const attempts = ['PUT', 'PATCH'].includes(method) ? 2 : 1;
+  let lastError = null;
+  for (let attempt = 1; attempt <= attempts; attempt += 1) {
+    const controller = new AbortController();
+    let timedOut = false;
+    const abortFromCaller = () => controller.abort(signal?.reason);
+    if (signal?.aborted) abortFromCaller();
+    else signal?.addEventListener('abort', abortFromCaller, { once:true });
+    const timeout = setTimeout(() => {
+      timedOut = true;
+      controller.abort(new DOMException('Request timed out', 'TimeoutError'));
+    }, timeoutMs);
+    try {
+      const response = await fetch(`${FIREBASE_ROOT}/${path}.json`, {
+        ...fetchOptions,
+        signal:controller.signal,
+        headers: { 'Content-Type':'application/json', ...(fetchOptions.headers || {}) },
+      });
+      if (!response.ok) {
+        const error = new Error(`Firebase HTTP ${response.status}`);
+        error.status = response.status;
+        throw error;
+      }
+      return response.status === 204 ? null : response.json();
+    } catch (error) {
+      lastError = error;
+      const retryable = timedOut || error?.name === 'AbortError' || !Number(error?.status || 0) || Number(error?.status) >= 500;
+      if (signal?.aborted || !retryable || attempt >= attempts) break;
+      await new Promise(resolve => setTimeout(resolve, 350));
+    } finally {
+      clearTimeout(timeout);
+      signal?.removeEventListener('abort', abortFromCaller);
+    }
+  }
+  if (lastError?.name === 'AbortError' || lastError?.name === 'TimeoutError') {
+    throw new Error('Connexion interrompue — réessaie dans un instant.');
+  }
+  throw lastError || new Error('Connexion Firebase indisponible.');
 }
 
 function selectedProfile() {
   const name = localStorage.getItem('olycity-profile') || '';
-  const member = roster.find(player => player.name === name);
-  return name && member ? { id: member.id || '', name, avatar: member.avatar || '' } : null;
+  return coopSelectedProfile(roster, name);
 }
 
 function playerRange(game) {
@@ -361,11 +388,16 @@ function startRealtime() {
   stream = new EventSource(`${FIREBASE_ROOT}/coopGames.json`);
   stream.addEventListener('put', applyRealtimeGames);
   stream.addEventListener('patch', applyRealtimeGames);
+  stream.addEventListener('open', () => {
+    if (!syncNotice) return;
+    syncNotice = null;
+    render();
+  });
   stream.addEventListener('error', () => {
-    if (games.length) {
-      syncNotice = { state:'offline' };
-      render();
-    }
+    // EventSource se reconnecte seul. Un événement `error` transitoire ne
+    // signifie donc pas que les données REST ni les votes sont indisponibles.
+    // Une lecture bornée décide de l'état réellement hors connexion.
+    scheduleReload();
   });
 }
 

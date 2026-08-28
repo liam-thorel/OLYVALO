@@ -143,7 +143,7 @@
   background:var(--surf2); border:1px solid var(--border2);
   padding:0 10px; transition:border-color .15s;
 }
-.search-wrap:focus-within{ border-color:var(--red); }
+.search-wrap:focus-within{ border-color:var(--red); box-shadow:0 0 0 2px var(--red-low); }
 .search-icon{ color:var(--muted); font-size:13px; }
 .search-input{
   background:transparent; border:none; outline:none;
@@ -236,6 +236,7 @@
   font-family:'Tomorrow',sans-serif; font-size:42px; font-weight:700;
   letter-spacing:.2px; color:var(--text); line-height:1;
 }
+.search-input:focus-visible{ outline:none; }
 .roster-sub{ color:var(--muted); font-size:13px; margin-left:auto; letter-spacing:.5px; }
 
 .roster-grid{

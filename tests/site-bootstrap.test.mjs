@@ -112,6 +112,7 @@ test('profile selection is accessible, stable and does not reload the site', () 
   assert.match(components, /\.profile-admin-btn/);
   assert.match(main, /\['nico', 'liam'\]\.includes\(current\?\.id\)/);
   assert.match(main, /data-profile-admin[\s\S]*?nav\('admin'\)/);
+  assert.match(fs.readFileSync(new URL('../data/members.json', import.meta.url), 'utf8'), /"id": "logan"/);
   assert.match(presence, /sessionRef\?\.set/);
   assert.match(presence, /const previousRef = sessionRef/);
 });
@@ -223,6 +224,13 @@ test('history and admin requests cannot stay pending forever', () => {
   assert.match(coopPage, /Reconnexion à la liste/);
 });
 
+test('returning to a data page retries it without requiring F5', () => {
+  assert.match(main, /window\.addEventListener\('online', resumePageData\)/);
+  assert.match(main, /activePage === 'games'[\s\S]*initCoopGamesPage\(state\.MEMBERS\)/);
+  assert.match(main, /activePage === 'history'[\s\S]*initLolHistoryPage\(\)[\s\S]*initHistoryPage\(\)/);
+  assert.match(layout, /\.search-input:focus-visible\s*\{\s*outline:none/);
+});
+
 test('mobile data pages render their last good copy before background refresh', () => {
   assert.match(interactions, /olycity-valorant-history-cache-v1/);
   assert.match(interactions, /const agentMapPromise = ensureAgentMap\(\)/);
@@ -240,7 +248,7 @@ test('mobile data pages render their last good copy before background refresh', 
 
 test('startup reveals the shell before optional APIs and supports installation', () => {
   assert.match(page, /window\.setTimeout\([\s\S]*loading-screen[\s\S]*1400/);
-  assert.match(main, /await loadData\(\)/);
+  assert.match(main, /await loadDataWithRecovery\(\)/);
   assert.doesNotMatch(main, /await Promise\.all\(\[loadData\(\), valorantApi\.load\(\)\]\)/);
   assert.match(main, /olycity-static-data-cache/);
   assert.match(page, /rel="manifest" href="\.\/manifest\.webmanifest(?:\?[^\"]+)?"/);
@@ -314,4 +322,15 @@ test('browser back initializes a page once and Admin reuses cached data', () => 
   assert.equal((main.match(/addEventListener\('popstate'/g) || []).length, 1);
   assert.match(admin, /if \(adminDataLoaded\) \{[\s\S]*?render\(\);[\s\S]*?await loadAll\(\)/);
   assert.match(admin, /if \(overlay !== null\)/);
+});
+
+test('initial data failure retries and reaches the global recovery instead of leaving a partial SPA', () => {
+  assert.match(main, /async function loadDataWithRecovery/);
+  assert.match(main, /Laisser l'échec remonter vers showBootFailure/);
+  assert.doesNotMatch(main, /Erreur de chargement — vérifie ta connexion et recharge/);
+});
+
+test('the service worker only removes obsolete OLYCITY caches', () => {
+  const worker = fs.readFileSync(new URL('../sw.js', import.meta.url), 'utf8');
+  assert.match(worker, /key\.startsWith\('olycity-runtime-'\)/);
 });

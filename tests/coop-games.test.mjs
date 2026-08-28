@@ -4,6 +4,7 @@ import { readFileSync } from 'node:fs';
 import {
   canDeleteCoopGame,
   catalogFields,
+  coopSelectedProfile,
   coopSearchScore,
   extractSteamAppId,
   filterCoopGames,
@@ -11,6 +12,7 @@ import {
   profileKey,
   rankCatalogResults,
 } from '../js/coop-games-utils.mjs';
+import { firebaseRequest } from '../js/coop-games-page.mjs';
 import { fetchSteamReviewSummaries, searchGameCatalog } from '../js/coop-game-catalog.mjs';
 
 test('Steam links and raw app ids resolve to one stable id', () => {
@@ -42,6 +44,14 @@ test('search tolerates accents, partial words and ranks title matches first', ()
   ];
   assert.ok(coopSearchScore(games[0], 'evas') > coopSearchScore(games[1], 'evas'));
   assert.deepEqual(filterCoopGames(games, { search:'évas', status:'all' }).map(game => game.id), ['a', 'b']);
+});
+
+test('Logan remains a valid Coop voter from the static member list', () => {
+  const profile = coopSelectedProfile([
+    { id:'logan', name:'Logan', avatar:'https://example.com/logan.png' },
+  ], 'Logan');
+  assert.deepEqual(profile, { id:'logan', name:'Logan', avatar:'https://example.com/logan.png' });
+  assert.equal(profileKey(profile.name), 'logan');
 });
 
 test('only Nico and Liam profiles can expose destructive game controls', () => {
@@ -142,4 +152,23 @@ test('the async submit keeps its form reference after Firebase resolves', () => 
   assert.match(source, /method: 'DELETE'/);
   assert.match(source, /sort: 'recent'/);
   assert.match(source, /fetchSteamReviewSummaries/);
+});
+
+test('an idempotent Coop vote retries one aborted Firebase connection', async () => {
+  const originalFetch = globalThis.fetch;
+  let calls = 0;
+  globalThis.fetch = async () => {
+    calls += 1;
+    if (calls === 1) throw new DOMException('aborted', 'AbortError');
+    return new Response(JSON.stringify({ ok:true }), { status:200, headers:{ 'Content-Type':'application/json' } });
+  };
+  try {
+    const result = await firebaseRequest('coopGames/test/interests/logan', {
+      method:'PUT', body:JSON.stringify({ name:'Logan' }), timeoutMs:200,
+    });
+    assert.deepEqual(result, { ok:true });
+    assert.equal(calls, 2);
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
 });

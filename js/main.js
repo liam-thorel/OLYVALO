@@ -6,19 +6,19 @@
 import { valorantApi } from './api.js';
 import { fetchJsonWithRetry, fetchJsonWithTimeout } from './request-utils.mjs?v=20260825-first-load-recovery';
 
-const SITE_VERSION = '20260827-live-resume';
+const SITE_VERSION = '20260828-first-visit-recovery';
 const BOOT_RETRY_KEY = 'olycity-boot-retry';
 import { syncPlayer as henrikSyncPlayer, syncAllPlayers as henrikSyncAll, persistPlayerStats } from './henrik.js?v=20260809-val-roster-season';
 import { setStoredKey, storedKey, forgetCachedKey } from './henrik-key.mjs';
 import { rosterHTML, guestCardHTML, mapSectionHTML, agentPageHTML, navMapsHTML, compHTML } from './render.js?v=20260826-pro-team-presets';
-import { initTheme, initTilt, initParallax, initSearch, initKeyboard, initHeroParticles, initWheelLogos, initLivePage, initHistoryPage } from './interactions.js?v=20260827-history-tracker';
+import { initTheme, initTilt, initParallax, initSearch, initKeyboard, initHeroParticles, initWheelLogos, initLivePage, initHistoryPage } from './interactions.js?v=20260828-first-visit-recovery';
 import { storage } from './storage.js';
 import { avatarLayersHTML } from './avatars.mjs';
 import { initAdminPage } from './admin.mjs?v=20260826-cold-load-recovery';
 import { initBettingPage } from './betting-page.mjs?v=20260826-cold-load-recovery';
-import { initCoopGamesPage } from './coop-games-page.mjs?v=20260826-cold-load-recovery';
+import { initCoopGamesPage } from './coop-games-page.mjs?v=20260828-first-visit-recovery';
 import { getGameMode, initGameMode, setGameMode } from './game-mode.mjs?v=20260824-home-title';
-import { initLolHistoryPage, initLolLivePage } from './lol-pages.mjs?v=20260826-cold-load-recovery';
+import { initLolHistoryPage, initLolLivePage } from './lol-pages.mjs?v=20260828-first-visit-recovery';
 import { initLolRosterPages } from './lol-roster.mjs?v=20260809-lol-sync';
 import { state } from './state.mjs?v=20260806-lol-roster';
 import { memberId, mergeMemberProfiles, resolveMemberProfile } from './member-profiles.mjs?v=20260823-profile-picker';
@@ -98,6 +98,24 @@ async function loadData() {
   state.ROSTER.forEach(p => {
     if (!Array.isArray(p.mains)) p.mains = [];
   });
+}
+
+const waitForBootRetry = delayMs => new Promise(resolve => window.setTimeout(resolve, delayMs));
+
+async function loadDataWithRecovery({ attempts = 2 } = {}) {
+  let lastError;
+  for (let attempt = 1; attempt <= attempts; attempt += 1) {
+    try {
+      await loadData();
+      return;
+    } catch (error) {
+      lastError = error;
+      if (attempt >= attempts) break;
+      console.warn(`[OLYCITY] Chargement initial interrompu, nouvelle tentative ${attempt}/${attempts - 1}`, error);
+      await waitForBootRetry(550 * attempt);
+    }
+  }
+  throw lastError;
 }
 
 // ─── SYNC HELPERS ─────────────────────────────────
@@ -774,14 +792,24 @@ async function boot() {
 
   if (!window._liveResumeBound) {
     window._liveResumeBound = true;
-    const resumeLiveData = () => {
+    let lastResumeAt = 0;
+    const resumePageData = () => {
       if (document.visibilityState !== 'visible') return;
+      if (Date.now() - lastResumeAt < 750) return;
+      lastResumeAt = Date.now();
+      const activePage = document.querySelector('.spa-page.active')?.id?.replace('page-', '') || state.currentPage;
       const usefulPageVisible = ['page-home', 'page-live', 'page-admin']
         .some(id => document.getElementById(id)?.classList.contains('active'));
       if (usefulPageVisible) void liveDataStore.refresh({ timeoutMs:3_500 });
+      if (activePage === 'games') initCoopGamesPage(state.MEMBERS);
+      if (activePage === 'history') {
+        if (getGameMode() === 'lol') void initLolHistoryPage();
+        else void initHistoryPage();
+      }
     };
-    document.addEventListener('visibilitychange', resumeLiveData);
-    window.addEventListener('pageshow', resumeLiveData);
+    document.addEventListener('visibilitychange', resumePageData);
+    window.addEventListener('pageshow', resumePageData);
+    window.addEventListener('online', resumePageData);
   }
 
   if (!window._gameSwitchCountsCleanup) {
@@ -820,12 +848,14 @@ async function boot() {
   document.getElementById('main').innerHTML = `<div class="loading">Chargement des données…</div>`;
 
   try {
-    await loadData();
+    await loadDataWithRecovery();
   } catch (e) {
     console.error('[OLYCITY] Load error', e);
-    document.getElementById('main').innerHTML = `<div class="loading" style="color:var(--D)">Erreur de chargement — vérifie ta connexion et recharge.</div>`;
+    document.getElementById('main').innerHTML = `<div class="loading" style="color:var(--D)">Connexion interrompue — nouvelle tentative en cours.</div>`;
     document.getElementById('loading-screen')?.classList.add('is-dismissed');
-    return;
+    // Laisser l'échec remonter vers showBootFailure : auparavant boot() faisait
+    // un simple return et la SPA restait partiellement initialisée jusqu'au F5.
+    throw e;
   }
 
   renderAll();

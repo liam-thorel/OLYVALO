@@ -28,5 +28,11 @@
     "id": "romain",
     "name": "Romain",
     "avatar": "https://cdn.discordapp.com/avatars/344155681416544266/e8eae97b18cfe369e307bc8c2fd0db88.png?size=256"
+  },
+  {
+    "id": "logan",
+    "name": "Logan",
+    "role": "GoyMaxxer",
+    "avatar": "https://cdn.discordapp.com/avatars/241287549719412746/39da0611d8869e0b82374fbea0331bbd.png?size=256"
   }
 ]

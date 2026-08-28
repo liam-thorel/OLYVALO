@@ -26,6 +26,14 @@ export function canDeleteCoopGame(profile = null) {
   return COOP_GAME_MANAGER_IDS.has(String(profile?.id || '').toLowerCase());
 }
 
+export function coopSelectedProfile(members = [], selectedName = '') {
+  const name = String(selectedName || '');
+  const member = members.find(player => player?.name === name);
+  return name && member
+    ? { id:String(member.id || ''), name, avatar:String(member.avatar || '') }
+    : null;
+}
+
 export function catalogFields(result = {}) {
   const steamAppId = String(result.steamAppId || '');
   const genres = Array.isArray(result.genres) ? result.genres.map(String).filter(Boolean).slice(0, 4) : [];
