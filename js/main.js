@@ -6,7 +6,7 @@
 import { valorantApi } from './api.js';
 import { fetchJsonWithRetry, fetchJsonWithTimeout } from './request-utils.mjs?v=20260825-first-load-recovery';
 
-const SITE_VERSION = '20260828-page-stream-lifecycle';
+const SITE_VERSION = '20260829-single-live-store';
 const BOOT_RETRY_KEY = 'olycity-boot-retry';
 import { syncPlayer as henrikSyncPlayer, syncAllPlayers as henrikSyncAll, persistPlayerStats } from './henrik.js?v=20260809-val-roster-season';
 import { setStoredKey, storedKey, forgetCachedKey } from './henrik-key.mjs';
@@ -26,7 +26,7 @@ import { initHomeDashboard } from './home-dashboard.mjs?v=20260825-human-banner'
 import { initHomeGroup } from './home-group.mjs?v=20260828-page-stream-lifecycle';
 import { initPwaInstall } from './pwa-install.mjs?v=20260825-offline-update';
 import { initSiteTelemetry } from './site-telemetry.mjs?v=20260825-site-health';
-import { liveDataStore, liveTimestamp } from './live-data-store.mjs?v=20260827-live-resume';
+import { liveDataStore, liveTimestamp } from './live-data-store.mjs?v=20260810-firebase-connection-fix';
 export { state };
 
 initSiteTelemetry();

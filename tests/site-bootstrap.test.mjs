@@ -327,6 +327,14 @@ test('history prioritizes recent matches and reveals secondary data progressivel
 test('Live and Admin share one realtime Firebase store', () => {
   const admin = fs.readFileSync(new URL('../js/admin.mjs', import.meta.url), 'utf8');
   const lolPages = fs.readFileSync(new URL('../js/lol-pages.mjs', import.meta.url), 'utf8');
+  const jsDirectory = new URL('../js/', import.meta.url);
+  const liveStoreSpecifiers = fs.readdirSync(jsDirectory)
+    .filter(file => /\.(?:js|mjs)$/.test(file))
+    .flatMap(file => [...fs.readFileSync(new URL(file, jsDirectory), 'utf8').matchAll(/from ['"](\.\/live-data-store\.mjs\?v=[^'"]+)['"]/g)])
+    .map(match => match[1]);
+  assert.deepEqual([...new Set(liveStoreSpecifiers)], [
+    './live-data-store.mjs?v=20260810-firebase-connection-fix',
+  ]);
   assert.match(liveDataStore, /valorantClients: 'live\/clients'/);
   assert.match(interactions, /liveDataStore\.subscribe/);
   assert.match(lolPages, /liveDataStore\.subscribe/);
