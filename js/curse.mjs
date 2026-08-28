@@ -493,6 +493,8 @@ export function initCurse(){
   window.addEventListener('olycity:page-change', event => {
     pageActive = event.detail?.page === 'live';
     refreshLocalEffects();
+    if (pageActive) startCurseStream();
+    else stopCurseStream();
   });
 
   /* ---------------- sync with Firebase (shared across all visitors) ---------------- */
@@ -503,13 +505,22 @@ export function initCurse(){
   // seed fetch). Lancer les deux en parallèle créait une course : un clic
   // juste après le chargement de la page pouvait voir le fetch initial
   // (plus lent) écraser l'état "actif" tout juste confirmé par le flux.
-  const curseSource = new EventSource(`${FIREBASE_URL}/${CURSE_PATH}.json`);
-  curseSource.addEventListener('put', e => {
-    try {
-      const message = JSON.parse(e.data);
-      if ((message.path || '/') === '/') applyCurseState(message.data);
-    } catch { /* flux temporairement invalide, ignoré */ }
-  });
+  let curseSource = null;
+  function startCurseStream() {
+    if (!pageActive || curseSource || typeof EventSource === 'undefined') return;
+    curseSource = new EventSource(`${FIREBASE_URL}/${CURSE_PATH}.json`);
+    curseSource.addEventListener('put', e => {
+      try {
+        const message = JSON.parse(e.data);
+        if ((message.path || '/') === '/') applyCurseState(message.data);
+      } catch { /* flux temporairement invalide, ignoré */ }
+    });
+  }
+  function stopCurseStream() {
+    curseSource?.close();
+    curseSource = null;
+  }
+  startCurseStream();
 
   /* ---------------- public API, driven by updateUI() ---------------- */
   function setRoster(names){

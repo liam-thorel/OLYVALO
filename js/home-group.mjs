@@ -14,6 +14,7 @@ let pendingAvailability = {};
 let pendingGameVotes = new Set();
 let stream = null;
 let reloadTimer = null;
+let pageActive = false;
 let coopCarouselTimer = null;
 
 function cachedGames() {
@@ -316,14 +317,32 @@ function scheduleReload() {
 }
 
 function startRealtime() {
-  if (stream || typeof EventSource === 'undefined') return;
+  if (!pageActive || stream || typeof EventSource === 'undefined') return;
   stream = new EventSource(`${FIREBASE_ROOT}/groupNight/current.json`);
   stream.addEventListener('put', scheduleReload);
   stream.addEventListener('patch', scheduleReload);
 }
 
+function stopRealtime() {
+  stream?.close();
+  stream = null;
+  clearTimeout(reloadTimer);
+  reloadTimer = null;
+}
+
+function handlePageChange(event) {
+  const nextActive = event.detail?.page === 'home';
+  if (nextActive === pageActive) return;
+  pageActive = nextActive;
+  if (pageActive) {
+    startRealtime();
+    void loadHomeGroup().catch(() => {});
+  } else stopRealtime();
+}
+
 export function initHomeGroup(nextMembers = []) {
   members = nextMembers;
+  pageActive = document.getElementById('page-home')?.classList.contains('active') ?? false;
   document.getElementById('home-tonight-open')?.addEventListener('click', openModal);
   document.getElementById('home-tonight-form')?.addEventListener('submit', submitPlan);
   document.getElementById('home-night-calendar')?.addEventListener('click', downloadCalendar);
@@ -344,10 +363,15 @@ export function initHomeGroup(nextMembers = []) {
   document.querySelectorAll('[data-home-sheet-close]').forEach(button => button.addEventListener('click', closeModal));
   document.getElementById('home-tonight-modal')?.addEventListener('click', event => { if (event.target.id === 'home-tonight-modal') closeModal(); });
   window.addEventListener('olycity:profile-change', () => { renderPlan(); if (!document.getElementById('home-tonight-modal')?.hidden) syncForm(); });
+  window.addEventListener('olycity:page-change', handlePageChange);
   startRealtime();
   loadHomeGroup().catch(() => {
     renderPlan();
     renderActivity([]);
   });
-  return () => { stream?.close(); stream = null; clearTimeout(reloadTimer); clearInterval(coopCarouselTimer); };
+  return () => {
+    stopRealtime();
+    clearInterval(coopCarouselTimer);
+    window.removeEventListener('olycity:page-change', handlePageChange);
+  };
 }

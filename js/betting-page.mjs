@@ -16,6 +16,7 @@ let loadSequence = 0;
 let realtimeRevision = 0;
 let recoveryAttempts = 0;
 let recoveryTimer = null;
+let pageActive = false;
 
 function escapeHTML(value) {
   return String(value ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -136,13 +137,28 @@ function applyRealtimeWallets(event) {
 }
 
 function startRealtime() {
-  if (stream || typeof EventSource === 'undefined') return;
+  if (!pageActive || stream || typeof EventSource === 'undefined') return;
   stream = new EventSource(`${FIREBASE_URL}/betting/wallets.json`);
   stream.addEventListener('put', applyRealtimeWallets);
   stream.addEventListener('patch', applyRealtimeWallets);
   stream.addEventListener('error', () => {
     if (Object.keys(walletsState).length) renderWallets({ offline:true });
   });
+}
+
+function stopRealtime() {
+  stream?.close();
+  stream = null;
+  clearTimeout(recoveryTimer);
+  recoveryTimer = null;
+}
+
+function handlePageChange(event) {
+  const nextActive = event.detail?.page === 'betting';
+  if (nextActive === pageActive) return;
+  pageActive = nextActive;
+  if (pageActive) startRealtime();
+  else stopRealtime();
 }
 
 function restartRealtime() {
@@ -164,6 +180,7 @@ export async function initBettingPage() {
   injectStylesOnce();
   if (!initialized) {
     initialized = true;
+    pageActive = document.getElementById('page-betting')?.classList.contains('active') ?? false;
     const cached = readCache();
     if (cached) {
       walletsState = cached.wallets;
@@ -175,6 +192,7 @@ export async function initBettingPage() {
         void loadAndRender();
       }
     });
+    window.addEventListener('olycity:page-change', handlePageChange);
     startRealtime();
   } else if (Object.keys(walletsState).length) {
     renderWallets();

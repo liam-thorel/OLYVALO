@@ -25,6 +25,25 @@ const designSystem = fs.readFileSync(new URL('../css/design-system.css', import.
 const presence = fs.readFileSync(new URL('../js/presence.js', import.meta.url), 'utf8');
 const admin = fs.readFileSync(new URL('../js/admin.mjs', import.meta.url), 'utf8');
 const coopPage = fs.readFileSync(new URL('../js/coop-games-page.mjs', import.meta.url), 'utf8');
+const bettingPage = fs.readFileSync(new URL('../js/betting-page.mjs', import.meta.url), 'utf8');
+const curse = fs.readFileSync(new URL('../js/curse.mjs', import.meta.url), 'utf8');
+
+test('page-specific realtime streams close during SPA navigation', () => {
+  for (const [source, pageName] of [
+    [coopPage, 'games'],
+    [bettingPage, 'betting'],
+    [homeGroup, 'home'],
+    [curse, 'live'],
+  ]) {
+    assert.match(source, new RegExp(`event\\.detail\\?\\.page === '${pageName}'`));
+    assert.match(source, /\.close\(\)/);
+    assert.match(source, /olycity:page-change/);
+  }
+  assert.match(coopPage, /if \(!pageActive \|\| stream/);
+  assert.match(bettingPage, /if \(!pageActive \|\| stream/);
+  assert.match(homeGroup, /if \(!pageActive \|\| stream/);
+  assert.match(curse, /if \(!pageActive \|\| curseSource/);
+});
 
 test('professional compositions show evidence instead of invented tactical copy', () => {
   assert.match(render, /const plan = comp\.tip \?/);

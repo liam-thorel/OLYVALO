@@ -1,4 +1,4 @@
-const CACHE_NAME = 'olycity-runtime-20260828-first-visit-recovery';
+const CACHE_NAME = 'olycity-runtime-20260828-page-stream-lifecycle';
 const SHELL_URLS = ['./', './index.html', './manifest.webmanifest'];
 
 self.addEventListener('install', event => {

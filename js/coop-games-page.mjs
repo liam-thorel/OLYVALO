@@ -42,6 +42,7 @@ let steamReviewIds = '';
 let syncNotice = null;
 let recoveryAttempts = 0;
 let recoveryTimer = null;
+let pageActive = false;
 const filters = { search: '', players: 0, genre:'all', status: 'all', sort: 'recent' };
 
 const escapeHTML = value => String(value ?? '')
@@ -384,7 +385,7 @@ function applyRealtimeGames(event) {
 }
 
 function startRealtime() {
-  if (stream || typeof EventSource === 'undefined') return;
+  if (!pageActive || stream || typeof EventSource === 'undefined') return;
   stream = new EventSource(`${FIREBASE_ROOT}/coopGames.json`);
   stream.addEventListener('put', applyRealtimeGames);
   stream.addEventListener('patch', applyRealtimeGames);
@@ -399,6 +400,23 @@ function startRealtime() {
     // Une lecture bornée décide de l'état réellement hors connexion.
     scheduleReload();
   });
+}
+
+function stopRealtime() {
+  stream?.close();
+  stream = null;
+  clearTimeout(reloadTimer);
+  reloadTimer = null;
+  clearTimeout(recoveryTimer);
+  recoveryTimer = null;
+}
+
+function handlePageChange(event) {
+  const nextActive = event.detail?.page === 'games';
+  if (nextActive === pageActive) return;
+  pageActive = nextActive;
+  if (pageActive) startRealtime();
+  else stopRealtime();
 }
 
 function restartRealtime() {
@@ -731,6 +749,7 @@ export function initCoopGamesPage(nextRoster = []) {
   roster = nextRoster;
   if (!initialized) {
     initialized = true;
+    pageActive = document.getElementById('page-games')?.classList.contains('active') ?? false;
     const cached = readGamesCache();
     if (cached?.games.length) {
       games = cached.games;
@@ -738,6 +757,7 @@ export function initCoopGamesPage(nextRoster = []) {
       syncNotice = { state:'syncing', savedAt:cached.savedAt };
     }
     bindControls();
+    window.addEventListener('olycity:page-change', handlePageChange);
     startRealtime();
     if (games.length) {
       syncGenreOptions();
