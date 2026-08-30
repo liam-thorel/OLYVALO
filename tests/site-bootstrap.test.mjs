@@ -211,6 +211,16 @@ test('mobile data pages keep readable spacing, controls and roster details', () 
   assert.match(designSystem, /\.coop-filter-field:last-child\s*\{\s*flex-basis:\s*100%/);
 });
 
+test('mobile Live and expanded history prioritize useful information', () => {
+  assert.match(responsive, /\.live-download-link \{ display:none; \}/);
+  assert.match(responsive, /\.live-minimap-wrap \{[\s\S]*?order:-1;[\s\S]*?height:132px !important/);
+  assert.match(responsive, /\.live-players\.is-syncing \{ min-height:118px; \}/);
+  assert.match(interactions, /class="history-roster-disclosure"/);
+  assert.match(interactions, /max-width: 768px/);
+  assert.match(responsive, /\.history-roster-disclosure > summary \{[\s\S]*?min-height:48px/);
+  assert.match(responsive, /\.history-game-detail \{ padding:0; \}/);
+});
+
 test('coop games expose explicit categories and cache-safe search modules', () => {
   assert.match(page, /data-coop-status="open"/);
   assert.match(page, /id="coop-genre"/);

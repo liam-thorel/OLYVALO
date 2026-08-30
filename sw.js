@@ -1,4 +1,4 @@
-const CACHE_NAME = 'olycity-runtime-20260829-single-live-store';
+const CACHE_NAME = 'olycity-runtime-20260830-mobile-live-history-2';
 const SHELL_URLS = ['./', './index.html', './manifest.webmanifest'];
 
 self.addEventListener('install', event => {

@@ -913,6 +913,9 @@ body.agent-mode .footer{ display:none; }
 .history-performance-card.mvp > small { color: var(--muted); font-size: 10px; }
 .history-performance-card.self-mvp { border-color: rgba(224,179,65,.38); background: rgba(224,179,65,.07); }
 .history-detail-players { min-width: 0; }
+.history-roster-disclosure { min-width: 0; }
+.history-roster-disclosure > summary { display: none; }
+.history-roster-content { min-width: 0; }
 .history-teams { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
 .history-team { display: grid; gap: 5px; }
 .history-deathmatch-list { display: grid; grid-template-columns: 1fr 1fr; gap: 5px 8px; }

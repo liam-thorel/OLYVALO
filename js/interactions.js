@@ -1526,6 +1526,17 @@ export async function initHistoryPage() {
       </div>`;
     }
 
+    const compactHistory = window.matchMedia?.('(max-width: 768px)').matches ?? false;
+    const rosterLabel = kind === 'deathmatch' ? 'Classement complet' : 'Les deux équipes';
+    const rosterContent = detailedPlayers.length ? `<details class="history-roster-disclosure"${compactHistory ? '' : ' open'}>
+      <summary>
+        <span>${rosterLabel}</span>
+        <strong>${detailedPlayers.length} joueur${detailedPlayers.length > 1 ? 's' : ''}</strong>
+        <i aria-hidden="true">⌄</i>
+      </summary>
+      <div class="history-roster-content">${playersHTML}</div>
+    </details>` : playersHTML;
+
     return `<div class="history-detail-layout">
       <aside class="history-map-visual"${heroStyle}>
         <div class="history-match-result ${resultClass}"><span>${resultText}</span><strong>${kind === 'competitive' ? scoreText : performance.placement ? `#${performance.placement}` : 'DM'}</strong></div>
@@ -1539,7 +1550,7 @@ export async function initHistoryPage() {
         </div>
         ${trackerUrl ? `<a class="history-tracker-link" href="${trackerUrl}" target="_blank" rel="noopener noreferrer">Voir sur Tracker.gg <span aria-hidden="true">↗</span></a>` : ''}
       </aside>
-      <div class="history-detail-content">${overviewHTML}<div class="history-detail-players">${playersHTML}</div></div>
+      <div class="history-detail-content">${overviewHTML}<div class="history-detail-players">${rosterContent}</div></div>
     </div>`;
   };
   const gameCard = game => {
