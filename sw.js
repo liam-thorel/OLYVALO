@@ -1,4 +1,4 @@
-const CACHE_NAME = 'olycity-runtime-20260830-mobile-live-history-2';
+const CACHE_NAME = 'olycity-runtime-20260830-section-icons';
 const SHELL_URLS = ['./', './index.html', './manifest.webmanifest'];
 
 self.addEventListener('install', event => {

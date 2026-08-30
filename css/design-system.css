@@ -69,7 +69,8 @@
   width: 1px;
   background: var(--border2);
 }
-.page-nav-icon { opacity: .78; }
+.page-nav-icon { opacity:.88; transition:opacity .18s,transform .18s; }
+.page-nav-btn:hover .page-nav-icon,.page-nav-btn.active .page-nav-icon { opacity:1; transform:translateY(-1px); }
 :root[data-game="lol"] .page-nav-btn.active {
   background: rgba(201,155,63,.12);
   color: #f0d58a;
@@ -277,7 +278,7 @@
 @media (max-width: 1180px) and (min-width: 769px) {
   .topbar-row { gap: 12px; padding-inline: 18px; }
   .page-nav-btn { padding-inline: 9px; }
-  .page-nav-icon { display: none; }
+  .page-nav-icon { width:14px; height:14px; }
 }
 
 @media (max-width: 768px) {

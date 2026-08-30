@@ -103,7 +103,7 @@ test('home is one live priority, three visual worlds and a compact member strip'
   assert.match(homeStyles, /league-champions-group\.webp/);
   assert.match(homeStyles, /peak-keyart\.webp/);
   assert.match(page, /home\.css\?v=20260825-human-banner/);
-  assert.match(page, /design-system\.css\?v=20260825-accessible-mobile/);
+  assert.match(page, /design-system\.css\?v=20260830-section-icons/);
   assert.match(page, /<span class="hero-title-frame">OLYCITY<\/span>/);
   assert.doesNotMatch(page, /id="hero-eyebrow"/);
   assert.match(page, /id="home-member-faces"/);
@@ -153,6 +153,17 @@ test('mobile navigation keeps primary sections reachable with a compact more men
   assert.match(page, /data-page="games" data-nav-scope="shared"/);
   assert.match(designSystem, /:root\[data-game="lol"\] \.page-nav > \.page-nav-btn\[data-page="roster"\][\s\S]*display: flex !important/);
   assert.match(designSystem, /:root\[data-game="lol"\] \.mobile-nav-more-sheet > \[data-mobile-page="roster"\][\s\S]*display: none/);
+});
+
+test('section navigation uses one meaningful SVG icon language', () => {
+  for (const icon of ['home', 'maps', 'roster', 'live', 'history', 'games', 'betting', 'more']) {
+    assert.match(page, new RegExp(`id="oly-icon-${icon}"`));
+    assert.match(page, new RegExp(`href="#oly-icon-${icon}"`));
+  }
+  assert.doesNotMatch(page, /page-nav-icon">(?:⌂|◈|◉|●|◇|✦|🎲|•••)/);
+  assert.match(layout, /\.page-nav-icon,[\s\S]*?stroke-width:2\.1/);
+  assert.doesNotMatch(designSystem, /\.page-nav-icon \{ display: none; \}/);
+  assert.match(responsive, /\.page-nav-btn \.page-nav-icon \{ width:19px; height:19px; \}/);
 });
 
 test('mobile composition cards stay compact without hiding their details', () => {

@@ -17,17 +17,43 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Tomorrow:wght@400;500;600;700&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="./css/tokens.css?v=20260824-page-shell">
-  <link rel="stylesheet" href="./css/layout.css?v=20260830-mobile-live-history-2">
+  <link rel="stylesheet" href="./css/layout.css?v=20260830-section-icons">
   <link rel="stylesheet" href="./css/components.css?v=20260827-team-logo-contrast">
   <link rel="stylesheet" href="./css/home.css?v=20260825-human-banner">
   <link rel="stylesheet" href="./css/agent-page.css?v=20260720-avatars">
-  <link rel="stylesheet" href="./css/responsive.css?v=20260830-mobile-live-history-2">
+  <link rel="stylesheet" href="./css/responsive.css?v=20260830-section-icons">
   <link rel="stylesheet" href="./css/lol-mode.css?v=20260825-community-foundation">
   <link rel="stylesheet" href="./css/curse.css?v=20260818-curse-lifecycle">
   <link rel="stylesheet" href="./css/coop-games.css?v=20260824-mobile-data-cache">
-  <link rel="stylesheet" href="./css/design-system.css?v=20260825-accessible-mobile">
+  <link rel="stylesheet" href="./css/design-system.css?v=20260830-section-icons">
 </head>
 <body>
+  <svg class="oly-icon-sprite" aria-hidden="true" focusable="false">
+    <symbol id="oly-icon-home" viewBox="0 0 24 24">
+      <path d="m3.5 11 8.5-7 8.5 7"/><path d="M5.5 9.5V20h13V9.5"/><path d="M9.5 20v-6h5v6"/>
+    </symbol>
+    <symbol id="oly-icon-maps" viewBox="0 0 24 24">
+      <path d="m3.5 6 5.5-3 6 3 5.5-3v15L15 21l-6-3-5.5 3Z"/><path d="M9 3v15M15 6v15"/><circle cx="15" cy="10" r="1.5"/>
+    </symbol>
+    <symbol id="oly-icon-roster" viewBox="0 0 24 24">
+      <circle cx="12" cy="8" r="3"/><path d="M6.5 20v-1.5A5.5 5.5 0 0 1 12 13a5.5 5.5 0 0 1 5.5 5.5V20"/><path d="M5.5 10.5a2.5 2.5 0 0 0 0 5M18.5 10.5a2.5 2.5 0 0 1 0 5M2.5 20v-1a4 4 0 0 1 3-3.9M21.5 20v-1a4 4 0 0 0-3-3.9"/>
+    </symbol>
+    <symbol id="oly-icon-live" viewBox="0 0 24 24">
+      <circle cx="12" cy="12" r="2" class="oly-icon-fill"/><path d="M8.5 8.5a5 5 0 0 0 0 7M15.5 8.5a5 5 0 0 1 0 7"/><path d="M5.5 5.5a9.2 9.2 0 0 0 0 13M18.5 5.5a9.2 9.2 0 0 1 0 13"/>
+    </symbol>
+    <symbol id="oly-icon-history" viewBox="0 0 24 24">
+      <path d="M4 7v5h5"/><path d="M5.2 17.5A8.5 8.5 0 1 0 4 12"/><path d="M12 7.5V12l3 2"/>
+    </symbol>
+    <symbol id="oly-icon-games" viewBox="0 0 24 24">
+      <path d="M8 7h8a5 5 0 0 1 4.7 3.3l1.1 3.2a4 4 0 0 1-6.3 4.4L13.8 16h-3.6l-1.7 1.9a4 4 0 0 1-6.3-4.4l1.1-3.2A5 5 0 0 1 8 7Z"/><path d="M7 11v4M5 13h4"/><circle cx="16.5" cy="11.5" r=".8" class="oly-icon-fill"/><circle cx="18.5" cy="14" r=".8" class="oly-icon-fill"/>
+    </symbol>
+    <symbol id="oly-icon-betting" viewBox="0 0 24 24">
+      <path d="M4 5h16v4a3 3 0 0 0 0 6v4H4v-4a3 3 0 0 0 0-6Z"/><path d="M12 7.5v2M12 12v1M12 15.5v1"/><circle cx="8" cy="12" r="1.5"/>
+    </symbol>
+    <symbol id="oly-icon-more" viewBox="0 0 24 24">
+      <rect x="4" y="4" width="6" height="6" rx="1"/><rect x="14" y="4" width="6" height="6" rx="1"/><rect x="4" y="14" width="6" height="6" rx="1"/><rect x="14" y="14" width="6" height="6" rx="1"/>
+    </symbol>
+  </svg>
 
   <!-- ADD PLAYER MODAL -->
   <div class="add-player-modal" id="add-player-modal">
@@ -122,34 +148,34 @@
       <!-- PAGE NAV -->
       <div class="page-nav" id="page-nav">
         <button class="page-nav-btn active" data-page="home" onclick="window.OLYCITY?.nav('home')">
-          <span class="page-nav-icon">⌂</span> Accueil
+          <svg class="page-nav-icon" aria-hidden="true"><use href="#oly-icon-home"></use></svg> Accueil
         </button>
         <div class="nav-maps-dropdown" data-valorant-only onmouseenter="this.classList.add('open')" onmouseleave="this.classList.remove('open')">
           <button class="page-nav-btn" data-page="maps" onclick="window.OLYCITY?.nav('maps')">
-            <span class="page-nav-icon">◈</span> Maps
+            <svg class="page-nav-icon" aria-hidden="true"><use href="#oly-icon-maps"></use></svg> Maps
           </button>
           <div class="nav-maps-menu" id="nav-maps-menu"></div>
         </div>
         <button class="page-nav-btn" data-page="roster" onclick="window.OLYCITY?.nav('roster')">
-          <span class="page-nav-icon">◉</span> Roster
+          <svg class="page-nav-icon" aria-hidden="true"><use href="#oly-icon-roster"></use></svg> Roster
         </button>
         <button class="page-nav-btn" data-page="live" onclick="window.OLYCITY?.nav('live')" style="position:relative">
-          <span class="page-nav-icon" style="color:#ff4656">●</span> Live
+          <svg class="page-nav-icon" aria-hidden="true"><use href="#oly-icon-live"></use></svg> Live
           <span id="live-dot" style="display:none;position:absolute;top:4px;right:4px;width:7px;height:7px;border-radius:50%;background:#ff4656;box-shadow:0 0 6px #ff4656"></span>
         </button>
         <button class="page-nav-btn" data-page="history" onclick="window.OLYCITY?.nav('history')">
-          <span class="page-nav-icon">◇</span> Historique
+          <svg class="page-nav-icon" aria-hidden="true"><use href="#oly-icon-history"></use></svg> Historique
         </button>
         <button class="page-nav-btn" data-page="games" data-nav-scope="shared" onclick="window.OLYCITY?.nav('games')">
-          <span class="page-nav-icon">✦</span> Jeux
+          <svg class="page-nav-icon" aria-hidden="true"><use href="#oly-icon-games"></use></svg> Jeux
         </button>
         <button class="page-nav-btn" data-page="betting" data-nav-scope="shared" onclick="window.OLYCITY?.nav('betting')">
-          <span class="page-nav-icon">🎲</span> Paris
+          <svg class="page-nav-icon" aria-hidden="true"><use href="#oly-icon-betting"></use></svg> Paris
         </button>
         <button class="page-nav-btn mobile-nav-more-trigger" id="mobile-nav-more-trigger" type="button"
                 aria-label="Afficher les autres sections" aria-expanded="false"
                 onclick="window.OLYCITY?.toggleMobileNavMenu()">
-          <span class="page-nav-icon">•••</span> Plus
+          <svg class="page-nav-icon" aria-hidden="true"><use href="#oly-icon-more"></use></svg> Plus
         </button>
       </div>
 
@@ -184,13 +210,13 @@
         <button type="button" aria-label="Fermer" onclick="window.OLYCITY?.closeMobileNavMenu()">×</button>
       </div>
       <button type="button" data-mobile-page="roster" onclick="window.OLYCITY?.nav('roster')">
-        <span>◉</span><div><strong>Roster</strong><small>Joueurs, rangs et statistiques</small></div><i>›</i>
+        <svg class="mobile-nav-section-icon" aria-hidden="true"><use href="#oly-icon-roster"></use></svg><div><strong>Roster</strong><small>Joueurs, rangs et statistiques</small></div><i>›</i>
       </button>
       <button type="button" data-mobile-page="games" onclick="window.OLYCITY?.nav('games')">
-        <span>✦</span><div><strong>Jeux</strong><small>Suggestions coop du Discord</small></div><i>›</i>
+        <svg class="mobile-nav-section-icon" aria-hidden="true"><use href="#oly-icon-games"></use></svg><div><strong>Jeux</strong><small>Suggestions coop du Discord</small></div><i>›</i>
       </button>
       <button type="button" data-mobile-page="betting" onclick="window.OLYCITY?.nav('betting')">
-        <span>🎲</span><div><strong>Paris</strong><small>Points fictifs et pronostics</small></div><i>›</i>
+        <svg class="mobile-nav-section-icon" aria-hidden="true"><use href="#oly-icon-betting"></use></svg><div><strong>Paris</strong><small>Points fictifs et pronostics</small></div><i>›</i>
       </button>
     </div>
   </div>
@@ -208,10 +234,10 @@
       </h1>
       <div class="hero-ctas">
         <button class="hero-cta-primary" id="hero-primary-cta" onclick="window.OLYCITY?.nav('maps')">
-          ◈ Explorer les maps
+          <svg class="hero-cta-icon" aria-hidden="true"><use href="#oly-icon-maps"></use></svg> Explorer les maps
         </button>
         <button class="hero-cta-secondary" id="hero-secondary-cta" onclick="window.OLYCITY?.nav('roster')">
-          ◉ Voir le roster
+          <svg class="hero-cta-icon" aria-hidden="true"><use href="#oly-icon-roster"></use></svg> Voir le roster
         </button>
       </div>
     </header>
@@ -548,6 +574,6 @@
   <!-- Firebase SDK -->
   <!-- Présence Firebase -->
   <script src="./js/presence.js?v=20260720-avatars"></script>
-  <script type="module" src="./js/main.js?v=20260830-mobile-live-history-2"></script>
+  <script type="module" src="./js/main.js?v=20260830-section-icons"></script>
 </body>
 </html>

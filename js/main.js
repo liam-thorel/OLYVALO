@@ -6,7 +6,7 @@
 import { valorantApi } from './api.js';
 import { fetchJsonWithRetry, fetchJsonWithTimeout } from './request-utils.mjs?v=20260825-first-load-recovery';
 
-const SITE_VERSION = '20260830-mobile-live-history-2';
+const SITE_VERSION = '20260830-section-icons';
 const BOOT_RETRY_KEY = 'olycity-boot-retry';
 import { syncPlayer as henrikSyncPlayer, syncAllPlayers as henrikSyncAll, persistPlayerStats } from './henrik.js?v=20260809-val-roster-season';
 import { setStoredKey, storedKey, forgetCachedKey } from './henrik-key.mjs';

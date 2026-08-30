@@ -8,7 +8,7 @@
   .topbar-row { gap: 10px; padding: 12px 18px; }
   .page-nav { gap: 2px; }
   .page-nav-btn { padding: 8px 11px; font-size: 10px; letter-spacing: 1px; }
-  .page-nav-icon { font-size: 11px; }
+  .page-nav-icon { width: 14px; height: 14px; }
   .topbar-tools .search-wrap { display: none; }
 }
 
@@ -121,7 +121,7 @@
     letter-spacing: .25px;
   }
   .page-nav-btn.active { background: var(--red-low); border-color: transparent; color: var(--red); box-shadow: none; }
-  .page-nav-btn span.page-nav-icon { font-size: 16px; line-height: 1; }
+  .page-nav-btn .page-nav-icon { width:19px; height:19px; }
   .mobile-nav-more-trigger { display:flex; }
 
   .mobile-nav-more-backdrop {
@@ -143,7 +143,7 @@
     align-items:center; gap:10px; padding:10px 12px; border:0; border-top:1px solid var(--border);
     background:transparent; color:var(--text); text-align:left; touch-action:manipulation;
   }
-  .mobile-nav-more-sheet > button > span { color:var(--red); font-size:18px; text-align:center; }
+  .mobile-nav-more-sheet > button > .mobile-nav-section-icon { width:22px; height:22px; color:var(--red); justify-self:center; }
   .mobile-nav-more-sheet > button > div { display:grid; gap:2px; }
   .mobile-nav-more-sheet > button strong { font-size:14px; }
   .mobile-nav-more-sheet > button small { color:var(--muted); font-size:11px; }

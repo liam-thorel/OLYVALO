@@ -52,7 +52,17 @@
 .page-nav-btn.active{
   background:var(--red); border-color:var(--red); color:#fff;
 }
-.page-nav-icon{ font-size:13px; }
+.oly-icon-sprite{ position:absolute; width:0; height:0; overflow:hidden; }
+.page-nav-icon,
+.mobile-nav-section-icon,
+.hero-cta-icon{
+  width:18px; height:18px; flex:0 0 auto; fill:none; stroke:currentColor;
+  stroke-width:2.1; stroke-linecap:round; stroke-linejoin:round;
+}
+.page-nav-icon{ width:16px; height:16px; }
+.oly-icon-fill{ fill:currentColor; stroke:none; }
+.hero-cta-icon{ width:17px; height:17px; }
+.hero-cta-primary,.hero-cta-secondary{ display:inline-flex; align-items:center; justify-content:center; gap:8px; }
 .mobile-nav-more-trigger,
 .mobile-nav-more-backdrop { display:none; }
 
