@@ -36,12 +36,16 @@ async function getBalance(userId, username) {
   return wallet.balance;
 }
 
-// Retourne false (et ne débite rien) si le solde est insuffisant.
+// Ne débite rien si le solde est insuffisant. Retourne le solde dans les deux
+// cas — après débit s'il a eu lieu, inchangé sinon : l'appelant peut l'afficher
+// au parieur sans relire le wallet (une lecture de plus, et un solde qui a pu
+// bouger entre les deux).
 async function debit(userId, amount, username) {
   const wallet = await ensureDailyGrant(userId, username);
-  if (wallet.balance < amount) return false;
-  await fbPut(`betting/wallets/${userId}`, { ...wallet, balance: wallet.balance - amount });
-  return true;
+  if (wallet.balance < amount) return { ok: false, balance: wallet.balance };
+  const balance = wallet.balance - amount;
+  await fbPut(`betting/wallets/${userId}`, { ...wallet, balance });
+  return { ok: true, balance };
 }
 
 async function credit(userId, amount, username) {

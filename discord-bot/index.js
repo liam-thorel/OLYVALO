@@ -11,6 +11,7 @@ const { watchNode, fbGet } = require('./firebase.js');
 const { buildItemsImage } = require('./build-image.js');
 const {
   openRound, closeRound, resolveRound, cancelRound, roundsForMatch, placeBet, attachMessage, BETTING_WINDOW_MS,
+  betErrorMessage, betConfirmation,
 } = require('./betting.js');
 const { startWeeklyScheduler } = require('./weekly.js');
 const { startDailyRecapScheduler } = require('./daily-recap.js');
@@ -90,13 +91,6 @@ process.on('uncaughtException', error => {
   client.commands.set(command.data.name, command);
 });
 
-const BET_ERROR_MESSAGES = {
-  closed: '❌ Les paris sont fermés pour cette game (fenêtre de 5 minutes dépassée).',
-  'already-bet': '❌ Tu as déjà parié sur cette game.',
-  'insufficient-funds': '❌ Solde insuffisant — utilise `/balance` pour voir combien il te reste.',
-  'no-round': '❌ Ce pari n\'est plus disponible.',
-};
-
 client.on('interactionCreate', async interaction => {
   if (interaction.isAutocomplete()) {
     const command = client.commands.get(interaction.commandName);
@@ -128,11 +122,11 @@ client.on('interactionCreate', async interaction => {
     await interaction.deferReply({ flags: MessageFlags.Ephemeral });
     const result = await placeBet(key, interaction.user.id, interaction.user.username, choice, amount);
     if (!result.ok) {
-      await interaction.editReply(BET_ERROR_MESSAGES[result.reason] || '❌ Impossible de placer ce pari.');
+      await interaction.editReply(betErrorMessage(result.reason, result.balance));
       return;
     }
     const potentialGain = Math.round(amount * result.odds);
-    await interaction.editReply('✅ Pari enregistré !');
+    await interaction.editReply(betConfirmation(amount, result.odds, result.balance));
     await interaction.channel.send(
       `🎲 **${interaction.user.username}** parie **${amount}** points ${betChoiceLabel(choice)} (cote x${result.odds}) — gain potentiel : **${potentialGain}** points.`,
     ).catch(() => {});

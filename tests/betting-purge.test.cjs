@@ -13,7 +13,10 @@ Module._load = function stub(request, parent, isMain) {
     };
   }
   if (request === './odds.js') return { estimateOdds: async () => ({}) };
-  if (request === './wallet.js') return { debit: async () => true, credit: async () => {}, recordBetOutcome: async () => 0 };
+  // debit() rend { ok, balance } : le solde restant remonte jusqu'au parieur.
+  if (request === './wallet.js') {
+    return { debit: async () => ({ ok: true, balance: 0 }), credit: async () => {}, recordBetOutcome: async () => 0 };
+  }
   return original(request, parent, isMain);
 };
 const betting = require('../discord-bot/betting.js');
