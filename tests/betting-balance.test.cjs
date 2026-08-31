@@ -34,7 +34,7 @@ Module._load = function stub(request, parent, isMain) {
   return original(request, parent, isMain);
 };
 const wallet = require('../discord-bot/wallet.js');
-const { placeBet, betErrorMessage, betConfirmation } = require('../discord-bot/betting.js');
+const { placeBet, betErrorMessage, betConfirmation, betModalLabels, MIN_BET } = require('../discord-bot/betting.js');
 Module._load = original;
 
 (async () => {
@@ -90,6 +90,38 @@ Module._load = original;
   assert.match(betErrorMessage('insufficient-funds', 1), /1 point\*/, '1 point, pas « 1 points »');
   assert.match(betErrorMessage('insufficient-funds', 0), /0 point\*/, '0 point au singulier aussi');
   assert.match(betErrorMessage('insufficient-funds', 2), /2 points/);
+
+  // ─── Fenêtre de saisie du montant ────────────────────────────────────────
+  // Discord n'accepte pas de texte libre dans une fenêtre : le solde doit
+  // tenir dans le titre, l'intitulé du champ ou l'exemple grisé.
+  const labels = betModalLabels(350);
+  assert.match(labels.title, /350 points/, 'le solde s’affiche avant même la saisie');
+  assert.match(labels.label, new RegExp(`${MIN_BET} à 350`), 'l’intitulé donne la plage permise');
+  assert.match(labels.placeholder, /350 points/);
+
+  // Une fenêtre dont le titre dépasse 45 caractères, ou l'intitulé 45, est
+  // rejetée EN ENTIER par Discord : le bouton n'ouvrirait plus rien.
+  for (const balance of [0, 1, 10, 999, 1_000_000, Number.MAX_SAFE_INTEGER]) {
+    const l = betModalLabels(balance);
+    assert.ok(l.title.length <= 45, `titre trop long pour un solde de ${balance} : ${l.title.length}`);
+    assert.ok(l.label.length <= 45, `intitulé trop long pour un solde de ${balance} : ${l.label.length}`);
+    assert.ok(l.placeholder.length <= 100, `exemple trop long pour un solde de ${balance}`);
+  }
+
+  // Sous le plancher de mise, l'intitulé ne doit pas annoncer une plage
+  // absurde (« 10 à 1 »). index.js répond avant d'ouvrir la fenêtre, mais les
+  // deux peuvent se désynchroniser.
+  assert.match(betModalLabels(1).label, /minimum 10/);
+  assert.doesNotMatch(betModalLabels(1).label, /10 à 1\b/);
+
+  // Solde inconnu (Firebase trop lent) : la fenêtre s'ouvre quand même, sans
+  // chiffre, plutôt que de bloquer le pari.
+  const blind = betModalLabels(null);
+  assert.doesNotMatch(blind.title, /\d/, 'aucun solde inventé quand il est inconnu');
+  assert.match(blind.placeholder, /minimum 10/);
+  assert.deepEqual(betModalLabels(), blind, 'appel sans argument = solde inconnu');
+
+  assert.equal(MIN_BET, 10, 'plancher partagé par /bet et la fenêtre de saisie');
 
   console.log('betting-balance: le solde restant remonte du wallet jusqu’au parieur');
 })().catch(error => { console.error(error); process.exit(1); });

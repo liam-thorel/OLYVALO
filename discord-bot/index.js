@@ -11,7 +11,7 @@ const { watchNode, fbGet } = require('./firebase.js');
 const { buildItemsImage } = require('./build-image.js');
 const {
   openRound, closeRound, resolveRound, cancelRound, roundsForMatch, placeBet, attachMessage, BETTING_WINDOW_MS,
-  betErrorMessage, betConfirmation,
+  betErrorMessage, betConfirmation, betModalLabels, MIN_BET,
 } = require('./betting.js');
 const { startWeeklyScheduler } = require('./weekly.js');
 const { startDailyRecapScheduler } = require('./daily-recap.js');
@@ -22,7 +22,7 @@ const {
 } = require('./lol-recap.js');
 const { startValoDailyRecapScheduler, startValoWeeklyRecapScheduler, startValoMonthlyRecapScheduler } = require('./valo-daily-recap.js');
 const { startLeaderboardScheduler } = require('./leaderboard-rank.js');
-const { rewardForGamePlayed } = require('./wallet.js');
+const { rewardForGamePlayed, getBalance } = require('./wallet.js');
 const { recordRankGain, lolRankPoints } = require('./rank-tracking.js');
 const { recordAward } = require('./valorant-awards.js');
 const { buildRankProgressLine } = require('./valorant-rank.js');
@@ -91,6 +91,10 @@ process.on('uncaughtException', error => {
   client.commands.set(command.data.name, command);
 });
 
+// Budget de lecture du solde avant l'ouverture de la fenêtre de pari. Court
+// exprès : au-delà, on préfère une fenêtre sans solde à une interaction perdue.
+const MODAL_BALANCE_TIMEOUT_MS = 1500;
+
 client.on('interactionCreate', async interaction => {
   if (interaction.isAutocomplete()) {
     const command = client.commands.get(interaction.commandName);
@@ -101,10 +105,33 @@ client.on('interactionCreate', async interaction => {
 
   if (interaction.isButton() && interaction.customId.startsWith('bet:')) {
     const [, key, choice] = interaction.customId.split(':');
-    const modal = new ModalBuilder().setCustomId(`betmodal:${key}:${choice}`).setTitle('Placer un pari');
+
+    // showModal doit être la TOUTE PREMIÈRE réponse à l'interaction : impossible
+    // de deferReply avant, donc les 3 secondes de Discord courent pendant la
+    // lecture du solde. On lui laisse un budget serré et on ouvre la fenêtre
+    // sans chiffre si Firebase traîne — mieux vaut parier sans le solde affiché
+    // qu'un bouton qui ne répond pas.
+    const pendingBalance = getBalance(interaction.user.id, interaction.user.username)
+      .catch(error => { console.error('[betting:solde]', error.message); return null; });
+    const balance = await Promise.race([
+      pendingBalance,
+      new Promise(resolve => setTimeout(() => resolve(null), MODAL_BALANCE_TIMEOUT_MS)),
+    ]);
+
+    // Inutile d'ouvrir une fenêtre dont la saisie sera forcément refusée.
+    if (balance != null && balance < MIN_BET) {
+      await interaction.reply({
+        content: betErrorMessage('insufficient-funds', balance),
+        flags: MessageFlags.Ephemeral,
+      }).catch(() => {});
+      return;
+    }
+
+    const labels = betModalLabels(balance);
+    const modal = new ModalBuilder().setCustomId(`betmodal:${key}:${choice}`).setTitle(labels.title);
     const amountInput = new TextInputBuilder()
-      .setCustomId('amount').setLabel('Montant (points)').setStyle(TextInputStyle.Short)
-      .setPlaceholder('ex: 100').setRequired(true);
+      .setCustomId('amount').setLabel(labels.label).setStyle(TextInputStyle.Short)
+      .setPlaceholder(labels.placeholder).setRequired(true);
     modal.addComponents(new ActionRowBuilder().addComponents(amountInput));
     try { await interaction.showModal(modal); } catch (error) { console.error('[betting:modal]', error.message); }
     return;
@@ -113,8 +140,8 @@ client.on('interactionCreate', async interaction => {
   if (interaction.isModalSubmit() && interaction.customId.startsWith('betmodal:')) {
     const [, key, choice] = interaction.customId.split(':');
     const amount = Number.parseInt(interaction.fields.getTextInputValue('amount'), 10);
-    if (!Number.isFinite(amount) || amount < 10) {
-      await interaction.reply({ content: '❌ Montant invalide (minimum 10 points).', flags: MessageFlags.Ephemeral });
+    if (!Number.isFinite(amount) || amount < MIN_BET) {
+      await interaction.reply({ content: `❌ Montant invalide (minimum ${MIN_BET} points).`, flags: MessageFlags.Ephemeral });
       return;
     }
     // placeBet fait plusieurs allers-retours Firebase séquentiels — on defer

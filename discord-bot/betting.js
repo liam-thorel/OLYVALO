@@ -137,6 +137,10 @@ const BET_ERRORS = {
   'no-round': "❌ Ce pari n'est plus disponible.",
 };
 
+// Mise plancher, appliquée par /bet (setMinValue) comme par la fenêtre de
+// saisie des boutons. Elle vivait en dur des deux côtés.
+const MIN_BET = 10;
+
 function points(amount) {
   return `${amount} point${Math.abs(amount) >= 2 ? 's' : ''}`;
 }
@@ -147,6 +151,34 @@ function betErrorMessage(reason, balance = null) {
   return balance == null
     ? '❌ Solde insuffisant — utilise `/balance` pour voir combien il te reste.'
     : `❌ Solde insuffisant : il te reste **${points(balance)}**.`;
+}
+
+// Libellés de la fenêtre de saisie du montant. Une fenêtre Discord n'accepte
+// pas de texte libre : le solde doit tenir dans le titre, l'intitulé du champ
+// ou l'exemple grisé. Les trois portent donc une information différente —
+// ce qu'on a, ce qui est permis, à quoi ça ressemble.
+//
+// Discord rejette la fenêtre ENTIÈRE si un titre dépasse 45 caractères ou un
+// intitulé 45 : on tronque plutôt que de risquer un bouton qui n'ouvre rien.
+const MODAL_TITLE_MAX = 45;
+const MODAL_LABEL_MAX = 45;
+
+function clamp(text, max) {
+  return text.length <= max ? text : `${text.slice(0, max - 1)}…`;
+}
+
+// balance à null = solde inconnu (Firebase trop lent) : on ouvre quand même la
+// fenêtre, sans chiffre, plutôt que de bloquer le pari.
+function betModalLabels(balance = null) {
+  if (balance == null) {
+    return { title: 'Placer un pari', label: 'Montant (points)', placeholder: `ex : 100 (minimum ${MIN_BET})` };
+  }
+  const range = balance >= MIN_BET ? `${MIN_BET} à ${balance}` : `minimum ${MIN_BET}`;
+  return {
+    title: clamp(`Pari — ${points(balance)} dispo`, MODAL_TITLE_MAX),
+    label: clamp(`Montant à miser (${range})`, MODAL_LABEL_MAX),
+    placeholder: `Il te reste ${points(balance)}`,
+  };
 }
 
 // Réponse privée au parieur : ce qu'il a misé, ce qu'il peut gagner, et ce
@@ -194,7 +226,7 @@ async function cancelRound(key) {
 module.exports = {
   roundKey, roundsForMatch, openRound, closeRound, placeBet, resolveRound, cancelRound,
   findOpenRoundForChannel, attachMessage, betsForUser, BETTING_WINDOW_MS,
-  betErrorMessage, betConfirmation,
+  betErrorMessage, betConfirmation, betModalLabels, MIN_BET,
   // exposés pour les tests
   __test: { purgeExpiredRounds, isExpired, ROUND_RETENTION_MS, resetPurgeClock: () => { lastPurgeAt = 0; } },
 };

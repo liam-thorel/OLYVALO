@@ -1,5 +1,5 @@
 const { SlashCommandBuilder, MessageFlags } = require('discord.js');
-const { placeBet, findOpenRoundForChannel, betErrorMessage, betConfirmation } = require('../betting.js');
+const { placeBet, findOpenRoundForChannel, betErrorMessage, betConfirmation, MIN_BET } = require('../betting.js');
 
 const CHOICE_LABELS = { win: 'Victoire', lose: 'Défaite' };
 
@@ -9,7 +9,7 @@ module.exports = {
     .setDescription('Parier sur la game OLYCITY en cours dans ce salon')
     .addStringOption(option => option.setName('choix').setDescription('Victoire ou défaite de l\'équipe OLYCITY').setRequired(true)
       .addChoices({ name: 'Victoire', value: 'win' }, { name: 'Défaite', value: 'lose' }))
-    .addIntegerOption(option => option.setName('montant').setDescription('Nombre de points à miser').setRequired(true).setMinValue(10)),
+    .addIntegerOption(option => option.setName('montant').setDescription('Nombre de points à miser').setRequired(true).setMinValue(MIN_BET)),
 
   async execute(interaction) {
     // Plusieurs allers-retours Firebase séquentiels ci-dessous (round, pari
