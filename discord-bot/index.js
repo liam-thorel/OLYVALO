@@ -28,6 +28,7 @@ const { recordAward } = require('./valorant-awards.js');
 const { buildRankProgressLine } = require('./valorant-rank.js');
 const { isRankedValorantMode, isValorantDeathmatch, isNonRankedLolQueue } = require('./stats.js');
 const { createBoundedSet, createExpiringMap } = require('./bounded-memory.js');
+const { outcomeHeader } = require('./outcome-header.js');
 const { formatLolRank, POSITION_ICONS } = require('./lol-rank.js');
 
 const SITE_URL = 'https://liam-thorel.github.io/OLYVALO';
@@ -403,14 +404,16 @@ async function notifyValorantGameEnd(sessions) {
     )
     : null;
 
-  const stackBanner = playerData.length > 1
-    ? `🔥 **STACK OLYCITY** — ${playerData.length} joueurs dans la même game !\n`
-    : '';
-
   await Promise.all([...channelIds].map(async channelId => {
     const channelPlayers = playerData.filter(({ member }) =>
       trackersForPlayerGame(member.name, 'valorant').some(t => t.channelId === channelId));
     if (channelPlayers.length === 0) return;
+
+    // Calculé par salon, pas globalement : un salon qui ne suit qu'un des deux
+    // joueurs ne doit pas annoncer le résultat de l'autre.
+    const header = outcomeHeader(channelPlayers.map(({ member, result }) => ({
+      name: member.name, outcome: result.result,
+    })));
 
     const playerEmbeds = channelPlayers.map(({ member, result, playReward, outcome: localOutcome, awardLines }) => {
       const resultLabel = resultLabels[result.result] || 'Terminée';
@@ -456,7 +459,7 @@ async function notifyValorantGameEnd(sessions) {
 
     try {
       const channel = await client.channels.fetch(channelId);
-      await channel.send({ content: stackBanner || undefined, embeds: finalEmbeds, components: linkRow ? [linkRow] : [] });
+      await channel.send({ content: header || undefined, embeds: finalEmbeds, components: linkRow ? [linkRow] : [] });
     } catch (error) {
       console.error(`[notify:valorant-end] échec envoi salon ${channelId} —`, error.message);
     }
@@ -547,14 +550,15 @@ async function notifyLolGameEnd(sessions) {
     return { session, member, result, playReward, outcome: localOutcome, files, imageName };
   }));
 
-  const stackBanner = playerData.length > 1
-    ? `🔥 **STACK OLYCITY** — ${playerData.length} joueurs dans la même game !\n`
-    : '';
-
   await Promise.all([...channelIds].map(async channelId => {
     const channelPlayers = playerData.filter(({ member }) =>
       trackersForPlayerGame(member.name, 'lol').some(t => t.channelId === channelId));
     if (channelPlayers.length === 0) return;
+
+    // Idem Valorant : l'en-tête ne parle que des joueurs suivis dans CE salon.
+    const header = outcomeHeader(channelPlayers.map(({ member, result }) => ({
+      name: member.name, outcome: result.win,
+    })));
 
     const allFiles = [];
     const playerEmbeds = channelPlayers.map(({ member, result, playReward, outcome: localOutcome, files, imageName }) => {
@@ -628,7 +632,7 @@ async function notifyLolGameEnd(sessions) {
     try {
       const channel = await client.channels.fetch(channelId);
       await channel.send({
-        content: stackBanner || undefined,
+        content: header || undefined,
         embeds: finalEmbeds,
         files: allFiles,
         components: chunkButtonRows(dpmButtons),

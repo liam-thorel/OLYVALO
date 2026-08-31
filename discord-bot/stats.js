@@ -167,6 +167,15 @@ function isNonRankedLolQueue(queueId) {
   return queueId !== null && queueId !== undefined && queueId !== '' && !isRankedLolQueue(queueId);
 }
 
+// Bilan d'une série de games : « 53% WR (5-4) ». Le pourcentage seul ment sur
+// les petits échantillons — 100% sur une game n'est pas 100% sur vingt — donc
+// le détail victoires-défaites l'accompagne toujours.
+// Retourne null quand aucune game n'a de résultat connu : rien à afficher.
+function winrateLabel(wins, decided) {
+  if (!decided) return null;
+  return `${Math.round((wins / decided) * 100)}% WR (${wins}-${decided - wins})`;
+}
+
 function rankedOnly(game, entries) {
   if (game === 'valorant') return entries.filter(e => isRankedValorantMode(e.mode));
   // Côté LoL on écarte seulement ce qu'on sait être hors classé : le script
@@ -180,5 +189,5 @@ function rankedOnly(game, entries) {
 module.exports = {
   historyFor, winrateFor, mostPlayed, recentForm, killDeathRatio, aggregateKDA, averageHsPercent, averageAcs, averageCs, HISTORY_SAMPLE_SIZE,
   rankedOnly, RANKED_VALORANT_MODE, isRankedValorantMode, isValorantDeathmatch,
-  RANKED_LOL_QUEUES, isRankedLolQueue, isNonRankedLolQueue,
+  RANKED_LOL_QUEUES, isRankedLolQueue, isNonRankedLolQueue, winrateLabel,
 };

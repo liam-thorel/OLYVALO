@@ -70,6 +70,12 @@ const game = (win, ts, extra = {}) => ({
   // Frise chronologique : la défaite (ts=2) précède la victoire (ts=3).
   assert.match(embed.description, /🟥🟩/, 'la frise doit suivre l’ordre des games');
 
+  // Winrate individuel, en plus du collectif déjà présent en en-tête. Le
+  // détail victoires-défaites accompagne le pourcentage : « 100% WR » sur une
+  // seule game ne veut pas dire la même chose que sur vingt.
+  assert.match(embed.description, /🟥🟩 · 50% WR \(1-1\)/, 'WR individuel de Liam, 1V-1D');
+  assert.match(embed.description, /0% WR \(0-1\)/, 'WR individuel de Mathis, 0V-1D');
+
   // Le rôle demandé, et non l'agent.
   assert.match(embed.description, /🌫️ Contrôleur/);
   assert.match(embed.description, /⚔️ Duelliste/);
@@ -97,6 +103,8 @@ const game = (win, ts, extra = {}) => ({
   assert.equal(partial.length, 1);
   assert.match(partial[0].description, /🥇 \*\*Nico\*\* · `\+12 RR`/);
   assert.doesNotMatch(partial[0].description, /KDA|ACS|HS/);
+  // Aucune game jouée : pas de « 0% WR (0-0) » trompeur.
+  assert.doesNotMatch(partial[0].description, /WR/, 'sans game, aucun winrate à afficher');
 
   // ─── Rien à dire : aucun message ──────────────────────────────────────────
   const silent = await loadRecap({
