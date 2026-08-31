@@ -148,6 +148,28 @@ const endResult = mode => ({
   await notifyValorantGameEnd([compEnd]);
   assert.equal(sent.length, 1, 'la carte de fin d’une game classée doit partir');
 
+  // L'en-tête annonce le résultat, plus le simple fait d'être plusieurs.
+  const solo = String(sent[0].payload.content);
+  assert.match(solo, /🏆 \*\*Victoire\*\* pour \*\*Joueur\d+\*\*/);
+  assert.doesNotMatch(solo, /STACK OLYCITY/, 'l’ancienne bannière ne doit plus partir');
+
+  // Un stack : les deux joueurs sont nommés dans le même en-tête.
+  sent.length = 0;
+  const stackA = session('competitive');
+  const stackB = session('competitive');
+  stackB.matchId = stackA.matchId; // même game
+  [stackA, stackB].forEach(s2 => {
+    s2.active = false;
+    s2.result = { ...endResult('competitive'), result: 'loss', matchId: stackA.matchId };
+  });
+  await notifyValorantGameEnd([stackA, stackB]);
+  assert.equal(sent.length, 1, 'un stack tient dans un seul message');
+  assert.match(
+    String(sent[0].payload.content),
+    /💀 \*\*Défaite\*\* pour \*\*Joueur\d+ et Joueur\d+\*\*/,
+    'les deux joueurs sont nommés, avec le résultat',
+  );
+
   // La casse du compétitif ne doit pas, elle, faire perdre une notif.
   for (const mode of ['Competitive', 'COMPETITIVE', ' competitive ']) {
     sent.length = 0;

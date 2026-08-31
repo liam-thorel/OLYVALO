@@ -55,6 +55,13 @@ const game = (win, ts, extra = {}) => ({
   assert.match(embed.description, /3 games · 33% WR collectif/);
   assert.match(embed.description, /🥇 \*\*Liam\*\* · `\+61 LP` · Émeraude 2 64 LP/);
   assert.match(embed.description, /🟥🟩/, 'frise en ordre chronologique');
+
+  // Winrate individuel, comme sur le récap Valorant. Le détail
+  // victoires-défaites accompagne le pourcentage : « 100% WR » sur une seule
+  // game ne veut pas dire la même chose que sur vingt.
+  assert.match(embed.description, /🟥🟩 · 50% WR \(1-1\)/, 'WR individuel de Liam, 1V-1D');
+  assert.match(embed.description, /0% WR \(0-1\)/, 'WR individuel de Rayhan, 0V-1D');
+
   assert.match(embed.description, /🌲 Jungle/, 'le poste le plus joué doit apparaître');
   assert.match(embed.description, /🛡️ Support/);
   assert.doesNotMatch(embed.description, /#\d/, 'aucun Riot ID dans le récap');

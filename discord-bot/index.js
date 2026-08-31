@@ -11,6 +11,7 @@ const { watchNode, fbGet } = require('./firebase.js');
 const { buildItemsImage } = require('./build-image.js');
 const {
   openRound, closeRound, resolveRound, cancelRound, roundsForMatch, placeBet, attachMessage, BETTING_WINDOW_MS,
+  betErrorMessage, betConfirmation, betModalLabels, MIN_BET,
 } = require('./betting.js');
 const { startWeeklyScheduler } = require('./weekly.js');
 const { startDailyRecapScheduler } = require('./daily-recap.js');
@@ -21,12 +22,13 @@ const {
 } = require('./lol-recap.js');
 const { startValoDailyRecapScheduler, startValoWeeklyRecapScheduler, startValoMonthlyRecapScheduler } = require('./valo-daily-recap.js');
 const { startLeaderboardScheduler } = require('./leaderboard-rank.js');
-const { rewardForGamePlayed } = require('./wallet.js');
+const { rewardForGamePlayed, getBalance } = require('./wallet.js');
 const { recordRankGain, lolRankPoints } = require('./rank-tracking.js');
 const { recordAward } = require('./valorant-awards.js');
 const { buildRankProgressLine } = require('./valorant-rank.js');
 const { isRankedValorantMode, isValorantDeathmatch, isNonRankedLolQueue } = require('./stats.js');
 const { createBoundedSet, createExpiringMap } = require('./bounded-memory.js');
+const { outcomeHeader } = require('./outcome-header.js');
 const { formatLolRank, POSITION_ICONS } = require('./lol-rank.js');
 
 const SITE_URL = 'https://liam-thorel.github.io/OLYVALO';
@@ -90,12 +92,9 @@ process.on('uncaughtException', error => {
   client.commands.set(command.data.name, command);
 });
 
-const BET_ERROR_MESSAGES = {
-  closed: '❌ Les paris sont fermés pour cette game (fenêtre de 5 minutes dépassée).',
-  'already-bet': '❌ Tu as déjà parié sur cette game.',
-  'insufficient-funds': '❌ Solde insuffisant — utilise `/balance` pour voir combien il te reste.',
-  'no-round': '❌ Ce pari n\'est plus disponible.',
-};
+// Budget de lecture du solde avant l'ouverture de la fenêtre de pari. Court
+// exprès : au-delà, on préfère une fenêtre sans solde à une interaction perdue.
+const MODAL_BALANCE_TIMEOUT_MS = 1500;
 
 client.on('interactionCreate', async interaction => {
   if (interaction.isAutocomplete()) {
@@ -107,10 +106,33 @@ client.on('interactionCreate', async interaction => {
 
   if (interaction.isButton() && interaction.customId.startsWith('bet:')) {
     const [, key, choice] = interaction.customId.split(':');
-    const modal = new ModalBuilder().setCustomId(`betmodal:${key}:${choice}`).setTitle('Placer un pari');
+
+    // showModal doit être la TOUTE PREMIÈRE réponse à l'interaction : impossible
+    // de deferReply avant, donc les 3 secondes de Discord courent pendant la
+    // lecture du solde. On lui laisse un budget serré et on ouvre la fenêtre
+    // sans chiffre si Firebase traîne — mieux vaut parier sans le solde affiché
+    // qu'un bouton qui ne répond pas.
+    const pendingBalance = getBalance(interaction.user.id, interaction.user.username)
+      .catch(error => { console.error('[betting:solde]', error.message); return null; });
+    const balance = await Promise.race([
+      pendingBalance,
+      new Promise(resolve => setTimeout(() => resolve(null), MODAL_BALANCE_TIMEOUT_MS)),
+    ]);
+
+    // Inutile d'ouvrir une fenêtre dont la saisie sera forcément refusée.
+    if (balance != null && balance < MIN_BET) {
+      await interaction.reply({
+        content: betErrorMessage('insufficient-funds', balance),
+        flags: MessageFlags.Ephemeral,
+      }).catch(() => {});
+      return;
+    }
+
+    const labels = betModalLabels(balance);
+    const modal = new ModalBuilder().setCustomId(`betmodal:${key}:${choice}`).setTitle(labels.title);
     const amountInput = new TextInputBuilder()
-      .setCustomId('amount').setLabel('Montant (points)').setStyle(TextInputStyle.Short)
-      .setPlaceholder('ex: 100').setRequired(true);
+      .setCustomId('amount').setLabel(labels.label).setStyle(TextInputStyle.Short)
+      .setPlaceholder(labels.placeholder).setRequired(true);
     modal.addComponents(new ActionRowBuilder().addComponents(amountInput));
     try { await interaction.showModal(modal); } catch (error) { console.error('[betting:modal]', error.message); }
     return;
@@ -119,8 +141,8 @@ client.on('interactionCreate', async interaction => {
   if (interaction.isModalSubmit() && interaction.customId.startsWith('betmodal:')) {
     const [, key, choice] = interaction.customId.split(':');
     const amount = Number.parseInt(interaction.fields.getTextInputValue('amount'), 10);
-    if (!Number.isFinite(amount) || amount < 10) {
-      await interaction.reply({ content: '❌ Montant invalide (minimum 10 points).', flags: MessageFlags.Ephemeral });
+    if (!Number.isFinite(amount) || amount < MIN_BET) {
+      await interaction.reply({ content: `❌ Montant invalide (minimum ${MIN_BET} points).`, flags: MessageFlags.Ephemeral });
       return;
     }
     // placeBet fait plusieurs allers-retours Firebase séquentiels — on defer
@@ -128,11 +150,11 @@ client.on('interactionCreate', async interaction => {
     await interaction.deferReply({ flags: MessageFlags.Ephemeral });
     const result = await placeBet(key, interaction.user.id, interaction.user.username, choice, amount);
     if (!result.ok) {
-      await interaction.editReply(BET_ERROR_MESSAGES[result.reason] || '❌ Impossible de placer ce pari.');
+      await interaction.editReply(betErrorMessage(result.reason, result.balance));
       return;
     }
     const potentialGain = Math.round(amount * result.odds);
-    await interaction.editReply('✅ Pari enregistré !');
+    await interaction.editReply(betConfirmation(amount, result.odds, result.balance));
     await interaction.channel.send(
       `🎲 **${interaction.user.username}** parie **${amount}** points ${betChoiceLabel(choice)} (cote x${result.odds}) — gain potentiel : **${potentialGain}** points.`,
     ).catch(() => {});
@@ -382,14 +404,16 @@ async function notifyValorantGameEnd(sessions) {
     )
     : null;
 
-  const stackBanner = playerData.length > 1
-    ? `🔥 **STACK OLYCITY** — ${playerData.length} joueurs dans la même game !\n`
-    : '';
-
   await Promise.all([...channelIds].map(async channelId => {
     const channelPlayers = playerData.filter(({ member }) =>
       trackersForPlayerGame(member.name, 'valorant').some(t => t.channelId === channelId));
     if (channelPlayers.length === 0) return;
+
+    // Calculé par salon, pas globalement : un salon qui ne suit qu'un des deux
+    // joueurs ne doit pas annoncer le résultat de l'autre.
+    const header = outcomeHeader(channelPlayers.map(({ member, result }) => ({
+      name: member.name, outcome: result.result,
+    })));
 
     const playerEmbeds = channelPlayers.map(({ member, result, playReward, outcome: localOutcome, awardLines }) => {
       const resultLabel = resultLabels[result.result] || 'Terminée';
@@ -435,7 +459,7 @@ async function notifyValorantGameEnd(sessions) {
 
     try {
       const channel = await client.channels.fetch(channelId);
-      await channel.send({ content: stackBanner || undefined, embeds: finalEmbeds, components: linkRow ? [linkRow] : [] });
+      await channel.send({ content: header || undefined, embeds: finalEmbeds, components: linkRow ? [linkRow] : [] });
     } catch (error) {
       console.error(`[notify:valorant-end] échec envoi salon ${channelId} —`, error.message);
     }
@@ -526,14 +550,15 @@ async function notifyLolGameEnd(sessions) {
     return { session, member, result, playReward, outcome: localOutcome, files, imageName };
   }));
 
-  const stackBanner = playerData.length > 1
-    ? `🔥 **STACK OLYCITY** — ${playerData.length} joueurs dans la même game !\n`
-    : '';
-
   await Promise.all([...channelIds].map(async channelId => {
     const channelPlayers = playerData.filter(({ member }) =>
       trackersForPlayerGame(member.name, 'lol').some(t => t.channelId === channelId));
     if (channelPlayers.length === 0) return;
+
+    // Idem Valorant : l'en-tête ne parle que des joueurs suivis dans CE salon.
+    const header = outcomeHeader(channelPlayers.map(({ member, result }) => ({
+      name: member.name, outcome: result.win,
+    })));
 
     const allFiles = [];
     const playerEmbeds = channelPlayers.map(({ member, result, playReward, outcome: localOutcome, files, imageName }) => {
@@ -607,7 +632,7 @@ async function notifyLolGameEnd(sessions) {
     try {
       const channel = await client.channels.fetch(channelId);
       await channel.send({
-        content: stackBanner || undefined,
+        content: header || undefined,
         embeds: finalEmbeds,
         files: allFiles,
         components: chunkButtonRows(dpmButtons),

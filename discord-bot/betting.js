@@ -118,10 +118,76 @@ async function placeBet(key, userId, username, choice, amount) {
   if (existingBet) return { ok: false, reason: 'already-bet' };
 
   const debited = await debit(userId, amount, username);
-  if (!debited) return { ok: false, reason: 'insufficient-funds' };
+  if (!debited.ok) return { ok: false, reason: 'insufficient-funds', balance: debited.balance };
 
   await fbPut(`betting/rounds/${key}/bets/${userId}`, { username, choice, amount, placedAt: Date.now() });
-  return { ok: true, odds: choice === 'win' ? round.oddsWin : round.oddsLose };
+  return {
+    ok: true,
+    odds: choice === 'win' ? round.oddsWin : round.oddsLose,
+    balance: debited.balance,
+  };
+}
+
+// Messages partagés par les deux façons de parier — la commande /bet et les
+// boutons sous la carte de game. Ils étaient dupliqués mot pour mot des deux
+// côtés, et le solde restant doit apparaître dans les deux.
+const BET_ERRORS = {
+  closed: '❌ Les paris sont fermés pour cette game (fenêtre de 5 minutes dépassée).',
+  'already-bet': '❌ Tu as déjà parié sur cette game.',
+  'no-round': "❌ Ce pari n'est plus disponible.",
+};
+
+// Mise plancher, appliquée par /bet (setMinValue) comme par la fenêtre de
+// saisie des boutons. Elle vivait en dur des deux côtés.
+const MIN_BET = 10;
+
+function points(amount) {
+  return `${amount} point${Math.abs(amount) >= 2 ? 's' : ''}`;
+}
+
+function betErrorMessage(reason, balance = null) {
+  if (reason !== 'insufficient-funds') return BET_ERRORS[reason] || '❌ Impossible de placer ce pari.';
+  // Le solde manquait précisément là où il est le plus utile : au refus.
+  return balance == null
+    ? '❌ Solde insuffisant — utilise `/balance` pour voir combien il te reste.'
+    : `❌ Solde insuffisant : il te reste **${points(balance)}**.`;
+}
+
+// Libellés de la fenêtre de saisie du montant. Une fenêtre Discord n'accepte
+// pas de texte libre : le solde doit tenir dans le titre, l'intitulé du champ
+// ou l'exemple grisé. Les trois portent donc une information différente —
+// ce qu'on a, ce qui est permis, à quoi ça ressemble.
+//
+// Discord rejette la fenêtre ENTIÈRE si un titre dépasse 45 caractères ou un
+// intitulé 45 : on tronque plutôt que de risquer un bouton qui n'ouvre rien.
+const MODAL_TITLE_MAX = 45;
+const MODAL_LABEL_MAX = 45;
+
+function clamp(text, max) {
+  return text.length <= max ? text : `${text.slice(0, max - 1)}…`;
+}
+
+// balance à null = solde inconnu (Firebase trop lent) : on ouvre quand même la
+// fenêtre, sans chiffre, plutôt que de bloquer le pari.
+function betModalLabels(balance = null) {
+  if (balance == null) {
+    return { title: 'Placer un pari', label: 'Montant (points)', placeholder: `ex : 100 (minimum ${MIN_BET})` };
+  }
+  const range = balance >= MIN_BET ? `${MIN_BET} à ${balance}` : `minimum ${MIN_BET}`;
+  return {
+    title: clamp(`Pari — ${points(balance)} dispo`, MODAL_TITLE_MAX),
+    label: clamp(`Montant à miser (${range})`, MODAL_LABEL_MAX),
+    placeholder: `Il te reste ${points(balance)}`,
+  };
+}
+
+// Réponse privée au parieur : ce qu'il a misé, ce qu'il peut gagner, et ce
+// qu'il lui reste. Le solde ne part pas dans l'annonce publique du salon.
+function betConfirmation(amount, odds, balance) {
+  return [
+    `✅ Pari enregistré : **${points(amount)}** à la cote **x${odds}** — gain potentiel **${points(Math.round(amount * odds))}**.`,
+    `💰 Il te reste **${points(balance)}**.`,
+  ].join('\n');
 }
 
 // outcome: 'win' | 'lose' — issue réelle de la game pour l'équipe OLYCITY suivie.
@@ -160,6 +226,7 @@ async function cancelRound(key) {
 module.exports = {
   roundKey, roundsForMatch, openRound, closeRound, placeBet, resolveRound, cancelRound,
   findOpenRoundForChannel, attachMessage, betsForUser, BETTING_WINDOW_MS,
+  betErrorMessage, betConfirmation, betModalLabels, MIN_BET,
   // exposés pour les tests
   __test: { purgeExpiredRounds, isExpired, ROUND_RETENTION_MS, resetPurgeClock: () => { lastPurgeAt = 0; } },
 };

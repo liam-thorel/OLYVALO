@@ -10,7 +10,7 @@
 const { EmbedBuilder } = require('discord.js');
 const { fbGet, fbPut } = require('./firebase.js');
 const { ensureRoster } = require('./roster.js');
-const { historyFor, aggregateKDA, averageHsPercent, averageAcs, rankedOnly } = require('./stats.js');
+const { historyFor, aggregateKDA, averageHsPercent, averageAcs, rankedOnly, winrateLabel } = require('./stats.js');
 const { allRankGains, resetRankGains } = require('./rank-tracking.js');
 const { getRecapChannelId } = require('./recap-channel.js');
 const { ensureAgentRoles, mostPlayedRole, formatRole } = require('./agent-roles.js');
@@ -143,6 +143,7 @@ async function buildValoRecapEmbeds(period, sinceTs = null) {
 
     const detail = [
       row.strip || null,
+      winrateLabel(row.wins, row.entriesWithResult),
       row.kda != null ? `${row.kda.toFixed(2)} KDA` : null,
       row.acs != null ? `${Math.round(row.acs)} ACS` : null,
       row.hs != null ? `${Math.round(row.hs)}% HS` : null,
