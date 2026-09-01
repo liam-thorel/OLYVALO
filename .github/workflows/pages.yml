@@ -45,6 +45,11 @@ jobs:
           # à faire sur Pages : il est distribué par les Releases GitHub.
           mkdir -p _site/live
           cp live/update-manifest.json _site/live/
+          # Un Service Worker au contenu identique n'émet aucun updatefound.
+          # Le SHA rend chaque déploiement détectable, y compris dans la PWA
+          # mobile ou dans un onglet resté ouvert plusieurs heures.
+          sed -i "s/__OLYCITY_BUILD_ID__/${GITHUB_SHA}/g" _site/sw.js
+          ! grep -q '__OLYCITY_BUILD_ID__' _site/sw.js
           du -sh _site
 
       - name: Injecter la configuration publique

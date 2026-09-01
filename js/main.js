@@ -24,7 +24,7 @@ import { state } from './state.mjs?v=20260806-lol-roster';
 import { memberId, mergeMemberProfiles, resolveMemberProfile } from './member-profiles.mjs?v=20260823-profile-picker';
 import { initHomeDashboard } from './home-dashboard.mjs?v=20260825-human-banner';
 import { initHomeGroup } from './home-group.mjs?v=20260828-page-stream-lifecycle';
-import { initPwaInstall } from './pwa-install.mjs?v=20260825-offline-update';
+import { initPwaInstall } from './pwa-install.mjs?v=20260901-deploy-updates';
 import { initSiteTelemetry } from './site-telemetry.mjs?v=20260825-site-health';
 import { liveDataStore, liveTimestamp } from './live-data-store.mjs?v=20260810-firebase-connection-fix';
 export { state };

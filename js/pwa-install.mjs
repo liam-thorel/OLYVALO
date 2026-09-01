@@ -1,5 +1,8 @@
 let installPrompt = null;
 let waitingWorker = null;
+let serviceWorkerRegistration = null;
+let updateCheckTimer = null;
+const UPDATE_CHECK_INTERVAL_MS = 5 * 60 * 1000;
 
 function showAppStatus({ title, detail, action = '', state = 'offline' }) {
   const banner = document.getElementById('app-status-banner');
@@ -98,6 +101,7 @@ async function registerServiceWorker() {
       window.location.reload();
     }, { once:true });
     const registration = await navigator.serviceWorker.register('./sw.js', { scope:'./', updateViaCache:'none' });
+    serviceWorkerRegistration = registration;
     const announceUpdate = worker => {
       if (!worker || !navigator.serviceWorker.controller) return;
       waitingWorker = worker;
@@ -114,7 +118,18 @@ async function registerServiceWorker() {
         if (worker.state === 'installed') announceUpdate(worker);
       });
     });
-    registration.update().catch(() => {});
+    const checkForUpdate = () => registration.update().catch(() => {});
+    checkForUpdate();
+
+    // Une SPA/PWA peut rester ouverte pendant des heures sans nouvelle
+    // navigation, donc le navigateur n'a pas forcément l'occasion de vérifier
+    // sw.js. On le fait périodiquement et au retour sur l'application.
+    if (updateCheckTimer) window.clearInterval(updateCheckTimer);
+    updateCheckTimer = window.setInterval(checkForUpdate, UPDATE_CHECK_INTERVAL_MS);
+    document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState === 'visible') checkForUpdate();
+    });
+    window.addEventListener('focus', checkForUpdate);
   } catch (error) {
     console.warn('[OLYCITY] Installation hors ligne indisponible', error);
   }
@@ -132,6 +147,7 @@ export function initPwaInstall() {
   window.addEventListener('online', () => {
     showAppStatus({ title:'Connexion rétablie', detail:'Les données se synchronisent en arrière-plan.', state:'online' });
     window.setTimeout(() => { if (!waitingWorker) hideAppStatus(); }, 2600);
+    serviceWorkerRegistration?.update().catch(() => {});
   });
   if (!navigator.onLine) showAppStatus({
     title:'Mode hors connexion', detail:'La dernière copie disponible reste accessible.', state:'offline',

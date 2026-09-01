@@ -296,7 +296,12 @@ test('startup reveals the shell before optional APIs and supports installation',
   assert.match(pwaInstall, /serviceWorker\.register\('\.\/sw\.js'/);
   assert.match(pwaInstall, /updateViaCache:'none'/);
   assert.match(pwaInstall, /controllerchange/);
+  assert.match(pwaInstall, /UPDATE_CHECK_INTERVAL_MS\s*=\s*5\s*\*\s*60\s*\*\s*1000/);
+  assert.match(pwaInstall, /visibilitychange/);
+  assert.match(pwaInstall, /serviceWorkerRegistration\?\.update\(\)/);
   const worker = fs.readFileSync(new URL('../sw.js', import.meta.url), 'utf8');
+  assert.match(worker, /__OLYCITY_BUILD_ID__/);
+  assert.match(worker, /olycity-runtime-\$\{BUILD_ID\}/);
   assert.match(worker, /addEventListener\('fetch'/);
   assert.match(worker, /networkFirst/);
   assert.match(worker, /SKIP_WAITING/);

@@ -7,6 +7,7 @@ const read = f => fs.readFileSync(path.join(root, f), 'utf8');
 
 const workflow = read('.github/workflows/pages.yml');
 assert.match(workflow, /cp index\.html \.nojekyll manifest\.webmanifest sw\.js _site\//);
+assert.match(workflow, /s\/__OLYCITY_BUILD_ID__\/\$\{GITHUB_SHA\}\/g/);
 assert.match(workflow, /NOTIFICATION_ENDPOINT/);
 
 // Le workflow copie explicitement ce qu'il publie : ce qui n'est pas listé

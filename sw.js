@@ -1,4 +1,8 @@
-const CACHE_NAME = 'olycity-runtime-20260830-section-icons';
+// Le workflow Pages remplace ce marqueur par le SHA du commit. Le fichier du
+// Service Worker change donc à chaque déploiement et les PWA déjà ouvertes
+// peuvent enfin détecter la nouvelle version sans F5.
+const BUILD_ID = '__OLYCITY_BUILD_ID__';
+const CACHE_NAME = `olycity-runtime-${BUILD_ID}`;
 const SHELL_URLS = ['./', './index.html', './manifest.webmanifest'];
 
 self.addEventListener('install', event => {

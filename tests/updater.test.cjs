@@ -29,10 +29,12 @@ assert.doesNotMatch(liveIndex, /updateCheckRunning\s*\|\|\s*inGame/, 'an active 
 assert.match(liveIndex, /pendingUpdateVersion/, 'an update downloaded in game must wait for the automatic restart');
 const manifest = JSON.parse(fs.readFileSync(path.join(liveDir, 'update-manifest.json'), 'utf8'));
 const packageVersion = JSON.parse(fs.readFileSync(path.join(liveDir, 'package.json'), 'utf8')).version;
+const releaseNotes = fs.readFileSync(path.join(liveDir, 'RELEASE-NOTES.md'), 'utf8');
 
 // La version vit à trois endroits qu'il faut bumper ensemble ; on vérifie leur
 // cohérence plutôt qu'un numéro figé, pour ne pas rougir à chaque release.
 assert.equal(manifest.version, packageVersion, 'update-manifest.json et package.json doivent être alignés');
+assert.match(releaseNotes, /mise à jour/i, 'la release doit expliquer les changements en français');
 assert.match(
   fs.readFileSync(path.join(liveDir, 'index.js'), 'utf8'),
   new RegExp(`SCRIPT_VERSION = '${packageVersion.replace(/\./g, '\\.')}'`),
