@@ -643,7 +643,9 @@ body.agent-mode .footer{ display:none; }
 .live-side-copy small { color: var(--dim); font-size: 7px; letter-spacing: 2px; }
 .live-side-copy strong { color: var(--side-color); font-size: 11px; line-height: 1.3; letter-spacing: 2px; }
 @keyframes live-side-pulse { 50% { opacity: .4; } }
-.live-pregame-comps{ display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:10px; }
+.live-pregame-comps{
+  display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); align-items:start; gap:10px;
+}
 .live-pregame-comp{ min-width:0; padding:12px 14px; border:1px solid var(--border); background:var(--surf); }
 .live-pregame-comp-label{
   margin-bottom:8px; color:var(--muted); font:700 8px 'Tomorrow',sans-serif;

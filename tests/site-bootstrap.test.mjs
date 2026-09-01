@@ -315,6 +315,15 @@ test('startup reveals the shell before optional APIs and supports installation',
   assert.match(main, /olycity-boot-retry/);
 });
 
+test('agent-select composition cards keep their natural content height', () => {
+  const layout = fs.readFileSync(new URL('../css/layout.css', import.meta.url), 'utf8');
+  assert.match(
+    layout,
+    /\.live-pregame-comps\s*\{[^}]*align-items\s*:\s*start/s,
+    'the taller pro preset must not stretch the ranked and fun cards',
+  );
+});
+
 test('PWA exposes opt-in notifications and admin test controls without touching the bot', () => {
   assert.match(page, /id="home-app-launcher"/);
   assert.match(page, /id="home-app-modal"/);
