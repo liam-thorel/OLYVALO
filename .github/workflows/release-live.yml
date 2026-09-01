@@ -134,6 +134,14 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
+          tag='${{ steps.version.outputs.tag }}'
+          version='${{ steps.version.outputs.version }}'
+          if ! gh release view "$tag" --repo '${{ github.repository }}' > /dev/null 2>&1; then
+            gh release create "$tag" \
+              --repo '${{ github.repository }}' \
+              --title "OLYCITY Live v${version}" \
+              --generate-notes
+          fi
           gh release upload '${{ steps.version.outputs.tag }}' \
             '${{ steps.archive.outputs.name }}' OLYCITY-Live.zip \
             --clobber --repo '${{ github.repository }}'

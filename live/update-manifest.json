@@ -1,5 +1,5 @@
 {
-  "version": "4.17.8",
+  "version": "4.17.9",
   "files": [
     "index.js",
     "lol-watcher.js",
@@ -24,6 +24,8 @@
     "SONDE-SKINS.bat",
     "restart-policy.js",
     "updater.js",
+    "poll-utils.js",
+    "game-presence-utils.js",
     "update-manifest.json",
     "OLYCITY-LIVE.bat",
     "silent.vbs",

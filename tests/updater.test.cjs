@@ -1,11 +1,15 @@
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
-const { compareVersions, restartDecision, validateManifest } = require('../live/updater.js');
+const { compareVersions, releaseVersion, restartDecision, validateManifest } = require('../live/updater.js');
 
 assert.equal(compareVersions('4.14.4', '4.14.3'), 1);
 assert.equal(compareVersions('v4.14.4', '4.14.4'), 0);
 assert.equal(compareVersions('4.14.3', '4.14.4'), -1);
+assert.equal(releaseVersion('v4.17.9'), '4.17.9');
+assert.equal(releaseVersion('4.17.9'), '4.17.9');
+assert.equal(releaseVersion('v4.17'), '');
+assert.equal(releaseVersion('skins-test'), '');
 assert.equal(restartDecision(true, '4.14.4'), 'defer');
 assert.equal(restartDecision(false, '4.14.4'), 'restart');
 assert.equal(restartDecision(false, ''), 'none');

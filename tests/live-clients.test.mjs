@@ -5,7 +5,7 @@ const now = 100000;
 const clients = {
   nico: {online:true,ts:99000,state:'idle',version:'4.9.3',playerName:'Drew A Picasso#XOOO'},
   liam: {online:true,ts:98000,state:'in-game',version:'4.9.3'},
-  stale: {online:true,ts:60000,state:'agent-select',version:'4.9.2'},
+  stale: {online:true,ts:39000,state:'agent-select',version:'4.9.2'},
   stopped: {online:false,ts:99500,state:'stopped',version:'4.9.3'},
 };
 const sessions = {liam:{playerName:'Wong Chi Ming#2046'}};
@@ -24,6 +24,11 @@ assert.deepEqual(
   'heartbeat timing must never reorder the script chips',
 );
 assert.deepEqual(liveClientSummary(fresh), {total:2,inGame:1,agentSelect:0,ready:1,issues:0});
+assert.equal(
+  freshLiveClients({ slow:{online:true,ts:55000,state:'in-game'} }, {}, now).length,
+  1,
+  'a temporarily slow Riot poll must not remove a live client after 45 seconds',
+);
 assert.equal(isVersionAtLeast('4.13.0', '4.12.0'), true);
 assert.equal(isVersionAtLeast('v4.12.0', '4.12.0'), true);
 assert.equal(isVersionAtLeast('4.11.9', '4.12.0'), false);

@@ -9,6 +9,8 @@ const { autoUpdate, restartDecision } = require('./updater.js');
 const { pregameTransition } = require('./pregame-utils.js');
 const { ensureStartupLauncher } = require('./startup.js');
 const { acquireInstanceLock, releaseInstanceLock } = require('./instance-lock.js');
+const { createExclusivePoller } = require('./poll-utils.js');
+const { gameAbsenceTransition } = require('./game-presence-utils.js');
 const { stopLegacyLiveProcesses } = require('./legacy-cleanup.js');
 const { createLolWatcher } = require('./lol-watcher.js');
 const { planRestart } = require('./restart-policy.js');
@@ -20,7 +22,7 @@ const { resolveRiotIdentity } = require('./riot-identity.js');
 const { valorantHistorySummary } = require('./history-index.js');
 
 const FIREBASE_URL = 'https://realtime-database-5bb9f-default-rtdb.europe-west1.firebasedatabase.app';
-const SCRIPT_VERSION = '4.17.8';
+const SCRIPT_VERSION = '4.17.9';
 const INSTANCE_LOCK_PATH = path.join(__dirname, '.olycity-live.lock');
 const LOG_PATH = path.join(__dirname, 'olycity.log');
 const MAX_LOG_BYTES = 5 * 1024 * 1024;
@@ -588,6 +590,7 @@ const rankHistoryCache = new Map();
 const RANK_HISTORY_CACHE_MS = 45 * 60 * 1000;
 let stableSessionKey = null;
 let missedPolls = 0;
+let lastConfirmedGameAt = 0;
 let roundPhase = '';
 let roundStartTime = null;
 let lastDiagnosticPush = 0;
@@ -797,6 +800,7 @@ async function refreshSelfIdentity(lock, force = false) {
   lastKnownRoster = [];
   lastKnownRosterMatchId = '';
   missedPolls = 0;
+  lastConfirmedGameAt = 0;
   roundPhase = '';
   roundStartTime = null;
   diagnosticPlayerName = resolvedIdentity?.playerName || '';
@@ -1203,10 +1207,35 @@ async function poll() {
 
   if (!isInGame) {
     missedPolls = (missedPolls || 0) + 1;
-    if (inGame && missedPolls >= 3) { // 3 missed polls = ~6s grace period
+    const absence = gameAbsenceTransition({
+      wasInGame: inGame,
+      lastConfirmedAt: lastConfirmedGameAt,
+    });
+
+    if (absence.action === 'keep-game') {
+      const sKey = stableSessionKey || 'unknown';
+      const now = Date.now();
+      if (sKey !== 'unknown') {
+        await Promise.all([
+          putFB(`live/sessions/${sKey}/ts`, now),
+          putFB(`live/sessions/${sKey}/heartbeatAt`, now),
+        ]);
+      }
+      await publishDiagnostic('in-game', {
+        error: '',
+        map: lastGameInfo?.map || lastMap || '',
+        matchId: persistentMatchId || lastGameInfo?.matchId || '',
+        server: currentServer?.name || '',
+        resyncing: true,
+      });
+      return;
+    }
+
+    if (absence.action === 'end-game') {
       inGame = false;
       lastMap = '';
       missedPolls = 0;
+      lastConfirmedGameAt = 0;
       console.log(`[${ts()}] 🏠 Fin de game`);
       const postMatchTokens = authTokens ? { ...authTokens } : null;
       lastPregameMap = ''; pregameState = null; pregameMissedPolls = 0;
@@ -1292,10 +1321,11 @@ async function poll() {
       currentServer = null;
       schedulePostGameUpdate();
     }
-    await publishDiagnostic('idle', { error: '', map: '' });
+    if (!inGame) await publishDiagnostic('idle', { error: '', map: '', resyncing: false });
     return;
   }
   missedPolls = 0;
+  lastConfirmedGameAt = Date.now();
 
   if (!inGame || mapRaw !== lastMap) {
     inGame   = true;
@@ -1687,7 +1717,11 @@ async function start() {
     }
   };
 
-  setInterval(poll, 2000);
+  const pollValorantOnce = createExclusivePoller(poll, error => {
+    console.log(`[${ts()}] Valorant - erreur temporaire: ${error.message}`);
+  });
+
+  setInterval(pollValorantOnce, 2000);
   setInterval(pollLolOnce, 3000);
   // Relit olycity-identity.json tant que le choix n'a pas été fait, pour
   // prendre en compte la réponse sans avoir à redémarrer le script.
@@ -1697,7 +1731,7 @@ async function start() {
   }, 10000);
   identityWatcher.unref?.();
   setInterval(updateAndRestart, 30 * 60 * 1000);
-  poll();
+  pollValorantOnce();
   pollLolOnce();
 }
 

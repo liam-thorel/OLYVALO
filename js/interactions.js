@@ -13,7 +13,7 @@ import {
   stableServerForSession,
   stableSessionForRender,
 } from './live-sessions.mjs?v=20260809-live-server-local';
-import { freshLiveClients, groupLiveClients, isVersionAtLeast, liveClientSummary } from './live-clients.mjs?v=20260810-firebase-connection-fix';
+import { freshLiveClients, groupLiveClients, isVersionAtLeast, LIVE_SESSION_STALE_MS, liveClientSummary } from './live-clients.mjs?v=20260901-live-grace';
 import { buildLiveIdentityIndex, resolveLiveIdentity } from './live-identities.mjs?v=20260809-live-groups';
 import { PLAYERS as LOL_ROSTER_PLAYERS } from './lol-roster.mjs?v=20260809-lol-sync';
 import { serverVisual } from './server-visuals.mjs?v=20260809-live-server-local';
@@ -579,7 +579,7 @@ export function initLivePage() {
 
   const isFreshSession = (session, now = Date.now()) => {
     const updatedAt = liveTimestamp(session, now);
-    return Number.isFinite(updatedAt) && updatedAt > 0 && now - updatedAt < 30000;
+    return Number.isFinite(updatedAt) && updatedAt > 0 && now - updatedAt < LIVE_SESSION_STALE_MS;
   };
 
   function handleSSE(e) {

@@ -78,10 +78,33 @@ function validateManifest(manifest, expectedVersion) {
   return files;
 }
 
-async function latestRelease() {
-  const release = await requestJson(`https://api.github.com/repos/${REPOSITORY}/releases/latest`);
-  const tag = String(release.tag_name || '');
-  return { tag, version: tag.replace(/^v/i, '') };
+function releaseVersion(tag) {
+  const match = String(tag || '').match(/^v?(\d+\.\d+\.\d+)$/i);
+  return match?.[1] || '';
+}
+
+async function latestRelease(currentVersion) {
+  const releases = await requestJson(`https://api.github.com/repos/${REPOSITORY}/releases?per_page=12`);
+  const compatible = [];
+
+  for (const release of Array.isArray(releases) ? releases : []) {
+    if (release?.draft || release?.prerelease) continue;
+    const tag = String(release?.tag_name || '');
+    const version = releaseVersion(tag);
+    if (!version || compareVersions(version, currentVersion) <= 0) continue;
+
+    try {
+      const rawBase = `https://raw.githubusercontent.com/${REPOSITORY}/${encodeURIComponent(tag)}/live`;
+      const manifest = await requestJson(`${rawBase}/update-manifest.json`);
+      validateManifest(manifest, version);
+      compatible.push({ tag, version });
+    } catch {
+      // Une release mal étiquetée ou incomplète ne doit jamais bloquer les
+      // versions correctes précédentes/suivantes (ex: v14.7.8 -> manifest 4.17.8).
+    }
+  }
+
+  return compatible.sort((left, right) => compareVersions(right.version, left.version))[0] || { tag:'', version:'' };
 }
 
 async function installRelease(tag, version, installDir) {
@@ -127,11 +150,11 @@ async function installRelease(tag, version, installDir) {
 
 async function autoUpdate(currentVersion, installDir = __dirname) {
   if (process.env.OLYCITY_SKIP_UPDATE === '1') return { updated: false, reason: 'disabled' };
-  const latest = await latestRelease();
+  const latest = await latestRelease(currentVersion);
   if (!latest.version || compareVersions(latest.version, currentVersion) <= 0) {
     return { updated: false, version: latest.version || currentVersion };
   }
   return installRelease(latest.tag, latest.version, installDir);
 }
 
-module.exports = { autoUpdate, compareVersions, restartDecision, validateManifest };
+module.exports = { autoUpdate, compareVersions, releaseVersion, restartDecision, validateManifest };

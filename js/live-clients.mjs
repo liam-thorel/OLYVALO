@@ -1,6 +1,10 @@
 import { liveTimestamp } from './live-data-store.mjs?v=20260810-firebase-connection-fix';
 
-export const LIVE_CLIENT_STALE_MS = 30000;
+// Deux ou trois requêtes Riot locales peuvent ponctuellement prendre plus de
+// 30 s. Le site garde donc le dernier état fiable une minute ; le script reste
+// la source de vérité et continue d'actualiser son heartbeat toutes les 2 s.
+export const LIVE_CLIENT_STALE_MS = 60000;
+export const LIVE_SESSION_STALE_MS = 60000;
 
 export function normalizeLiveClientState(client = {}) {
   const presenceUnavailable = client.riotClient === true
