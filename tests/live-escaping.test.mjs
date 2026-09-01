@@ -12,8 +12,8 @@ test('les données Firebase rendues en HTML sont échappées', () => {
     ['lastKill.killer', /escapeDiagnosticText\(lastKill\.killer\)/],
     ['lastKill.victim', /escapeDiagnosticText\(lastKill\.victim\)/],
     ['le pseudo du joueur', /escapeDiagnosticText\(p\.name \|\| '—'\)/],
-    ['le nom du membre OLYCITY', /escapeDiagnosticText\(olycityMember\(p\.name\)\)/],
-    ["le nom d'agent", /escapeDiagnosticText\(fixedAgent\|\|''\)/],
+    ['le nom du membre OLYCITY', /escapeDiagnosticText\(member\)/],
+    ["le nom d'agent", /escapeDiagnosticText\(fixedAgent \|\| ''\)/],
     ['les noms du sélecteur de sessions', /escapeDiagnosticText\(names\)/],
     ['le nom de map du sélecteur', /escapeDiagnosticText\(map\.toUpperCase\(\)\)/],
   ];
@@ -21,10 +21,11 @@ test('les données Firebase rendues en HTML sont échappées', () => {
     assert.match(interactions, pattern, `${label} doit être échappé`));
 });
 
-test('le puuid injecté dans un attribut onclick est neutralisé', () => {
-  // Une apostrophe dans le puuid sortirait de l'attribut et exécuterait du
-  // script ; l'encodage la rend inoffensive.
-  assert.match(interactions, /_selectLiveSession\('\$\{encodeURIComponent\(sessions\[0\]\.puuid\)\}'\)/);
+test('le puuid injecté dans un attribut data est neutralisé', () => {
+  // Une apostrophe dans le puuid sortirait de l'attribut data ; l'encodage la
+  // rend inoffensive et aucun gestionnaire JavaScript n'est injecté en HTML.
+  assert.match(interactions, /data-live-session="\$\{encodeURIComponent\(sessions\[0\]\.puuid\)\}"/);
+  assert.doesNotMatch(interactions, /onclick="window\._selectLiveSession/);
   // Et le handler doit décoder, sinon la sélection ne correspondrait plus.
   assert.match(interactions, /decodeURIComponent\(encodedPuuid\)/);
 });

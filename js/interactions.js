@@ -412,9 +412,18 @@ export function initLivePage() {
   const stablePregameCache = new Map();
   const stableServerCache = new Map();
   const serverImageFailures = new Map();
+  let latestLiveVersion = '';
   let _rosterIdentityIndex = null;
   let _rosterFetched = false;
   let _mapsCache = null;
+
+  fetch(`./live/update-manifest.json?v=${Date.now()}`)
+    .then(response => response.ok ? response.json() : null)
+    .then(manifest => {
+      latestLiveVersion = manifest?.version || '';
+      renderDiagnostic();
+    })
+    .catch(() => {});
 
   function rosterProfileForName(name = '') {
     return resolveLiveIdentity({ playerName: name }, _rosterIdentityIndex);
@@ -486,8 +495,7 @@ export function initLivePage() {
     const detail = document.getElementById('live-diagnostic-detail');
     const version = document.getElementById('live-diagnostic-version');
     const list = document.getElementById('live-client-list');
-    const clientDetails = document.getElementById('live-client-details');
-    const clientToggleLabel = document.getElementById('live-client-toggle-label');
+    const download = document.getElementById('live-download-link');
     const waitingTitle = document.getElementById('live-waiting-title');
     const waitingDetail = document.getElementById('live-waiting-detail');
     if (!panel || !label || !detail || !version || !list) return;
@@ -509,10 +517,7 @@ export function initLivePage() {
           : 'Les membres actifs apparaîtront ici';
       version.textContent = '—';
       list.innerHTML = '';
-      if (clientDetails) {
-        clientDetails.hidden = true;
-        clientDetails.open = false;
-      }
+      if (download) download.hidden = true;
       if (waitingTitle) waitingTitle.textContent = loading ? 'Connexion au Live…' : 'Aucun script connecté';
       if (waitingDetail) waitingDetail.textContent = loading
         ? 'Vérification des membres connectés.'
@@ -520,13 +525,10 @@ export function initLivePage() {
       return;
     }
 
-    if (clientDetails) clientDetails.hidden = false;
-    if (clientToggleLabel) clientToggleLabel.textContent = `${summary.total} membre${summary.total > 1 ? 's' : ''} connecté${summary.total > 1 ? 's' : ''}`;
-
     panel.dataset.state = summary.inGame ? 'in-game'
       : summary.agentSelect ? 'agent-select'
         : summary.issues ? 'error' : 'idle';
-    label.textContent = `${summary.total} script${summary.total > 1 ? 's' : ''} connecté${summary.total > 1 ? 's' : ''}`;
+    label.textContent = `${summary.total} membre${summary.total > 1 ? 's' : ''} en ligne`;
     detail.textContent = [
       summary.inGame && `${summary.inGame} en partie`,
       summary.agentSelect && `${summary.agentSelect} en Agent Select`,
@@ -534,7 +536,16 @@ export function initLivePage() {
       summary.issues && `${summary.issues} en erreur`,
     ].filter(Boolean).join(' · ');
     const versions = [...new Set(clients.map(client => client.version).filter(Boolean))];
-    version.textContent = versions.length === 1 ? `v${versions[0]}` : `${versions.length} versions`;
+    const updateNeeded = versions.length > 1 || Boolean(latestLiveVersion && clients.some(client => (
+      client.version && !isVersionAtLeast(client.version, latestLiveVersion)
+    )));
+    version.textContent = versions.length > 1
+      ? `${versions.length} versions`
+      : versions.length === 1 ? `v${versions[0]}` : 'Version inconnue';
+    if (download) {
+      download.hidden = !updateNeeded;
+      download.title = latestLiveVersion ? `Dernière version : v${latestLiveVersion}` : 'Télécharger la dernière version';
+    }
     if (waitingTitle) waitingTitle.textContent = summary.ready
       ? `${summary.ready} membre${summary.ready > 1 ? 's' : ''} prêt${summary.ready > 1 ? 's' : ''}`
       : 'Aucune game en cours';
@@ -700,7 +711,12 @@ export function initLivePage() {
     if (!picker) {
       picker = document.createElement('div');
       picker.id = 'live-session-picker';
-      picker.style.cssText = 'display:flex;gap:8px;flex-wrap:wrap;padding:12px 0 16px';
+      picker.className = 'live-session-picker';
+      picker.addEventListener('click', event => {
+        const button = event.target.closest('[data-live-session]');
+        if (!button) return;
+        window._selectLiveSession(button.dataset.liveSession);
+      });
       page.querySelector('.live-page')?.prepend(picker);
     }
 
@@ -714,8 +730,11 @@ export function initLivePage() {
     ensureRosterCache();
 
     picker.innerHTML = `
-      <div style="font-family:Tomorrow,sans-serif;font-size:9px;letter-spacing:2px;color:var(--dim);text-transform:uppercase;margin-bottom:8px">Games en cours</div>
-      <div style="display:flex;gap:8px;flex-wrap:wrap">
+      <div class="live-session-picker-heading">
+        <span>Parties en cours</span>
+        <small>Choisissez le match à suivre</small>
+      </div>
+      <div class="live-session-picker-list">
       ${Object.entries(byMatch).map(([mid, sessions]) => {
         const first = sessions[0];
         const isSelected = sessions.some(p => p.puuid === renderSelected);
@@ -730,24 +749,22 @@ export function initLivePage() {
         }).filter(Boolean);
 
         const avatarsHtml = rosterAvatars.length
-          ? `<div style="display:flex;margin-bottom:8px">
-              ${rosterAvatars.map((profile, i) => `<span class="live-session-avatar" style="border-color:${isSelected ? 'var(--red)' : 'var(--border)'};margin-left:${i>0?'-8px':'0'}">${avatarLayersHTML(profile.member, profile.avatar)}</span>`).join('')}
-            </div>`
+          ? `<span class="live-session-avatars">
+              ${rosterAvatars.map(profile => `<span class="live-session-avatar">${avatarLayersHTML(profile.member, profile.avatar)}</span>`).join('')}
+            </span>`
           : '';
 
         const names = sessions.map(s => s.playerName?.split('#')[0]).join(' & ');
-        // Le puuid atterrit dans un attribut onclick : une apostrophe suffirait
-        // à en sortir. encodeURIComponent le neutralise sans rien changer pour
-        // un identifiant Riot légitime.
-        return `<button onclick="window._selectLiveSession('${encodeURIComponent(sessions[0].puuid)}')" style="
-          font-family:Tomorrow,sans-serif;cursor:pointer;text-align:left;
-          padding:10px 14px;border:1px solid ${isSelected ? 'var(--red)' : 'var(--border)'};
-          background:${isSelected ? 'var(--red-low)' : 'var(--surf)'};
-          transition:border-color .15s,background .15s;min-width:160px">
+        // Le puuid atterrit dans un attribut data : on le conserve encodé puis
+        // la délégation de clic du conteneur le transmet au sélecteur.
+        return `<button class="live-session-card${isSelected ? ' is-selected' : ''}" data-live-session="${encodeURIComponent(sessions[0].puuid)}" type="button"${isSelected ? ' aria-current="true"' : ''}>
           ${avatarsHtml}
-          <div style="font-size:11px;font-weight:700;letter-spacing:3px;color:${isSelected ? 'var(--red)' : 'var(--text)'};margin-bottom:3px">${escapeDiagnosticText(map.toUpperCase())}</div>
-          <div style="font-size:9px;letter-spacing:1px;color:var(--muted)">${escapeDiagnosticText(names)}</div>
-          <div style="font-size:8px;letter-spacing:1px;color:var(--dim);margin-top:2px;text-transform:uppercase">${escapeDiagnosticText([mode, server].filter(Boolean).join(' · '))}</div>
+          <span class="live-session-copy">
+            <strong>${escapeDiagnosticText(map.toUpperCase())}</strong>
+            <span>${escapeDiagnosticText(names)}</span>
+            <small>${escapeDiagnosticText([mode, server].filter(Boolean).join(' · '))}</small>
+          </span>
+          <span class="live-session-state">${isSelected ? 'Affichée' : 'Voir'}</span>
         </button>`;
       }).join('')}
       </div>`;
@@ -781,8 +798,12 @@ export function initLivePage() {
       const m = _mapsCache.find(m => m.displayName?.toLowerCase() === mapName?.toLowerCase()
         || m.mapUrl?.toLowerCase().includes(mapName?.toLowerCase()));
       const imgEl = document.getElementById('live-map-img');
-      if (m?.splash && imgEl) imgEl.src = m.splash;
-      else if (m?.displayIcon && imgEl) imgEl.src = m.displayIcon;
+      if (imgEl) {
+        imgEl.alt = mapName ? `Carte ${mapName}` : '';
+        if (m?.splash) imgEl.src = m.splash;
+        else if (m?.displayIcon) imgEl.src = m.displayIcon;
+        else imgEl.removeAttribute('src');
+      }
     } catch { _mapsCache = null; }
   }
 
@@ -835,11 +856,7 @@ export function initLivePage() {
       mapEl.textContent = mapName;
       loadMapImg(mapName);
     }
-    const mapLabel = document.getElementById('live-map-label');
-    const modeLabel = document.getElementById('live-mode-label');
     const serverEl = document.getElementById('live-server');
-    if (mapLabel && mapLabel.textContent !== mapName) mapLabel.textContent = mapName;
-    if (modeLabel && modeLabel.textContent !== (data.mode||'')) modeLabel.textContent = data.mode || '';
     if (serverEl) {
       const serverName = stableServerForSession(
         data,
@@ -913,40 +930,35 @@ export function initLivePage() {
         notice.textContent = '';
       }
     }
-    if (rankedPlayers.length > 0) {
+    const avgEl = document.getElementById('live-avg-rank');
+    if (rankedPlayers.length > 0 && avgEl) {
       const avgTier = Math.round(rankedPlayers.reduce((s,p) => s + (p.rank?.tier||0), 0) / rankedPlayers.length);
       const avgName = RANK_NAMES[avgTier] || '';
-      let avgEl = document.getElementById('live-avg-rank');
-      if (!avgEl) {
-        avgEl = document.createElement('div');
-        avgEl.id = 'live-avg-rank';
-        avgEl.style.cssText = 'position:absolute;top:12px;right:12px;display:flex;align-items:center;gap:8px;background:rgba(6,8,12,.7);padding:6px 10px;backdrop-filter:blur(4px)';
-        document.querySelector('.live-minimap-wrap')?.appendChild(avgEl);
-      }
+      avgEl.hidden = false;
       if (avgEl.dataset.tier !== String(avgTier)) {
         avgEl.dataset.tier = avgTier;
         avgEl.innerHTML = `
-          <img id="live-rank-icon" src="" style="width:28px;height:28px;object-fit:contain" alt="">
-          <div>
-            <div style="font-family:Tomorrow,sans-serif;font-size:8px;letter-spacing:1px;color:rgba(255,255,255,.5);text-transform:uppercase">Rang moyen</div>
-            <div style="font-family:Tomorrow,sans-serif;font-size:11px;font-weight:700;letter-spacing:2px;color:#fff">${avgName.toUpperCase()}</div>
-          </div>`;
+          <img class="live-rank-icon" src="" alt="">
+          <span class="live-avg-rank-copy"><small>Rang moyen</small><strong>${avgName}</strong></span>`;
         // Load rank icon from valorant-api
         if (!window._rankIconsCache) window._rankIconsCache = {};
         if (window._rankIconsCache[avgTier]) {
-          avgEl.querySelector('#live-rank-icon').src = window._rankIconsCache[avgTier];
+          avgEl.querySelector('.live-rank-icon').src = window._rankIconsCache[avgTier];
         } else {
           fetch('https://valorant-api.com/v1/competitivetiers').then(r=>r.json()).then(d => {
             const latest = d.data?.[d.data.length-1];
             const tier = latest?.tiers?.find(t => t.tier === avgTier);
             if (tier?.largeIcon) {
               window._rankIconsCache[avgTier] = tier.largeIcon;
-              const img = document.getElementById('live-rank-icon');
+              const img = avgEl.querySelector('.live-rank-icon');
               if (img) img.src = tier.largeIcon;
             }
           }).catch(()=>{});
         }
       }
+    } else if (avgEl) {
+      avgEl.hidden = true;
+      avgEl.dataset.tier = '';
     }
 
     // L'identité de l'observateur est déjà visible dans le sélecteur de
@@ -1111,8 +1123,12 @@ export function initLivePage() {
       return `${p.name}|${p.agent}|${p.team}|${rank.tier ?? ''}|${rank.rr ?? ''}|${rank.peakTier ?? ''}|${rank.level ?? ''}|${(rank.rrHistory || []).join('.')}|${rank.rrEarned ?? ''}|${rank.season?.games ?? ''}|${rank.season?.winRatePct ?? ''}`;
     }).join(',');
     if (playersEl && playersEl.dataset.key !== stableKey) {
+      const openPlayerKeys = [...playersEl.querySelectorAll('.live-player-row[open]')]
+        .map(row => row.dataset.playerKey).filter(Boolean);
+      const selectedMobileTeam = playersEl.dataset.mobileTeam || 'allies';
       playersEl.dataset.key = stableKey;
       playersEl.classList.toggle('is-syncing', all.length === 0);
+      playersEl.classList.toggle('is-deathmatch', isDM);
       playersEl.innerHTML = all.length === 0
         ? `<div class="live-roster-sync">
              <span class="live-roster-sync-dot" aria-hidden="true"></span>
@@ -1121,14 +1137,32 @@ export function initLivePage() {
            </div>`
         : isDM
         ? all.map(p => playerRow(p, myName)).join('')
-        : `<section class="live-team live-team-allies">
-             <div class="live-team-title">Alliés</div>
+        : `<div class="live-team-tabs" role="tablist" aria-label="Choisir une équipe">
+             <button class="live-team-tab" type="button" role="tab" data-live-team="allies" aria-selected="${selectedMobileTeam !== 'enemies'}">Alliés · ${allies.length}</button>
+             <button class="live-team-tab" type="button" role="tab" data-live-team="enemies" aria-selected="${selectedMobileTeam === 'enemies'}">Ennemis · ${enemies.length}</button>
+           </div>
+           <section class="live-team live-team-allies">
+             ${teamTitle('Alliés', allies)}
              ${allies.map(p => playerRow(p, myName)).join('')}
            </section>
            <section class="live-team live-team-enemies">
-             <div class="live-team-title">Ennemis</div>
+             ${teamTitle('Ennemis', enemies)}
              ${enemies.map(p => playerRow(p, myName)).join('')}
            </section>`;
+      playersEl.dataset.mobileTeam = selectedMobileTeam === 'enemies' ? 'enemies' : 'allies';
+      playersEl.querySelectorAll('.live-team-tab').forEach(button => {
+        button.addEventListener('click', () => {
+          const team = button.dataset.liveTeam === 'enemies' ? 'enemies' : 'allies';
+          playersEl.dataset.mobileTeam = team;
+          playersEl.querySelectorAll('.live-team-tab').forEach(tab => {
+            tab.setAttribute('aria-selected', String(tab.dataset.liveTeam === team));
+          });
+        });
+      });
+      openPlayerKeys.forEach(key => {
+        const row = [...playersEl.querySelectorAll('.live-player-row')].find(item => item.dataset.playerKey === key);
+        if (row) row.open = true;
+      });
     }
 
 
@@ -1142,15 +1176,14 @@ export function initLivePage() {
       const avgW   = wins.length   ? Math.round(wins.reduce((s,r)=>s+r,0)/wins.length)   : null;
       const avgL   = losses.length ? Math.round(losses.reduce((s,r)=>s+r,0)/losses.length) : null;
       const parts  = [];
-      if (avgW !== null) parts.push(`<span style="color:#3fcf6b">+${avgW}</span>`);
-      if (avgL !== null) parts.push(`<span style="color:#ff4656">${avgL}</span>`);
+      if (avgW !== null) parts.push(`<span class="positive">+${avgW}</span>`);
+      if (avgL !== null) parts.push(`<span class="negative">${avgL}</span>`);
       if (!parts.length) return '';
-      return `<span style="font-size:9px;font-family:Tomorrow,sans-serif;letter-spacing:1px;opacity:.85">${parts.join('<span style="opacity:.3"> / </span>')}</span>`;
+      return `<span class="live-player-rr" title="Gains et pertes RR moyens">${parts.join('<span class="separator"> / </span>')}</span>`;
     }
     if (rank.rrEarned !== undefined && rank.rrEarned !== 0) {
       const v = rank.rrEarned;
-      const color = v > 0 ? '#3fcf6b' : '#ff4656';
-      return `<span style="font-size:9px;font-family:Tomorrow,sans-serif;color:${color};letter-spacing:1px">${v>0?'+':''}${v} RR</span>`;
+      return `<span class="live-player-rr ${v > 0 ? 'positive' : 'negative'}">${v>0?'+':''}${v} RR</span>`;
     }
     return '';
   }
@@ -1171,10 +1204,10 @@ export function initLivePage() {
     const bigGap = gap >= 9; // 3 full ranks gap
 
     if (isLowRank && isHighPeak && (isNewAccount || bigGap)) {
-      return `<span style="font-size:8px;font-family:Tomorrow,sans-serif;letter-spacing:1px;color:#ff4656;border:1px solid rgba(255,70,86,.4);padding:1px 4px">SMURF</span>`;
+      return `<span class="live-player-badge smurf">Smurf possible</span>`;
     }
     if (bigGap && isHighPeak) {
-      return `<span style="font-size:8px;font-family:Tomorrow,sans-serif;letter-spacing:1px;color:#f5c842;border:1px solid rgba(245,200,66,.3);padding:1px 4px">⚠</span>`;
+      return `<span class="live-player-badge warning">Écart de rang</span>`;
     }
     return '';
   }
@@ -1196,12 +1229,20 @@ export function initLivePage() {
     'Gold':'#f5c842','Platinum':'#40c9c9','Diamond':'#9b59b6',
     'Ascendant':'#2ecc71','Immortal':'#e74c3c','Radiant':'#ffd700','Unranked':'#555'
   };
+  function teamTitle(label, teamPlayers) {
+    const ranked = teamPlayers.filter(player => player.rank?.tier > 2);
+    const averageTier = ranked.length
+      ? Math.round(ranked.reduce((sum, player) => sum + player.rank.tier, 0) / ranked.length)
+      : 0;
+    const average = averageTier ? RANK_NAMES[averageTier] : '';
+    return `<div class="live-team-title"><strong>${label}</strong><small>${average ? `Rang moyen · ${average}` : `${teamPlayers.length} joueurs`}</small></div>`;
+  }
   function rankDisplay(rank) {
     if (!rank) return '';
     const name = RANK_NAMES[rank.tier] || 'Unranked';
     const base = name.split(' ')[0];
     const color = RANK_COLORS[base] || '#888';
-    return `<span style="font-size:8px;font-family:Tomorrow,sans-serif;letter-spacing:1px;color:${color};opacity:.8">${name}</span>`;
+    return `<span class="live-rank-current" style="color:${color}">${name}</span>`;
   }
 
   function peakDisplay(rank) {
@@ -1213,14 +1254,14 @@ export function initLivePage() {
     const title = rank.peakHistorical
       ? 'Meilleur rang retrouvé dans l’historique des actes'
       : 'Historique Riot indisponible — meilleur rang des parties récentes';
-    return `<span title="${title}" style="font-size:8px;font-family:Tomorrow,sans-serif;letter-spacing:1px;color:${color};border-left:1px solid #333;padding-left:6px"><span style="color:#777">${label}</span> ${name}</span>`;
+    return `<span class="live-rank-peak" title="${title}" style="color:${color}"><span class="live-rank-prefix">${label}</span> ${name}</span>`;
   }
 
   function seasonDisplay(rank) {
     if (!rank?.season?.games) return '';
     const { games, winRatePct } = rank.season;
     const wr = winRatePct != null ? `${winRatePct}% WR · ` : '';
-    return `<span title="Acte compétitif en cours" style="font-size:8px;font-family:Tomorrow,sans-serif;letter-spacing:1px;color:#888;border-left:1px solid #333;padding-left:6px">${wr}${games} game${games > 1 ? 's' : ''}</span>`;
+    return `<span class="live-player-season" title="Acte compétitif en cours">${wr}${games} game${games > 1 ? 's' : ''}</span>`;
   }
 
   // Agent UUID → icon URL cache
@@ -1265,34 +1306,43 @@ export function initLivePage() {
   }
 
   function playerRow(p, myName) {
-    const hpPct = (p.maxHp && p.hp !== undefined) ? Math.round((p.hp/p.maxHp)*100) : 100;
-    const hpColor = hpPct > 60 ? '#3fcf6b' : hpPct > 30 ? '#f9c74f' : '#ff4656';
     const isMe = myName && p.name?.includes(myName.split('#')[0]);
     const fixedAgent = fixAgentName(p);
     const imgUrl = agentIconUrl(fixedAgent, p.agentId);
+    const profile = rosterProfileForName(p.name || '');
+    const member = profile?.member || olycityMember(p.name);
+    const memberAvatar = profile?.avatar
+      ? `<span class="live-player-member-avatar" title="${escapeDiagnosticText(member)}">${avatarLayersHTML(member, profile.avatar)}</span>`
+      : '';
+    const playerName = p.incognito ? 'Joueur anonyme' : escapeDiagnosticText(p.name || '—');
+    const playerKey = escapeDiagnosticText(encodeURIComponent(p.name || `${fixedAgent}-${p.team || ''}`));
+    const secondary = [seasonDisplay(p.rank), rrDisplay(p.rank), smurfBadge(p.rank)].filter(Boolean).join('');
+    const tracker = !p.incognito && p.name?.includes('#')
+      ? `<a class="live-player-tracker" href="https://tracker.gg/valorant/profile/riot/${encodeURIComponent(p.name)}/overview" target="_blank" rel="noopener">Voir sur Tracker ↗</a>`
+      : '';
 
-    return `<div class="live-player-row ${p.alive===false ? 'dead' : ''} ${isMe ? 'me' : ''}">
-      ${imgUrl ? `<img class="live-player-agent" src="${imgUrl}" onerror="this.style.visibility='hidden'">` : '<div class="live-player-agent" style="background:var(--surf3)"></div>'}
-      <div style="flex:1;min-width:0">
-        <div class="live-player-name" style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">
-          ${p.incognito
-            ? `<span style="opacity:.5;font-style:italic">${escapeDiagnosticText(fixedAgent||'?')}</span> <span style="font-size:8px;letter-spacing:1px;color:#888;border:1px solid #333;padding:1px 4px">ANONYME</span>`
-            : `${escapeDiagnosticText(p.name || '—')} <span style="opacity:.4;font-size:9px;font-weight:400">${escapeDiagnosticText(fixedAgent||'')}</span>${olycityMember(p.name) ? ` <span style="font-size:8px;letter-spacing:1px;color:#ff4656;border:1px solid rgba(255,70,86,.5);padding:1px 5px;font-weight:700;vertical-align:middle">OLY · ${escapeDiagnosticText(olycityMember(p.name))}</span>` : ''}`
-          }
-        </div>
-        <div style="margin-top:3px;display:flex;align-items:center;gap:6px">
-          ${rankDisplay(p.rank)}
-          ${peakDisplay(p.rank)}
-          ${seasonDisplay(p.rank)}
-          ${rrDisplay(p.rank)}
-          ${smurfBadge(p.rank)}
-        </div>
+    return `<details class="live-player-row ${p.alive===false ? 'dead' : ''} ${isMe ? 'me' : ''}" data-player-key="${playerKey}">
+      <summary class="live-player-summary">
+        <span class="live-player-portrait">
+          ${imgUrl ? `<img class="live-player-agent" src="${imgUrl}" alt="${escapeDiagnosticText(fixedAgent || 'Agent')}" onerror="this.style.visibility='hidden'">` : '<span class="live-player-agent"></span>'}
+          ${memberAvatar}
+        </span>
+        <span class="live-player-main">
+          <span class="live-player-identity">
+            <span class="live-player-name">${playerName}</span>
+            <span class="live-player-agent-name">${escapeDiagnosticText(fixedAgent || '')}</span>
+            ${p.incognito ? '<span class="live-player-badge">Anonyme</span>' : ''}
+            ${member ? `<span class="live-player-badge oly">OLY · ${escapeDiagnosticText(member)}</span>` : ''}
+          </span>
+          <span class="live-player-primary-stats">${rankDisplay(p.rank) || '<span class="live-rank-current">Rang indisponible</span>'}${peakDisplay(p.rank)}</span>
+        </span>
+        <span class="live-player-chevron" aria-hidden="true">⌄</span>
+      </summary>
+      <div class="live-player-details">
+        ${secondary || '<span class="live-player-season">Aucune statistique supplémentaire</span>'}
+        ${tracker}
       </div>
-      <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px;flex-shrink:0">
-
-        ${!p.incognito && p.name && p.name.includes('#') ? `<a href="https://tracker.gg/valorant/profile/riot/${encodeURIComponent(p.name)}/overview" target="_blank" style="font-family:Tomorrow,sans-serif;font-size:8px;letter-spacing:1px;color:#ff4656;text-decoration:none;padding:2px 6px;border:1px solid rgba(255,70,86,.3);text-transform:uppercase">TRACKER</a>` : ''}
-      </div>
-    </div>`;
+    </details>`;
   }
 
   const handleGameChange = event => {

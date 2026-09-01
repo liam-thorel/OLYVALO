@@ -17,11 +17,11 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Tomorrow:wght@400;500;600;700&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="./css/tokens.css?v=20260824-page-shell">
-  <link rel="stylesheet" href="./css/layout.css?v=20260901-live-card-height">
+  <link rel="stylesheet" href="./css/layout.css?v=20260901-live-redesign">
   <link rel="stylesheet" href="./css/components.css?v=20260827-team-logo-contrast">
   <link rel="stylesheet" href="./css/home.css?v=20260825-human-banner">
   <link rel="stylesheet" href="./css/agent-page.css?v=20260720-avatars">
-  <link rel="stylesheet" href="./css/responsive.css?v=20260830-section-icons">
+  <link rel="stylesheet" href="./css/responsive.css?v=20260901-live-redesign">
   <link rel="stylesheet" href="./css/lol-mode.css?v=20260825-community-foundation">
   <link rel="stylesheet" href="./css/curse.css?v=20260818-curse-lifecycle">
   <link rel="stylesheet" href="./css/coop-games.css?v=20260824-mobile-data-cache">
@@ -486,26 +486,22 @@
     <div class="live-page" id="live-page">
       <div data-game-panel="valorant">
       <div class="live-diagnostic" id="live-diagnostic" data-state="offline">
-        <span class="live-diagnostic-dot"></span>
-        <div class="live-diagnostic-copy">
-          <strong id="live-diagnostic-label">Connexion au live…</strong>
-          <span id="live-diagnostic-detail">Synchronisation des scripts en cours</span>
+        <div class="live-diagnostic-summary">
+          <span class="live-diagnostic-dot" aria-hidden="true"></span>
+          <div class="live-diagnostic-copy">
+            <strong id="live-diagnostic-label">Connexion au groupe…</strong>
+            <span id="live-diagnostic-detail">Synchronisation des membres</span>
+          </div>
         </div>
-        <span class="live-diagnostic-version" id="live-diagnostic-version">—</span>
+        <div class="live-client-list" id="live-client-list" aria-live="polite"></div>
+        <span class="live-diagnostic-version" id="live-diagnostic-version" aria-label="Versions des scripts">—</span>
         <!-- URL sans version : GitHub redirige /releases/latest/download/ vers la
              dernière release. Le lien versionné cassait dès qu'une release
              partait sans archive, ou que le numéro n'était pas mis à jour ici.
              L'archive est assemblée par .github/workflows/release-live.yml. -->
-        <a href="https://github.com/liam-thorel/OLYVALO/releases/latest/download/OLYCITY-Live.zip" download class="live-download-link">
-          ↓ Télécharger la dernière version
+        <a href="https://github.com/liam-thorel/OLYVALO/releases/latest/download/OLYCITY-Live.zip" download class="live-download-link" id="live-download-link" hidden>
+          <span aria-hidden="true">↓</span><span>Mettre à jour</span>
         </a>
-        <details class="live-client-details" id="live-client-details">
-          <summary>
-            <span id="live-client-toggle-label">Voir les scripts connectés</span>
-            <span class="live-client-toggle-icon" aria-hidden="true">⌄</span>
-          </summary>
-          <div class="live-client-list" id="live-client-list"></div>
-        </details>
       </div>
       <div class="live-waiting" id="live-waiting">
         <span class="live-waiting-icon" aria-hidden="true">🎮</span>
@@ -513,32 +509,34 @@
         <span id="live-waiting-detail">Le Live apparaîtra automatiquement dès qu’une partie commencera.</span>
       </div>
       <div class="live-content" id="live-content" style="display:none">
-        <!-- Map + players -->
+        <!-- Identité du match + joueurs -->
         <div class="live-header" id="live-header">
+          <img class="live-match-art" id="live-map-img" src="" alt="">
+          <span class="live-match-art-shade" aria-hidden="true"></span>
           <div class="live-match-context">
+            <span class="live-match-kicker">PARTIE EN COURS</span>
             <div class="live-map-name" id="live-map-name">—</div>
-            <div class="live-server" id="live-server" style="display:none">—</div>
-            <div class="live-phase" id="live-phase">—</div>
+            <div class="live-match-meta">
+              <div class="live-phase" id="live-phase">—</div>
+              <div class="live-server" id="live-server" style="display:none">—</div>
+            </div>
           </div>
-          <div class="curse-controls">
-            <button class="curse-mute" id="curse-mute-btn" type="button" title="Couper le son de la curse" aria-pressed="false">
-              <span id="curse-mute-icon" aria-hidden="true">🔊</span>
-              <span id="curse-mute-label">Couper le son</span>
-            </button>
-            <button class="curse-toggle" id="curse-btn" type="button" aria-pressed="false">
-              <span class="glyph"><svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M3 14.5c0-3.2 1.1-4.6 4-4.6 2.4 0 2.6-2 .9-3.6-2-1.9-1.4-4.8 1.6-5.3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><circle cx="11.4" cy="1.9" r="1" fill="currentColor"/></svg></span><span id="curse-btn-label">Maudire la game</span>
-            </button>
+          <div class="live-match-actions">
+            <div class="live-avg-rank" id="live-avg-rank" hidden aria-live="polite"></div>
+            <div class="curse-controls">
+              <button class="curse-mute" id="curse-mute-btn" type="button" title="Couper le son de la curse" aria-pressed="false">
+                <span id="curse-mute-icon" aria-hidden="true">🔊</span>
+                <span id="curse-mute-label">Couper le son</span>
+              </button>
+              <button class="curse-toggle" id="curse-btn" type="button" aria-pressed="false">
+                <span class="glyph"><svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M3 14.5c0-3.2 1.1-4.6 4-4.6 2.4 0 2.6-2 .9-3.6-2-1.9-1.4-4.8 1.6-5.3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><circle cx="11.4" cy="1.9" r="1" fill="currentColor"/></svg></span><span id="curse-btn-label">Maudire la game</span>
+              </button>
+            </div>
           </div>
         </div>
         <div class="live-data-notice" id="live-data-notice" style="display:none"></div>
         <div class="live-body">
           <div class="live-players" id="live-players"></div>
-          <div class="live-minimap-wrap" style="overflow:hidden;position:relative;border-radius:2px">
-            <img id="live-map-img" style="width:100%;height:100%;object-fit:cover;display:block;filter:saturate(1.2) brightness(.85)" src="" alt="">
-            <div style="position:absolute;inset:0;background:linear-gradient(to top,rgba(6,8,12,.85) 0%,transparent 55%)"></div>
-            <div id="live-map-label" style="position:absolute;bottom:14px;left:16px;font-family:Tomorrow,sans-serif;font-size:13px;font-weight:700;letter-spacing:4px;text-transform:uppercase;color:#fff;text-shadow:0 2px 8px rgba(0,0,0,.8)"></div>
-            <div id="live-mode-label" style="position:absolute;bottom:14px;right:16px;font-family:Tomorrow,sans-serif;font-size:9px;letter-spacing:2px;text-transform:uppercase;color:rgba(255,255,255,.5)"></div>
-          </div>
         </div>
       </div>
       </div>
@@ -574,6 +572,6 @@
   <!-- Firebase SDK -->
   <!-- Présence Firebase -->
   <script src="./js/presence.js?v=20260720-avatars"></script>
-  <script type="module" src="./js/main.js?v=20260901-deploy-updates"></script>
+  <script type="module" src="./js/main.js?v=20260901-live-redesign"></script>
 </body>
 </html>

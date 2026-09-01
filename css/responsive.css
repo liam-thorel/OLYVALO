@@ -181,50 +181,81 @@
   }
 
   .live-header {
-    display:grid; grid-template-columns:minmax(0,1fr) auto; align-items:center;
-    gap:7px 10px; padding:9px 10px;
+    display:grid; grid-template-columns:minmax(0,1fr) auto; align-items:end;
+    gap:10px; min-height:148px; padding:15px;
   }
-  .live-match-context{ display:contents; }
+  .live-match-art{ width:100%; }
+  .live-match-art-shade{ background:linear-gradient(0deg,rgba(8,11,17,.98) 3%,rgba(8,11,17,.75) 55%,rgba(8,11,17,.22)); }
+  .live-match-context{ display:grid; gap:6px; }
+  .live-match-kicker{ font-size:8px; letter-spacing:2px; }
   .live-map-name {
-    grid-column:1; grid-row:1; min-width:0; overflow:hidden;
-    font-size:16px; letter-spacing:2.5px; text-overflow:ellipsis; white-space:nowrap;
+    min-width:0; overflow:hidden; font-size:25px; letter-spacing:3px; text-overflow:ellipsis; white-space:nowrap;
   }
-  .live-phase{ grid-column:1; grid-row:2; justify-self:start; align-self:center; padding:3px 7px; font-size:8px; }
+  .live-match-meta{ gap:6px; }
+  .live-phase{ min-height:34px; padding:5px 7px; font-size:8px; }
   .live-server {
-    grid-column:1 / -1; grid-row:3; width:100%; min-width:0; max-width:none; height:40px;
+    width:auto; min-width:125px; max-width:170px; height:34px; padding-right:40px;
   }
+  .live-server-copy small{ font-size:7px; }
+  .live-server-copy strong{ font-size:9px; }
+  .live-server-credit{ font-size:6px; }
+  .live-match-actions{ min-width:0; align-self:stretch; justify-content:space-between; }
+  .live-avg-rank{ min-height:38px; padding:5px 7px; }
+  .live-avg-rank img{ width:25px; height:25px; }
+  .live-avg-rank-copy small{ font-size:6px; }
+  .live-avg-rank-copy strong{ max-width:105px; overflow:hidden; font-size:9px; text-overflow:ellipsis; white-space:nowrap; }
   .curse-controls{
-    grid-column:2; grid-row:1 / span 2; width:auto; max-width:185px;
-    margin-left:0; flex-wrap:wrap; justify-content:flex-end;
+    width:auto; max-width:150px; margin-left:0; flex-wrap:wrap; justify-content:flex-end;
   }
+  .curse-toggle{ min-height:34px; padding:6px 8px; font-size:8px; }
   .live-body { grid-template-columns: minmax(0, 1fr); gap:8px; }
-  .live-minimap-wrap {
-    order:-1; width:100%; max-width:100%; height:132px !important; min-height:132px;
-  }
-  .live-minimap-wrap #live-map-label { bottom:10px !important; left:12px !important; }
-  .live-minimap-wrap #live-mode-label { bottom:10px !important; right:12px !important; }
   .live-players { grid-template-columns: 1fr; min-width: 0; }
+  .live-team-tabs{ display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:5px; }
+  .live-team-tab{
+    min-height:42px; border:1px solid var(--border); background:var(--surf); color:var(--muted);
+    font:700 9px/1 'Tomorrow',sans-serif; letter-spacing:1.2px; text-transform:uppercase;
+  }
+  .live-team-tab[aria-selected="true"]{ border-color:var(--red-mid); background:var(--red-low); color:var(--text); }
+  .live-players[data-mobile-team="allies"] .live-team-enemies,
+  .live-players[data-mobile-team="enemies"] .live-team-allies{ display:none; }
+  .live-team{ padding:7px; }
+  .live-team-title{ min-height:25px; }
+  .live-player-summary{ min-height:57px; padding:8px; }
+  .live-player-portrait,.live-player-agent{ width:42px; height:42px; }
+  .live-player-portrait{ flex-basis:42px; }
+  .live-player-name{ font-size:11px; }
+  .live-player-agent-name{ font-size:9px; }
+  .live-rank-current,.live-rank-peak{ font-size:8.5px; }
+  .live-player-details{ flex-wrap:wrap; margin:0 8px; padding:8px 0 9px 52px; }
+  .live-player-tracker{ min-height:24px; display:inline-flex; align-items:center; }
   .live-players.is-syncing { min-height:118px; }
   .live-roster-sync { gap:5px; padding:18px 14px; }
   .live-roster-sync strong { font-size:10px; letter-spacing:1.4px; }
   .live-roster-sync small { font-size:10px; }
   .live-diagnostic {
-    flex-wrap:wrap; gap:8px 10px; margin-bottom:8px; padding:9px 11px;
+    grid-template-columns:minmax(0,1fr) auto; gap:8px; margin-bottom:8px; padding:9px;
     border-left:2px solid rgba(255,255,255,.16);
   }
   .live-diagnostic[data-state="online"], .live-diagnostic[data-state="idle"] { border-left-color:#3fcf6b; }
   .live-diagnostic[data-state="agent-select"] { border-left-color:#f5c842; }
   .live-diagnostic[data-state="in-game"] { border-left-color:var(--red); }
-  .live-diagnostic-copy { flex: 1; }
+  .live-diagnostic-summary{ min-width:0; }
   .live-diagnostic-copy strong { font-size: 11px; }
   .live-diagnostic-copy span { font-size: 10px; line-height: 1.35; white-space: normal; }
   .live-diagnostic-version, .live-client-chip-version { display: none; }
-  .live-client-list { grid-template-columns: 1fr; }
-  .live-client-details > summary { min-height: 44px; }
-  .live-client-group { grid-column: auto; }
-  .live-client-group-members { grid-template-columns: 1fr; }
+  .live-client-list{ grid-column:1 / -1; margin:0 -9px -9px; padding:7px 9px 9px; border-top:1px solid var(--border); }
+  .live-client-group-heading{ display:none; }
   .live-download-link { display:none; }
-  .live-client-chip { min-height: 44px; box-sizing: border-box; padding: 7px 9px 7px 11px; }
+  .live-session-picker{
+    grid-template-columns:1fr; gap:7px; margin-bottom:8px; padding:9px;
+  }
+  .live-session-picker-heading{ display:flex; align-items:baseline; justify-content:space-between; min-width:0; }
+  .live-session-picker-heading span{ font-size:9px; }
+  .live-session-picker-heading small{ font-size:9px; }
+  .live-session-picker-list{ margin:0 -9px -9px; padding:0 9px 9px; }
+  .live-session-card{ min-width:205px; min-height:50px; padding:6px 8px; }
+  .live-session-state{ display:none; }
+  .live-client-chip { min-height:44px; max-width:205px; box-sizing:border-box; padding:6px 9px 6px 11px; }
   .live-client-avatar { flex-basis: 30px; width: 30px; height: 30px; }
   .live-client-info strong { font-size: 10px; }
   .live-client-info small { font-size: 9.5px; white-space: normal; }

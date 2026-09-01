@@ -224,7 +224,9 @@ test('mobile data pages keep readable spacing, controls and roster details', () 
 
 test('mobile Live and expanded history prioritize useful information', () => {
   assert.match(responsive, /\.live-download-link \{ display:none; \}/);
-  assert.match(responsive, /\.live-minimap-wrap \{[\s\S]*?order:-1;[\s\S]*?height:132px !important/);
+  assert.match(responsive, /\.live-header \{[\s\S]*?min-height:148px/);
+  assert.match(responsive, /\.live-team-tabs\{ display:grid/);
+  assert.match(responsive, /data-mobile-team="allies"/);
   assert.match(responsive, /\.live-players\.is-syncing \{ min-height:118px; \}/);
   assert.match(interactions, /class="history-roster-disclosure"/);
   assert.match(interactions, /max-width: 768px/);
@@ -356,7 +358,21 @@ test('history prioritizes recent matches and reveals secondary data progressivel
   assert.match(interactions, /limit:20/);
   assert.match(interactions, /data-history-show-more/);
   assert.match(lolPages, /class="lol-history-recap"/);
-  assert.match(page, /class="live-client-details"/);
+  assert.match(page, /class="history-roster-disclosure"|id="history-content"/);
+});
+
+test('Valorant Live uses a compact presence bar and progressive player details', () => {
+  assert.match(page, /class="live-diagnostic-summary"/);
+  assert.match(page, /id="live-client-list" aria-live="polite"/);
+  assert.doesNotMatch(page, /class="live-client-details"/);
+  assert.match(page, /class="live-match-art" id="live-map-img"/);
+  assert.doesNotMatch(page, /class="live-minimap-wrap"/);
+  assert.match(interactions, /<details class="live-player-row/);
+  assert.match(interactions, /class="live-player-primary-stats"/);
+  assert.match(interactions, /class="live-player-details"/);
+  assert.match(interactions, /class="live-session-card/);
+  assert.match(interactions, /data-live-session=/);
+  assert.doesNotMatch(interactions, /picker\.style\.cssText/);
 });
 
 test('Live and Admin share one realtime Firebase store', () => {
