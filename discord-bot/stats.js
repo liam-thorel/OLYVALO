@@ -22,7 +22,7 @@ async function valorantHistoryFor(riotIds) {
     Object.values(match?.reports || {}).forEach(report => allReports.push(report));
   });
 
-  return allReports
+  const mapped = allReports
     .map(report => {
       const self = (report.players || []).find(p => riotIds.some(id => id.toLowerCase() === String(p.name || '').toLowerCase()));
       if (!self) return null;
@@ -35,6 +35,9 @@ async function valorantHistoryFor(riotIds) {
       // rang d'un coéquipier.
       const isReporter = report.playerPuuid && self.puuid && report.playerPuuid === self.puuid;
       return {
+        matchId: report.matchId || '',
+        // Dit si tier/rr sont renseignés : seul le rapporteur porte son rang.
+        isReporter: !!isReporter,
         win: report.result === 'win' ? true : report.result === 'loss' ? false : null,
         champion: self.agent ? { name: self.agent } : null,
         kills: self.stats?.kills ?? null,
@@ -49,8 +52,39 @@ async function valorantHistoryFor(riotIds) {
         ts: report.ts || report.endTs || 0,
       };
     })
-    .filter(Boolean)
-    .sort((a, b) => b.ts - a.ts);
+    .filter(Boolean);
+
+  return dedupeByMatch(mapped).sort((a, b) => b.ts - a.ts);
+}
+
+/**
+ * Quand plusieurs membres du roster jouent la même game, chaque script publie
+ * SON rapport — et chaque rapport liste les dix joueurs. Un joueur se
+ * retrouvait donc dans le rapport de ses coéquipiers autant que dans le sien :
+ * une game jouée en stack de cinq comptait cinq fois.
+ *
+ * Le winrate et les moyennes n'en souffraient pas (les doublons sont
+ * identiques), ce qui a masqué le problème ; mais le nombre de games, la frise
+ * de résultats et la fenêtre des 20 dernières games, elles, étaient fausses.
+ */
+function dedupeByMatch(entries) {
+  const byMatch = new Map();
+  // Les rapports d'avant l'ajout du matchId ne peuvent pas être regroupés :
+  // les fusionner sur une clé approchée risquerait d'effacer de vraies games.
+  const withoutMatchId = [];
+
+  entries.forEach(entry => {
+    if (!entry.matchId) {
+      withoutMatchId.push(entry);
+      return;
+    }
+    const kept = byMatch.get(entry.matchId);
+    // À doublon égal on garde le rapport écrit par le joueur lui-même : c'est
+    // le seul qui porte son rang, les autres l'ont à null.
+    if (!kept || (entry.isReporter && !kept.isReporter)) byMatch.set(entry.matchId, entry);
+  });
+
+  return [...byMatch.values(), ...withoutMatchId];
 }
 
 async function historyFor(game, riotIds) {

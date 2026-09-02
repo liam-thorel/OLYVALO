@@ -18,7 +18,8 @@ function loadRecap({ members, history, gains }) {
     }
     if (request === './stats.js') {
       const real = original('./stats.js', parent, isMain);
-      return { ...real, historyFor: async (game, ids) => history[ids[0]] || [], rankedOnly: (game, e) => e };
+      // rankedOnly n'est PAS stubé : c'est lui qu'on veut voir à l'œuvre.
+      return { ...real, historyFor: async (game, ids) => history[ids[0]] || [] };
     }
     if (request === 'discord.js') {
       return { EmbedBuilder: class {
@@ -37,7 +38,7 @@ function loadRecap({ members, history, gains }) {
 }
 
 const game = (win, ts, extra = {}) => ({
-  win, ts, kills: 15, deaths: 12, assists: 6, acs: 200, hsPercent: 22, ...extra,
+  win, ts, mode: 'competitive', kills: 15, deaths: 12, assists: 6, acs: 200, hsPercent: 22, ...extra,
 });
 
 (async () => {
@@ -45,8 +46,14 @@ const game = (win, ts, extra = {}) => ({
   const { buildValoRecapEmbeds } = loadRecap({
     members: [{ name: 'Liam', riotIds: ['a#1'] }, { name: 'Mathis', riotIds: ['d#1'] }],
     history: {
-      'a#1': [game(true, 3, { tier: 19, rr: 88, champion: { name: 'Omen' } }), game(false, 2, { champion: { name: 'Astra' } })],
-      'd#1': [game(false, 3, { tier: 22, rr: 41, champion: { name: 'Reyna' } })],
+      'a#1': [
+        game(true, 3, { matchId: 'm3', tier: 19, rr: 88, champion: { name: 'Omen' } }),
+        game(false, 2, { matchId: 'm2', champion: { name: 'Astra' } }),
+        // Ne doit RIEN ajouter au récap : hors file classée.
+        game(true, 4, { matchId: 'm4', mode: 'deathmatch', champion: { name: 'Reyna' } }),
+        game(true, 5, { matchId: 'm5', mode: 'unrated', champion: { name: 'Omen' } }),
+      ],
+      'd#1': [game(false, 3, { matchId: 'm3', tier: 22, rr: 41, champion: { name: 'Reyna' } })],
     },
     gains: [{ memberName: 'Liam', delta: 52 }, { memberName: 'Mathis', delta: -38 }],
   });
@@ -59,7 +66,9 @@ const game = (win, ts, extra = {}) => ({
   const [embed] = embeds;
   assert.equal(embed.color, 0x3fcf6b, 'bilan positif = vert');
   assert.match(embed.author, /Récap OLYCITY · \+14 RR aujourd’hui/);
+  // 3 games classées comptées : le deathmatch et l'unrated d'Liam sont exclus.
   assert.match(embed.description, /3 games · 33% WR collectif/);
+  assert.doesNotMatch(embed.description, /5 games|4 games/, 'aucune game hors classé dans le total');
 
   // Classement par RR, médailles, rang atteint.
   const podium = embed.description.indexOf('🥇 **Liam**');
