@@ -288,6 +288,28 @@ function safeFirebaseKey(str) {
   return String(str).replace(/[.#$[\]/]/g, '_');
 }
 
+/**
+ * Clé d'une entrée d'historique LoL. Le nom du joueur en fait partie, sinon
+ * deux membres du roster dans la MÊME game écrivent sous la même clé et le
+ * second efface le premier — la game disparaît de l'historique de l'un des
+ * deux, avec son champion, son KDA et son résultat.
+ *
+ * Une entrée d'historique LoL décrit la partie D'UN joueur (voir
+ * lolHistorySummary), pas la partie elle-même : deux entrées pour une game
+ * jouée à deux est la forme correcte, pas un doublon.
+ *
+ * Les entrées écrites avant ce correctif gardent leur ancienne clé. Rien à
+ * migrer : la lecture filtre sur playerName, pas sur le format de la clé.
+ */
+function lolHistoryKey(matchId, playerName, startedAt) {
+  const match = matchId || String(startedAt || Date.now());
+  // Sans nom de joueur exploitable on retombe sur l'ancienne clé : mieux vaut
+  // le risque d'écrasement que des entrées « match-undefined » indistinctes.
+  return playerName
+    ? safeFirebaseKey(`${match}-${playerName}`)
+    : safeFirebaseKey(match);
+}
+
 function formatDuration(totalSeconds) {
   const seconds = Math.max(0, Math.round(totalSeconds || 0));
   return `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, '0')}`;
@@ -498,7 +520,7 @@ function createLolWatcher({
       result: capturedResult || null,
     };
     const history = capturedResult ? {
-      key: safeFirebaseKey(currentMatchId || String(matchStartedAt)),
+      key: lolHistoryKey(currentMatchId, sessionKey, matchStartedAt),
       value: {
         playerName: sessionKey,
         memberId: member?.memberId || '',
@@ -777,5 +799,5 @@ function createLolWatcher({
 module.exports = {
   createLolWatcher, readLockfile, lcuGet, safeFirebaseKey, syncRosterProfiles,
   // exposés pour les tests
-  shouldProbeProcess, nextProbeDelay, PROCESS_PROBE_BACKOFF_MS, MAX_DEBUG_LOG_BYTES,
+  shouldProbeProcess, nextProbeDelay, PROCESS_PROBE_BACKOFF_MS, MAX_DEBUG_LOG_BYTES, lolHistoryKey,
 };
