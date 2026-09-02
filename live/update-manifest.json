@@ -19,6 +19,7 @@
     "presence-schema.js",
     "riot-identity.js",
     "history-index.js",
+    "valorant-mode-utils.js",
     "IDENTITE.bat",
     "probe-loadouts.js",
     "SONDE-SKINS.bat",

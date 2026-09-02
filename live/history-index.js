@@ -8,6 +8,8 @@ function valorantHistorySummary(record = {}) {
     endTs: Number(record.endTs || 0),
     map: record.map || '',
     mode: record.mode || '',
+    modeLabel: record.modeLabel || '',
+    modeFamily: record.modeFamily || '',
     result: record.result || 'unknown',
     score: record.score || null,
     durationMs: Number(record.durationMs || 0),

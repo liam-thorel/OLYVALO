@@ -38,6 +38,20 @@ const valorantHistoryPager = createHistoryPager({
   pageSize:30,
 });
 const historyEscape = value => String(value ?? '').replace(/[&<>"']/g, char => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[char]));
+const VALORANT_LIVE_MODE_LABELS = Object.freeze({
+  competitive:'Compétitif', unrated:'Non classé', swiftplay:'Vélocité', spikerush:'Spike Rush',
+  deathmatch:'Deathmatch', hurm:'Team Deathmatch', ggteam:'Intensification', onefa:'Réplication',
+  snowball:'Bataille de boules de neige', newmap:'Nouvelle carte', premier:'Premier',
+  custom:'Partie personnalisée', aros:'All Random One Site', dodgeball:'K.-O.',
+  fortcollins:'Retake', skirmish:'Escarmouche', skirmishascension:'Escarmouche : Ascension',
+});
+
+function valorantLiveModeLabel(data = {}) {
+  if (data.modeLabel) return String(data.modeLabel);
+  const raw = data.queueId || (data.mode === 'agent-select' ? '' : data.mode) || '';
+  const token = String(raw).trim().replace(/^social_mode_/i, '').split('/').pop().split('.')[0].toLowerCase();
+  return VALORANT_LIVE_MODE_LABELS[token] || raw || 'Mode Riot';
+}
 
 function readValorantHistoryCache() {
   try {
@@ -863,6 +877,8 @@ export function initLivePage() {
     if (dot && document.documentElement.dataset.game === 'valorant' && dot.style.display !== 'block') dot.style.display = 'block';
 
     const isPregame = data?.phase === 'pregame' || data?.mode === 'agent-select';
+    const liveMode = data?.queueId || (data?.mode === 'agent-select' ? '' : data?.mode) || '';
+    const liveModeLabel = valorantLiveModeLabel(data);
     const liveHeader = content?.querySelector('.live-header');
     const liveBody = content?.querySelector('.live-body');
     if (liveHeader) liveHeader.style.display = isPregame ? 'none' : '';
@@ -998,7 +1014,7 @@ export function initLivePage() {
     let compsEl = document.getElementById('live-comps-panel');
     if (isPregame && (data?.mapClean || data?.map)) {
       const pgMapName = data.mapClean || data.map;
-      const pregameRenderKey = `${pgMapName}|${data.side || ''}`;
+      const pregameRenderKey = `${pgMapName}|${data.side || ''}|${liveMode}|${data.supportsComps !== false}`;
       const sideClass = data.side === 'ATTAQUE' ? 'attack' : data.side === 'DEFENSE' ? 'defense' : 'pending';
       const sideLabel = data.side === 'ATTAQUE' ? 'Départ en attaque' : data.side === 'DEFENSE' ? 'Départ en défense' : 'Côté en attente';
       const sideHint = data.side ? 'Côté de départ' : 'Synchronisation avec Riot';
@@ -1015,6 +1031,23 @@ export function initLivePage() {
         compsEl.dataset.map = pgMapName;
         compsEl.dataset.key = pregameRenderKey;
         Promise.resolve(state.COMPS_DATA).then(comps => {
+          if (data.supportsComps === false) {
+            const optionalSide = data.side ? `
+              <div class="live-side-card ${sideClass}" aria-label="${sideLabel}">
+                <span class="live-side-icon" aria-hidden="true"></span>
+                <span class="live-side-copy"><small>${sideHint}</small><strong>${sideLabel}</strong></span>
+              </div>` : '';
+            compsEl.innerHTML = `
+              <div class="live-pregame-header ${sideClass}">
+                <div class="live-pregame-heading">
+                  <span class="live-pregame-kicker">${pgMapName} <i aria-hidden="true">·</i> Agent Select</span>
+                  <strong>${escapeDiagnosticText(liveModeLabel)}</strong>
+                  <span>Mode détecté par le script OLYCITY</span>
+                </div>
+                ${optionalSide}
+              </div>`;
+            return;
+          }
           const mapData = comps.find(m => m.map === pgMapName);
           if (!mapData) { compsEl.innerHTML = ''; return; }
           const pick = (...tiers) => mapData.comps.find(c => tiers.includes(c.tier));
@@ -1124,7 +1157,7 @@ export function initLivePage() {
 
     // Phase — guard
     const phaseEl = document.getElementById('live-phase');
-    const phase = data.roundPhase || data.mode || '—';
+    const phase = liveModeLabel || data.roundPhase || '—';
     if (phaseEl) {
       const label = phase.charAt(0).toUpperCase() + phase.slice(1);
       if (phaseEl.textContent !== label) {
@@ -1142,7 +1175,11 @@ export function initLivePage() {
     // In deathmatch everyone is on same "team" — just show all
     const allies = all.filter(p => p.team === 'ORDER');
     const enemies = all.filter(p => p.team === 'CHAOS');
-    const isDM = /deathmatch/i.test(data.mode || '') || all.some(p => p.team === 'NEUTRAL') || allies.length === all.length || enemies.length === 0;
+    const isDM = data.modeFamily === 'free-for-all'
+      || (/deathmatch/i.test(liveMode) && !/team/i.test(liveMode))
+      || all.some(p => p.team === 'NEUTRAL')
+      || allies.length === all.length
+      || enemies.length === 0;
 
     curse?.setRoster([...new Set(allies.map(p => olycityMember(p.name)).filter(Boolean))]);
     curse?.setMatch(data.matchId || '');
@@ -1519,7 +1556,7 @@ export async function initHistoryPage() {
 
   const modeLabel = game => historyMode(game) === 'deathmatch' ? 'Deathmatch'
     : historyMode(game) === 'competitive' ? 'Compétitif'
-    : game.mode || 'Autre mode';
+    : valorantLiveModeLabel(game);
   const playerRow = (game, player, index, rank = '') => {
     const deathmatch = historyMode(game) === 'deathmatch';
     const lastMetric = deathmatch ? player.stats?.score : player.stats?.acs;

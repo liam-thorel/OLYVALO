@@ -120,7 +120,8 @@ export function compHTML(comp, mapIdx, compIdx) {
   }).join('');
   const tierCls = comp.tier === 'S' ? 'tier-s' : comp.tier === 'FUN' ? 'tier-f' : comp.tier === 'PRO' ? 'tier-pro' : 'tier-a';
   const reference = preset?.url ? { url:preset.url } : comp.vods?.[0];
-  const source = preset ? `${preset.team} · ${preset.event}` : comp.source;
+  const source = preset ? `${preset.team} · ${preset.event}`
+    : `${comp.source}${comp.sourcePatch ? ` · données du patch ${comp.sourcePatch}` : ''}`;
   const presetDate = preset?.date
     ? new Intl.DateTimeFormat('fr-FR', { day:'numeric', month:'short', year:'numeric' }).format(new Date(`${preset.date}T12:00:00`))
     : '';
@@ -136,7 +137,7 @@ export function compHTML(comp, mapIdx, compIdx) {
         </div>
         <div class="pro-match-meta">
           <img src="${preset.logo}" alt="Logo ${preset.team}">
-          <div><strong>${preset.team}</strong><span>${preset.event} · contre ${preset.opponent} · ${preset.score} · ${presetDate}</span></div>
+          <div><strong>${preset.team}</strong><span>${preset.event} · contre ${preset.opponent} · ${preset.score} · ${presetDate}${preset.patch ? ` · Patch ${preset.patch}` : ''}</span></div>
         </div>` : '';
   const plan = comp.tip ? `
         <details class="comp-mobile-details">

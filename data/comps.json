@@ -17,8 +17,8 @@
         "label": "Ranked · recommandée",
         "tier": "S",
         "tierLabel": "S-TIER",
-        "updatedAt": "Août 2026",
-        "patch": "13.04",
+        "updatedAt": "Septembre 2026",
+        "patch": "13.05",
         "agents": [
           "Neon",
           "Phoenix",
@@ -34,14 +34,15 @@
             "url": "https://metabot.gg/en/valorant/map/Haven/agents"
           }
         ],
-        "key": "Sova"
+        "key": "Sova",
+        "sourcePatch": "13.04"
       },
       {
         "label": "Joue comme un pro",
         "tier": "PRO",
         "tierLabel": "PRO",
-        "updatedAt": "Août 2026",
-        "patch": "13.04",
+        "updatedAt": "Septembre 2026",
+        "patch": "13.05",
         "agents": [
           "Omen",
           "Sova",
@@ -49,11 +50,11 @@
           "Neon",
           "Phoenix"
         ],
-        "source": "Karmine Corp · VCT EMEA Stage 2",
+        "source": "Karmine Corp · VCT EMEA Stage 2 · Finale haute",
         "vods": [
           {
-            "label": "KC vs Enterprise · Haven",
-            "url": "https://www.vlr.gg/731399/karmine-corp-vs-enterprise-esports-vct-2026-emea-stage-2-ubsf/?game=279406"
+            "label": "KC vs FUT Esports · Haven",
+            "url": "https://www.vlr.gg/731400/fut-esports-vs-karmine-corp-vct-2026-emea-stage-2-ubf/?game=279410"
           }
         ],
         "teamPresets": [
@@ -63,11 +64,12 @@
             "tag": "KC",
             "logo": "./assets/teams/kc.png",
             "agents": ["Omen", "Sova", "Cypher", "Neon", "Phoenix"],
-            "event": "VCT EMEA Stage 2",
-            "opponent": "Enterprise Esports",
-            "date": "2026-08-21",
-            "score": "13-10",
-            "url": "https://www.vlr.gg/731399/karmine-corp-vs-enterprise-esports-vct-2026-emea-stage-2-ubsf/?game=279406"
+            "event": "VCT EMEA Stage 2 · Finale haute",
+            "opponent": "FUT Esports",
+            "date": "2026-08-28",
+            "score": "13-8",
+            "url": "https://www.vlr.gg/731400/fut-esports-vs-karmine-corp-vct-2026-emea-stage-2-ubf/?game=279410",
+            "patch": "13.04"
           },
           {
             "id": "m8",
@@ -79,19 +81,21 @@
             "opponent": "Eintracht Frankfurt",
             "date": "2026-08-12",
             "score": "9-13",
-            "url": "https://www.vlr.gg/729674/gentle-mates-vs-eintracht-frankfurt-vct-2026-emea-stage-2-lr1/?game=278939"
+            "url": "https://www.vlr.gg/729674/gentle-mates-vs-eintracht-frankfurt-vct-2026-emea-stage-2-lr1/?game=278939",
+            "patch": "13.02"
           },
           {
-            "id": "fut",
-            "team": "FUT Esports",
-            "tag": "FUT",
-            "logo": "./assets/teams/fut.png",
-            "agents": ["Omen", "Sova", "Cypher", "Neon", "Waylay"],
-            "event": "VCT EMEA Stage 2",
-            "opponent": "Team Liquid",
-            "date": "2026-08-20",
-            "score": "13-11",
-            "url": "https://www.vlr.gg/731396/team-liquid-vs-fut-esports-vct-2026-emea-stage-2-ur1/?game=279397"
+            "id": "liquid",
+            "team": "Team Liquid",
+            "tag": "TL",
+            "logo": "./assets/teams/liquid.png",
+            "agents": ["Omen", "Sova", "Cypher", "Jett", "Phoenix"],
+            "event": "VCT EMEA Stage 2 · Playoffs",
+            "opponent": "Fire Flux Esports",
+            "date": "2026-08-28",
+            "score": "13-10",
+            "url": "https://www.vlr.gg/731407/team-liquid-vs-fire-flux-esports-vct-2026-emea-stage-2-lr3/?game=279429",
+            "patch": "13.04"
           }
         ]
       },
@@ -99,7 +103,7 @@
         "label": "Fun — Brouillard sur 3 sites",
         "tier": "FUN",
         "tierLabel": "FUN",
-        "updatedAt": "Août 2026",
+        "updatedAt": "Septembre 2026",
         "agents": [
           "Omen",
           "Clove",
@@ -115,7 +119,7 @@
             "url": "https://www.vlr.gg/221296/point-of-authority-blossom-vs-team-smg-gc-game-changers-2023-asia-pacific-open-2-playoffs-ubqf/?game=155775&tab=overview"
           }
         ],
-        "patch": "13.04",
+        "patch": "13.05",
         "key": "Harbor"
       }
     ],
@@ -145,8 +149,8 @@
         "label": "Ranked · recommandée",
         "tier": "S",
         "tierLabel": "S-TIER",
-        "updatedAt": "Août 2026",
-        "patch": "13.04",
+        "updatedAt": "Septembre 2026",
+        "patch": "13.05",
         "agents": [
           "Neon",
           "Jett",
@@ -162,14 +166,15 @@
             "url": "https://metabot.gg/en/valorant/map/Abyss/agents"
           }
         ],
-        "key": "Sova"
+        "key": "Sova",
+        "sourcePatch": "13.04"
       },
       {
         "label": "Joue comme un pro",
         "tier": "PRO",
         "tierLabel": "PRO",
-        "updatedAt": "Août 2026",
-        "patch": "13.04",
+        "updatedAt": "Septembre 2026",
+        "patch": "13.05",
         "agents": [
           "Astra",
           "Omen",
@@ -180,7 +185,7 @@
         "source": "Karmine Corp · VCT EMEA Stage 2",
         "vods": [
           {
-            "label": "KC vs Enterprise · Abyss",
+            "label": "KC vs Enterprise Esports · Abyss",
             "url": "https://www.vlr.gg/731399/karmine-corp-vs-enterprise-esports-vct-2026-emea-stage-2-ubsf/?game=279407"
           }
         ],
@@ -195,7 +200,8 @@
             "opponent": "Enterprise Esports",
             "date": "2026-08-21",
             "score": "9-13",
-            "url": "https://www.vlr.gg/731399/karmine-corp-vs-enterprise-esports-vct-2026-emea-stage-2-ubsf/?game=279407"
+            "url": "https://www.vlr.gg/731399/karmine-corp-vs-enterprise-esports-vct-2026-emea-stage-2-ubsf/?game=279407",
+            "patch": "13.04"
           },
           {
             "id": "liquid",
@@ -207,7 +213,8 @@
             "opponent": "Enterprise Esports",
             "date": "2026-08-23",
             "score": "14-12",
-            "url": "https://www.vlr.gg/731404/enterprise-esports-vs-team-liquid-vct-2026-emea-stage-2-lr2/?game=279424"
+            "url": "https://www.vlr.gg/731404/enterprise-esports-vs-team-liquid-vct-2026-emea-stage-2-lr2/?game=279424",
+            "patch": "13.04"
           },
           {
             "id": "fireflux",
@@ -219,7 +226,8 @@
             "opponent": "BBL Esports",
             "date": "2026-08-23",
             "score": "13-11",
-            "url": "https://www.vlr.gg/731406/bbl-esports-vs-fire-flux-esports-vct-2026-emea-stage-2-lr2/?game=279426"
+            "url": "https://www.vlr.gg/731406/bbl-esports-vs-fire-flux-esports-vct-2026-emea-stage-2-lr2/?game=279426",
+            "patch": "13.04"
           }
         ]
       },
@@ -227,8 +235,8 @@
         "label": "Fun — Tous dans le vide",
         "tier": "FUN",
         "tierLabel": "FUN",
-        "updatedAt": "Août 2026",
-        "patch": "13.04",
+        "updatedAt": "Septembre 2026",
+        "patch": "13.05",
         "agents": [
           "Jett",
           "Raze",
@@ -268,8 +276,8 @@
         "label": "Ranked · recommandée",
         "tier": "S",
         "tierLabel": "S-TIER",
-        "updatedAt": "Août 2026",
-        "patch": "13.04",
+        "updatedAt": "Septembre 2026",
+        "patch": "13.05",
         "agents": [
           "Waylay",
           "Neon",
@@ -285,14 +293,15 @@
             "url": "https://metabot.gg/en/valorant/map/Lotus/agents"
           }
         ],
-        "key": "Fade"
+        "key": "Fade",
+        "sourcePatch": "13.04"
       },
       {
         "label": "Joue comme un pro",
         "tier": "PRO",
         "tierLabel": "PRO",
-        "updatedAt": "Août 2026",
-        "patch": "13.04",
+        "updatedAt": "Septembre 2026",
+        "patch": "13.05",
         "agents": [
           "Omen",
           "Viper",
@@ -300,31 +309,52 @@
           "Chamber",
           "Neon"
         ],
-        "source": "Karmine Corp · VCT EMEA Stage 2",
+        "source": "Karmine Corp · VCT EMEA Stage 2 · Finale",
         "vods": [
           {
-            "label": "KC vs Enterprise · Lotus",
-            "url": "https://www.vlr.gg/731399/karmine-corp-vs-enterprise-esports-vct-2026-emea-stage-2-ubsf/?game=279408"
+            "label": "KC vs Team Liquid · Lotus",
+            "url": "https://www.vlr.gg/731401/karmine-corp-vs-team-liquid-vct-2026-emea-stage-2-gf/?game=279414"
           }
         ],
         "teamPresets": [
           {
-            "id": "kc", "team": "Karmine Corp", "tag": "KC", "logo": "./assets/teams/kc.png",
+            "id": "kc",
+            "team": "Karmine Corp",
+            "tag": "KC",
+            "logo": "./assets/teams/kc.png",
             "agents": ["Omen", "Viper", "Fade", "Chamber", "Neon"],
-            "event": "VCT EMEA Stage 2", "opponent": "Enterprise Esports", "date": "2026-08-21", "score": "13-6",
-            "url": "https://www.vlr.gg/731399/karmine-corp-vs-enterprise-esports-vct-2026-emea-stage-2-ubsf/?game=279408"
+            "event": "VCT EMEA Stage 2 · Finale",
+            "opponent": "Team Liquid",
+            "date": "2026-08-30",
+            "score": "7-13",
+            "url": "https://www.vlr.gg/731401/karmine-corp-vs-team-liquid-vct-2026-emea-stage-2-gf/?game=279414",
+            "patch": "13.04"
           },
           {
-            "id": "m8", "team": "Gentle Mates", "tag": "M8", "logo": "./assets/teams/m8.png",
+            "id": "m8",
+            "team": "Gentle Mates",
+            "tag": "M8",
+            "logo": "./assets/teams/m8.png",
             "agents": ["Omen", "Fade", "Cypher", "Neon", "Raze"],
-            "event": "VCT EMEA Stage 2", "opponent": "Enterprise Esports", "date": "2026-08-09", "score": "6-13",
-            "url": "https://www.vlr.gg/729671/gentle-mates-vs-enterprise-esports-vct-2026-emea-stage-2-ubqf/?game=278930"
+            "event": "VCT EMEA Stage 2",
+            "opponent": "Enterprise Esports",
+            "date": "2026-08-09",
+            "score": "6-13",
+            "url": "https://www.vlr.gg/729671/gentle-mates-vs-enterprise-esports-vct-2026-emea-stage-2-ubqf/?game=278930",
+            "patch": "13.02"
           },
           {
-            "id": "liquid", "team": "Team Liquid", "tag": "TL", "logo": "./assets/teams/liquid.png",
+            "id": "liquid",
+            "team": "Team Liquid",
+            "tag": "TL",
+            "logo": "./assets/teams/liquid.png",
             "agents": ["Omen", "Fade", "Cypher", "Jett", "Raze"],
-            "event": "VCT EMEA Stage 2", "opponent": "Enterprise Esports", "date": "2026-08-23", "score": "13-4",
-            "url": "https://www.vlr.gg/731404/enterprise-esports-vs-team-liquid-vct-2026-emea-stage-2-lr2/?game=279423"
+            "event": "VCT EMEA Stage 2 · Finale",
+            "opponent": "Karmine Corp",
+            "date": "2026-08-30",
+            "score": "13-7",
+            "url": "https://www.vlr.gg/731401/karmine-corp-vs-team-liquid-vct-2026-emea-stage-2-gf/?game=279414",
+            "patch": "13.04"
           }
         ]
       },
@@ -332,8 +362,8 @@
         "label": "Fun — 5 Initiateurs",
         "tier": "FUN",
         "tierLabel": "FUN",
-        "updatedAt": "Août 2026",
-        "patch": "13.04",
+        "updatedAt": "Septembre 2026",
+        "patch": "13.05",
         "agents": [
           "Skye",
           "Fade",
@@ -373,8 +403,8 @@
         "label": "Ranked · recommandée",
         "tier": "S",
         "tierLabel": "S-TIER",
-        "updatedAt": "Août 2026",
-        "patch": "13.04",
+        "updatedAt": "Septembre 2026",
+        "patch": "13.05",
         "agents": [
           "Neon",
           "Fade",
@@ -390,14 +420,15 @@
             "url": "https://metabot.gg/en/valorant/map/Split/agents"
           }
         ],
-        "key": "Fade"
+        "key": "Fade",
+        "sourcePatch": "13.04"
       },
       {
         "label": "Joue comme un pro",
         "tier": "PRO",
         "tierLabel": "PRO",
-        "updatedAt": "Août 2026",
-        "patch": "13.04",
+        "updatedAt": "Septembre 2026",
+        "patch": "13.05",
         "agents": [
           "Omen",
           "Viper",
@@ -414,22 +445,43 @@
         ],
         "teamPresets": [
           {
-            "id": "kc", "team": "Karmine Corp", "tag": "KC", "logo": "./assets/teams/kc.png",
+            "id": "kc",
+            "team": "Karmine Corp",
+            "tag": "KC",
+            "logo": "./assets/teams/kc.png",
             "agents": ["Omen", "Viper", "Fade", "Sage", "Raze"],
-            "event": "VCT EMEA Stage 2", "opponent": "FNATIC", "date": "2026-07-22", "score": "15-17",
-            "url": "https://www.vlr.gg/712815/fnatic-vs-karmine-corp-vct-2026-emea-stage-2-w2/?game=276533"
+            "event": "VCT EMEA Stage 2",
+            "opponent": "FNATIC",
+            "date": "2026-07-22",
+            "score": "15-17",
+            "url": "https://www.vlr.gg/712815/fnatic-vs-karmine-corp-vct-2026-emea-stage-2-w2/?game=276533",
+            "patch": "13.01"
           },
           {
-            "id": "m8", "team": "Gentle Mates", "tag": "M8", "logo": "./assets/teams/m8.png",
+            "id": "m8",
+            "team": "Gentle Mates",
+            "tag": "M8",
+            "logo": "./assets/teams/m8.png",
             "agents": ["Omen", "Viper", "Fade", "Jett", "Yoru"],
-            "event": "VCT EMEA Stage 2", "opponent": "Eintracht Frankfurt", "date": "2026-08-12", "score": "11-13",
-            "url": "https://www.vlr.gg/729674/gentle-mates-vs-eintracht-frankfurt-vct-2026-emea-stage-2-lr1/?game=278938"
+            "event": "VCT EMEA Stage 2",
+            "opponent": "Eintracht Frankfurt",
+            "date": "2026-08-12",
+            "score": "11-13",
+            "url": "https://www.vlr.gg/729674/gentle-mates-vs-eintracht-frankfurt-vct-2026-emea-stage-2-lr1/?game=278938",
+            "patch": "13.02"
           },
           {
-            "id": "liquid", "team": "Team Liquid", "tag": "TL", "logo": "./assets/teams/liquid.png",
+            "id": "liquid",
+            "team": "Team Liquid",
+            "tag": "TL",
+            "logo": "./assets/teams/liquid.png",
             "agents": ["Omen", "Viper", "Skye", "Jett", "Raze"],
-            "event": "VCT EMEA Stage 2", "opponent": "Eintracht Frankfurt", "date": "2026-08-22", "score": "13-1",
-            "url": "https://www.vlr.gg/731402/team-liquid-vs-eintracht-frankfurt-vct-2026-emea-stage-2-lr1/?game=279418"
+            "event": "VCT EMEA Stage 2 · Finale basse",
+            "opponent": "FUT Esports",
+            "date": "2026-08-29",
+            "score": "13-5",
+            "url": "https://www.vlr.gg/731408/fut-esports-vs-team-liquid-vct-2026-emea-stage-2-lbf/?game=279432",
+            "patch": "13.04"
           }
         ]
       },
@@ -437,7 +489,7 @@
         "label": "Fun — 5-Stack Rush B",
         "tier": "FUN",
         "tierLabel": "FUN",
-        "updatedAt": "Août 2026",
+        "updatedAt": "Septembre 2026",
         "agents": [
           "Raze",
           "Breach",
@@ -448,7 +500,7 @@
         "source": "Communauté Valorant · rush coordonné",
         "tip": "<strong>Rush B, mais avec un vrai plan</strong> : Breach neutralise Heaven, Neon et Raze entrent ensemble, Clove ferme les rotations et Sage pose son mur dès que le site est pris. Interdiction de ralentir avant le plant.",
         "vods": [],
-        "patch": "13.04",
+        "patch": "13.05",
         "key": "Breach"
       }
     ],
@@ -483,8 +535,8 @@
         "label": "Ranked · recommandée",
         "tier": "S",
         "tierLabel": "S-TIER",
-        "updatedAt": "Août 2026",
-        "patch": "13.04",
+        "updatedAt": "Septembre 2026",
+        "patch": "13.05",
         "agents": [
           "Jett",
           "Sova",
@@ -500,14 +552,15 @@
             "url": "https://metabot.gg/en/valorant/map/Ascent/agents"
           }
         ],
-        "key": "Sova"
+        "key": "Sova",
+        "sourcePatch": "13.04"
       },
       {
         "label": "Joue comme un pro",
         "tier": "PRO",
         "tierLabel": "PRO",
-        "updatedAt": "Août 2026",
-        "patch": "13.04",
+        "updatedAt": "Septembre 2026",
+        "patch": "13.05",
         "agents": [
           "Omen",
           "Sova",
@@ -515,31 +568,52 @@
           "Neon",
           "Phoenix"
         ],
-        "source": "Karmine Corp · VCT EMEA Stage 2",
+        "source": "Karmine Corp · VCT EMEA Stage 2 · Finale",
         "vods": [
           {
-            "label": "KC vs FNATIC · Ascent",
-            "url": "https://www.vlr.gg/712815/fnatic-vs-karmine-corp-vct-2026-emea-stage-2-w2/?game=276532"
+            "label": "KC vs Team Liquid · Ascent",
+            "url": "https://www.vlr.gg/731401/karmine-corp-vs-team-liquid-vct-2026-emea-stage-2-gf/?game=279413"
           }
         ],
         "teamPresets": [
           {
-            "id": "kc", "team": "Karmine Corp", "tag": "KC", "logo": "./assets/teams/kc.png",
+            "id": "kc",
+            "team": "Karmine Corp",
+            "tag": "KC",
+            "logo": "./assets/teams/kc.png",
             "agents": ["Omen", "Sova", "Cypher", "Neon", "Phoenix"],
-            "event": "VCT EMEA Stage 2", "opponent": "FNATIC", "date": "2026-07-22", "score": "13-6",
-            "url": "https://www.vlr.gg/712815/fnatic-vs-karmine-corp-vct-2026-emea-stage-2-w2/?game=276532"
+            "event": "VCT EMEA Stage 2 · Finale",
+            "opponent": "Team Liquid",
+            "date": "2026-08-30",
+            "score": "13-6",
+            "url": "https://www.vlr.gg/731401/karmine-corp-vs-team-liquid-vct-2026-emea-stage-2-gf/?game=279413",
+            "patch": "13.04"
           },
           {
-            "id": "m8", "team": "Gentle Mates", "tag": "M8", "logo": "./assets/teams/m8.png",
+            "id": "m8",
+            "team": "Gentle Mates",
+            "tag": "M8",
+            "logo": "./assets/teams/m8.png",
             "agents": ["Omen", "Sova", "Cypher", "Phoenix", "Yoru"],
-            "event": "VCT EMEA Stage 2", "opponent": "BBL Esports", "date": "2026-07-31", "score": "5-13",
-            "url": "https://www.vlr.gg/712828/bbl-esports-vs-gentle-mates-vct-2026-emea-stage-2-w3/?game=276571"
+            "event": "VCT EMEA Stage 2",
+            "opponent": "BBL Esports",
+            "date": "2026-07-31",
+            "score": "5-13",
+            "url": "https://www.vlr.gg/712828/bbl-esports-vs-gentle-mates-vct-2026-emea-stage-2-w3/?game=276571",
+            "patch": "13.01"
           },
           {
-            "id": "liquid", "team": "Team Liquid", "tag": "TL", "logo": "./assets/teams/liquid.png",
+            "id": "liquid",
+            "team": "Team Liquid",
+            "tag": "TL",
+            "logo": "./assets/teams/liquid.png",
             "agents": ["Omen", "Sova", "Cypher", "Jett", "Phoenix"],
-            "event": "VCT EMEA Stage 2", "opponent": "Eintracht Frankfurt", "date": "2026-08-22", "score": "13-1",
-            "url": "https://www.vlr.gg/731402/team-liquid-vs-eintracht-frankfurt-vct-2026-emea-stage-2-lr1/?game=279419"
+            "event": "VCT EMEA Stage 2 · Finale",
+            "opponent": "Karmine Corp",
+            "date": "2026-08-30",
+            "score": "6-13",
+            "url": "https://www.vlr.gg/731401/karmine-corp-vs-team-liquid-vct-2026-emea-stage-2-gf/?game=279413",
+            "patch": "13.04"
           }
         ]
       },
@@ -547,8 +621,8 @@
         "label": "Fun — Wallbang Simulator",
         "tier": "FUN",
         "tierLabel": "FUN",
-        "updatedAt": "Août 2026",
-        "patch": "13.04",
+        "updatedAt": "Septembre 2026",
+        "patch": "13.05",
         "agents": [
           "Sova",
           "Fade",
@@ -579,15 +653,16 @@
         ],
         "key": "Fade",
         "tip": "<strong>Neon exploite les informations combinées de Fade et Sova</strong> pour gagner Mid ou B Main. Clove couvre les lignes de Market et Cypher sécurise les flancs ou verrouille B.",
-        "patch": "13.04",
-        "updatedAt": "Août 2026",
+        "patch": "13.05",
+        "updatedAt": "Septembre 2026",
         "source": "MetaBot · 6 739 parties classées",
         "vods": [
           {
             "label": "Statistiques ranked · Sunset",
             "url": "https://metabot.gg/en/valorant/map/Sunset/agents"
           }
-        ]
+        ],
+        "sourcePatch": "13.04"
       },
       {
         "tier": "PRO",
@@ -600,33 +675,54 @@
           "Chamber",
           "Neon"
         ],
-        "patch": "13.04",
-        "updatedAt": "Août 2026",
-        "source": "Karmine Corp · VCT EMEA Stage 2",
+        "patch": "13.05",
+        "updatedAt": "Septembre 2026",
+        "source": "Karmine Corp · VCT EMEA Stage 2 · Finale",
         "vods": [
           {
-            "label": "KC vs Team Heretics · Sunset",
-            "url": "https://www.vlr.gg/712823/team-heretics-vs-karmine-corp-vct-2026-emea-stage-2-w2/?game=276555"
+            "label": "KC vs Team Liquid · Sunset",
+            "url": "https://www.vlr.gg/731401/karmine-corp-vs-team-liquid-vct-2026-emea-stage-2-gf/?game=279412"
           }
         ],
         "teamPresets": [
           {
-            "id": "kc", "team": "Karmine Corp", "tag": "KC", "logo": "./assets/teams/kc.png",
+            "id": "kc",
+            "team": "Karmine Corp",
+            "tag": "KC",
+            "logo": "./assets/teams/kc.png",
             "agents": ["Omen", "Viper", "Fade", "Chamber", "Neon"],
-            "event": "VCT EMEA Stage 2", "opponent": "Team Heretics", "date": "2026-07-26", "score": "13-4",
-            "url": "https://www.vlr.gg/712823/team-heretics-vs-karmine-corp-vct-2026-emea-stage-2-w2/?game=276555"
+            "event": "VCT EMEA Stage 2 · Finale",
+            "opponent": "Team Liquid",
+            "date": "2026-08-30",
+            "score": "13-7",
+            "url": "https://www.vlr.gg/731401/karmine-corp-vs-team-liquid-vct-2026-emea-stage-2-gf/?game=279412",
+            "patch": "13.04"
           },
           {
-            "id": "m8", "team": "Gentle Mates", "tag": "M8", "logo": "./assets/teams/m8.png",
+            "id": "m8",
+            "team": "Gentle Mates",
+            "tag": "M8",
+            "logo": "./assets/teams/m8.png",
             "agents": ["Omen", "Sova", "Cypher", "Neon", "Phoenix"],
-            "event": "VCT EMEA Stage 2", "opponent": "BBL Esports", "date": "2026-07-31", "score": "10-13",
-            "url": "https://www.vlr.gg/712828/bbl-esports-vs-gentle-mates-vct-2026-emea-stage-2-w3/?game=276572"
+            "event": "VCT EMEA Stage 2",
+            "opponent": "BBL Esports",
+            "date": "2026-07-31",
+            "score": "10-13",
+            "url": "https://www.vlr.gg/712828/bbl-esports-vs-gentle-mates-vct-2026-emea-stage-2-w3/?game=276572",
+            "patch": "13.01"
           },
           {
-            "id": "fireflux", "team": "Fire Flux Esports", "tag": "FF", "logo": "./assets/teams/fireflux.png",
-            "agents": ["Omen", "KAY/O", "Cypher", "Neon", "Waylay"],
-            "event": "VCT EMEA Stage 2", "opponent": "Team Heretics", "date": "2026-08-09", "score": "13-2",
-            "url": "https://www.vlr.gg/729670/team-heretics-vs-fire-flux-esports-vct-2026-emea-stage-2-ubqf/?game=278927"
+            "id": "liquid",
+            "team": "Team Liquid",
+            "tag": "TL",
+            "logo": "./assets/teams/liquid.png",
+            "agents": ["Omen", "Fade", "Cypher", "Neon", "Yoru"],
+            "event": "VCT EMEA Stage 2 · Finale",
+            "opponent": "Karmine Corp",
+            "date": "2026-08-30",
+            "score": "7-13",
+            "url": "https://www.vlr.gg/731401/karmine-corp-vs-team-liquid-vct-2026-emea-stage-2-gf/?game=279412",
+            "patch": "13.04"
           }
         ]
       },
@@ -643,8 +739,8 @@
         ],
         "key": "Breach",
         "tip": "<strong>Chaque joueur peut aveugler l'adversaire</strong>. Enchaînez Paranoia, flash KAY/O, stun Breach puis Phoenix et Yoru dans les angles serrés de Market. Pensez simplement à prévenir vos propres coéquipiers.",
-        "patch": "13.04",
-        "updatedAt": "Août 2026",
+        "patch": "13.05",
+        "updatedAt": "Septembre 2026",
         "source": "Communauté Valorant · composition full flash"
       }
     ],
@@ -682,15 +778,16 @@
         ],
         "key": "Fade",
         "tip": "<strong>Neon ouvre les passages après l'information de Fade et Sova</strong>. Clove couvre les lignes libérées par les murs activés, tandis que Sage ralentit les reprises et sécurise le plant sur cette map encore récente.",
-        "patch": "13.04",
-        "updatedAt": "Août 2026",
+        "patch": "13.05",
+        "updatedAt": "Septembre 2026",
         "source": "MetaBot · 7 051 parties classées",
         "vods": [
           {
             "label": "Statistiques ranked · Summit",
             "url": "https://metabot.gg/en/valorant/map/Summit/agents"
           }
-        ]
+        ],
+        "sourcePatch": "13.04"
       },
       {
         "tier": "PRO",
@@ -703,33 +800,54 @@
           "Chamber",
           "Neon"
         ],
-        "patch": "13.04",
-        "updatedAt": "Août 2026",
-        "source": "Karmine Corp · VCT EMEA Stage 2",
+        "patch": "13.05",
+        "updatedAt": "Septembre 2026",
+        "source": "Karmine Corp · VCT EMEA Stage 2 · Finale",
         "vods": [
           {
             "label": "KC vs Team Liquid · Summit",
-            "url": "https://www.vlr.gg/712831/karmine-corp-vs-team-liquid-vct-2026-emea-stage-2-w3/?game=276580"
+            "url": "https://www.vlr.gg/731401/karmine-corp-vs-team-liquid-vct-2026-emea-stage-2-gf/?game=279415"
           }
         ],
         "teamPresets": [
           {
-            "id": "kc", "team": "Karmine Corp", "tag": "KC", "logo": "./assets/teams/kc.png",
+            "id": "kc",
+            "team": "Karmine Corp",
+            "tag": "KC",
+            "logo": "./assets/teams/kc.png",
             "agents": ["Omen", "Viper", "Fade", "Chamber", "Neon"],
-            "event": "VCT EMEA Stage 2", "opponent": "Team Liquid", "date": "2026-08-01", "score": "11-13",
-            "url": "https://www.vlr.gg/712831/karmine-corp-vs-team-liquid-vct-2026-emea-stage-2-w3/?game=276580"
+            "event": "VCT EMEA Stage 2 · Finale",
+            "opponent": "Team Liquid",
+            "date": "2026-08-30",
+            "score": "13-10",
+            "url": "https://www.vlr.gg/731401/karmine-corp-vs-team-liquid-vct-2026-emea-stage-2-gf/?game=279415",
+            "patch": "13.04"
           },
           {
-            "id": "m8", "team": "Gentle Mates", "tag": "M8", "logo": "./assets/teams/m8.png",
+            "id": "m8",
+            "team": "Gentle Mates",
+            "tag": "M8",
+            "logo": "./assets/teams/m8.png",
             "agents": ["Omen", "Fade", "Cypher", "Neon", "Phoenix"],
-            "event": "VCT EMEA Stage 2", "opponent": "Enterprise Esports", "date": "2026-08-09", "score": "9-13",
-            "url": "https://www.vlr.gg/729671/gentle-mates-vs-enterprise-esports-vct-2026-emea-stage-2-ubqf/?game=278929"
+            "event": "VCT EMEA Stage 2",
+            "opponent": "Enterprise Esports",
+            "date": "2026-08-09",
+            "score": "9-13",
+            "url": "https://www.vlr.gg/729671/gentle-mates-vs-enterprise-esports-vct-2026-emea-stage-2-ubqf/?game=278929",
+            "patch": "13.02"
           },
           {
-            "id": "fireflux", "team": "Fire Flux Esports", "tag": "FF", "logo": "./assets/teams/fireflux.png",
-            "agents": ["Omen", "Sova", "Cypher", "Waylay", "Yoru"],
-            "event": "VCT EMEA Stage 2", "opponent": "BBL Esports", "date": "2026-08-23", "score": "13-11",
-            "url": "https://www.vlr.gg/731406/bbl-esports-vs-fire-flux-esports-vct-2026-emea-stage-2-lr2/?game=279427"
+            "id": "liquid",
+            "team": "Team Liquid",
+            "tag": "TL",
+            "logo": "./assets/teams/liquid.png",
+            "agents": ["Omen", "Viper", "Sova", "Jett", "Phoenix"],
+            "event": "VCT EMEA Stage 2 · Finale",
+            "opponent": "Karmine Corp",
+            "date": "2026-08-30",
+            "score": "10-13",
+            "url": "https://www.vlr.gg/731401/karmine-corp-vs-team-liquid-vct-2026-emea-stage-2-gf/?game=279415",
+            "patch": "13.04"
           }
         ]
       },
@@ -746,8 +864,8 @@
         ],
         "key": "Sage",
         "tip": "<strong>Ajoutez cinq couches de murs aux trois murs de la map</strong>. Harbor et Viper redessinent les lignes de vue, Sage et Deadlock ferment les passages et Vyse piège la seule sortie encore ouverte.",
-        "patch": "13.04",
-        "updatedAt": "Août 2026",
+        "patch": "13.05",
+        "updatedAt": "Septembre 2026",
         "source": "Communauté Valorant · défi murs et sentinelles"
       }
     ],

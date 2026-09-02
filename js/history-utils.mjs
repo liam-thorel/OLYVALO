@@ -34,6 +34,7 @@ export function normalizeHistoryEntries(data = {}) {
 
 export function historyMode(game) {
   const mode = String(game?.mode || '').toLowerCase();
+  if (mode === 'hurm' || /team[ _-]*deathmatch/.test(mode)) return 'other';
   if (mode.includes('deathmatch')) return 'deathmatch';
   if (mode.includes('competitive') || mode === 'comp') return 'competitive';
   return 'other';

@@ -25,4 +25,4 @@ for (const [internalName, displayName] of Object.entries(competitiveMaps)) {
   assert.ok(legacyScript.includes(compactPython), `l'ancien script Python doit rester cohérent pour ${displayName}`);
 }
 
-console.log('map-detection: les 7 cartes compétitives du patch 13.04 sont reconnues partout');
+console.log('map-detection: les 7 cartes compétitives du patch 13.05 sont reconnues partout');

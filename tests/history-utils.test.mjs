@@ -3,6 +3,8 @@ import { filterHistoryGames, historyDailyPerformances, historyGameForOwner, hist
 
 assert.equal(historyMode({ mode: 'competitive' }), 'competitive');
 assert.equal(historyMode({ mode: 'deathmatch' }), 'deathmatch');
+assert.equal(historyMode({ mode: 'hurm' }), 'other');
+assert.equal(historyMode({ mode: 'Team Deathmatch' }), 'other');
 assert.equal(historyMode({ mode: 'swiftplay' }), 'other');
 
 assert.equal(isOpaquePlayerName('b2f303f9'), true);

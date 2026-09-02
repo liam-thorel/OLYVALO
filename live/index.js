@@ -20,6 +20,12 @@ const { cleanupStalePresence, PRESENCE_CLEANUP_INTERVAL_MS } = require('./mainte
 const { presenceRecordForPath } = require('./presence-schema.js');
 const { resolveRiotIdentity } = require('./riot-identity.js');
 const { valorantHistorySummary } = require('./history-index.js');
+const {
+  normalizeValorantMode,
+  valorantModeLabel,
+  valorantModeFamily,
+  supportsStandardComps,
+} = require('./valorant-mode-utils.js');
 
 const FIREBASE_URL = 'https://realtime-database-5bb9f-default-rtdb.europe-west1.firebasedatabase.app';
 const SCRIPT_VERSION = '4.17.11';
@@ -904,8 +910,13 @@ function buildDetailedHistory(snapshot, details, tokens, resolvedNames = {}) {
   const rawPlayers = details.players || [];
   const rawTeams = details.teams || [];
   const hsPercentByPuuid = headshotPercentByPuuid(details);
-  const mode = details.matchInfo?.queueID || details.matchInfo?.queueId || snapshot.mode;
-  const isDeathmatch = String(mode || '').toLowerCase().includes('deathmatch');
+  const mode = normalizeValorantMode(
+    details.matchInfo?.queueID,
+    details.matchInfo?.queueId,
+    snapshot.mode,
+    details.matchInfo?.gameMode,
+  );
+  const isDeathmatch = valorantModeFamily(mode) === 'free-for-all';
   const snapshotPlayers = new Map((snapshot.players || [])
     .filter(player => player.puuid)
     .map(player => [player.puuid, player]));
@@ -945,6 +956,8 @@ function buildDetailedHistory(snapshot, details, tokens, resolvedNames = {}) {
     schemaVersion: 2,
     map,
     mode,
+    modeLabel: valorantModeLabel(mode),
+    modeFamily: valorantModeFamily(mode),
     ts: details.matchInfo?.gameStartMillis || snapshot.ts,
     endTs: details.matchInfo?.gameStartMillis && details.matchInfo?.gameLengthMillis
       ? details.matchInfo.gameStartMillis + details.matchInfo.gameLengthMillis
@@ -1038,7 +1051,11 @@ async function poll() {
         await putFB(`live/sessions/${stableSessionKey}`, {
           active: true, ts: Date.now(),
           map: state.map, mapClean: state.mapClean, mapInternal: state.map,
-          mode: state.mode || 'competitive', phase: 'pregame', side: state.side,
+          mode: 'agent-select', queueId: state.mode || 'competitive',
+          modeLabel: valorantModeLabel(state.mode || 'competitive'),
+          modeFamily: valorantModeFamily(state.mode || 'competitive'),
+          supportsComps: supportsStandardComps(state.mode || 'competitive'),
+          phase: 'pregame', side: state.side,
           matchId: state.matchId, playerName: observedPlayerName, players: [], activePlayer: {},
           puuid: stableSessionKey || '',
           memberId: identity?.memberId || '',
@@ -1061,8 +1078,8 @@ async function poll() {
           lastKnownRoster = [];
           lastKnownRosterMatchId = pg.MatchID;
           const pgMap = pgMatch.MapID.split('/').pop() || '';
-          const pgMode = (pgMatch.QueueID || pgMatch.Mode || '').replace('/Game/GameModes/','');
-          const side = getPregameSide(pgMatch, authTokens.puuid);
+          const pgMode = normalizeValorantMode(pgMatch.QueueID, pgMatch.Mode) || 'standard';
+          const side = supportsStandardComps(pgMode) ? getPregameSide(pgMatch, authTokens.puuid) : null;
           currentServer = riotServer(pgMatch.GamePodID, authTokens.region);
 
           pregameState = {
@@ -1070,7 +1087,7 @@ async function poll() {
             mapClean: MAP_NAMES[pgMap] || pgMap,
             matchId: pg.MatchID,
             side,
-            mode: pgMatch.QueueID || 'competitive',
+            mode: pgMode,
             server: currentServer?.name || '',
             gamePodId: currentServer?.gamePodId || '',
           };
@@ -1198,10 +1215,15 @@ async function poll() {
   const mode       = (found?.mode || '').replace('social_mode_','');
   const coreMapRaw = coreMatch?.MapID?.split('/')?.pop() || '';
   const coreModeId = coreMatch?.ModeID?.split('/')?.pop()?.split('.')?.[0] || '';
-  const coreMode   = /deathmatch/i.test(coreModeId) ? 'deathmatch' : coreModeId;
   const mapRaw     = coreMapRaw || location.replace('social_location_','').split('/').pop() || matchData?.matchMap?.split('/')?.pop() || '';
   const mapDisplay = MAP_NAMES[mapRaw] || mapRaw || '';
-  const queueId    = coreMatch?.MatchmakingData?.QueueID || coreMatch?.QueueID || matchData?.queueId || mode || coreMode || '';
+  const queueId    = normalizeValorantMode(
+    coreMatch?.MatchmakingData?.QueueID,
+    coreMatch?.QueueID,
+    matchData?.queueId,
+    coreMatch?.ModeID,
+    mode,
+  );
   const isShootingRange = /shootingrange/i.test(coreModeId) || mapRaw === 'Range' || /range/i.test(location);
   const isInGame   = !isShootingRange && (!!corePlayer?.MatchID || !!(mapRaw && mapRaw !== 'Range' && mapRaw !== ''));
 
@@ -1409,6 +1431,9 @@ async function poll() {
                   pdGet(tokensCopy, `/account-xp/v1/players/${puuid}`),
                 ]);
                 mmr = freshMmr;
+                // An old rank request must not restore the previous mode/match
+                // after a quick Deathmatch -> Agent Select transition.
+                if (!inGame || persistentMatchId !== stableMatchId || pregameState) return;
                 if (!hasFreshHistory && mmr?.QueueSkills?.competitive?.SeasonalInfoBySeasonID) {
                   rankHistoryCache.set(puuid, {
                     data: mmr,
@@ -1438,7 +1463,10 @@ async function poll() {
                     active: true,
                     ts: Date.now(),
                     map: stableMapRaw, mapClean: stableMapDisplay, mapInternal: stableMapRaw,
-                    mode: stableMode, matchId: stableMatchId,
+                    mode: stableMode, queueId: stableMode, matchId: stableMatchId,
+                    modeLabel: valorantModeLabel(stableMode),
+                    modeFamily: valorantModeFamily(stableMode),
+                    supportsComps: supportsStandardComps(stableMode),
                     playerName: stablePlayerName,
                     players: updatedPlayers,
                     activePlayer: { name: stablePlayerName },
@@ -1561,6 +1589,10 @@ async function poll() {
     mapInternal: mapRaw,
     mapClean:    mapDisplay,
     mode:        queueId,
+    queueId,
+    modeLabel:   valorantModeLabel(queueId),
+    modeFamily:  valorantModeFamily(queueId),
+    supportsComps: supportsStandardComps(queueId),
     matchId:     pregameState?.matchId || persistentMatchId || realMatchId || '',
     playerName:  playerName,
     puuid:       stableSessionKey || '',
@@ -1574,7 +1606,17 @@ async function poll() {
     scriptVersion: SCRIPT_VERSION,
     server:       currentServer?.name || '',
     gamePodId:    currentServer?.gamePodId || '',
-    ...(pregameState ? { map: pregameState.map, mapClean: pregameState.mapClean, mapInternal: pregameState.map, mode: 'agent-select', side: pregameState.side } : {}),
+    ...(pregameState ? {
+      map: pregameState.map,
+      mapClean: pregameState.mapClean,
+      mapInternal: pregameState.map,
+      mode: 'agent-select',
+      queueId: pregameState.mode,
+      modeLabel: valorantModeLabel(pregameState.mode),
+      modeFamily: valorantModeFamily(pregameState.mode),
+      supportsComps: supportsStandardComps(pregameState.mode),
+      side: pregameState.side,
+    } : {}),
   });
   await publishDiagnostic('in-game', {
     error: '', map: mapDisplay, matchId: persistentMatchId || realMatchId || '',
@@ -1589,6 +1631,8 @@ async function poll() {
       ts: gameStartedAt || Date.now(),
       map: mapDisplay,
       mode: queueId,
+      modeLabel: valorantModeLabel(queueId),
+      modeFamily: valorantModeFamily(queueId),
       matchId: currentMatchId,
       player: playerName,
       playerPuuid: authTokens?.puuid || stableSessionKey || '',

@@ -4,12 +4,12 @@ import test from 'node:test';
 
 const readJson = path => JSON.parse(readFileSync(new URL(path, import.meta.url), 'utf8'));
 
-test('patch 13.04 exposes the official competitive map rotation', () => {
+test('patch 13.05 preserves the official competitive map rotation', () => {
   const meta = readJson('../data/meta.json');
   const comps = readJson('../data/comps.json');
   const mapNames = comps.map(entry => entry.map);
 
-  assert.equal(meta.currentPatch, '13.04');
+  assert.equal(meta.currentPatch, '13.05');
   assert.deepEqual(mapNames, meta.mapsInRotation);
   assert.ok(mapNames.includes('Abyss'));
   assert.ok(!mapNames.includes('Breeze'));
@@ -62,15 +62,39 @@ test('every map separates a sourced ranked recommendation from an observed pro c
       assert.equal(preset.agents.length, 5, `${map.map} / ${preset.team} doit avoir cinq agents`);
       assert.match(preset.url, /vlr\.gg/, `${map.map} / ${preset.team} doit lier la feuille de match`);
       assert.match(preset.date, /^2026-0[7-8]-/, `${map.map} / ${preset.team} doit venir de la méta récente`);
+      assert.match(preset.patch, /^13\.0[124]$/, 'Le patch observé doit rester celui du match, pas celui du site');
       assert.ok(preset.logo?.startsWith('./assets/teams/'), `${map.map} / ${preset.team} doit utiliser un logo local`);
     }
 
     for (const comp of [ranked, pro]) {
-      assert.equal(comp.patch, '13.04', `${map.map} / ${comp.label} doit être à jour`);
+      assert.equal(comp.patch, '13.05', `${map.map} / ${comp.label} doit être à jour`);
       assert.ok(comp.source, `${map.map} / ${comp.label} doit afficher sa source`);
       if (comp.key) assert.ok(comp.agents.includes(comp.key), `${map.map} / ${comp.label} doit avoir un key pick présent`);
     }
   }
+});
+
+test('September review preserves ranked samples and identifies actual finals compositions', () => {
+  const comps = readJson('../data/comps.json');
+  for (const map of comps) {
+    const [ranked, pro] = map.comps;
+    assert.equal(ranked.sourcePatch, '13.04');
+    assert.deepEqual(pro.agents, pro.teamPresets[0].agents);
+    assert.equal(pro.vods[0].url, pro.teamPresets[0].url);
+    if (['Sunset', 'Ascent', 'Lotus', 'Summit'].includes(map.map)) {
+      for (const preset of [pro.teamPresets[0], pro.teamPresets[2]]) {
+        assert.equal(preset.date, '2026-08-30');
+        assert.equal(preset.patch, '13.04');
+        assert.match(preset.url, /731401/);
+      }
+    }
+    const m8 = pro.teamPresets.find(preset => preset.id === 'm8');
+    if (m8) assert.ok(m8.date <= '2026-08-12', 'Ne pas inventer de nouvelle rencontre M8');
+  }
+  const lotus = comps.find(map => map.map === 'Lotus').comps[1];
+  assert.equal(lotus.teamPresets[0].score, '7-13', 'Conserver aussi les défaites des équipes préférées');
+  const summit = comps.find(map => map.map === 'Summit').comps[1];
+  assert.deepEqual(summit.teamPresets[2].agents, ['Omen', 'Viper', 'Sova', 'Jett', 'Phoenix']);
 });
 
 test('Agent Select reuses the versioned composition data loaded by the site', () => {
@@ -85,7 +109,7 @@ test('every map has one current and displayable fun challenge', () => {
   for (const map of comps) {
     const fun = map.comps.find(comp => comp.tier === 'FUN');
     assert.ok(fun, `${map.map} doit proposer une composition fun`);
-    assert.equal(fun.patch, '13.04', `${map.map} / fun doit être à jour`);
+    assert.equal(fun.patch, '13.05', `${map.map} / fun doit être à jour`);
     assert.equal(fun.agents.length, 5, `${map.map} / fun doit contenir cinq agents`);
     assert.equal(new Set(fun.agents).size, 5, `${map.map} / fun ne doit pas contenir de doublon`);
     assert.ok(fun.source, `${map.map} / fun doit expliquer son origine`);
