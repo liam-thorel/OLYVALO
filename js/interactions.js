@@ -395,7 +395,6 @@ export function initWheelLogos() {
 
 // ─── LIVE PAGE ────────────────────────────────────────
 export function initLivePage() {
-  if (!window._agentNameToUuid) { fetch('https://valorant-api.com/v1/agents?isPlayableCharacter=true').then(r=>r.json()).then(d=>{ window._agentNameToUuid={}; d.data?.forEach(a=>window._agentNameToUuid[a.displayName]=a.uuid); }).catch(()=>{}); }
   const FIREBASE_URL = 'https://realtime-database-5bb9f-default-rtdb.europe-west1.firebasedatabase.app';
   let lastMapName = null;
   let currentLiveData = null;
@@ -416,6 +415,36 @@ export function initLivePage() {
   let _rosterIdentityIndex = null;
   let _rosterFetched = false;
   let _mapsCache = null;
+  const agentIconCache = {};
+  const agentUuidMap = { ...(window._agentNameToUuid || {}) }; // name → uuid
+  const uuidToName = {}; // uuid → name (source de vérité API)
+  Object.entries(agentUuidMap).forEach(([name, uuid]) => {
+    if (uuid) uuidToName[String(uuid).toLowerCase()] = name;
+  });
+
+  // Les compositions peuvent être rendues avant la réponse de Valorant-API.
+  // Une fois les UUID reçus, on invalide explicitement la carte Agent Select :
+  // son ancienne clé map|side ne suffisait pas à provoquer un second rendu.
+  fetch('https://valorant-api.com/v1/agents?isPlayableCharacter=true')
+    .then(response => {
+      if (!response.ok) throw new Error(`Valorant assets HTTP ${response.status}`);
+      return response.json();
+    })
+    .then(payload => {
+      window._agentNameToUuid = window._agentNameToUuid || {};
+      payload.data?.forEach(agent => {
+        agentUuidMap[agent.displayName] = agent.uuid;
+        uuidToName[agent.uuid.toLowerCase()] = agent.displayName;
+        window._agentNameToUuid[agent.displayName] = agent.uuid;
+      });
+      const compsPanel = document.getElementById('live-comps-panel');
+      if (compsPanel) delete compsPanel.dataset.key;
+      if (currentLiveData) {
+        lastDataKey = '';
+        updateUI(currentLiveData);
+      }
+    })
+    .catch(() => {});
 
   fetch(`./live/update-manifest.json?v=${Date.now()}`)
     .then(response => response.ok ? response.json() : null)
@@ -991,10 +1020,13 @@ export function initLivePage() {
           const pick = (...tiers) => mapData.comps.find(c => tiers.includes(c.tier));
           const show = [pick('S'), pick('PRO'), pick('FUN', 'F')].filter(Boolean);
           const agentIcons = agents => agents.map(a => {
-            const uuid = (window._agentNameToUuid || {})[a];
-            return uuid
-              ? `<img src="https://media.valorant-api.com/agents/${uuid}/displayicon.png" title="${a}" alt="${a}">`
-              : `<span>${a}</span>`;
+            const uuid = agentUuidMap[a]
+              || Object.entries(agentUuidMap).find(([name]) => name.toLowerCase() === a.toLowerCase())?.[1];
+            const cachedVisual = valorantApi.agentData(a)?.icon || valorantApi.agentImg(a);
+            const src = uuid ? `https://media.valorant-api.com/agents/${uuid}/displayicon.png` : cachedVisual;
+            return src
+              ? `<img src="${src}" title="${escapeDiagnosticText(a)}" alt="${escapeDiagnosticText(a)}" width="30" height="30" onerror="this.hidden=true">`
+              : `<span>${escapeDiagnosticText(a)}</span>`;
           }).join('');
           const liveCompCard = comp => {
             const presets = Array.isArray(comp.teamPresets) ? comp.teamPresets : [];
@@ -1263,17 +1295,6 @@ export function initLivePage() {
     const wr = winRatePct != null ? `${winRatePct}% WR · ` : '';
     return `<span class="live-player-season" title="Acte compétitif en cours">${wr}${games} game${games > 1 ? 's' : ''}</span>`;
   }
-
-  // Agent UUID → icon URL cache
-  const agentIconCache = {};
-  let agentUuidMap = {}; // name → uuid
-  const uuidToName = {}; // uuid → name (source de vérité API)
-  fetch('https://valorant-api.com/v1/agents?isPlayableCharacter=true')
-    .then(r=>r.json()).then(d=>{
-      window._agentNameToUuid = window._agentNameToUuid || {};
-      d.data?.forEach(a => { agentUuidMap[a.displayName] = a.uuid; uuidToName[a.uuid.toLowerCase()] = a.displayName; window._agentNameToUuid[a.displayName] = a.uuid; });
-      if (currentLiveData) { lastDataKey = ''; updateUI(currentLiveData); } // re-render avec les bons noms
-    }).catch(()=>{});
 
   // Résolution agent — l'UUID (agentId) est la source de vérité, résolu via l'API
   function fixAgentName(p) {

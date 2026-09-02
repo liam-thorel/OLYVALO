@@ -375,6 +375,12 @@ test('Valorant Live uses a compact presence bar and progressive player details',
   assert.doesNotMatch(interactions, /picker\.style\.cssText/);
 });
 
+test('Agent Select repaints agent portraits after the remote UUID list arrives', () => {
+  assert.match(interactions, /delete compsPanel\.dataset\.key/);
+  assert.match(interactions, /const cachedVisual = valorantApi\.agentData\(a\)\?\.icon \|\| valorantApi\.agentImg\(a\)/);
+  assert.match(interactions, /width="30" height="30" onerror="this\.hidden=true"/);
+});
+
 test('Live and Admin share one realtime Firebase store', () => {
   const admin = fs.readFileSync(new URL('../js/admin.mjs', import.meta.url), 'utf8');
   const lolPages = fs.readFileSync(new URL('../js/lol-pages.mjs', import.meta.url), 'utf8');
