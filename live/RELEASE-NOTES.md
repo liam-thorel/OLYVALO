@@ -1,12 +1,10 @@
-Cette mise à jour rend OLYCITY plus fiable aussi bien dans le Live que lors des mises à jour du site.
+Cette mise à jour corrige les historiques partagés lorsque plusieurs membres d’OLYCITY jouent ensemble.
 
 ### Changements principaux
 
-- Le site détecte désormais chaque nouveau déploiement, même lorsqu'il reste ouvert comme application sur PC ou téléphone.
-- OLYCITY vérifie les mises à jour au retour sur l'application et toutes les cinq minutes.
-- Le bouton **Mettre à jour** active la nouvelle version puis recharge automatiquement la page une seule fois : plus besoin de faire F5.
-- Le Live Valorant conserve sa protection contre les disparitions temporaires de parties et les interrogations Riot qui se chevauchent.
-- L'auto-updater ignore les releases mal étiquetées ou incomplètes.
-- La sonde expérimentale de skins de Liam reste incluse dans le package via `SONDE-SKINS.bat`.
+- Une partie Valorant jouée en stack ne compte désormais qu’une seule fois dans les récaps et les statistiques du bot.
+- Lorsque plusieurs membres jouent la même partie League of Legends, chacun conserve maintenant sa propre entrée d’historique, avec son champion, son KDA et son résultat.
+- Les anciennes entrées restent compatibles et aucune migration manuelle n’est nécessaire.
+- Le site recharge correctement les portraits d’agents dans l’Agent Select après la synchronisation des visuels Valorant.
 
-La mise à jour du script se télécharge en arrière-plan et attend la fin d'une partie avant de redémarrer OLYCITY Live.
+La mise à jour du script se télécharge automatiquement en arrière-plan. Si une partie est en cours, OLYCITY Live attend sa fin avant de redémarrer.
