@@ -1,6 +1,9 @@
 import { groupLolSessions, lolKda, normalizeLolHistory, summarizeLolDays } from './lol-utils.mjs?v=20260810-firebase-connection-fix';
 import { liveDataStore } from './live-data-store.mjs?v=20260810-firebase-connection-fix';
 import { createHistoryPager } from './history-pager.mjs?v=20260826-cold-load-recovery';
+import { createHistoryDisclosureState } from './history-disclosure-state.mjs';
+
+const historyDisclosures = createHistoryDisclosureState('data-lol-history-id');
 
 const FIREBASE_URL = 'https://realtime-database-5bb9f-default-rtdb.europe-west1.firebasedatabase.app';
 const LOL_HISTORY_CACHE_KEY = 'olycity-lol-history-cache-v1';
@@ -198,6 +201,7 @@ function renderHistory(matches, player = 'all', period = 'all', pagerState = lol
       details.dataset.detailLoaded = '1';
     } catch { target.innerHTML = '<span class="history-detail-loading error">Détails indisponibles</span>'; }
   }));
+  historyDisclosures.restore(el);
 }
 
 export async function initLolHistoryPage() {

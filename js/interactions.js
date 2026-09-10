@@ -23,6 +23,9 @@ import { initCurse } from './curse.mjs?v=20260828-page-stream-lifecycle';
 import { fetchJsonWithTimeout } from './request-utils.mjs?v=20260809-route-load-stable';
 import { liveDataStore, liveTimestamp } from './live-data-store.mjs?v=20260810-firebase-connection-fix';
 import { createHistoryPager } from './history-pager.mjs?v=20260826-cold-load-recovery';
+import { createHistoryDisclosureState } from './history-disclosure-state.mjs';
+
+const historyDisclosures = createHistoryDisclosureState('data-history-id');
 
 const VALORANT_HISTORY_CACHE_KEY = 'olycity-valorant-history-cache-v1';
 let historyLoadSequence = 0;
@@ -1912,6 +1915,7 @@ export async function initHistoryPage() {
         target.innerHTML = '<div class="history-detail-loading error">Détails indisponibles · refermez puis réessayez</div>';
       }
     }));
+    historyDisclosures.restore(el);
   };
 
   refreshHistory();
