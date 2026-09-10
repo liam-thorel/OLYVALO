@@ -1,0 +1,26 @@
+{
+  "name": "olycity-overlay",
+  "productName": "OLYCITY Overlay",
+  "version": "1.0.0",
+  "description": "Le site OLYCITY en surimpression, au lancement du jeu ou au raccourci clavier",
+  "main": "main.js",
+  "private": true,
+  "scripts": {
+    "start": "electron .",
+    "build": "electron-builder --win --publish never"
+  },
+  "devDependencies": {
+    "electron": "43.7.0",
+    "electron-builder": "26.15.3"
+  },
+  "build": {
+    "appId": "gg.olycity.overlay",
+    "productName": "OLYCITY-Overlay",
+    "files": ["main.js", "preload.js", "lib/**/*", "ui/**/*"],
+    "win": {
+      "target": [{ "target": "portable", "arch": ["x64"] }],
+      "artifactName": "OLYCITY-Overlay.exe"
+    },
+    "portable": { "artifactName": "OLYCITY-Overlay.exe" }
+  }
+}

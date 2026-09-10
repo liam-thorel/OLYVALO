@@ -1,0 +1,70 @@
+# OLYCITY Overlay
+
+Le site OLYCITY par-dessus le jeu : il apparaît au lancement d'une partie, et
+se rappelle au raccourci **Ctrl + Shift + F8**.
+
+## ⚠️ Valorant doit être en « Plein écran fenêtré »
+
+C'est la seule condition, et elle n'est pas contournable. Une fenêtre « toujours
+au-dessus » ne peut pas s'afficher par-dessus un jeu en **plein écran exclusif** :
+Windows donne la surface entière au jeu et rien ne passe par-dessus.
+
+Dans Valorant : *Paramètres → Vidéo → Général → Mode d'affichage → **Plein écran
+fenêtré***. La différence de performance est négligeable sur Windows 10 et 11.
+
+Si l'overlay ne s'affiche jamais alors que l'icône est bien dans la zone de
+notification, c'est presque toujours ça.
+
+## Installation
+
+Télécharger `OLYCITY-Overlay.exe` depuis la page Live du site ou depuis les
+releases GitHub, puis le lancer. Il n'y a rien à installer : l'exécutable est
+autonome et se place dans la zone de notification, à côté de l'horloge.
+
+Au premier lancement il se règle pour démarrer avec Windows. Ça se désactive
+d'un clic droit sur son icône.
+
+## Utilisation
+
+| Action | Effet |
+|---|---|
+| Lancement d'une partie | L'overlay apparaît |
+| **Ctrl + Shift + F8** | L'affiche ou le masque |
+| Clic sur l'icône | Idem |
+| Fermeture du jeu | L'overlay disparaît |
+| Barre du haut | Déplacer la fenêtre, régler l'opacité, revenir au Live |
+
+Une fenêtre fermée à la main ne revient pas toute seule : elle attend la partie
+suivante. Un choix explicite n'est jamais écrasé par l'automatisme.
+
+## Ce que cette application ne fait pas
+
+Aucune injection dans le processus du jeu, aucun hook clavier bas niveau,
+aucune lecture de la mémoire du jeu. C'est une fenêtre Windows ordinaire posée
+au-dessus, et le raccourci passe par `RegisterHotKey`, une API publique.
+
+**Rien ici n'entre en contact avec Vanguard.** C'est aussi pourquoi le plein
+écran exclusif est un obstacle infranchissable : le contourner demanderait
+précisément le genre d'injection qu'on refuse de faire.
+
+La navigation est enfermée dans le site OLYCITY. Tout lien qui en sort s'ouvre
+dans le navigateur par défaut, et seulement s'il est en http(s) — une fenêtre
+qui flotte au-dessus du jeu et démarre avec Windows n'a pas à devenir un
+navigateur généraliste.
+
+## Développement
+
+```bash
+cd overlay
+npm install
+npm start          # lance l'overlay
+npm run build      # produit dist/OLYCITY-Overlay.exe (Windows uniquement)
+```
+
+L'exécutable publié est construit par `.github/workflows/release-live.yml` sur
+un runner `windows-latest`, et attaché à la même release que le script Live.
+
+La logique testable — détection du jeu, règles d'affichage, validation des
+réglages, politique de navigation — vit dans `lib/` et est couverte par
+`tests/overlay-logic.test.cjs`. Le reste (fenêtre, raccourci, zone de
+notification) ne peut être vérifié que sur une machine Windows.
