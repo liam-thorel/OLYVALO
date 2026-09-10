@@ -61,8 +61,14 @@ npm start          # lance l'overlay
 npm run build      # produit dist/OLYCITY-Overlay.exe (Windows uniquement)
 ```
 
-L'exécutable publié est construit par `.github/workflows/release-live.yml` sur
-un runner `windows-latest`, et attaché à la même release que le script Live.
+L'exécutable publié est construit par `.github/workflows/release-overlay.yml`
+sur un runner `windows-latest`. Il a son propre cycle : le mêler au workflow du
+script Live obligerait à bumper la version du Live — et donc à pousser une mise
+à jour sur tous les postes — juste pour republier l'overlay.
+
+Déclenchement manuel : le workflow compile la **branche courante** et joint
+l'exécutable à la **release choisie**. C'est ce qui permet de l'attacher à une
+release publiée avant que ce dossier n'existe.
 
 La logique testable — détection du jeu, règles d'affichage, validation des
 réglages, politique de navigation — vit dans `lib/` et est couverte par

@@ -1,0 +1,102 @@
+name: Package de l'overlay
+
+# L'overlay a son propre rythme de publication. Le mêler au workflow du script
+# Live obligerait à bumper la version du Live — et donc à pousser une mise à
+# jour sur tous les postes — juste pour republier un exécutable qui n'a rien à
+# voir avec lui.
+#
+# Deux déclencheurs :
+#   - un tag `v*` : l'exécutable est joint à cette release ;
+#   - manuellement : on CONSTRUIT depuis la branche courante et on JOINT à la
+#     release demandée. C'est ce qui permet d'attacher l'overlay à une release
+#     déjà publiée avant que le dossier overlay/ n'existe — un checkout de ce
+#     tag-là ne contiendrait tout simplement pas le code à compiler.
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Release à laquelle joindre l’exécutable (ex. v4.17.11)'
+        required: true
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release-overlay-${{ inputs.tag || github.ref_name }}
+  cancel-in-progress: false
+
+jobs:
+  build:
+    # windows-latest est le seul runner qui produise un .exe sans compilation
+    # croisée.
+    runs-on: windows-latest
+    steps:
+      # Sur un tag, on compile le code de ce tag. En manuel, on compile la
+      # branche par défaut : le tag visé sert alors uniquement de destination.
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event_name == 'workflow_dispatch' && github.ref || github.ref_name }}
+
+      # Les tags antérieurs à l'introduction de l'overlay n'ont pas ce dossier.
+      # On sort proprement plutôt que de faire échouer une release de script.
+      - name: Vérifier que l'overlay existe à cette révision
+        id: guard
+        shell: bash
+        run: |
+          if [ -f overlay/package.json ]; then
+            echo "present=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "present=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::Pas de dossier overlay/ à cette révision — rien à construire."
+          fi
+
+      - uses: actions/setup-node@v4
+        if: steps.guard.outputs.present == 'true'
+        with:
+          node-version: '22'
+
+      - name: Installer les dépendances
+        if: steps.guard.outputs.present == 'true'
+        run: npm install --no-audit --no-fund
+        working-directory: overlay
+
+      - name: Construire l'exécutable
+        if: steps.guard.outputs.present == 'true'
+        run: npm run build
+        working-directory: overlay
+
+      # On échoue ici plutôt que de téléverser un fichier absent et de laisser
+      # la page Live afficher un lien mort.
+      - name: Vérifier l'exécutable
+        if: steps.guard.outputs.present == 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+          exe=overlay/dist/OLYCITY-Overlay.exe
+          [ -f "$exe" ] || { echo "::error::$exe introuvable"; ls -R overlay/dist || true; exit 1; }
+          ls -lh "$exe"
+
+      - name: Joindre à la release
+        if: steps.guard.outputs.present == 'true'
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          tag='${{ inputs.tag || github.ref_name }}'
+          # La release peut ne pas exister encore lors d'un push de tag : le
+          # workflow du Live la crée de son côté, on l'attend brièvement plutôt
+          # que d'échouer sur une course entre les deux.
+          for attempt in 1 2 3 4 5 6; do
+            if gh release view "$tag" --repo '${{ github.repository }}' > /dev/null 2>&1; then
+              gh release upload "$tag" overlay/dist/OLYCITY-Overlay.exe \
+                --clobber --repo '${{ github.repository }}'
+              exit 0
+            fi
+            echo "Release $tag pas encore publiée — nouvelle tentative dans 20 s ($attempt/6)"
+            sleep 20
+          done
+          echo "::error::La release $tag n'existe pas."
+          exit 1
