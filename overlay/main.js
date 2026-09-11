@@ -164,6 +164,37 @@ function createWindow() {
 }
 
 /** Applique un nouvel état : c'est le seul endroit qui montre ou masque. */
+/**
+ * Repose le niveau « au-dessus de tout » et remonte la fenêtre dans l'ordre
+ * d'empilement. Windows rétrograde une fenêtre always-on-top quand une autre
+ * application passe au premier plan — un jeu qui démarre, typiquement — et
+ * l'overlay se retrouve alors derrière sans que rien ne le signale.
+ *
+ * Aucun effet sur un jeu en plein écran EXCLUSIF : là, Windows ne laisse
+ * aucune fenêtre au-dessus, et seul un changement de réglage dans le jeu peut
+ * y remédier.
+ */
+function assertOnTop() {
+  if (!window_ || window_.isDestroyed() || !window_.isVisible()) return;
+  // Le second appel force une réévaluation même si Electron pense que le
+  // niveau est déjà bon.
+  window_.setAlwaysOnTop(false);
+  window_.setAlwaysOnTop(true, 'screen-saver');
+  window_.moveTop();
+}
+
+/** État réel de la fenêtre, pour le journal. */
+function logWindowState(context) {
+  if (!window_ || window_.isDestroyed()) {
+    log(`[fenêtre] ${context} — fenêtre absente`);
+    return;
+  }
+  const bounds = window_.getBounds();
+  log(`[fenêtre] ${context} — visible=${window_.isVisible()}`,
+    `auDessus=${window_.isAlwaysOnTop()}`,
+    `position=${bounds.x},${bounds.y} ${bounds.width}x${bounds.height}`);
+}
+
 function apply(next) {
   const wasVisible = state.visible;
   state = next;
@@ -172,9 +203,7 @@ function apply(next) {
 
   if (state.visible) {
     window_.show();
-    // Le niveau se perd parfois quand une autre application prend le premier
-    // plan : on le réaffirme à chaque affichage.
-    window_.setAlwaysOnTop(true, 'screen-saver');
+    assertOnTop();
   } else {
     window_.hide();
   }
@@ -197,8 +226,17 @@ async function pollGames() {
   const transition = gameTransition(lastRunning, running);
   lastRunning = running;
 
-  if (transition === 'launched') apply(reduce(state, 'game-launched'));
-  else if (transition === 'closed') apply(reduce(state, 'game-closed'));
+  if (transition === 'launched') {
+    const games = Object.entries(running).filter(([, on]) => on).map(([game]) => game).join(', ');
+    log('[jeu] lancé :', games);
+    apply(reduce(state, 'game-launched'));
+    logWindowState('après lancement du jeu');
+  } else if (transition === 'closed') {
+    log('[jeu] fermé');
+    apply(reduce(state, 'game-closed'));
+  }
+
+  if (anyGameRunning(running) && state.visible) assertOnTop();
 
   maybeCheckForUpdate(anyGameRunning(running));
 
@@ -221,7 +259,10 @@ function registerHotkey() {
   // Un raccourci déjà pris par une autre application fait échouer
   // l'enregistrement : sans repli, l'overlay deviendrait inaccessible pour qui
   // n'a pas d'icône dans la zone de notification visible.
-  const registered = globalShortcut.register(settings.hotkey, () => apply(reduce(state, 'hotkey')));
+  const registered = globalShortcut.register(settings.hotkey, () => {
+    apply(reduce(state, 'hotkey'));
+    logWindowState('après raccourci');
+  });
   if (!registered) {
     console.error(`[hotkey] ${settings.hotkey} est déjà pris par une autre application`);
     if (settings.hotkey !== 'Control+Shift+F8') {
