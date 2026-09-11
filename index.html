@@ -502,9 +502,13 @@
         <a href="https://github.com/liam-thorel/OLYVALO/releases/latest/download/OLYCITY-Live.zip" download class="live-download-link" id="live-download-link" hidden>
           <span aria-hidden="true">↓</span><span>Mettre à jour</span>
         </a>
+        <!-- Récupère les DEUX éléments d'un coup : l'overlay et le script Live.
+             Le lien « Mettre à jour » ci-dessus n'apparaît que lorsqu'un script
+             déjà installé est périmé — quelqu'un qui n'a jamais rien installé
+             n'avait donc aucun moyen de télécharger le Live depuis le site. -->
         <a href="https://github.com/liam-thorel/OLYVALO/releases/latest/download/OLYCITY-Overlay-Setup.exe" download class="live-download-link" id="overlay-download-link"
-           title="Le site au-dessus du jeu, au lancement d'une partie ou avec Ctrl+Shift+F8. Valorant doit être en « Plein écran fenêtré ».">
-          <span aria-hidden="true">↓</span><span>Overlay</span>
+           title="Installeur de l'overlay + archive du script Live. Valorant doit être en « Plein écran fenêtré » pour que l'overlay s'affiche par-dessus.">
+          <span aria-hidden="true">↓</span><span>Overlay + Live</span>
         </a>
       </div>
       <div class="live-waiting" id="live-waiting">
