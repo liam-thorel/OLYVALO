@@ -64,7 +64,12 @@ fichier se trouve dans `%APPDATA%\OLYCITY Overlay\overlay.log`.
 | **Ctrl + Shift + F8** | L'affiche ou le masque |
 | Clic sur l'icône | Idem |
 | Fermeture du jeu | L'overlay disparaît |
-| Barre du haut | Déplacer la fenêtre, régler l'opacité, revenir au Live |
+| Barre du haut | Déplacer la fenêtre, régler l'opacité, changer de vue |
+
+L'overlay ouvre une **vue compacte** (`overlay.html`) pensée pour une fenêtre
+étroite au-dessus d'une partie : la game en cours, les joueurs présents et les
+paris ouverts, sans la coquille du site. Le bouton **Site** bascule vers le site
+complet quand on veut plus que l'essentiel, **Live** ramène à la vue compacte.
 
 Une fenêtre fermée à la main ne revient pas toute seule : elle attend la partie
 suivante. Un choix explicite n'est jamais écrasé par l'automatisme.

@@ -119,7 +119,7 @@ function createWindow() {
   siteView = new WebContentsView({
     webPreferences: { contextIsolation: true, nodeIntegration: false, sandbox: true },
   });
-  siteView.webContents.loadURL(siteUrl('#live'));
+  siteView.webContents.loadURL(siteUrl('overlay.html'));
   window_.contentView.addChildView(siteView);
 
   const resizeChrome = () => {
@@ -355,7 +355,8 @@ if (!app.requestSingleInstanceLock()) {
   });
 
   ipcMain.on('overlay:hide', () => apply(reduce(state, 'hide')));
-  ipcMain.on('overlay:home', () => siteView?.webContents.loadURL(siteUrl('#live')));
+  ipcMain.on('overlay:home', () => siteView?.webContents.loadURL(siteUrl('overlay.html')));
+  ipcMain.on('overlay:full-site', () => siteView?.webContents.loadURL(siteUrl('#live')));
   ipcMain.on('overlay:opacity', (_event, value) => {
     settings.opacity = sanitize({ ...settings, opacity: value }).opacity;
     window_?.setOpacity(settings.opacity);

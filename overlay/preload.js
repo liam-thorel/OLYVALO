@@ -9,5 +9,6 @@ const { contextBridge, ipcRenderer } = require('electron');
 contextBridge.exposeInMainWorld('overlay', {
   hide: () => ipcRenderer.send('overlay:hide'),
   home: () => ipcRenderer.send('overlay:home'),
+  fullSite: () => ipcRenderer.send('overlay:full-site'),
   setOpacity: value => ipcRenderer.send('overlay:opacity', Number(value)),
 });
