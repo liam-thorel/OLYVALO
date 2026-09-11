@@ -37,6 +37,10 @@ export function groupActiveGames(sessions = {}, now = Date.now()) {
           matchId: session.matchId || '',
           map: session.mapClean || session.map || '',
           mode: session.mode || '',
+          // Publiés par le script pour tous les modes : « Vélocité »,
+          // « Deathmatch », « Intensification »… plutôt que le queueID brut.
+          modeLabel: session.modeLabel || '',
+          modeFamily: session.modeFamily || '',
           ts: Number(session.ts || 0),
           sessions: [],
         });
@@ -47,9 +51,29 @@ export function groupActiveGames(sessions = {}, now = Date.now()) {
       // game : on garde la première valeur non vide rencontrée.
       if (!group.map) group.map = session.mapClean || session.map || '';
       if (!group.mode) group.mode = session.mode || '';
+      if (!group.modeLabel) group.modeLabel = session.modeLabel || '';
+      if (!group.modeFamily) group.modeFamily = session.modeFamily || '';
       group.ts = Math.max(group.ts, Number(session.ts || 0));
     });
   return [...groups.values()].sort((a, b) => b.ts - a.ts);
+}
+
+/** Ce qu'on écrit sur la pastille de mode. */
+export function modeLabelFor(group) {
+  if (group?.modeLabel) return group.modeLabel;
+  // Ancienne version du script, ou mode inconnu : mieux vaut un libellé
+  // générique que « ggteam » ou « onefa » affiché tel quel.
+  return group?.mode ? 'En jeu' : '';
+}
+
+/**
+ * Les modes sans équipes — Deathmatch, et tout ce que le script range en
+ * famille « free-for-all » — n'ont ni allié ni adversaire. Y colorer les
+ * joueurs mentirait : en Deathmatch tout le monde porte la même TeamID,
+ * donc tout le monde passerait pour un allié.
+ */
+export function hasTeams(group) {
+  return group?.modeFamily !== 'free-for-all';
 }
 
 export function isAgentSelect(group) {
@@ -111,7 +135,8 @@ export function countdownLabel(closesAt, now = Date.now()) {
 export function matchSkins(group) {
   const session = (group?.sessions || []).find(entry => entry.players?.length);
   if (!session) return [];
-  const ourTeam = session.selfTeam || null;
+  // Sans équipes dans le mode, aucun camp à annoncer.
+  const ourTeam = hasTeams(group) ? (session.selfTeam || null) : null;
 
   return (session.players || [])
     .filter(player => player.skins?.length)

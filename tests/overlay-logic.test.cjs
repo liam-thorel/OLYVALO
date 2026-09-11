@@ -1,4 +1,6 @@
 const assert = require('node:assert/strict');
+const { readFileSync } = require('node:fs');
+const path = require('node:path');
 const { detectGames, anyGameRunning, gameTransition, nextPollDelay,
   IDLE_POLL_MS, ACTIVE_POLL_MS } = require('../overlay/lib/game-watch.js');
 const { createOverlayState, reduce } = require('../overlay/lib/overlay-state.js');
@@ -254,5 +256,39 @@ assert.ok(checks <= 5, `au plus quelques vérifications par jour, obtenu ${check
 assert.match(updateLabel({ version: '1.2.0' }), /1\.2\.0/);
 assert.match(updateLabel(null), /Redémarrer/);
 assert.match(updateLabel({}), /Redémarrer/);
+
+// ─── Format de la fenêtre ────────────────────────────────────────────────────
+// La vue compacte est dessinée pour une colonne étroite posée sur le côté de
+// l'écran. La fenêtre s'ouvrait à 1100 px, soit la moitié d'un écran 1080p
+// pour afficher trois blocs.
+const overlayMain = readFileSync(path.join(__dirname, '..', 'overlay/main.js'), 'utf8');
+const number = (name, key) => Number(
+  new RegExp(`const ${name} = \\{[^}]*${key}:\\s*(\\d+)`).exec(overlayMain)?.[1],
+);
+const defaultWidth = number('DEFAULT_SIZE', 'width');
+const minWidth = number('MIN_SIZE', 'width');
+const minHeight = number('MIN_SIZE', 'height');
+
+assert.ok(defaultWidth <= 560, `fenêtre par défaut trop large : ${defaultWidth}px`);
+assert.ok(minWidth <= 360, `largeur minimale trop élevée : ${minWidth}px`);
+assert.ok(minWidth >= 280, 'en dessous, la barre de titre perd ses commandes');
+assert.ok(minHeight >= 200, 'une fenêtre trop basse n’affiche plus rien d’utile');
+assert.ok(defaultWidth >= minWidth, 'le défaut ne peut pas être sous le minimum');
+
+// La feuille de style doit couvrir cette largeur minimale, sinon les lignes
+// « nom à gauche, détail à droite » se chevauchent.
+const overlayPage = readFileSync(path.join(__dirname, '..', 'overlay.html'), 'utf8');
+const breakpoints = [...overlayPage.matchAll(/@media \(max-width:\s*(\d+)px\)/g)]
+  .map(match => Number(match[1]));
+assert.ok(breakpoints.length > 0, 'aucun point de rupture : la vue ne s’adapte pas');
+assert.ok(Math.max(...breakpoints) >= minWidth,
+  `le point de rupture (${Math.max(...breakpoints)}px) doit couvrir la largeur minimale (${minWidth}px)`);
+
+// Aucune largeur fixe ne doit dépasser la fenêtre la plus étroite. On ignore
+// les valeurs des media queries, qui sont des seuils et non des tailles.
+const withoutMedia = overlayPage.replace(/@media[^{]*\{/g, '{');
+const fixedWidths = [...withoutMedia.matchAll(/(?:min-)?width:\s*(\d+)px/g)].map(m => Number(m[1]));
+fixedWidths.forEach(width => assert.ok(width < minWidth,
+  `largeur fixe de ${width}px, supérieure à la fenêtre minimale de ${minWidth}px`));
 
 console.log('overlay-logic: détection du jeu, visibilité, réglages et navigation validés');

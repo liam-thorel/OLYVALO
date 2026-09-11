@@ -26,7 +26,13 @@ const { createLogger } = require('./lib/logger.js');
 const { setupAutoUpdate, shouldCheck, updateLabel, FIRST_CHECK_DELAY_MS } = require('./lib/updater.js');
 
 const TITLEBAR_HEIGHT = 36;
-const DEFAULT_SIZE = { width: 1100, height: 720 };
+// La vue compacte est dessinée pour une colonne étroite posée sur le côté de
+// l'écran, pas pour une fenêtre de navigateur : 1100 px couvraient la moitié
+// du jeu pour afficher trois blocs.
+const DEFAULT_SIZE = { width: 460, height: 680 };
+// En dessous, les lignes « nom · skins » se chevauchent et la barre de titre
+// perd ses commandes.
+const MIN_SIZE = { width: 320, height: 240 };
 
 let window_ = null;
 let siteView = null;
@@ -79,7 +85,12 @@ function boundsOnVisibleScreen(bounds) {
     return bounds.x < area.x + area.width && bounds.x + bounds.width > area.x
       && bounds.y < area.y + area.height && bounds.y + bounds.height > area.y;
   });
-  return fits ? bounds : null;
+  if (!fits) return null;
+  return {
+    ...bounds,
+    width: Math.max(bounds.width, MIN_SIZE.width),
+    height: Math.max(bounds.height, MIN_SIZE.height),
+  };
 }
 
 function createWindow() {
@@ -92,6 +103,8 @@ function createWindow() {
     frame: false,
     transparent: false,
     resizable: true,
+    minWidth: MIN_SIZE.width,
+    minHeight: MIN_SIZE.height,
     skipTaskbar: true,   // l'overlay vit dans la zone de notification
     alwaysOnTop: true,
     title: 'OLYCITY Overlay',
