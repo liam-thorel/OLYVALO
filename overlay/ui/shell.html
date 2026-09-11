@@ -1,0 +1,40 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>OLYCITY Overlay</title>
+<style>
+  :root { color-scheme: dark; }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; height: 36px; display: flex; align-items: center; gap: 12px;
+    padding: 0 8px 0 14px; background: #12141a; color: #e7e9ee;
+    font: 12px/1 system-ui, -apple-system, Segoe UI, sans-serif;
+    border-bottom: 1px solid #262a35;
+    /* Toute la barre déplace la fenêtre, sauf les commandes ci-dessous. */
+    -webkit-app-region: drag; user-select: none;
+  }
+  .brand { font-weight: 700; letter-spacing: 2px; color: #ff4656; }
+  .spacer { flex: 1; }
+  button, input { -webkit-app-region: no-drag; }
+  button {
+    background: #1c1f28; color: #e7e9ee; border: 1px solid #2d323f;
+    border-radius: 6px; padding: 5px 10px; cursor: pointer; font-size: 12px;
+  }
+  button:hover { border-color: #ff4656; }
+  label { display: flex; align-items: center; gap: 6px; color: #8b94a3; -webkit-app-region: no-drag; }
+  input[type=range] { width: 84px; accent-color: #ff4656; }
+  .hint { color: #8b94a3; font-size: 11px; }
+  @media (max-width: 620px) { .hint, label { display: none; } }
+</style>
+
+<span class="brand">OLYCITY</span>
+<button id="home">Live</button>
+<span class="spacer"></span>
+<span class="hint">Valorant doit être en « Plein écran fenêtré »</span>
+<label>Opacité <input id="opacity" type="range" min="0.3" max="1" step="0.05" value="0.95"></label>
+<button id="hide" title="Masquer (Ctrl+Shift+F8)">✕</button>
+
+<script>
+  document.getElementById('home').onclick = () => window.overlay.home();
+  document.getElementById('hide').onclick = () => window.overlay.hide();
+  document.getElementById('opacity').oninput = event => window.overlay.setOpacity(event.target.value);
+</script>
