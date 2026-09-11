@@ -449,6 +449,16 @@ body.agent-mode .footer{ display:none; }
   text-decoration:none; text-transform:uppercase; transition:border-color .2s,background .2s;
 }
 .live-download-link[hidden]{ display:none; }
+.live-download-actions { display:flex; flex-wrap:wrap; justify-content:flex-end; align-items:center; gap:8px; }
+.live-download-actions .live-download-link { min-height:36px; box-sizing:border-box; font-size:12px; letter-spacing:.2px; text-transform:none; white-space:nowrap; }
+.live-download-actions .live-download-secondary { color:var(--muted); background:transparent; border-color:var(--border); }
+.live-download-actions .live-download-link:focus-visible { outline:2px solid var(--red); outline-offset:3px; }
+@media (min-width:769px) and (max-width:1100px) {
+  .live-diagnostic .live-download-actions { grid-column:1 / -1; }
+}
+@media (max-width:768px) {
+  .live-download-actions { display:none; }
+}
 .live-download-link:hover { border-color: var(--red); background: rgba(255,70,86,.18); }
 .live-client-list {
   display:flex; align-items:center; gap:6px; min-width:0; overflow-x:auto; scrollbar-width:none;

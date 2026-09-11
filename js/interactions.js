@@ -15,7 +15,7 @@ import {
 } from './live-sessions.mjs?v=20260809-live-server-local';
 import { freshLiveClients, groupLiveClients, isVersionAtLeast, LIVE_SESSION_STALE_MS, liveClientSummary } from './live-clients.mjs?v=20260901-live-grace';
 import { buildLiveIdentityIndex, resolveLiveIdentity } from './live-identities.mjs?v=20260809-live-groups';
-import { wireDownloadButton } from './downloads.mjs?v=20260911-overlay-bundle';
+import { updateScriptDownload } from './downloads.mjs?v=20260912-separate-downloads';
 import { PLAYERS as LOL_ROSTER_PLAYERS } from './lol-roster.mjs?v=20260809-lol-sync';
 import { serverVisual } from './server-visuals.mjs?v=20260809-live-server-local';
 import { avatarLayersHTML } from './avatars.mjs?v=20260720-avatars';
@@ -536,10 +536,7 @@ export function initLivePage() {
     '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;',
   })[character]);
 
-  let downloadWired = false;
-
   function renderDiagnostic() {
-    if (!downloadWired) downloadWired = wireDownloadButton();
     const panel = document.getElementById('live-diagnostic');
     const label = document.getElementById('live-diagnostic-label');
     const detail = document.getElementById('live-diagnostic-detail');
@@ -567,7 +564,7 @@ export function initLivePage() {
           : 'Les membres actifs apparaîtront ici';
       version.textContent = '—';
       list.innerHTML = '';
-      if (download) download.hidden = true;
+      updateScriptDownload(download);
       if (waitingTitle) waitingTitle.textContent = loading ? 'Connexion au Live…' : 'Aucun script connecté';
       if (waitingDetail) waitingDetail.textContent = loading
         ? 'Vérification des membres connectés.'
@@ -592,10 +589,7 @@ export function initLivePage() {
     version.textContent = versions.length > 1
       ? `${versions.length} versions`
       : versions.length === 1 ? `v${versions[0]}` : 'Version inconnue';
-    if (download) {
-      download.hidden = !updateNeeded;
-      download.title = latestLiveVersion ? `Dernière version : v${latestLiveVersion}` : 'Télécharger la dernière version';
-    }
+    updateScriptDownload(download, updateNeeded, latestLiveVersion);
     if (waitingTitle) waitingTitle.textContent = summary.ready
       ? `${summary.ready} membre${summary.ready > 1 ? 's' : ''} prêt${summary.ready > 1 ? 's' : ''}`
       : 'Aucune game en cours';
