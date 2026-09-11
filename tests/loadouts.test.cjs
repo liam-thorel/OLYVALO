@@ -118,17 +118,36 @@ assert.deepEqual(buildSkinLevelIndex(undefined).size, 0);
 assert.deepEqual(equippedIds(null), []);
 
 // ─── Taille réelle de la charge utile ────────────────────────────────────────
-// La sonde a mesuré 174 Ko pour dix joueurs en brut. On vérifie qu'après
-// réduction on reste très en dessous — c'est la raison d'être du module.
+// La sonde a mesuré 174 Ko pour dix joueurs en brut ; c'est ce que ce module
+// existe pour éviter. Le pire cas n'est pas dix joueurs identiques mais dix
+// joueurs tous différents : la sonde a relevé 10 couteaux distincts sur
+// 10 joueurs, et autant de Vandals. On mesure donc avec des noms et des URL
+// d'icônes de longueur réaliste, sinon le test passerait pour de mauvaises
+// raisons.
+const ICON = 'https://media.valorant-api.com/weaponskinlevels/0000aaaa-1111-2222-3333-444455556666/displayicon.png';
+const realistic = ['melee', 'vandal', 'phantom', 'operator', 'sheriff'];
+const bigWeapons = buildWeaponIndex({ data: realistic.map((name, i) => ({
+  uuid: `arme-${i}`, displayName: name, skins: [{ levels: [`defaut-${i}`] }],
+})) });
+const bigLevels = buildSkinLevelIndex({ data: Array.from({ length: 50 }, (_, i) => ({
+  uuid: `niveau-${i}`,
+  displayName: 'Champion 2022 Vandal (Niveau 4)', // parmi les plus longs du jeu
+  displayIcon: ICON,
+})) });
+
 const tenPlayers = curateLoadouts({
-  loadouts: Array.from({ length: 10 }, (_, i) => loadout(`joueur-${i}`, {
-    [VANDAL]: weaponEntry(VANDAL, 'PRIME-VANDAL'),
-    [MELEE]: weaponEntry(MELEE, 'ELDERFLAME-MELEE'),
-  })),
-  players: [], weaponIndex: weapons, skinLevels,
+  loadouts: Array.from({ length: 10 }, (_, player) => loadout(`joueur-${player}`,
+    Object.fromEntries(realistic.map((_, w) => [
+      `arme-${w}`, weaponEntry(`arme-${w}`, `niveau-${player * 5 + w}`), // chacun le sien
+    ])))),
+  players: [], weaponIndex: bigWeapons, skinLevels: bigLevels, featured: realistic,
 });
 assert.equal(Object.keys(tenPlayers).length, 10);
-const bytes = Buffer.byteLength(JSON.stringify(tenPlayers));
-assert.ok(bytes < 10 * 1024, `charge utile trop lourde : ${bytes} octets`);
+assert.equal(tenPlayers['joueur-0'].length, 5, 'les cinq armes retenues');
 
-console.log(`loadouts: dix joueurs réduits à ${bytes} octets (174 Ko en brut)`);
+const bytes = Buffer.byteLength(JSON.stringify(tenPlayers));
+assert.ok(bytes < 16 * 1024, `charge utile trop lourde : ${bytes} octets`);
+// Et malgré tout, un ordre de grandeur sous le brut mesuré par la sonde.
+assert.ok(bytes < 174 * 1024 / 10, `pas assez réduit face aux 174 Ko bruts : ${bytes} octets`);
+
+console.log(`loadouts: pire cas à dix joueurs = ${(bytes / 1024).toFixed(1)} Ko (174 Ko en brut)`);
