@@ -170,4 +170,41 @@ assert.equal(isSafeExternalUrl('javascript:alert(1)'), false);
 assert.equal(isSafeExternalUrl('steam://run/730'), false);
 assert.equal(isSafeExternalUrl(''), false);
 
+// ─── Journal ─────────────────────────────────────────────────────────────────
+// Sans trace écrite, un plantage au démarrage est parfaitement silencieux :
+// c'est exactement ce qui s'est passé au premier essai sur un vrai poste.
+const { createLogger, MAX_LOG_BYTES } = require('../overlay/lib/logger.js');
+
+const fakeFs = (files = {}) => ({
+  files,
+  mkdirSync() {},
+  statSync(f) { if (!(f in files)) throw new Error('ENOENT'); return { size: files[f].length }; },
+  unlinkSync(f) { delete files[f]; },
+  appendFileSync(f, data) { files[f] = (files[f] || '') + data; },
+});
+
+{
+  const impl = fakeFs();
+  const { log, file } = createLogger('/tmp/olycity', { fsImpl: impl, now: () => new Date('2026-09-11T07:00:00Z') });
+  log('[demarrage]', 'test');
+  assert.match(impl.files[file], /2026-09-11T07:00:00\.000Z\] \[demarrage\] test/);
+
+  // Le journal vit à côté des réglages et l'application démarre avec Windows :
+  // sans plafond, le fichier grossirait indéfiniment.
+  impl.files[file] = 'x'.repeat(MAX_LOG_BYTES + 1);
+  log('après rotation');
+  assert.ok(impl.files[file].length < MAX_LOG_BYTES, 'le journal est reparti de zéro');
+  assert.match(impl.files[file], /après rotation/);
+}
+
+{
+  // Un disque plein ou un dossier en lecture seule ne doit jamais empêcher
+  // l'application de tourner — journaliser n'est pas sa raison d'être.
+  const cassé = { mkdirSync() { throw new Error('EACCES'); }, statSync() { throw new Error('EACCES'); },
+    unlinkSync() {}, appendFileSync() { throw new Error('EACCES'); } };
+  const { log } = createLogger('/interdit', { fsImpl: cassé });
+  assert.doesNotThrow(() => log('toujours vivant'));
+  assert.doesNotThrow(() => log('et on n’insiste pas'));
+}
+
 console.log('overlay-logic: détection du jeu, visibilité, réglages et navigation validés');
