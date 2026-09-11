@@ -17,15 +17,38 @@ notification, c'est presque toujours ça.
 
 ## Installation
 
-Télécharger `OLYCITY-Overlay.exe` depuis la page Live du site ou depuis les
-releases GitHub, puis le lancer. Il n'y a rien à installer : l'exécutable est
-autonome et se place dans la zone de notification, à côté de l'horloge.
+Télécharger `OLYCITY-Overlay-Setup.exe` depuis la page Live du site ou depuis
+les releases GitHub, et le lancer. L'installation se fait en un clic, sans
+question, et l'application démarre à la fin.
+
+Windows affichera probablement « Windows a protégé votre ordinateur » : le
+programme n'est pas signé (un certificat coûte plusieurs centaines d'euros par
+an). *Informations complémentaires* → *Exécuter quand même*.
+
+> Un installeur plutôt qu'un exécutable autonome, parce que la mise à jour
+> automatique ne fonctionne pas avec le format portable : celui-ci se
+> décompresse dans un dossier temporaire à chaque lancement, il n'y a donc rien
+> de stable à remplacer.
 
 Au premier lancement, la fenêtre s'ouvre d'elle-même et l'application se règle
 pour démarrer avec Windows. Les fois suivantes elle démarre **masquée**, dans la
 zone de notification — sur Windows 11 son icône atterrit souvent dans le
 débordement, derrière la flèche `^` près de l'horloge. Un clic droit dessus
 donne accès aux réglages.
+
+## Mises à jour
+
+Automatiques. L'application vérifie quatre fois par jour, **jamais pendant une
+partie** — télécharger 90 Mo au milieu d'une game serait le pire moment, et
+l'installation devrait de toute façon attendre.
+
+La nouvelle version se télécharge en fond et **s'installe à la fermeture de
+l'application**, jamais à chaud. Pour l'appliquer tout de suite : clic droit sur
+l'icône → *Redémarrer pour installer*, qui n'apparaît que lorsqu'une mise à jour
+est prête.
+
+Une mise à jour qui échoue (pas de réseau, GitHub indisponible) est notée dans
+le journal et retentée plus tard ; elle n'empêche jamais l'overlay de tourner.
 
 ## En cas de problème
 

@@ -69,14 +69,25 @@ jobs:
 
       # On échoue ici plutôt que de téléverser un fichier absent et de laisser
       # la page Live afficher un lien mort.
-      - name: Vérifier l'exécutable
+      # latest.yml décrit la version publiée : c'est LUI que l'application
+      # installée interroge pour savoir qu'une mise à jour existe. Sans ce
+      # fichier sur la release, l'auto-update échoue silencieusement.
+      - name: Vérifier les fichiers de publication
         if: steps.guard.outputs.present == 'true'
         shell: bash
         run: |
           set -euo pipefail
-          exe=overlay/dist/OLYCITY-Overlay.exe
-          [ -f "$exe" ] || { echo "::error::$exe introuvable"; ls -R overlay/dist || true; exit 1; }
-          ls -lh "$exe"
+          cd overlay/dist
+          for required in OLYCITY-Overlay-Setup.exe latest.yml; do
+            [ -f "$required" ] || { echo "::error::$required introuvable"; ls -R .; exit 1; }
+          done
+          # La version annoncée doit correspondre au paquet, sinon les postes
+          # retéléchargeraient en boucle une mise à jour qui ne s'applique pas.
+          declared=$(grep -E '^version:' latest.yml | head -1 | sed 's/version: *//' | tr -d '\r')
+          expected=$(node -p "require('../package.json').version")
+          echo "latest.yml annonce $declared, package.json dit $expected"
+          [ "$declared" = "$expected" ] || { echo "::error::versions incohérentes"; exit 1; }
+          ls -lh
 
       - name: Joindre à la release
         if: steps.guard.outputs.present == 'true'
@@ -91,8 +102,13 @@ jobs:
           # que d'échouer sur une course entre les deux.
           for attempt in 1 2 3 4 5 6; do
             if gh release view "$tag" --repo '${{ github.repository }}' > /dev/null 2>&1; then
-              gh release upload "$tag" overlay/dist/OLYCITY-Overlay.exe \
-                --clobber --repo '${{ github.repository }}'
+              # Le .blockmap permet à electron-updater de ne télécharger que
+              # les octets qui changent d'une version à l'autre.
+              files=(overlay/dist/OLYCITY-Overlay-Setup.exe overlay/dist/latest.yml)
+              for extra in overlay/dist/*.blockmap; do
+                [ -f "$extra" ] && files+=("$extra")
+              done
+              gh release upload "$tag" "${files[@]}" --clobber --repo '${{ github.repository }}'
               exit 0
             fi
             echo "Release $tag pas encore publiée — nouvelle tentative dans 20 s ($attempt/6)"

@@ -18,11 +18,12 @@ const fs = require('fs');
 const path = require('path');
 const { execFile } = require('child_process');
 
-const { detectGames, gameTransition, nextPollDelay } = require('./lib/game-watch.js');
+const { detectGames, gameTransition, nextPollDelay, anyGameRunning } = require('./lib/game-watch.js');
 const { createOverlayState, reduce } = require('./lib/overlay-state.js');
 const { parseSettings, sanitize } = require('./lib/settings.js');
 const { isAllowedUrl, isSafeExternalUrl, siteUrl } = require('./lib/url-policy.js');
 const { createLogger } = require('./lib/logger.js');
+const { setupAutoUpdate, shouldCheck, updateLabel, FIRST_CHECK_DELAY_MS } = require('./lib/updater.js');
 
 const TITLEBAR_HEIGHT = 36;
 const DEFAULT_SIZE = { width: 1100, height: 720 };
@@ -35,6 +36,8 @@ let settings = sanitize(null);
 let state = createOverlayState();
 let lastRunning = { valorant: false, lol: false };
 let firstRun = false;
+let updater = null;
+let lastUpdateCheckAt = 0;
 let log = (...parts) => console.log(...parts); // remplacé dès que userData est connu
 
 const settingsPath = () => path.join(app.getPath('userData'), 'settings.json');
@@ -197,8 +200,18 @@ async function pollGames() {
   if (transition === 'launched') apply(reduce(state, 'game-launched'));
   else if (transition === 'closed') apply(reduce(state, 'game-closed'));
 
+  maybeCheckForUpdate(anyGameRunning(running));
+
   pollTimer = setTimeout(pollGames, nextPollDelay(running));
   pollTimer.unref?.();
+}
+
+function maybeCheckForUpdate(gameRunning) {
+  if (!updater) return;
+  const now = Date.now();
+  if (!shouldCheck({ gameRunning, lastCheckAt: lastUpdateCheckAt, now })) return;
+  lastUpdateCheckAt = now;
+  updater.check();
 }
 
 // ─── Raccourci et zone de notification ───────────────────────────────────────
@@ -264,6 +277,10 @@ function refreshTrayMenu() {
     { type: 'separator' },
     // Pour qu'un diagnostic à distance ne demande pas de naviguer jusqu'à
     // %APPDATA% à l'aveugle.
+    ...(updater?.pending() ? [
+      { label: updateLabel(updater.pending()), click: () => { app.isQuitting = true; updater.installNow(); } },
+      { type: 'separator' },
+    ] : []),
     { label: 'Ouvrir le journal', click: () => shell.openPath(path.join(app.getPath('userData'), 'overlay.log')) },
     { type: 'separator' },
     { label: 'Quitter', click: () => { app.isQuitting = true; app.quit(); } },
@@ -310,6 +327,22 @@ if (!app.requestSingleInstanceLock()) {
 
     registerHotkey();
     applyLoginItem();
+
+    // require() tardif : en développement (npm start) le paquet peut ne pas
+    // être installé, et l'absence de mise à jour automatique ne doit pas
+    // empêcher l'overlay de tourner.
+    try {
+      const { autoUpdater } = require('electron-updater');
+      updater = setupAutoUpdate({
+        autoUpdater, log,
+        onStateChange: () => refreshTrayMenu(), // fait apparaître « Redémarrer pour installer »
+      });
+      const firstCheck = setTimeout(() => maybeCheckForUpdate(false), FIRST_CHECK_DELAY_MS);
+      firstCheck.unref?.();
+    } catch (error) {
+      log('[maj] indisponible —', error.message);
+    }
+
     pollGames();
 
     // Un premier lancement qui ne montre RIEN laisse croire que l'exécutable
