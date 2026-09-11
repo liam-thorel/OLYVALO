@@ -1,8 +1,9 @@
 {
-  "version": "4.17.11",
+  "version": "4.17.12",
   "files": [
     "index.js",
     "lol-watcher.js",
+    "loadouts.js",
     "lol-profile-utils.js",
     "opgg-profile.js",
     "rank-utils.js",

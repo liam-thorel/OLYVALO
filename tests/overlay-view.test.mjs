@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import {
   isLiveSession, groupActiveGames, isAgentSelect, memberForSession,
-  displayNameFor, openBets, countdownLabel, escapeHtml,
+  displayNameFor, openBets, countdownLabel, escapeHtml, matchSkins,
 } from '../js/overlay-utils.mjs';
 
 const NOW = 1_700_000_000_000;
@@ -100,5 +100,44 @@ assert.equal(escapeHtml('<img src=x onerror=alert(1)>'),
   '&lt;img src=x onerror=alert(1)&gt;');
 assert.equal(escapeHtml(`"&'`), '&quot;&amp;&#39;');
 assert.equal(escapeHtml(null), '');
+
+// ─── Skins des dix joueurs ───────────────────────────────────────────────────
+// La sonde a confirmé que les loadouts adverses reviennent : la vue doit les
+// montrer, et distinguer les camps sans se tromper.
+const withSkins = {
+  sessions: [{
+    selfTeam: 'ORDER',
+    players: [
+      { name: 'Mathis#OLY', team: 'ORDER', skins: [{ weapon: 'melee', skin: 'Elderflame Dagger' }] },
+      { name: 'Ennemi#EU', team: 'CHAOS', skins: [{ weapon: 'vandal', skin: 'Prime Vandal' }] },
+      { name: 'Banal#EU', team: 'CHAOS' },
+    ],
+  }],
+};
+const shown = matchSkins(withSkins);
+assert.equal(shown.length, 2, 'seuls les joueurs avec un skin notable apparaissent');
+assert.equal(shown[0].name, 'Mathis', 'les alliés en premier, sans le tag Riot');
+assert.equal(shown[0].ally, true);
+assert.equal(shown[1].ally, false, 'l’adversaire est identifié comme tel');
+
+// Sans équipe connue on n'affirme rien plutôt que de ranger tout le monde
+// du même côté — un liseré vert sur un ennemi serait pire que pas de liseré.
+const noTeam = matchSkins({ sessions: [{ players: [
+  { name: 'X#1', team: 'ORDER', skins: [{ weapon: 'melee', skin: 'Reaver' }] },
+] }] });
+assert.equal(noTeam[0].ally, null);
+
+// La session qui porte les dix joueurs n'est pas forcément la première :
+// en stack, seule celle du rapporteur les liste.
+assert.equal(matchSkins({ sessions: [
+  { selfTeam: 'ORDER' },
+  { selfTeam: 'ORDER', players: [{ name: 'Y#1', team: 'ORDER', skins: [{ skin: 'Oni' }] }] },
+] }).length, 1);
+
+// Rien à montrer ne doit jamais lever d'exception : la section se masque.
+for (const empty of [null, undefined, {}, { sessions: [] }, { sessions: [{}] },
+                     { sessions: [{ players: [] }] }]) {
+  assert.deepEqual(matchSkins(empty), [], `entrée vide : ${JSON.stringify(empty)}`);
+}
 
 console.log('overlay-view: regroupement des games, rattachement au roster et paris validés');

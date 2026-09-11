@@ -9,7 +9,7 @@
 
 import { liveDataStore, FIREBASE_URL } from './live-data-store.mjs';
 import {
-  groupActiveGames, isAgentSelect, displayNameFor, openBets, countdownLabel, escapeHtml,
+  groupActiveGames, isAgentSelect, displayNameFor, openBets, countdownLabel, escapeHtml, matchSkins,
 } from './overlay-utils.mjs';
 
 const ROSTER_URL = './data/roster.json';
@@ -56,6 +56,24 @@ function renderGame(snapshot) {
     ${game.sessions.map(playerRow).join('')}`;
 }
 
+function renderSkins(snapshot) {
+  const sessions = { ...(snapshot.valorantSessions || {}), ...(snapshot.lolSessions || {}) };
+  const [game] = groupActiveGames(sessions);
+  const players = game ? matchSkins(game) : [];
+
+  // Section entièrement masquée quand personne n'a de skin notable : au-dessus
+  // d'une partie, un bloc vide ne fait que voler de la place.
+  el('skins-section').hidden = players.length === 0;
+  if (players.length === 0) return;
+
+  el('skins').innerHTML = players.map(player => `
+    <div class="skin-row">
+      <span class="skin-side ${player.ally === true ? 'ally' : player.ally === false ? 'enemy' : ''}"></span>
+      <span class="skin-name">${escapeHtml(player.name)}</span>
+      <span class="skin-list">${player.skins.map(item => escapeHtml(item.skin)).join(' · ')}</span>
+    </div>`).join('');
+}
+
 function renderBets() {
   const open = openBets(rounds);
   // La section entière disparaît quand il n'y a rien : au-dessus d'une partie,
@@ -85,6 +103,7 @@ function renderStatus(snapshot) {
 function render() {
   if (!lastSnapshot) return;
   renderGame(lastSnapshot);
+  renderSkins(lastSnapshot);
   renderBets();
   renderStatus(lastSnapshot);
 }
