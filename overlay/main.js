@@ -202,7 +202,15 @@ function apply(next) {
   if (state.visible === wasVisible) return;
 
   if (state.visible) {
-    window_.show();
+    // Prendre le focus fait revenir la barre des tâches : Windows constate que
+    // la fenêtre au premier plan n'est plus le jeu en plein écran et réaffiche
+    // le shell. On n'active donc la fenêtre que lorsque l'utilisateur l'a
+    // explicitement demandée — c'est qu'il veut s'en servir.
+    //
+    // manualOverride distingue les deux : il est faux quand l'affichage vient
+    // du lancement d'une partie, vrai après un raccourci ou le menu.
+    if (state.manualOverride && !settings.neverFocus) window_.show();
+    else window_.showInactive(); // surgit sans voler le focus au jeu
     assertOnTop();
   } else {
     window_.hide();
@@ -303,6 +311,15 @@ function refreshTrayMenu() {
         settings.autoShow = menuItem.checked;
         saveSettings();
         apply(reduce(state, 'set-auto-show', menuItem.checked));
+      },
+    },
+    {
+      label: 'Ne jamais prendre le focus', type: 'checkbox', checked: settings.neverFocus,
+      // Le focus est ce qui fait réapparaître la barre des tâches par-dessus
+      // le jeu : sans lui, elle reste masquée.
+      click: menuItem => {
+        settings.neverFocus = menuItem.checked;
+        saveSettings();
       },
     },
     {
