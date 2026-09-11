@@ -21,8 +21,17 @@ Télécharger `OLYCITY-Overlay.exe` depuis la page Live du site ou depuis les
 releases GitHub, puis le lancer. Il n'y a rien à installer : l'exécutable est
 autonome et se place dans la zone de notification, à côté de l'horloge.
 
-Au premier lancement il se règle pour démarrer avec Windows. Ça se désactive
-d'un clic droit sur son icône.
+Au premier lancement, la fenêtre s'ouvre d'elle-même et l'application se règle
+pour démarrer avec Windows. Les fois suivantes elle démarre **masquée**, dans la
+zone de notification — sur Windows 11 son icône atterrit souvent dans le
+débordement, derrière la flèche `^` près de l'horloge. Un clic droit dessus
+donne accès aux réglages.
+
+## En cas de problème
+
+Clic droit sur l'icône → **Ouvrir le journal**. Tout ce que fait l'application y
+est écrit : démarrage, création de l'icône, raccourci, lancement du jeu. Le
+fichier se trouve dans `%APPDATA%\OLYCITY Overlay\overlay.log`.
 
 ## Utilisation
 
