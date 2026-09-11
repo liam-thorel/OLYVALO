@@ -74,6 +74,22 @@ complet quand on veut plus que l'essentiel, **Live** ramène à la vue compacte.
 Une fenêtre fermée à la main ne revient pas toute seule : elle attend la partie
 suivante. Un choix explicite n'est jamais écrasé par l'automatisme.
 
+## La barre des tâches réapparaît par-dessus le jeu
+
+C'est Windows, pas l'overlay. Dès qu'une fenêtre prend le **focus**, le shell
+constate que la fenêtre au premier plan n'est plus le jeu en plein écran, et
+réaffiche la barre des tâches.
+
+L'affichage **automatique** au lancement d'une partie n'active donc jamais la
+fenêtre : elle surgit sans voler le focus au jeu, et la barre reste masquée.
+C'est aussi préférable en pleine game — personne ne veut perdre le contrôle de
+sa souris au moment où la partie démarre.
+
+En revanche, afficher l'overlay au **raccourci** l'active, puisque c'est qu'on
+veut s'en servir. Pour consulter sans que la barre revienne : clic droit sur
+l'icône → **Ne jamais prendre le focus**. La fenêtre reste alors passive ;
+cliquer dedans lui rend le focus, et la barre avec.
+
 ## Ce que cette application ne fait pas
 
 Aucune injection dans le processus du jeu, aucun hook clavier bas niveau,

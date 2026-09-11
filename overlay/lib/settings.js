@@ -9,6 +9,10 @@
 const DEFAULTS = {
   hotkey: 'Control+Shift+F8',
   autoShow: true,        // s'afficher au lancement du jeu
+  // Mode consultation : la fenêtre ne prend jamais le focus, donc la barre des
+  // tâches ne réapparaît pas par-dessus le jeu. En contrepartie il faut
+  // cliquer dedans pour s'en servir — ce clic rend le focus, et la barre avec.
+  neverFocus: false,
   openAtLogin: true,
   opacity: 0.95,
   bounds: null,          // { x, y, width, height } — position mémorisée
@@ -51,6 +55,7 @@ function sanitize(raw) {
   return {
     hotkey: isValidHotkey(input.hotkey) ? input.hotkey : DEFAULTS.hotkey,
     autoShow: typeof input.autoShow === 'boolean' ? input.autoShow : DEFAULTS.autoShow,
+    neverFocus: typeof input.neverFocus === 'boolean' ? input.neverFocus : DEFAULTS.neverFocus,
     openAtLogin: typeof input.openAtLogin === 'boolean' ? input.openAtLogin : DEFAULTS.openAtLogin,
     opacity: Number.isFinite(opacity) ? Math.min(1, Math.max(MIN_OPACITY, opacity)) : DEFAULTS.opacity,
     bounds: isValidBounds(input.bounds) ? {

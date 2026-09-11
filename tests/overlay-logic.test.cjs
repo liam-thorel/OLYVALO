@@ -143,6 +143,26 @@ assert.equal(sanitize({ bounds: { x: 0, y: 0, width: 0, height: 100 } }).bounds,
 assert.deepEqual(sanitize({ bounds: { x: 10.6, y: 20.2, width: 800.9, height: 600.1 } }).bounds,
   { x: 11, y: 20, width: 801, height: 600 });
 
+// ─── Focus et barre des tâches ───────────────────────────────────────────────
+// Prendre le focus fait réapparaître la barre des tâches par-dessus le jeu :
+// Windows constate que la fenêtre au premier plan n'est plus le jeu en plein
+// écran. L'affichage automatique ne doit donc jamais activer la fenêtre ;
+// manualOverride est ce qui distingue les deux cas.
+let auto = createOverlayState();
+auto = reduce(auto, 'game-launched');
+assert.equal(auto.visible, true);
+assert.equal(auto.manualOverride, false, 'un affichage automatique ne prend pas le focus');
+
+let asked = reduce(createOverlayState(), 'hotkey');
+assert.equal(asked.manualOverride, true, 'un affichage demandé peut prendre le focus');
+assert.equal(reduce(createOverlayState(), 'show').manualOverride, true);
+
+// Le réglage « ne jamais prendre le focus » survit à un fichier abîmé.
+assert.equal(sanitize({}).neverFocus, false, 'le focus reste permis par défaut');
+assert.equal(sanitize({ neverFocus: true }).neverFocus, true);
+assert.equal(sanitize({ neverFocus: 'oui' }).neverFocus, false, 'une valeur non booléenne retombe au défaut');
+assert.equal(sanitize(null).neverFocus, false);
+
 // ─── Navigation ──────────────────────────────────────────────────────────────
 // La fenêtre est toujours au-dessus du jeu et lancée au démarrage : elle ne
 // doit pas pouvoir devenir un navigateur généraliste.
