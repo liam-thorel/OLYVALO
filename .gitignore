@@ -21,3 +21,18 @@ config.js
 # Secrets locaux du Worker de catalogue IGDB
 workers/game-catalog/.dev.vars
 workers/game-catalog/.wrangler/
+
+# Artefacts d'exécution du script Live, créés sur le PC des joueurs et commités
+# par erreur : dossier de sauvegarde de l'auto-updater, verrou d'instance, et
+# dossier de travail de la mise à jour.
+live/.olycity-backup/
+live/.olycity-update/
+live/.olycity-live.lock
+
+# L'archive autonome est assemblée par .github/workflows/release-live.yml à
+# chaque release. La garder dans le dépôt faisait payer 34 Mo à chaque clone
+# pour un fichier périmé dès la version suivante.
+live/olycity-live.zip
+
+# Build de l'overlay
+overlay/dist/

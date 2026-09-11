@@ -1,0 +1,108 @@
+/**
+ * Sélection et mise en forme des données pour la vue overlay.
+ *
+ * Séparé du rendu pour être testable : cette vue s'affiche par-dessus une
+ * partie en cours, c'est-à-dire au moment où l'on a le moins envie de
+ * découvrir un bug.
+ */
+
+const AGENT_SELECT_MODES = new Set(['agent-select']);
+
+/** Une session compte comme « en cours » si elle est active et récente. */
+export function isLiveSession(session, now = Date.now(), maxAgeMs = 15 * 60 * 1000) {
+  if (!session || session.active === false) return false;
+  const ts = Number(session.ts || 0);
+  if (!ts) return false;
+  return now - ts <= maxAgeMs;
+}
+
+/**
+ * Regroupe les sessions actives par partie. Deux membres du roster dans la
+ * même game partagent un matchId : ils doivent apparaître comme un seul bloc,
+ * pas comme deux parties distinctes.
+ *
+ * Une session sans matchId (Agent Select, rapport incomplet) ne peut être
+ * regroupée avec rien : elle forme son propre bloc plutôt que de fusionner
+ * par erreur avec une autre partie sans identifiant.
+ */
+export function groupActiveGames(sessions = {}, now = Date.now()) {
+  const groups = new Map();
+  Object.entries(sessions || {})
+    .filter(([, session]) => isLiveSession(session, now))
+    .sort(([, a], [, b]) => Number(b.ts || 0) - Number(a.ts || 0))
+    .forEach(([key, session]) => {
+      const groupKey = session.matchId ? `match:${session.matchId}` : `session:${key}`;
+      if (!groups.has(groupKey)) {
+        groups.set(groupKey, {
+          matchId: session.matchId || '',
+          map: session.mapClean || session.map || '',
+          mode: session.mode || '',
+          ts: Number(session.ts || 0),
+          sessions: [],
+        });
+      }
+      const group = groups.get(groupKey);
+      group.sessions.push({ key, ...session });
+      // La carte n'est pas toujours connue sur toutes les sessions d'une même
+      // game : on garde la première valeur non vide rencontrée.
+      if (!group.map) group.map = session.mapClean || session.map || '';
+      if (!group.mode) group.mode = session.mode || '';
+      group.ts = Math.max(group.ts, Number(session.ts || 0));
+    });
+  return [...groups.values()].sort((a, b) => b.ts - a.ts);
+}
+
+export function isAgentSelect(group) {
+  return AGENT_SELECT_MODES.has(String(group?.mode || '').toLowerCase())
+    || Boolean(group?.sessions?.some(session => session.phase === 'pregame'));
+}
+
+/** Rattache une session à un membre du roster, par memberId puis par Riot ID. */
+export function memberForSession(session, roster = []) {
+  if (!session) return null;
+  const byId = session.memberId
+    && roster.find(member => String(member.id || member.name) === String(session.memberId));
+  if (byId) return byId;
+
+  const riotId = String(session.playerName || '').toLowerCase();
+  if (!riotId) return null;
+  return roster.find(member => {
+    const ids = [member.riot, ...(member.smurfs || [])]
+      .filter(Boolean)
+      .map(account => `${account.name}#${account.tag}`.toLowerCase());
+    return ids.includes(riotId);
+  }) || null;
+}
+
+/** Nom à afficher : celui du roster si on le connaît, sinon le pseudo Riot. */
+export function displayNameFor(session, roster = []) {
+  const member = memberForSession(session, roster);
+  if (member?.name) return member.name;
+  return String(session?.member || session?.playerName || '').split('#')[0] || 'Inconnu';
+}
+
+/**
+ * Paris encore ouverts, les plus récents d'abord. Un round dont la fenêtre est
+ * écoulée n'est plus pariable : l'afficher inviterait à cliquer dans le vide.
+ */
+export function openBets(rounds = {}, now = Date.now()) {
+  return Object.entries(rounds || {})
+    .map(([key, round]) => ({ key, ...round }))
+    .filter(round => round.status === 'open' && Number(round.closesAt || 0) > now)
+    .sort((a, b) => Number(b.openedAt || 0) - Number(a.openedAt || 0));
+}
+
+/** « 2 min 30 » — compte à rebours lisible d'un pari. */
+export function countdownLabel(closesAt, now = Date.now()) {
+  const remaining = Math.max(0, Number(closesAt || 0) - now);
+  const totalSeconds = Math.floor(remaining / 1000);
+  const minutes = Math.floor(totalSeconds / 60);
+  const seconds = totalSeconds % 60;
+  return minutes > 0 ? `${minutes} min ${String(seconds).padStart(2, '0')}` : `${seconds} s`;
+}
+
+export function escapeHtml(value) {
+  return String(value ?? '').replace(/[&<>"']/g, character => ({
+    '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;',
+  }[character]));
+}

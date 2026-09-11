@@ -6,7 +6,7 @@ const root = path.join(__dirname, '..');
 const read = f => fs.readFileSync(path.join(root, f), 'utf8');
 
 const workflow = read('.github/workflows/pages.yml');
-assert.match(workflow, /cp index\.html \.nojekyll manifest\.webmanifest sw\.js _site\//);
+assert.match(workflow, /cp index\.html overlay\.html \.nojekyll manifest\.webmanifest sw\.js _site\//);
 assert.match(workflow, /s\/__OLYCITY_BUILD_ID__\/\$\{GITHUB_SHA\}\/g/);
 assert.match(workflow, /NOTIFICATION_ENDPOINT/);
 
@@ -21,7 +21,7 @@ for (const m of workflow.matchAll(/^\s*cp (?:-r )?([^\n|>]+?) _site\/?(\S*)$/gm)
 for (const m of workflow.matchAll(/^\s*cp ([^\s]+) _site\/(\S+)\/$/gm)) published.add(m[1]);
 
 // ─── Tout ce que le site référence doit être publié ──────────────────────────
-const sources = ['index.html', ...fs.readdirSync(path.join(root, 'js')).map(f => `js/${f}`)];
+const sources = ['index.html', 'overlay.html', ...fs.readdirSync(path.join(root, 'js')).map(f => `js/${f}`)];
 const referenced = new Set();
 for (const file of sources) {
   const src = read(file);

@@ -38,7 +38,10 @@ jobs:
       - name: Assembler le site
         run: |
           mkdir -p _site
-          cp index.html .nojekyll manifest.webmanifest sw.js _site/
+          # overlay.html : vue compacte chargée par l'application overlay,
+          # volontairement hors de la coquille SPA (routeur et caches inutiles
+          # à 420 px au-dessus d'une partie).
+          cp index.html overlay.html .nojekyll manifest.webmanifest sw.js _site/
           cp -r assets css js data _site/
           # Le panneau admin lit ce manifeste pour afficher la version du
           # script attendue. Le reste de live/ (dont le ZIP de 34 Mo) n'a rien
