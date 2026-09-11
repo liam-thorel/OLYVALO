@@ -50,7 +50,7 @@
      étiquette « Allié / Ennemi » mangerait la place du nom. */
   .skin-row { display: flex; align-items: center; gap: 8px; padding: 5px 0; }
   .skin-row + .skin-row { border-top: 1px solid var(--line); }
-  .skin-side { width: 3px; align-self: stretch; border-radius: 2px; background: var(--line); flex: none; }
+  .skin-side { width: 3px; min-height: 16px; align-self: stretch; border-radius: 2px; background: var(--line); flex: none; }
   .skin-side.ally { background: var(--green); }
   .skin-side.enemy { background: var(--red); }
   .skin-name { font-weight: 600; flex: none; max-width: 40%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -58,6 +58,30 @@
 
   footer { color: var(--dim); font-size: 11px; text-align: center; padding-top: 4px; }
   .offline { color: var(--red); }
+
+  /* La fenêtre descend jusqu'à 320 px de large. En dessous de ~380, « nom à
+     gauche, détail à droite » se chevauche : on empile. */
+  @media (max-width: 380px) {
+    body { padding: 8px; }
+    .card { padding: 10px; }
+    .player { flex-wrap: wrap; }
+    .player-meta { flex-basis: 100%; text-align: left; padding-left: 40px; }
+    .skin-row { flex-wrap: wrap; }
+    .skin-name { max-width: none; }
+    .skin-list { flex-basis: 100%; text-align: left; padding-left: 11px; }
+    .bet { flex-wrap: wrap; }
+    .bet-timer { flex-basis: 100%; text-align: right; }
+  }
+
+  /* Fenêtre très basse : on rend la page défilable plutôt que de tronquer, et
+     on récupère de la hauteur sur les marges. */
+  @media (max-height: 420px) {
+    body { padding: 8px; }
+    section { margin-bottom: 10px; }
+    h2 { margin-bottom: 5px; }
+    .player { padding: 4px 0; }
+    .skin-row { padding: 3px 0; }
+  }
 </style>
 </head>
 <body>

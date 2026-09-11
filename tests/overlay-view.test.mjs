@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import {
   isLiveSession, groupActiveGames, isAgentSelect, memberForSession,
   displayNameFor, openBets, countdownLabel, escapeHtml, matchSkins,
+  modeLabelFor, hasTeams,
 } from '../js/overlay-utils.mjs';
 
 const NOW = 1_700_000_000_000;
@@ -139,5 +140,59 @@ for (const empty of [null, undefined, {}, { sessions: [] }, { sessions: [{}] },
                      { sessions: [{ players: [] }] }]) {
   assert.deepEqual(matchSkins(empty), [], `entrée vide : ${JSON.stringify(empty)}`);
 }
+
+// ─── Tous les modes de jeu ───────────────────────────────────────────────────
+// Le script publie modeLabel et modeFamily pour TOUS les modes. La vue ne doit
+// jamais montrer un queueID brut du genre « ggteam » ou « onefa ».
+const modes = groupActiveGames({
+  a: { active: true, ts: NOW, matchId: 'M1', playerName: 'A#1',
+       mode: 'ggteam', modeLabel: 'Intensification', modeFamily: 'arcade' },
+}, NOW);
+assert.equal(modeLabelFor(modes[0]), 'Intensification');
+
+// Poste resté sur une ancienne version du script : pas de modeLabel publié.
+// Un libellé générique vaut mieux que « ggteam » affiché tel quel.
+assert.equal(modeLabelFor({ mode: 'ggteam' }), 'En jeu');
+assert.equal(modeLabelFor({}), '');
+assert.equal(modeLabelFor(null), '');
+
+// ─── Modes sans équipes ──────────────────────────────────────────────────────
+// En Deathmatch tout le monde porte la même TeamID. Colorer les joueurs y
+// ferait passer les dix adversaires pour des alliés.
+assert.equal(hasTeams({ modeFamily: 'free-for-all' }), false, 'Deathmatch : aucun camp');
+assert.equal(hasTeams({ modeFamily: 'tactical' }), true);
+assert.equal(hasTeams({ modeFamily: 'team-deathmatch' }), true, 'le TDM a bien deux équipes');
+assert.equal(hasTeams({ modeFamily: 'arcade' }), true);
+// Famille inconnue : on suppose des équipes plutôt que d'effacer l'info.
+assert.equal(hasTeams({}), true);
+assert.equal(hasTeams(null), true);
+
+const ffa = {
+  modeFamily: 'free-for-all',
+  sessions: [{ selfTeam: 'NEUTRAL', players: [
+    { name: 'Moi#OLY', team: 'NEUTRAL', skins: [{ weapon: 'melee', skin: 'Reaver' }] },
+    { name: 'Autre#EU', team: 'NEUTRAL', skins: [{ weapon: 'vandal', skin: 'Oni' }] },
+  ] }],
+};
+const ffaSkins = matchSkins(ffa);
+assert.equal(ffaSkins.length, 2, 'les skins restent affichés en Deathmatch');
+assert.deepEqual(ffaSkins.map(p => p.ally), [null, null],
+  'aucun camp annoncé : ni liseré vert, ni rouge');
+
+// Le même jeu de données dans un mode avec équipes doit, lui, colorer.
+const teamed = matchSkins({ ...ffa, modeFamily: 'tactical' });
+assert.deepEqual(teamed.map(p => p.ally), [true, true], 'même TeamID = même camp');
+
+// ─── Le libellé survit au regroupement d'un stack ────────────────────────────
+// Seule la session du rapporteur porte parfois les métadonnées complètes.
+const stackModes = groupActiveGames({
+  a: { active: true, ts: NOW, matchId: 'M9', playerName: 'A#1' },
+  b: { active: true, ts: NOW, matchId: 'M9', playerName: 'B#1',
+       modeLabel: 'Vélocité', modeFamily: 'tactical' },
+}, NOW);
+assert.equal(stackModes.length, 1);
+assert.equal(modeLabelFor(stackModes[0]), 'Vélocité',
+  'le libellé remonte depuis la session qui le porte');
+assert.equal(hasTeams(stackModes[0]), true);
 
 console.log('overlay-view: regroupement des games, rattachement au roster et paris validés');

@@ -10,6 +10,7 @@
 import { liveDataStore, FIREBASE_URL } from './live-data-store.mjs';
 import {
   groupActiveGames, isAgentSelect, displayNameFor, openBets, countdownLabel, escapeHtml, matchSkins,
+  modeLabelFor,
 } from './overlay-utils.mjs';
 
 const ROSTER_URL = './data/roster.json';
@@ -51,7 +52,7 @@ function renderGame(snapshot) {
   el('game').innerHTML = `
     <div class="game-head">
       <span class="game-map">${escapeHtml(game.map || 'Partie en cours')}</span>
-      <span class="badge ${pregame ? '' : 'live'}">${pregame ? 'Agent Select' : escapeHtml(game.mode || 'En jeu')}</span>
+      <span class="badge ${pregame ? '' : 'live'}">${pregame ? 'Agent Select' : escapeHtml(modeLabelFor(game))}</span>
     </div>
     ${game.sessions.map(playerRow).join('')}`;
 }
