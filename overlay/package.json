@@ -9,18 +9,33 @@
     "start": "electron .",
     "build": "electron-builder --win --publish never"
   },
+  "dependencies": {
+    "electron-updater": "6.8.9"
+  },
   "devDependencies": {
     "electron": "43.7.0",
     "electron-builder": "26.15.3"
   },
   "build": {
     "appId": "gg.olycity.overlay",
-    "productName": "OLYCITY-Overlay",
+    "productName": "OLYCITY Overlay",
     "files": ["main.js", "preload.js", "lib/**/*", "ui/**/*"],
+    "publish": [
+      { "provider": "github", "owner": "liam-thorel", "repo": "OLYVALO" }
+    ],
     "win": {
-      "target": [{ "target": "portable", "arch": ["x64"] }],
-      "artifactName": "OLYCITY-Overlay.exe"
+      "target": [{ "target": "nsis", "arch": ["x64"] }],
+      "artifactName": "OLYCITY-Overlay-Setup.exe"
     },
-    "portable": { "artifactName": "OLYCITY-Overlay.exe" }
+    "nsis": {
+      "oneClick": true,
+      "perMachine": false,
+      "allowToChangeInstallationDirectory": false,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "runAfterFinish": true,
+      "artifactName": "OLYCITY-Overlay-Setup.exe",
+      "differentialPackage": true
+    }
   }
 }

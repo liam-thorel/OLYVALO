@@ -207,4 +207,32 @@ const fakeFs = (files = {}) => ({
   assert.doesNotThrow(() => log('et on n’insiste pas'));
 }
 
+// ─── Mise à jour automatique ─────────────────────────────────────────────────
+const { shouldCheck, updateLabel, CHECK_INTERVAL_MS } = require('../overlay/lib/updater.js');
+
+// Ne jamais télécharger 90 Mo pendant une partie : ça mange la bande passante
+// au pire moment, et l'installation devra de toute façon attendre la fermeture.
+assert.equal(shouldCheck({ gameRunning: true, lastCheckAt: 0, now: 1e12 }), false,
+  'aucune vérification pendant une game, même si on n’a jamais vérifié');
+
+// Hors partie : une première fois tout de suite, puis espacé.
+assert.equal(shouldCheck({ gameRunning: false, lastCheckAt: 0, now: 1e12 }), true);
+assert.equal(shouldCheck({ gameRunning: false, lastCheckAt: 1e12, now: 1e12 + 1000 }), false,
+  'on n’interroge pas GitHub à chaque sondage du jeu');
+assert.equal(shouldCheck({ gameRunning: false, lastCheckAt: 1e12, now: 1e12 + CHECK_INTERVAL_MS }), true);
+
+// Le sondage du jeu tourne toutes les 5 à 15 secondes : sans l'intervalle,
+// l'overlay interrogerait GitHub des milliers de fois par jour.
+let checks = 0;
+let last = 0;
+for (let t = 0; t < 24 * 3600_000; t += 15_000) {
+  if (shouldCheck({ gameRunning: false, lastCheckAt: last, now: t })) { checks += 1; last = t; }
+}
+assert.ok(checks <= 5, `au plus quelques vérifications par jour, obtenu ${checks}`);
+
+// Le libellé du menu doit nommer la version quand on la connaît.
+assert.match(updateLabel({ version: '1.2.0' }), /1\.2\.0/);
+assert.match(updateLabel(null), /Redémarrer/);
+assert.match(updateLabel({}), /Redémarrer/);
+
 console.log('overlay-logic: détection du jeu, visibilité, réglages et navigation validés');
