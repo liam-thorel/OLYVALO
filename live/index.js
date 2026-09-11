@@ -7,6 +7,7 @@ const { buildRankSnapshot } = require('./rank-utils.js');
 const { riotServer } = require('./server-utils.js');
 const { autoUpdate, restartDecision } = require('./updater.js');
 const { pregameTransition } = require('./pregame-utils.js');
+const { buildWeaponIndex, buildSkinLevelIndex, curateLoadouts } = require('./loadouts.js');
 const { ensureStartupLauncher } = require('./startup.js');
 const { acquireInstanceLock, releaseInstanceLock } = require('./instance-lock.js');
 const { createExclusivePoller } = require('./poll-utils.js');
@@ -28,7 +29,7 @@ const {
 } = require('./valorant-mode-utils.js');
 
 const FIREBASE_URL = 'https://realtime-database-5bb9f-default-rtdb.europe-west1.firebasedatabase.app';
-const SCRIPT_VERSION = '4.17.11';
+const SCRIPT_VERSION = '4.17.12';
 const INSTANCE_LOCK_PATH = path.join(__dirname, '.olycity-live.lock');
 const LOG_PATH = path.join(__dirname, 'olycity.log');
 const MAX_LOG_BYTES = 5 * 1024 * 1024;
@@ -403,6 +404,15 @@ function reqNoAuth(port, endpoint) {
 // Load agent UUIDs + client version at startup
 let AGENT_UUIDS = {};
 let AGENT_ICONS = {};
+// Catalogues nécessaires pour nommer les skins équipés. Vides tant que
+// valorant-api n'a pas répondu : les skins sont alors simplement absents,
+// ce qui ne gêne rien d'autre.
+let WEAPON_INDEX = new Map();
+let SKIN_LEVEL_INDEX = new Map();
+// Loadouts déjà récupérés, par matchId : la composition ne change pas en
+// cours de partie, une seule requête suffit.
+let loadoutsMatchId = '';
+let loadoutsByPuuid = {};
 let RIOT_CLIENT_VERSION = 'unknown';
 
 let agentsReady = false;
@@ -424,10 +434,16 @@ function valorantApiJson(apiPath, timeoutMs = 5000) {
 }
 
 async function refreshValorantMetadata() {
-  const [version, agents] = await Promise.allSettled([
+  const [version, agents, weapons, skinLevels] = await Promise.allSettled([
     valorantApiJson('/v1/version'),
     valorantApiJson('/v1/agents?isPlayableCharacter=true'),
+    valorantApiJson('/v1/weapons'),
+    valorantApiJson('/v1/weapons/skinlevels'),
   ]);
+  // Les skins sont un bonus : leur absence ne doit pas déclencher la nouvelle
+  // tentative réservée aux agents, sans lesquels le script ne sert à rien.
+  if (weapons.status === 'fulfilled') WEAPON_INDEX = buildWeaponIndex(weapons.value);
+  if (skinLevels.status === 'fulfilled') SKIN_LEVEL_INDEX = buildSkinLevelIndex(skinLevels.value);
   if (version.status === 'fulfilled') {
     const data = version.value;
     RIOT_CLIENT_VERSION = data.data?.riotClientVersion || data.data?.version || RIOT_CLIENT_VERSION;
@@ -805,6 +821,8 @@ async function refreshSelfIdentity(lock, force = false) {
   rankMap = {};
   lastKnownRoster = [];
   lastKnownRosterMatchId = '';
+  loadoutsMatchId = '';
+  loadoutsByPuuid = {};
   missedPolls = 0;
   lastConfirmedGameAt = 0;
   roundPhase = '';
@@ -849,6 +867,36 @@ async function ensureAuth(lock) {
 }
 
 const wait = ms => new Promise(resolve => setTimeout(resolve, ms));
+
+/**
+ * Skins équipés des dix joueurs. Une seule requête par partie : la composition
+ * ne change plus une fois la game lancée.
+ *
+ * Silencieux en cas d'échec. Cet endpoint n'est pas documenté par Riot et peut
+ * disparaître à n'importe quel patch ; le Live doit continuer sans lui.
+ */
+async function fetchMatchLoadouts(tokens, matchId, players) {
+  if (!tokens || !matchId) return {};
+  if (matchId === loadoutsMatchId) return loadoutsByPuuid;
+  if (WEAPON_INDEX.size === 0 || SKIN_LEVEL_INDEX.size === 0) return {};
+
+  loadoutsMatchId = matchId;
+  loadoutsByPuuid = {};
+  try {
+    const response = await pvpGet(tokens, `/core-game/v1/matches/${matchId}/loadouts`);
+    const list = response?.Loadouts || [];
+    if (list.length === 0) return loadoutsByPuuid;
+    loadoutsByPuuid = curateLoadouts({
+      loadouts: list, players,
+      weaponIndex: WEAPON_INDEX, skinLevels: SKIN_LEVEL_INDEX,
+    });
+    const withSkins = Object.keys(loadoutsByPuuid).length;
+    console.log(`[${ts()}] 🔫 Skins — ${withSkins}/${list.length} joueurs avec un skin notable`);
+  } catch (error) {
+    console.log(`[${ts()}] 🔫 Skins indisponibles — ${error.message}`);
+  }
+  return loadoutsByPuuid;
+}
 
 async function fetchPostMatchDetails(tokens, matchId) {
   if (!tokens || !matchId) return null;
@@ -1487,6 +1535,8 @@ async function poll() {
           const redScore  = teams.find(t => t.TeamID === 'Red')?.Score || 0;
           lastScore = JSON.stringify({ blue: blueScore, red: redScore });
 
+          const skinsByPuuid = await fetchMatchLoadouts(authTokens, matchData.MatchID, match.Players);
+
           players = match.Players.map(p => {
             // Match agent UUID (first 8 chars)
             const charId = (p.CharacterID || '').toLowerCase();
@@ -1503,6 +1553,9 @@ async function poll() {
               ult: false, x: 0, y: 0,
               incognito: !nameMap[p.Subject],
               rank: rankMap[p.Subject] || null,
+              // Absent quand le joueur n'a que des skins d'origine : inutile
+              // de publier une liste vide pour chacun des dix.
+              ...(skinsByPuuid[p.Subject]?.length ? { skins: skinsByPuuid[p.Subject] } : {}),
             };
           });
           if (!gameDataLogged) {

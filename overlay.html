@@ -46,6 +46,16 @@
   .bet-odds { color: var(--dim); font-size: 12px; }
   .bet-timer { color: var(--red); font-variant-numeric: tabular-nums; font-weight: 700; flex: none; }
 
+  /* Un liseré de couleur suffit à distinguer les camps : à cette largeur, une
+     étiquette « Allié / Ennemi » mangerait la place du nom. */
+  .skin-row { display: flex; align-items: center; gap: 8px; padding: 5px 0; }
+  .skin-row + .skin-row { border-top: 1px solid var(--line); }
+  .skin-side { width: 3px; align-self: stretch; border-radius: 2px; background: var(--line); flex: none; }
+  .skin-side.ally { background: var(--green); }
+  .skin-side.enemy { background: var(--red); }
+  .skin-name { font-weight: 600; flex: none; max-width: 40%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .skin-list { color: var(--dim); font-size: 12px; flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; text-align: right; }
+
   footer { color: var(--dim); font-size: 11px; text-align: center; padding-top: 4px; }
   .offline { color: var(--red); }
 </style>
@@ -54,6 +64,11 @@
   <section id="game-section">
     <h2>Partie en cours</h2>
     <div id="game" class="card"><div class="empty">Connexion au Live…</div></div>
+  </section>
+
+  <section id="skins-section" hidden>
+    <h2>Skins de la partie</h2>
+    <div id="skins" class="card"></div>
   </section>
 
   <section id="bets-section" hidden>

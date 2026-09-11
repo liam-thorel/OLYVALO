@@ -101,6 +101,32 @@ export function countdownLabel(closesAt, now = Date.now()) {
   return minutes > 0 ? `${minutes} min ${String(seconds).padStart(2, '0')}` : `${seconds} s`;
 }
 
+/**
+ * Les dix joueurs de la partie qui ont un skin notable, adversaires compris.
+ *
+ * Le script ne publie `skins` que pour ceux qui en ont un hors skin d'origine :
+ * la liste est donc déjà filtrée, on n'a qu'à la mettre en forme. L'équipe du
+ * joueur observé sert de repère — c'est `selfTeam` sur la session.
+ */
+export function matchSkins(group) {
+  const session = (group?.sessions || []).find(entry => entry.players?.length);
+  if (!session) return [];
+  const ourTeam = session.selfTeam || null;
+
+  return (session.players || [])
+    .filter(player => player.skins?.length)
+    .map(player => ({
+      name: String(player.name || '').split('#')[0] || '?',
+      // Sans équipe connue on n'affirme rien plutôt que de ranger tout le
+      // monde du même côté.
+      ally: ourTeam ? player.team === ourTeam : null,
+      skins: player.skins,
+    }))
+    // Alliés d'abord, puis l'ordre d'origine : la liste reste stable d'un
+    // rafraîchissement à l'autre.
+    .sort((a, b) => Number(b.ally === true) - Number(a.ally === true));
+}
+
 export function escapeHtml(value) {
   return String(value ?? '').replace(/[&<>"']/g, character => ({
     '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;',
