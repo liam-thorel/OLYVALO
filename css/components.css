@@ -1221,3 +1221,30 @@ body.profile-picker-open { overflow: hidden; }
 }
 .henrik-key-btn:hover { border-color: var(--gold); color: var(--text); }
 .henrik-key-btn.is-set { color: #3fcf6b; border-color: rgba(63,207,107,.4); }
+
+/* ─── Lineups : couverture par carte et formulaire d'ajout ─────────────────── */
+/* Une carte sans lineup doit sauter aux yeux : c'est l'information utile ici,
+   trois des sept cartes en rotation n'en avaient aucun et rien ne le disait. */
+.admin-lineup-coverage { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px; }
+.admin-lineup-chip {
+  font-size: 12px; padding: 4px 10px; border-radius: 999px;
+  border: 1px solid var(--line, #262a35); color: var(--dim, #8b94a3);
+}
+.admin-lineup-chip b { color: var(--text, #e7e9ee); margin-left: 2px; }
+.admin-lineup-chip[data-empty="true"] { border-color: var(--red, #ff4656); color: var(--red, #ff4656); }
+.admin-lineup-chip[data-empty="true"] b { color: var(--red, #ff4656); }
+
+.admin-lineup-form { display: flex; flex-direction: column; gap: 8px; }
+.admin-lineup-row { display: flex; gap: 8px; flex-wrap: wrap; }
+.admin-lineup-row > * { flex: 1 1 160px; min-width: 0; }
+.admin-lineup-form input,
+.admin-lineup-form select {
+  background: var(--card, #161922); color: var(--text, #e7e9ee);
+  border: 1px solid var(--line, #262a35); border-radius: 8px;
+  padding: 9px 11px; font: inherit; font-size: 13px; width: 100%;
+}
+.admin-lineup-form input:focus,
+.admin-lineup-form select:focus { outline: none; border-color: var(--red, #ff4656); }
+.admin-lineup-actions { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+/* Le statut porte les messages de validation, souvent plusieurs à la fois. */
+.admin-lineup-actions .admin-dim { flex: 1 1 220px; min-width: 0; }

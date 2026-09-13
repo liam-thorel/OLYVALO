@@ -14,6 +14,7 @@
 
 import { accountLiveState, accountRiotId, discoveryRows, normalizeGames } from './admin-account-utils.mjs?v=20260810-firebase-connection-fix';
 import { buildScriptHealth, scriptDiagnosticText, scriptHealthSummary } from './admin-health-utils.mjs?v=20260814-admin-current-script';
+import { validateLineup, lineupCoverage, mergeLineups } from './lineup-utils.mjs?v=20260913-lineup-contrib';
 import { fetchJsonWithRetry, fetchJsonWithTimeout } from './request-utils.mjs?v=20260825-first-load-recovery';
 import { isLiveRecordExpired, liveDataStore, staleLiveRecords } from './live-data-store.mjs?v=20260810-firebase-connection-fix';
 import { mergeMemberProfiles } from './member-profiles.mjs?v=20260823-profile-picker';
@@ -152,6 +153,7 @@ async function loadAll(signal) {
   }
   if (discoveredData !== null) discovered = discoveredData || {};
   applyLiveSnapshot(liveSnapshot);
+  await loadLineupState().catch(() => {});
   if (updateManifest?.version) latestScriptVersion = updateManifest.version;
   adminDataLoaded = true;
 }
@@ -363,6 +365,85 @@ function renderMembersHTML() {
   }).join('');
 }
 
+
+// Cartes en rotation et lineups connus, pour la couverture et le formulaire.
+let lineupState = { maps: [], lineups: {} };
+
+async function loadLineupState() {
+  const [meta, base, added] = await Promise.all([
+    fetchJsonWithTimeout('./data/meta.json', { timeoutMs: ADMIN_LOAD_TIMEOUT_MS }).catch(() => null),
+    fetchJsonWithTimeout('./data/lineups.json', { timeoutMs: ADMIN_LOAD_TIMEOUT_MS }).catch(() => null),
+    fbGet('lineups').catch(() => null),
+  ]);
+  lineupState = {
+    maps: meta?.mapsInRotation || [],
+    lineups: mergeLineups(base || {}, added || {}),
+  };
+}
+
+function renderLineupCoverageHTML() {
+  const rows = lineupCoverage(lineupState.lineups, lineupState.maps);
+  if (!rows.length) return '<p class="admin-dim">Rotation inconnue.</p>';
+  // Une carte à zéro est ce qu’on veut voir en premier : rien ne le signalait.
+  return `<div class="admin-lineup-coverage">${rows.map(row => `
+    <span class="admin-lineup-chip" data-empty="${row.count === 0}">
+      ${escapeHTML(row.map)} <b>${row.count}</b>
+    </span>`).join('')}</div>`;
+}
+
+function renderLineupFormHTML() {
+  const maps = lineupState.maps.map(map => `<option>${escapeHTML(map)}</option>`).join('');
+  return `
+    <form class="admin-lineup-form" id="admin-lineup-form">
+      <div class="admin-lineup-row">
+        <select name="map" required>${maps}</select>
+        <input name="agent" placeholder="Agent (Sova, Viper…)" required maxlength="24">
+      </div>
+      <input name="name" placeholder="Nom du lineup — ex. A Site God Arrow" required maxlength="80">
+      <input name="video" placeholder="Lien YouTube (avec l’horodatage du bouton Partager)" required>
+      <div class="admin-lineup-row">
+        <select name="type"><option value="ATK">Attaque</option><option value="DEF">Défense</option></select>
+        <select name="diff"><option>Facile</option><option>Moyen</option><option>Difficile</option></select>
+      </div>
+      <input name="desc" placeholder="Description — d’où le lancer, ce que ça couvre" required maxlength="240">
+      <div class="admin-lineup-actions">
+        <button type="submit" class="admin-btn admin-btn-primary">Ajouter</button>
+        <span class="admin-dim" id="admin-lineup-status"></span>
+      </div>
+    </form>`;
+}
+
+function wireLineupForm(root) {
+  const form = root.querySelector('#admin-lineup-form');
+  if (!form) return;
+  const status = root.querySelector('#admin-lineup-status');
+
+  form.addEventListener('submit', async event => {
+    event.preventDefault();
+    const input = Object.fromEntries(new FormData(form).entries());
+    const result = validateLineup(input);
+    if (!result.ok) {
+      // Tous les problèmes d’un coup, pas un par soumission.
+      if (status) status.textContent = result.erreurs.join(' ');
+      return;
+    }
+
+    const button = form.querySelector('button[type=submit]');
+    button.disabled = true;
+    if (status) status.textContent = 'Envoi…';
+    try {
+      // POST : Firebase génère la clé, deux ajouts simultanés ne s’écrasent pas.
+      await fbPost(`lineups/${result.map}/${result.agent}`, result.lineup);
+      form.reset();
+      await loadLineupState();
+      root.querySelector('#admin-lineup-coverage').innerHTML = renderLineupCoverageHTML();
+      if (status) status.textContent = `Ajouté sur ${result.map} · visible au prochain chargement du site.`;
+    } catch (error) {
+      if (status) status.textContent = `Échec : ${error.message}`;
+    } finally { button.disabled = false; }
+  });
+}
+
 function render() {
   const root = document.getElementById('admin-content');
   if (!root) return;
@@ -407,6 +488,17 @@ function render() {
       </section>` : ''}
 
       <section class="admin-section">
+        <div class="admin-section-head">
+          <div>
+            <h3>Lineups par carte</h3>
+            <p class="admin-dim">Colle un lien YouTube avec son horodatage — l’ID et le départ sont lus tout seuls</p>
+          </div>
+        </div>
+        <div id="admin-lineup-coverage">${renderLineupCoverageHTML()}</div>
+        ${renderLineupFormHTML()}
+      </section>
+
+      <section class="admin-section">
         <h3>Comptes détectés non assignés</h3>
         <div id="admin-discovered">${renderDiscoveredHTML()}</div>
       </section>
@@ -432,6 +524,7 @@ async function reloadAndRender(root) {
 }
 
 function wireEvents(root) {
+  wireLineupForm(root);
   root.querySelector('#admin-refresh-btn')?.addEventListener('click', () => reloadAndRender(root));
   root.querySelector('#admin-services-refresh')?.addEventListener('click', () => refreshServiceHealth(root));
 
