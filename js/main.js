@@ -3,6 +3,7 @@
  * Point d'entrée. Charge les données, orchestre les modules, expose window.OLYCITY.
  */
 
+import { mergeLineups } from './lineup-utils.mjs?v=20260913-lineup-contrib';
 import { valorantApi } from './api.js';
 import { fetchJsonWithRetry, fetchJsonWithTimeout } from './request-utils.mjs?v=20260825-first-load-recovery';
 
@@ -75,6 +76,9 @@ async function loadData() {
   }
   const [comps, roster, members, roles, agentsFr, lineups, meta] = bundle;
   const memberOverlay = await fetchJsonWithTimeout('https://realtime-database-5bb9f-default-rtdb.europe-west1.firebasedatabase.app/rosterOverlay.json', { timeoutMs:2_500 }).catch(() => null);
+  // Lineups ajoutés depuis le site, hors déploiement. Indisponibles = on
+  // affiche ceux du dépôt, ce qui reste la situation d'avant.
+  const addedLineups = await fetchJsonWithTimeout('https://realtime-database-5bb9f-default-rtdb.europe-west1.firebasedatabase.app/lineups.json', { timeoutMs:2_500 }).catch(() => null);
 
   state.COMPS_DATA = comps;
   state.ROSTER = roster;
@@ -85,7 +89,7 @@ async function loadData() {
   state.S_TIER = roles.sTier;
   state.GLOBAL_NOTES = roles.globalNotes;
   state.AGENT_FR = agentsFr;
-  state.LINEUPS = lineups;
+  state.LINEUPS = mergeLineups(lineups, addedLineups || {});
   state.META = meta;
   // Load custom players added at runtime
   try {
