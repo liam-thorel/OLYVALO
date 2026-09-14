@@ -41,6 +41,8 @@ let pollTimer = null;
 let settings = sanitize(null);
 let state = createOverlayState();
 let lastRunning = { valorant: false, lol: false };
+// Jeu actuellement affiché par la vue compacte, via le fragment d'URL.
+let shownGame = '';
 let firstRun = false;
 let updater = null;
 let lastUpdateCheckAt = 0;
@@ -257,12 +259,35 @@ async function pollGames() {
     apply(reduce(state, 'game-closed'));
   }
 
+  showGame(running);
+
   if (anyGameRunning(running) && state.visible) assertOnTop();
 
   maybeCheckForUpdate(anyGameRunning(running));
 
   pollTimer = setTimeout(pollGames, nextPollDelay(running));
   pollTimer.unref?.();
+}
+
+/**
+ * Aligne la vue sur le jeu lancé. Sans ça, une session Valorant encore
+ * fraîche de la partie précédente s'affiche par-dessus la game LoL en cours :
+ * la vue prend la plus récente des deux flux confondus.
+ *
+ * Valorant l'emporte si les deux tournent — on ne joue pas aux deux à la fois,
+ * mais le client LoL reste souvent ouvert en fond.
+ */
+function showGame(running) {
+  const next = running.valorant ? 'valorant' : running.lol ? 'lol' : '';
+  if (next === shownGame) return;
+  shownGame = next;
+  log('[vue] jeu affiché :', next || 'aucun');
+  const target = next ? `#${next}` : '';
+  siteView?.webContents
+    .executeJavaScript(`location.hash = ${JSON.stringify(target)}`)
+    // La page peut ne pas être chargée (démarrage, réseau coupé) : on
+    // retombe sur un chargement complet, qui portera le bon fragment.
+    .catch(() => siteView?.webContents.loadURL(siteUrl(`overlay.html${target}`)));
 }
 
 function maybeCheckForUpdate(gameRunning) {
@@ -307,7 +332,15 @@ function applyLoginItem() {
     app.setLoginItemSettings(portableExe
       ? { openAtLogin: settings.openAtLogin, path: portableExe, args: [] }
       : { openAtLogin: settings.openAtLogin });
-    log('[demarrage-windows]', settings.openAtLogin ? 'activé' : 'désactivé', portableExe ? '(portable)' : '');
+    // Windows peut refuser silencieusement (stratégie de groupe, antivirus,
+    // entrée supprimée par un nettoyeur). On relit ce qu'il a réellement
+    // retenu plutôt que de supposer que l'appel a suffi.
+    const effectif = app.getLoginItemSettings().openAtLogin;
+    if (effectif === settings.openAtLogin) {
+      log('[demarrage-windows]', settings.openAtLogin ? 'activé' : 'désactivé', portableExe ? '(portable)' : '');
+    } else {
+      log('[demarrage-windows] REFUSÉ par Windows — demandé:', settings.openAtLogin, 'effectif:', effectif);
+    }
   } catch (error) {
     log('[demarrage-windows] échec —', error.message);
   }
