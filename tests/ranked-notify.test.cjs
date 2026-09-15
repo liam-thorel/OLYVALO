@@ -3,6 +3,8 @@ const Module = require('node:module');
 
 // Messages réellement envoyés à Discord pendant le test.
 const sent = [];
+// Points de participation réellement crédités.
+const credited = [];
 
 function loadBot() {
   const original = Module._load;
@@ -26,7 +28,7 @@ function loadBot() {
           // légitimement les cas suivants.
           memberByIdentity: s => {
             const name = String(s?.playerName || 'X').split('#')[0];
-            return { id: name.toLowerCase(), name, discordId: null, avatar: null, riotIds: [s?.playerName || ''] };
+            return { id: name.toLowerCase(), name, discordId: `discord-${name.toLowerCase()}`, avatar: null, riotIds: [s?.playerName || ''] };
           },
         };
       case './trackers.js':
@@ -50,7 +52,10 @@ function loadBot() {
         return Object.fromEntries(['startValoDailyRecapScheduler', 'startValoWeeklyRecapScheduler',
           'startValoMonthlyRecapScheduler'].map(n => [n, () => {}]));
       case './leaderboard-rank.js': return { startLeaderboardScheduler: () => {} };
-      case './wallet.js': return { rewardForGamePlayed: async () => 0 };
+      case './wallet.js':
+        return {
+          rewardForGamePlayed: async (userId, amount) => { credited.push({ userId, amount }); return amount; },
+        };
       case './rank-tracking.js': return { recordRankGain: async () => {}, lolRankPoints: () => 0 };
       case './valorant-awards.js': return { recordAward: async () => {} };
       case 'discord.js': {
@@ -230,6 +235,71 @@ const endResult = mode => ({
   delete legacy.queueId;
   await notifyLolGameStart(legacy, { [legacy.playerName]: legacy });
   assert.equal(sent.length, 1, 'un queueId absent ne doit pas faire sauter la notif');
+
+  // ─── Points de participation hors file classée ─────────────────────────────
+  // Ces modes ne doivent RIEN envoyer sur Discord, mais ils rapportent
+  // désormais des points : une soirée ARAM occupe autant de temps qu'une
+  // classée.
+  const creditsFor = async (session) => {
+    sent.length = 0; credited.length = 0;
+    await notifyValorantGameEnd([session]);
+    return { sent: [...sent], credited: [...credited] };
+  };
+
+  const dm = session('deathmatch');
+  dm.active = false; dm.result = endResult('deathmatch');
+  let run = await creditsFor(dm);
+  assert.deepEqual(run.sent, [], 'toujours aucun message en deathmatch');
+  assert.equal(run.credited.length, 1, 'mais le joueur est crédité');
+  assert.equal(run.credited[0].amount, 50, 'deathmatch = 50 points');
+
+  const unrated = session('unrated');
+  unrated.active = false; unrated.result = endResult('unrated');
+  run = await creditsFor(unrated);
+  assert.deepEqual(run.sent, [], 'aucun message en non classée');
+  assert.equal(run.credited[0].amount, 75, 'unrated = 75 points');
+
+  const swift = session('swiftplay');
+  swift.active = false; swift.result = endResult('swiftplay');
+  run = await creditsFor(swift);
+  assert.equal(run.credited[0].amount, 50, 'les autres modes = 50 points');
+
+  // ─── LoL hors file classée ──────────────────────────────────────────────────
+  const lolCredits = async (queueId) => {
+    sent.length = 0; credited.length = 0;
+    const s2 = lolSession(queueId);
+    s2.active = false;
+    s2.result = { ...lolEndResult(queueId), win: true };
+    await notifyLolGameEnd([s2]);
+    return { sent: [...sent], credited: [...credited] };
+  };
+
+  let lolRun = await lolCredits(450); // ARAM
+  assert.deepEqual(lolRun.sent, [], 'aucun message en ARAM');
+  assert.equal(lolRun.credited[0]?.amount, 50, 'ARAM = 50 points');
+
+  lolRun = await lolCredits(400); // Normale draft
+  assert.deepEqual(lolRun.sent, [], 'aucun message en normale');
+  assert.equal(lolRun.credited[0]?.amount, 100, 'file non classée LoL = 100 points');
+
+  lolRun = await lolCredits(1700); // Arena
+  assert.equal(lolRun.credited[0]?.amount, 50, 'Arena = 50 points');
+
+  // ─── Le classé reste le plus rentable ───────────────────────────────────────
+  sent.length = 0; credited.length = 0;
+  const rankedWin = session('competitive');
+  rankedWin.active = false;
+  rankedWin.result = { ...endResult('competitive'), result: 'win' };
+  await notifyValorantGameEnd([rankedWin]);
+  assert.equal(sent.length, 1, 'une classée est toujours annoncée');
+  assert.equal(credited[0].amount, 150, 'classée gagnée = 150 points');
+
+  sent.length = 0; credited.length = 0;
+  const rankedLoss = session('competitive');
+  rankedLoss.active = false;
+  rankedLoss.result = { ...endResult('competitive'), result: 'loss' };
+  await notifyValorantGameEnd([rankedLoss]);
+  assert.equal(credited[0].amount, 50, 'classée perdue = 50 points');
 
   console.log('ranked-notify: seules les files classées notifient, sur Valorant comme sur LoL');
 })().catch(error => { console.error(error); process.exit(1); });

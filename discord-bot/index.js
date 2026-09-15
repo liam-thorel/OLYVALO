@@ -27,6 +27,7 @@ const { recordRankGain, lolRankPoints } = require('./rank-tracking.js');
 const { recordAward } = require('./valorant-awards.js');
 const { buildRankProgressLine } = require('./valorant-rank.js');
 const { isRankedValorantMode, isValorantDeathmatch, isNonRankedLolQueue } = require('./stats.js');
+const { playReward: playRewardFor } = require('./play-rewards.js');
 const { createBoundedSet, createExpiringMap } = require('./bounded-memory.js');
 const { outcomeHeader } = require('./outcome-header.js');
 const { formatLolRank, POSITION_ICONS } = require('./lol-rank.js');
@@ -319,12 +320,15 @@ function chunkButtonRows(buttons, size = 5) {
 async function notifyValorantGameEnd(sessions) {
   const withResult = sessions.filter(s => s.result);
   const primary = withResult[0] || sessions[0];
-  // Hors file classée, on s'arrête AVANT tout enregistrement : ni carte, ni
-  // points de participation, ni award. Le garde était plus bas, ce qui laissait
-  // une game non classée créditer des points de paris et alimenter les awards.
-  // Aucun pari n'existe pour ces modes (la notif de début les écarte), donc il
-  // n'y a rien à résoudre non plus.
-  if (!isRankedValorantMode(primary.result?.mode || primary.mode)) return;
+  // Hors file classée : on crédite les points de participation, et RIEN
+  // d'autre. Pas de carte dans Discord, pas d'award, pas de suivi de rang.
+  // Aucun pari n'existe pour ces modes (la notif de début les écarte), donc
+  // il n'y a rien à résoudre non plus.
+  const valorantMode = primary.result?.mode || primary.mode;
+  if (!isRankedValorantMode(valorantMode)) {
+    await creditCasualPlayRewards('valorant', sessions);
+    return;
+  }
 
   const matchId = primary.matchId || primary.result?.matchId;
   const outcome = primary.result?.result === 'win' ? 'win' : primary.result?.result === 'loss' ? 'lose' : null;
@@ -366,7 +370,8 @@ async function notifyValorantGameEnd(sessions) {
   const playerData = await Promise.all(withResultPlayers.map(async ({ session, member }) => {
     const result = session.result;
     const localOutcome = result.result === 'win' ? 'win' : result.result === 'loss' ? 'lose' : null;
-    const playReward = await creditPlayReward(member, localOutcome).catch(error => {
+    const rewardAmount = playRewardFor({ game: 'valorant', mode: valorantMode, won: localOutcome === 'win' });
+    const playReward = await creditPlayReward(member, rewardAmount).catch(error => {
       console.error('[play-reward]', error.message);
       return null;
     });
@@ -473,10 +478,14 @@ async function notifyLolGameEnd(sessions) {
   const withResult = sessions.filter(s => s.result);
   const primary = withResult[0] || sessions[0];
 
-  // Hors file classée, on s'arrête AVANT tout enregistrement : ni résumé, ni
-  // points de participation, ni suivi de rang. Aucun pari n'a pu être ouvert
-  // sur ces games (la notif de début les écarte), donc rien à rembourser.
-  if (isNonRankedLolQueue(primary.result?.queueId ?? primary.queueId)) return;
+  // Hors file classée : points de participation seulement. Le script publie
+  // désormais ces parties pour qu'elles s'affichent en direct sur le site et
+  // dans l'overlay ; c'est ici qu'on décide de ne pas en parler sur Discord.
+  const lolQueueId = primary.result?.queueId ?? primary.queueId;
+  if (isNonRankedLolQueue(lolQueueId)) {
+    await creditCasualPlayRewards('lol', sessions);
+    return;
+  }
 
   const matchId = primary.matchId || primary.result?.matchId;
   const outcome = primary.result?.win === true ? 'win' : primary.result?.win === false ? 'lose' : null;
@@ -518,7 +527,8 @@ async function notifyLolGameEnd(sessions) {
   const playerData = await Promise.all(withResultPlayers.map(async ({ session, member }) => {
     const result = session.result;
     const localOutcome = result.win === true ? 'win' : result.win === false ? 'lose' : null;
-    const playReward = await creditPlayReward(member, localOutcome).catch(error => {
+    const rewardAmount = playRewardFor({ game: 'lol', queueId: lolQueueId, won: localOutcome === 'win' });
+    const playReward = await creditPlayReward(member, rewardAmount).catch(error => {
       console.error('[play-reward]', error.message);
       return null;
     });
@@ -845,11 +855,41 @@ async function resolveBetting(game, matchId, outcome) {
 // Récompense de participation (indépendante des paris) : 150 pts en cas de
 // victoire, 50 en cas de défaite, créditée au joueur du roster qui a joué —
 // nécessite que son avatar de roster pointe vers son ID Discord (cf roster.js).
-async function creditPlayReward(member, outcome) {
-  if (!member.discordId || !outcome) return null;
+async function creditPlayReward(member, amount) {
+  if (!member.discordId || !amount) return null;
   let username = null;
   try { username = (await client.users.fetch(member.discordId)).username; } catch { /* best effort */ }
-  return rewardForGamePlayed(member.discordId, outcome === 'win', username);
+  return rewardForGamePlayed(member.discordId, amount, username);
+}
+
+/**
+ * Points de participation pour une partie hors file classée.
+ *
+ * Ces modes ne déclenchent NI notification, NI pari, NI suivi de rang, NI
+ * award, NI entrée d'historique — mais ils occupent autant de temps qu'une
+ * classée et rapportent désormais des points.
+ *
+ * Un joueur n'est crédité qu'une fois même s'il apparaît dans plusieurs
+ * sessions du même groupe.
+ */
+async function creditCasualPlayRewards(game, sessions) {
+  const credited = new Set();
+  await Promise.all((sessions || []).map(async session => {
+    const member = memberByIdentity(session);
+    if (!member?.discordId || credited.has(member.discordId)) return;
+    credited.add(member.discordId);
+
+    const result = session.result || {};
+    const amount = playRewardFor({
+      game,
+      mode: result.mode ?? session.mode,
+      queueId: result.queueId ?? session.queueId,
+      won: game === 'lol' ? result.win === true : result.result === 'win',
+    });
+    if (!amount) return;
+    await creditPlayReward(member, amount)
+      .catch(error => console.error('[play-reward:casual]', error.message));
+  }));
 }
 
 function formatPlayReward(amount, outcome) {

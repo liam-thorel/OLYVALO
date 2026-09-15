@@ -1,4 +1,4 @@
-import { groupLolSessions, lolKda, normalizeLolHistory, summarizeLolDays } from './lol-utils.mjs?v=20260810-firebase-connection-fix';
+import { groupLolSessions, lolKda, lolMapLabel, normalizeLolHistory, summarizeLolDays } from './lol-utils.mjs?v=20260915-lol-all-modes';
 import { liveDataStore } from './live-data-store.mjs?v=20260810-firebase-connection-fix';
 import { createHistoryPager } from './history-pager.mjs?v=20260826-cold-load-recovery';
 import { createHistoryDisclosureState } from './history-disclosure-state.mjs';
@@ -72,7 +72,7 @@ function sessionCard(group) {
   const queue = first.queueDescription || first.queue || 'Partie en cours';
   return `<article class="lol-match-live">
     <header class="lol-match-live-header">
-      <div><span>${esc(queue)}</span><strong>Faille de l’invocateur</strong></div>
+      <div><span>${esc(queue)}</span><strong>${esc(lolMapLabel(first) || 'Partie en cours')}</strong></div>
       <div class="lol-region-badge">${esc(region)}</div>
     </header>
     <div class="lol-live-players">${group.players.map(player => {

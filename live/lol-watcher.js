@@ -517,9 +517,15 @@ function createLolWatcher({
       memberId: member?.memberId || '',
       member: member?.memberName || '',
       matchId: currentMatchId,
+      // Le bot en a besoin pour choisir le barème de points et pour savoir
+      // s'il doit rester silencieux. capturedResult le porte aussi, mais il
+      // peut manquer quand le résumé de fin de partie n'arrive pas.
+      queueId: currentQueueId,
       result: capturedResult || null,
     };
-    const history = capturedResult ? {
+    // resetMatchState() efface currentQueueId : on tranche avant.
+    const wasRanked = isRankedLolQueue(currentQueueId);
+    const history = capturedResult && wasRanked ? {
       key: lolHistoryKey(currentMatchId, sessionKey, matchStartedAt),
       value: {
         playerName: sessionKey,
@@ -534,8 +540,10 @@ function createLolWatcher({
     // the previous match alive or block detection of the next one.
     resetMatchState();
     await putFB(`live/lolSessions/${safeFirebaseKey(endedSession.playerName)}`, endedSession);
-    // Historique persistant (une entrée par game) — sert à calculer les
-    // winrates perso pour le moteur de cotes des paris.
+    // Historique persistant (une entrée par game), classé uniquement : il
+    // alimente les récaps, le moteur de cotes et la page Historique, qui ne
+    // parlent que de classé. Les autres modes s'affichent en direct mais ne
+    // s'y accumulent pas.
     if (history) {
       await putFB(`live/lolHistory/${history.key}`, history.value);
       await putFB(`historyIndex/lol/${history.key}`, lolHistorySummary(history.value));
@@ -704,15 +712,11 @@ function createLolWatcher({
     const summonerRes = await lcuGet(cachedLock, '/lol-summoner/v1/current-summoner');
     await publishIdentity(summonerRes.data, phase);
 
-    // Seules les games classées (Solo/Duo, Flex) sont trackées. La présence
-    // reste remontée normalement (publishIdentity ci-dessus, pour le statut
-    // "en ligne" du panel admin), mais aucune session/notif/pari/stat pour
-    // les normales, ARAM, Practice Tool, Co-op vs IA, etc.
-    if (!isRankedLolQueue(currentQueueId)) {
-      if (wasActive) { log(`[${ts()}] 🔵 LoL — passage en file non classée, fin de session trackée`); await markInactive(); }
-      else resetMatchState();
-      return;
-    }
+    // Toutes les files sont suivies en direct : la partie en cours doit
+    // s'afficher sur le site et dans l'overlay quel que soit le mode, comme
+    // côté Valorant. Ce qui reste réservé au classé — notifications Discord,
+    // paris, suivi de rang, récaps — est décidé par le bot, qui a ses propres
+    // gardes, et par le filtre d'historique ci-dessous.
 
     if (phase === 'ChampSelect') {
       await updateChampSelectCache();
