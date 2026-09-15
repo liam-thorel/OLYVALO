@@ -320,22 +320,33 @@ function chunkButtonRows(buttons, size = 5) {
 async function notifyValorantGameEnd(sessions) {
   const withResult = sessions.filter(s => s.result);
   const primary = withResult[0] || sessions[0];
+  const matchId = primary.matchId || primary.result?.matchId;
+  const outcome = primary.result?.result === 'win' ? 'win' : primary.result?.result === 'loss' ? 'lose' : null;
+
+  // AVANT le garde « file classée », et c'est essentiel. Une partie annulée —
+  // dodge en sélection d'agents, joueur qui ne se connecte pas — arrive ici
+  // sans mode NI résultat : le script publie la fin de session avant d'aller
+  // chercher le rapport de fin de partie, et pour ces parties-là ce rapport
+  // n'arrive jamais. Un mode absent se lisait alors comme un mode non classé,
+  // on sortait aussitôt, et le pari restait ouvert : mises débitées, message
+  // jamais réactualisé.
+  //
+  // Sans round ouvert sur ce matchId, resolveBetting ne fait rien : l'appeler
+  // pour toutes les fins de partie ne coûte qu'une lecture.
+  const betting = await resolveBetting('valorant', matchId, outcome).catch(error => {
+    console.error('[betting:resolve]', error.message);
+    return null;
+  });
+
   // Hors file classée : on crédite les points de participation, et RIEN
   // d'autre. Pas de carte dans Discord, pas d'award, pas de suivi de rang.
-  // Aucun pari n'existe pour ces modes (la notif de début les écarte), donc
-  // il n'y a rien à résoudre non plus.
+  // Un mode inconnu tombe ici aussi — on ne résume pas une partie qu'on ne
+  // sait pas identifier — mais le remboursement, lui, a déjà eu lieu.
   const valorantMode = primary.result?.mode || primary.mode;
   if (!isRankedValorantMode(valorantMode)) {
     await creditCasualPlayRewards('valorant', sessions);
     return;
   }
-
-  const matchId = primary.matchId || primary.result?.matchId;
-  const outcome = primary.result?.result === 'win' ? 'win' : primary.result?.result === 'loss' ? 'lose' : null;
-  const betting = await resolveBetting('valorant', matchId, outcome).catch(error => {
-    console.error('[betting:resolve]', error.message);
-    return null;
-  });
 
   const players = sessions
     .map(session => ({ session, member: memberByIdentity(session) }))
@@ -478,6 +489,20 @@ async function notifyLolGameEnd(sessions) {
   const withResult = sessions.filter(s => s.result);
   const primary = withResult[0] || sessions[0];
 
+  const matchId = primary.matchId || primary.result?.matchId;
+  const outcome = primary.result?.win === true ? 'win' : primary.result?.win === false ? 'lose' : null;
+
+  // Avant le garde, comme côté Valorant : une partie annulée arrive sans file
+  // ni résultat, et c'est ce chemin qui rembourse les mises et réactualise le
+  // message. isNonRankedLolQueue laisse déjà passer une file inconnue, donc
+  // l'ordre n'était pas fautif ici — mais deux fonctions jumelles qui ne
+  // nettoient pas au même moment, c'est exactement ainsi que le défaut est
+  // revenu côté Valorant.
+  const betting = await resolveBetting('lol', matchId, outcome).catch(error => {
+    console.error('[betting:resolve]', error.message);
+    return null;
+  });
+
   // Hors file classée : points de participation seulement. Le script publie
   // désormais ces parties pour qu'elles s'affichent en direct sur le site et
   // dans l'overlay ; c'est ici qu'on décide de ne pas en parler sur Discord.
@@ -486,13 +511,6 @@ async function notifyLolGameEnd(sessions) {
     await creditCasualPlayRewards('lol', sessions);
     return;
   }
-
-  const matchId = primary.matchId || primary.result?.matchId;
-  const outcome = primary.result?.win === true ? 'win' : primary.result?.win === false ? 'lose' : null;
-  const betting = await resolveBetting('lol', matchId, outcome).catch(error => {
-    console.error('[betting:resolve]', error.message);
-    return null;
-  });
 
   const players = sessions
     .map(session => ({ session, member: memberByIdentity(session) }))
@@ -765,7 +783,7 @@ async function disableBettingMessage(channelId, messageId) {
   try {
     const channel = await client.channels.fetch(channelId);
     const message = await channel.messages.fetch(messageId).catch(() => null);
-    if (!message || !message.components[0]) return;
+    if (!message?.components?.[0]) return;
     const disabledRow = ActionRowBuilder.from(message.components[0]);
     disabledRow.components.forEach(c => c.setDisabled(true));
     await message.edit({ components: [disabledRow] }).catch(() => {});
