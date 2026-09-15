@@ -10,7 +10,7 @@
 import { liveDataStore, FIREBASE_URL } from './live-data-store.mjs';
 import {
   groupActiveGames, isAgentSelect, displayNameFor, openBets, countdownLabel, escapeHtml, matchSkins,
-  modeLabelFor,
+  modeLabelFor, gameHeadline,
 } from './overlay-utils.mjs';
 
 const ROSTER_URL = './data/roster.json';
@@ -30,17 +30,39 @@ function playerRow(session) {
   const agent = session.agent?.name || session.agent || session.champion?.name || '';
   const icon = session.agent?.image || session.champion?.image || '';
   const rank = session.rank?.label || session.rank?.tier || '';
+  // En LoL, le poste et l'adversaire de voie valent mieux que le seul nom
+  // du champion, déjà porté par le titre du bloc.
+  const against = session.matchup?.name ? `vs ${session.matchup.name}` : '';
+  const lane = session.position || '';
+  const meta = [against || agent, lane, rank].filter(Boolean).join(' · ');
   return `
     <div class="player">
       ${icon ? `<img src="${escapeHtml(icon)}" alt="" loading="lazy">` : '<img alt="">'}
       <span class="player-name">${escapeHtml(name)}</span>
-      <span class="player-meta">${escapeHtml([agent, rank].filter(Boolean).join(' · '))}</span>
+      <span class="player-meta">${escapeHtml(meta)}</span>
     </div>`;
 }
 
+/**
+ * Sessions des deux jeux, chacune marquée de sa provenance. L'application
+ * overlay indique le jeu lancé dans le fragment d'URL (#lol / #valorant) :
+ * on ne garde alors que celui-là, plutôt que de mélanger une game LoL en
+ * cours avec une session Valorant encore fraîche de la partie d'avant.
+ */
+function sessionsFor(snapshot) {
+  const wanted = location.hash.replace(/^#/, '');
+  const all = {
+    ...Object.fromEntries(Object.entries(snapshot.valorantSessions || {})
+      .map(([key, value]) => [`valorant:${key}`, { ...value, game: 'valorant' }])),
+    ...Object.fromEntries(Object.entries(snapshot.lolSessions || {})
+      .map(([key, value]) => [`lol:${key}`, { ...value, game: 'lol' }])),
+  };
+  if (wanted !== 'lol' && wanted !== 'valorant') return all;
+  return Object.fromEntries(Object.entries(all).filter(([, value]) => value.game === wanted));
+}
+
 function renderGame(snapshot) {
-  const sessions = { ...(snapshot.valorantSessions || {}), ...(snapshot.lolSessions || {}) };
-  const [game] = groupActiveGames(sessions);
+  const [game] = groupActiveGames(sessionsFor(snapshot));
 
   if (!game) {
     const loading = !snapshot.status?.valorantSessions?.loaded;
@@ -51,15 +73,14 @@ function renderGame(snapshot) {
   const pregame = isAgentSelect(game);
   el('game').innerHTML = `
     <div class="game-head">
-      <span class="game-map">${escapeHtml(game.map || 'Partie en cours')}</span>
+      <span class="game-map">${escapeHtml(gameHeadline(game))}</span>
       <span class="badge ${pregame ? '' : 'live'}">${pregame ? 'Agent Select' : escapeHtml(modeLabelFor(game))}</span>
     </div>
     ${game.sessions.map(playerRow).join('')}`;
 }
 
 function renderSkins(snapshot) {
-  const sessions = { ...(snapshot.valorantSessions || {}), ...(snapshot.lolSessions || {}) };
-  const [game] = groupActiveGames(sessions);
+  const [game] = groupActiveGames(sessionsFor(snapshot));
   const players = game ? matchSkins(game) : [];
 
   // Section entièrement masquée quand personne n'a de skin notable : au-dessus
@@ -133,6 +154,8 @@ async function loadRoster() {
 }
 
 liveDataStore.subscribe(snapshot => { lastSnapshot = snapshot; render(); });
+// L'application overlay change le fragment quand le jeu lancé change.
+window.addEventListener('hashchange', render);
 
 loadRoster();
 refreshBets();

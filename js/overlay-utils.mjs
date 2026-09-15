@@ -41,6 +41,7 @@ export function groupActiveGames(sessions = {}, now = Date.now()) {
           // « Deathmatch », « Intensification »… plutôt que le queueID brut.
           modeLabel: session.modeLabel || '',
           modeFamily: session.modeFamily || '',
+          game: gameOf(session),
           ts: Number(session.ts || 0),
           sessions: [],
         });
@@ -59,11 +60,29 @@ export function groupActiveGames(sessions = {}, now = Date.now()) {
 }
 
 /** Ce qu'on écrit sur la pastille de mode. */
+// Files classées LoL. Le script ne publie de session que pour celles-ci ;
+// le libellé vient donc du queueId, LoL n'ayant pas d'équivalent au
+// modeLabel que le script Valorant calcule.
+const LOL_QUEUE_LABELS = { 420: 'SoloQ', 440: 'Flex' };
+
+/**
+ * De quel jeu vient une session. L'overlay fusionne les deux flux : sans
+ * cette marque, une game LoL est traitée comme une game Valorant et perd son
+ * matchup, tandis que sa carte inexistante laisse un titre vide.
+ */
+export function gameOf(session) {
+  if (session?.game) return session.game;
+  return session?.queueId != null || session?.champion ? 'lol' : 'valorant';
+}
+
 export function modeLabelFor(group) {
   if (group?.modeLabel) return group.modeLabel;
+  // LoL : le queueId porte l'information, il n'y a pas de modeLabel publié.
+  const queueId = group?.sessions?.find(entry => entry.queueId != null)?.queueId;
+  if (queueId != null && LOL_QUEUE_LABELS[queueId]) return LOL_QUEUE_LABELS[queueId];
   // Ancienne version du script, ou mode inconnu : mieux vaut un libellé
   // générique que « ggteam » ou « onefa » affiché tel quel.
-  return group?.mode ? 'En jeu' : '';
+  return group?.mode || queueId != null ? 'En jeu' : '';
 }
 
 /**
@@ -74,6 +93,21 @@ export function modeLabelFor(group) {
  */
 export function hasTeams(group) {
   return group?.modeFamily !== 'free-for-all';
+}
+
+/**
+ * Titre du bloc de partie. En Valorant c'est la carte ; en LoL il n'y en a
+ * pas, et ce qui compte est le duel de voie.
+ */
+export function gameHeadline(group) {
+  if (group?.game === 'lol') {
+    const session = (group.sessions || [])[0] || {};
+    const mine = session.champion?.name;
+    const against = session.matchup?.name;
+    if (mine && against) return `${mine} contre ${against}`;
+    return mine || 'Partie LoL';
+  }
+  return group?.map || 'Partie en cours';
 }
 
 export function isAgentSelect(group) {

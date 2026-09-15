@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import {
   isLiveSession, groupActiveGames, isAgentSelect, memberForSession,
   displayNameFor, openBets, countdownLabel, escapeHtml, matchSkins,
-  modeLabelFor, hasTeams,
+  modeLabelFor, hasTeams, gameOf, gameHeadline,
 } from '../js/overlay-utils.mjs';
 
 const NOW = 1_700_000_000_000;
@@ -194,5 +194,45 @@ assert.equal(stackModes.length, 1);
 assert.equal(modeLabelFor(stackModes[0]), 'Vélocité',
   'le libellé remonte depuis la session qui le porte');
 assert.equal(hasTeams(stackModes[0]), true);
+
+// ─── Valorant ou LoL ─────────────────────────────────────────────────────────
+// L'overlay fusionne les deux flux. Sans marque de provenance, une game LoL
+// est traitée comme une game Valorant : elle perd son matchup et son titre
+// reste vide, LoL n'ayant pas de carte.
+assert.equal(gameOf({ queueId: 420, champion: { name: 'Ahri' } }), 'lol');
+assert.equal(gameOf({ champion: { name: 'Ahri' } }), 'lol', 'un champion suffit');
+assert.equal(gameOf({ queueId: 0 }), 'lol', 'queueId 0 reste un queueId');
+assert.equal(gameOf({ mapClean: 'Split', agent: { name: 'Omen' } }), 'valorant');
+assert.equal(gameOf({ game: 'lol', mapClean: 'Split' }), 'lol', 'la marque explicite prime');
+assert.equal(gameOf({}), 'valorant');
+assert.equal(gameOf(null), 'valorant');
+
+// Le groupe retient le jeu, pour que la vue sache quoi afficher.
+const lolGroup = groupActiveGames({
+  x: { active: true, ts: NOW, matchId: 'EUW1_1', queueId: 420, playerName: 'M#EUW',
+       champion: { name: 'Ahri' }, matchup: { name: 'Zed' }, position: 'MIDDLE' },
+}, NOW);
+assert.equal(lolGroup[0].game, 'lol');
+
+// ─── Titre du bloc ───────────────────────────────────────────────────────────
+// En LoL il n'y a pas de carte : ce qui compte est le duel de voie.
+assert.equal(gameHeadline(lolGroup[0]), 'Ahri contre Zed');
+assert.equal(gameHeadline({ game: 'lol', sessions: [{ champion: { name: 'Ahri' } }] }), 'Ahri',
+  'sans adversaire connu, le champion seul');
+assert.equal(gameHeadline({ game: 'lol', sessions: [{}] }), 'Partie LoL');
+assert.equal(gameHeadline({ game: 'lol', sessions: [] }), 'Partie LoL');
+assert.equal(gameHeadline({ game: 'valorant', map: 'Split' }), 'Split');
+assert.equal(gameHeadline({ game: 'valorant' }), 'Partie en cours');
+assert.equal(gameHeadline(null), 'Partie en cours');
+
+// ─── Libellé de file LoL ─────────────────────────────────────────────────────
+// LoL n'a pas d'équivalent au modeLabel que le script Valorant calcule :
+// le queueId porte l'information.
+assert.equal(modeLabelFor(lolGroup[0]), 'SoloQ');
+assert.equal(modeLabelFor({ sessions: [{ queueId: 440 }] }), 'Flex');
+// Une file inattendue ne doit pas afficher « 450 » brut.
+assert.equal(modeLabelFor({ sessions: [{ queueId: 450 }] }), 'En jeu');
+// Un modeLabel Valorant publié reste prioritaire.
+assert.equal(modeLabelFor({ modeLabel: 'Vélocité', sessions: [{ queueId: 420 }] }), 'Vélocité');
 
 console.log('overlay-view: regroupement des games, rattachement au roster et paris validés');
