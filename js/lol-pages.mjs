@@ -128,7 +128,7 @@ function matchRow(match) {
   return `<details class="lol-history-match ${match.win ? 'win' : 'loss'}" data-lol-history-id="${esc(match.id || '')}">
     <summary>
       <span class="lol-result">${result}</span>
-      <span class="lol-history-champion">${image(champion) ? `<img src="${esc(image(champion))}" alt="">` : ''}<span><strong>${esc(name(champion) || 'Champion')}</strong><small>${esc(match.queueDescription || 'Partie')}</small></span></span>
+      <span class="lol-history-champion">${image(champion) ? `<img src="${esc(image(champion))}" alt="" loading="lazy" decoding="async">` : ''}<span><strong>${esc(name(champion) || 'Champion')}</strong><small>${esc(match.queueDescription || 'Partie')}</small></span></span>
       <span class="lol-history-kda"><strong>${Number(match.kills || 0)} / ${Number(match.deaths || 0)} / ${Number(match.assists || 0)}</strong><small>${lolKda(match)} KDA</small></span>
       <span class="lol-history-stat"><strong>${Number(match.cs || 0)}</strong><small>CS</small></span>
       <span class="lol-history-duration"><strong>${esc(match.durationLabel || '—')}</strong><small>${date.toLocaleTimeString('fr-FR', { hour:'2-digit', minute:'2-digit' })}</small></span>
@@ -138,7 +138,7 @@ function matchRow(match) {
       <div><small>Joueur</small><strong>${esc(match.playerName || 'Inconnu')}</strong></div>
       <div><small>Participation</small><strong>${Number(match.killParticipation || 0)}%</strong></div>
       <div><small>Niveau</small><strong>${Number(match.level || 0)}</strong></div>
-      <div><small>Build final</small><span class="lol-items">${items.length ? items.map(item => `<img src="${esc(image(item))}" title="${esc(name(item))}" alt="${esc(name(item))}">`).join('') : '—'}</span></div>
+      <div><small>Build final</small><span class="lol-items">${items.length ? items.map(item => `<img src="${esc(image(item))}" title="${esc(name(item))}" alt="${esc(name(item))}" loading="lazy" decoding="async">`).join('') : '—'}</span></div>
     </div>
   </details>`;
 }
