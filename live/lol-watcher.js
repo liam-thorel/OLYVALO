@@ -532,6 +532,9 @@ function createLolWatcher({
         memberId: member?.memberId || '',
         member: member?.memberName || '',
         ts: Date.now(),
+        // Indispensable pour rapprocher deux membres du roster d'une même
+        // partie : la clé seule ne suffit pas à retrouver le match.
+        matchId: currentMatchId,
         ...capturedResult,
       },
     } : null;

@@ -38,8 +38,11 @@ function purgeExpiredRounds(rounds, now = Date.now()) {
 // Un round par salon qui suit la game (et non un seul round global) : la même
 // game peut être trackée dans plusieurs salons/serveurs à la fois, et chacun
 // doit avoir son propre message de paris + son propre pool de mises.
-function roundKey(game, matchId, channelId) {
-  return `${game}_${String(matchId).replace(/[.#$[\]/]/g, '_')}_${String(channelId).replace(/[.#$[\]/]/g, '_')}`;
+function roundKey(game, matchId, channelId, phase = '') {
+  const base = `${game}_${String(matchId).replace(/[.#$[\]/]/g, '_')}_${String(channelId).replace(/[.#$[\]/]/g, '_')}`;
+  // Sans suffixe, le pari de mi-temps écraserait celui d'avant-match : même
+  // partie, même salon, donc même clé.
+  return phase ? `${base}_${phase}` : base;
 }
 
 // Tous les rounds (tous salons confondus) ouverts pour une game donnée.
@@ -62,14 +65,21 @@ async function betsForUser(userId) {
 // Ouvre un round de paris pour une game qui vient de démarrer. Idempotent :
 // si un round existe déjà pour ce match (ex: un 2e joueur OLYCITY détecté dans
 // la même game), retourne le round existant sans le recréer.
-async function openRound({ game, matchId, channelId, rosterPlayers }) {
-  const key = roundKey(game, matchId, channelId);
+/**
+ * Ouvre un round de paris. `phase` distingue un pari de mi-temps du pari
+ * d'avant-match sur la même partie ; `odds` permet de fournir des cotes déjà
+ * calculées — à la mi-temps elles viennent du score, signal bien plus direct
+ * que le rang et le winrate dont dispose estimateOdds.
+ */
+async function openRound({ game, matchId, channelId, rosterPlayers, phase = '', odds = null }) {
+  const key = roundKey(game, matchId, channelId, phase);
   const existing = await fbGet(`betting/rounds/${key}`).catch(() => null);
   if (existing) return { key, round: existing, isNew: false };
 
-  const { oddsWin, oddsLose, explanation, probability } = await estimateOdds(game, rosterPlayers);
+  const { oddsWin, oddsLose, explanation, probability } = odds || await estimateOdds(game, rosterPlayers);
   const round = {
     game, matchId, channelId,
+    ...(phase ? { phase } : {}),
     players: rosterPlayers.map(p => p.member.name),
     oddsWin, oddsLose, explanation, probability,
     status: 'open',
