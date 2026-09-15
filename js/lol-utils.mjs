@@ -45,6 +45,28 @@ export function normalizeLolHistory(raw) {
   return matches.sort((a, b) => Number(b.ts || 0) - Number(a.ts || 0));
 }
 
+// Carte correspondant au mode renvoyé par le client League. Tant que seules
+// les files classées remontaient, « Faille de l'invocateur » était toujours
+// juste — l'ARAM et l'Arène le démentent.
+const LOL_MAP_BY_MODE = {
+  CLASSIC: 'Faille de l’invocateur',
+  ARAM: 'Abîme hurlant',
+  CHERRY: 'Arène',
+  URF: 'Faille de l’invocateur',
+  NEXUSBLITZ: 'Nexus Blitz',
+  TUTORIAL: 'Tutoriel',
+  PRACTICETOOL: 'Outil d’entraînement',
+  SWIFTPLAY: 'Faille de l’invocateur',
+};
+
+export function lolMapLabel(session) {
+  const mode = String(session?.mode || '').toUpperCase();
+  if (LOL_MAP_BY_MODE[mode]) return LOL_MAP_BY_MODE[mode];
+  // Mode inconnu : la description de file reste plus parlante qu'une carte
+  // inventée, et à défaut on n'affirme rien.
+  return session?.queueDescription || '';
+}
+
 export function lolKda(match) {
   const deaths = Math.max(1, Number(match?.deaths || 0));
   return ((Number(match?.kills || 0) + Number(match?.assists || 0)) / deaths).toFixed(1);

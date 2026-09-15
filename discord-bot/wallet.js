@@ -53,15 +53,16 @@ async function credit(userId, amount, username) {
   await fbPut(`betting/wallets/${userId}`, { ...wallet, balance: wallet.balance + amount });
 }
 
-const PLAY_REWARD_WIN = 150;
-const PLAY_REWARD_LOSS = 50;
-
-// Récompense de participation à une game (indépendante des paris) : créditée
-// au joueur du roster qui vient de jouer, que son équipe gagne ou perde.
-async function rewardForGamePlayed(userId, won, username) {
-  const amount = won ? PLAY_REWARD_WIN : PLAY_REWARD_LOSS;
-  await credit(userId, amount, username);
-  return amount;
+// Récompense de participation à une game (indépendante des paris), créditée
+// au joueur du roster qui vient de jouer. Le montant dépend du mode et du
+// résultat : il est calculé par play-rewards.js, ce module ne fait que le
+// créditer. Un montant nul ou négatif ne touche pas au solde — c'est ainsi
+// qu'on s'abstient sur une partie dont on ignore la nature.
+async function rewardForGamePlayed(userId, amount, username) {
+  const points = Number(amount);
+  if (!Number.isFinite(points) || points <= 0) return 0;
+  await credit(userId, points, username);
+  return points;
 }
 
 // Met à jour la série de paris gagnants d'affilée d'un utilisateur, retourne la série en cours.
@@ -103,5 +104,5 @@ async function resetWeeklyBalances() {
 
 module.exports = {
   getBalance, debit, credit, recordBetOutcome, leaderboard, weeklyLeaderboard, resetWeeklyBalances, DAILY_GRANT,
-  rewardForGamePlayed, PLAY_REWARD_WIN, PLAY_REWARD_LOSS,
+  rewardForGamePlayed,
 };
