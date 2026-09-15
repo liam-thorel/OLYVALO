@@ -28,6 +28,7 @@ const { recordAward } = require('./valorant-awards.js');
 const { buildRankProgressLine } = require('./valorant-rank.js');
 const { isRankedValorantMode, isValorantDeathmatch, isNonRankedLolQueue } = require('./stats.js');
 const { playReward: playRewardFor } = require('./play-rewards.js');
+const { isHalfTime, ownScore, oddsFromScore } = require('./live-odds.js');
 const { createBoundedSet, createExpiringMap } = require('./bounded-memory.js');
 const { outcomeHeader } = require('./outcome-header.js');
 const { formatLolRank, POSITION_ICONS } = require('./lol-rank.js');
@@ -240,6 +241,56 @@ const recentValorantStarts = createExpiringMap(START_DEDUPE_WINDOW_MS); // "noms
 
 function alreadyNotifiedRecently(recentStarts, key) {
   return recentStarts.seenRecently(key);
+}
+
+// Une partie, un seul pari de mi-temps — le score est republié à chaque
+// manche et la session reste active tout du long.
+const halfTimeRounds = createBoundedSet(200);
+
+/**
+ * Deuxième pari, ouvert à la mi-temps avec des cotes tirées du SCORE.
+ *
+ * Le pari d'avant-match ne peut s'appuyer que sur le rang et le winrate : Riot
+ * masque l'adversaire jusqu'à la fin de la partie. À 12 manches jouées on sait
+ * enfin où en est le rapport de force, et la cote le reflète.
+ *
+ * Le pari d'avant-match n'est pas touché : il garde ses cotes et se résout
+ * normalement. Les deux portent le même matchId, donc roundsForMatch les
+ * retrouve tous les deux à la fin de la partie.
+ */
+async function maybeOpenHalfTimeRound(session, snapshot) {
+  if (!isRankedValorantMode(session?.mode)) return;
+  const matchId = session?.matchId;
+  if (!matchId || halfTimeRounds.has(matchId)) return;
+  if (!isHalfTime(session.score)) return;
+
+  // Se tromper de camp inverserait la cote : le favori deviendrait l'outsider.
+  const scores = ownScore(session.score, session.selfTeam);
+  if (!scores) return;
+  const odds = oddsFromScore(scores.mine, scores.theirs);
+  if (!odds) return;
+
+  const sameMatch = Object.values(snapshot || {}).filter(s => s?.active && s.matchId === matchId);
+  const rosterPlayers = sameMatch
+    .map(s => ({ session: s, member: memberByIdentity(s) }))
+    .filter(entry => entry.member);
+  if (rosterPlayers.length === 0) return;
+
+  const channelIds = new Set();
+  rosterPlayers.forEach(({ member }) => {
+    trackersForPlayerGame(member.name, 'valorant').forEach(tracker => channelIds.add(tracker.channelId));
+  });
+  if (channelIds.size === 0) return;
+
+  halfTimeRounds.add(matchId);
+  const bettingPlayers = rosterPlayers.map(({ session: s, member }) => ({
+    member, rank: s.rank || null, championOrAgentName: null,
+  }));
+  [...channelIds].forEach(channelId => {
+    openBettingRound('valorant', matchId, channelId, bettingPlayers, `${SITE_URL}/#live`, {
+      phase: 'half', odds,
+    }).catch(error => console.error('[betting:half]', error.message));
+  });
 }
 
 // Même logique que LoL : regroupe les sessions actives partageant le même
@@ -799,9 +850,13 @@ async function disableBettingMessage(channelId, messageId) {
 // côté betting.js via `closesAt`, même si le bot redémarre entre-temps.
 const bettingCloseTimers = new Map();
 
-async function openBettingRound(game, matchId, channelId, rosterPlayers, viewUrl) {
+/**
+ * `phase` ouvre un pari distinct sur la même partie — 'half' pour la mi-temps —
+ * et `odds` fournit des cotes déjà calculées plutôt que de les estimer.
+ */
+async function openBettingRound(game, matchId, channelId, rosterPlayers, viewUrl, { phase = '', odds = null } = {}) {
   if (!channelId || !matchId || rosterPlayers.length === 0) return;
-  const { key, round, isNew } = await openRound({ game, matchId, channelId, rosterPlayers });
+  const { key, round, isNew } = await openRound({ game, matchId, channelId, rosterPlayers, phase, odds });
   if (!isNew) return;
 
   let sentMessage = null;
@@ -810,7 +865,9 @@ async function openBettingRound(game, matchId, channelId, rosterPlayers, viewUrl
     const minutes = Math.round(BETTING_WINDOW_MS / 60000);
     const probabilityPct = round.probability != null ? Math.round(round.probability * 100) : null;
     sentMessage = await channel.send({
-      content: `🎲 **Paris ouverts !** ${round.players.join(', ')} en game ${GAME_META[game].label}.`,
+      content: phase === 'half'
+        ? `⏱️ **Mi-temps — nouveaux paris !** ${round.players.join(', ')} · cotes recalculées sur le score.`
+        : `🎲 **Paris ouverts !** ${round.players.join(', ')} en game ${GAME_META[game].label}.`,
       embeds: [new EmbedBuilder()
         .setColor(GAME_META[game].startColor)
         .setDescription(
@@ -833,7 +890,9 @@ async function openBettingRound(game, matchId, channelId, rosterPlayers, viewUrl
     await disableBettingMessage(channelId, closed.messageId);
     try {
       const channel = await client.channels.fetch(channelId);
-      await channel.send('⏱️ Paris fermés pour cette game.');
+      await channel.send(phase === 'half'
+        ? '⏱️ Paris de mi-temps fermés.'
+        : '⏱️ Paris fermés pour cette game.');
     } catch (error) {
       console.error('[betting:close-announce]', error.message);
     }
@@ -1072,6 +1131,14 @@ function watchGameSessions(game, firebasePath) {
 
       resultNotified.delete(key); // nouvelle game : on pourra renotifier sa fin plus tard
       clearPendingTimer(key); // une nouvelle game a démarré — le remboursement en attente pour la précédente ne s'applique plus
+
+      // Avant le court-circuit ci-dessous : le score évolue alors que la
+      // session reste active, donc la mi-temps ne correspond à aucune
+      // transition inactif→actif.
+      if (game === 'valorant') {
+        maybeOpenHalfTimeRound(session, snapshot).catch(error => console.error('[betting:half]', error.message));
+      }
+
       if (previousActive.get(key)) continue; // déjà actif au tour précédent
       if (isFirstSnapshot) { previousActive.set(key, true); continue; }
 
@@ -1128,4 +1195,7 @@ client.login(DISCORD_TOKEN).catch(error => console.error('[startup] login() a é
 // Exposé pour les tests : vérifier qu'aucun message ne part en deathmatch
 // exige d'exercer réellement le chemin de notification, pas seulement le
 // prédicat de mode.
-module.exports = { __test: { notifyValorantGameStart, notifyValorantGameEnd, notifyLolGameStart, notifyLolGameEnd } };
+module.exports = { __test: {
+  notifyValorantGameStart, notifyValorantGameEnd, notifyLolGameStart, notifyLolGameEnd,
+  maybeOpenHalfTimeRound,
+} };
