@@ -23,7 +23,7 @@ import { readSiteVitals } from './site-telemetry.mjs?v=20260825-site-health';
 const FIREBASE_URL = 'https://realtime-database-5bb9f-default-rtdb.europe-west1.firebasedatabase.app';
 // SHA-256 du mot de passe admin. Pour le changer : recalcule le hash d'un
 // nouveau mot de passe et remplace la valeur ci-dessous.
-const ADMIN_PASSWORD_HASH = '4ec69c8d367347db4dd4357d82c919af0e21fad86cf0432757b8de628c227af7';
+const ADMIN_PASSWORD_HASH = 'f8fd190168055594ac560f935c2e63850dc289e18aacbc812f88d2abb87b695e';
 const AUTH_STORAGE_KEY = 'olycity-admin-auth';
 const ADMIN_LOAD_TIMEOUT_MS = 4_000;
 
