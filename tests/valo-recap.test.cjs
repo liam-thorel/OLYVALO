@@ -19,7 +19,7 @@ function loadRecap({ members, history, gains }) {
     if (request === './stats.js') {
       const real = original('./stats.js', parent, isMain);
       // rankedOnly n'est PAS stubé : c'est lui qu'on veut voir à l'œuvre.
-      return { ...real, historyFor: async (game, ids) => history[ids[0]] || [] };
+      return { ...real, historyFor: async (game, ids) => ids.flatMap(id => history[id] || []) };
     }
     if (request === 'discord.js') {
       return { EmbedBuilder: class {
@@ -55,7 +55,7 @@ const game = (win, ts, extra = {}) => ({
       ],
       'd#1': [game(false, 3, { matchId: 'm3', tier: 22, rr: 41, champion: { name: 'Reyna' } })],
     },
-    gains: [{ memberName: 'Liam', delta: 52 }, { memberName: 'Mathis', delta: -38 }],
+    gains: [{ memberName: 'Liam', riotId: 'a#1', delta: 52 }, { memberName: 'Mathis', riotId: 'd#1', delta: -38 }],
   });
 
   const embeds = await buildValoRecapEmbeds('daily');
@@ -96,7 +96,7 @@ const game = (win, ts, extra = {}) => ({
   const down = await loadRecap({
     members: [{ name: 'Mathis', riotIds: ['d#1'] }],
     history: { 'd#1': [game(false, 1, { tier: 22, rr: 41, champion: { name: 'Reyna' } })] },
-    gains: [{ memberName: 'Mathis', delta: -38 }],
+    gains: [{ memberName: 'Mathis', riotId: 'd#1', delta: -38 }],
   }).buildValoRecapEmbeds('daily');
   assert.equal(down[0].color, 0xff5f6d, 'bilan négatif = rouge');
   assert.match(down[0].author, /-38 RR/);
@@ -107,7 +107,7 @@ const game = (win, ts, extra = {}) => ({
   const partial = await loadRecap({
     members: [{ name: 'Nico', riotIds: ['b#1'] }],
     history: { 'b#1': [] },
-    gains: [{ memberName: 'Nico', delta: 12 }],
+    gains: [{ memberName: 'Nico', riotId: 'b#1', delta: 12 }],
   }).buildValoRecapEmbeds('daily');
   assert.equal(partial.length, 1);
   assert.match(partial[0].description, /🥇 \*\*Nico\*\* · `\+12 RR`/);
@@ -127,9 +127,56 @@ const game = (win, ts, extra = {}) => ({
   const weekly = await loadRecap({
     members: [{ name: 'Liam', riotIds: ['a#1'] }],
     history: { 'a#1': [game(true, 1, { champion: { name: 'Omen' } })] },
-    gains: [{ memberName: 'Liam', delta: 20 }],
+    gains: [{ memberName: 'Liam', riotId: 'a#1', delta: 20 }],
   }).buildValoRecapEmbeds('weekly');
   assert.match(weekly[0].author, /cette semaine/);
+
+  // ─── Un membre, deux comptes ──────────────────────────────────────────────
+  // Le défaut corrigé : les deux comptes étaient fondus en une ligne. Le rang
+  // affiché était celui de la dernière partie jouée — le smurf en Fer faisait
+  // passer un Immortel pour un Fer — et le winrate mêlait les deux niveaux.
+  const smurf = await loadRecap({
+    members: [{ name: 'Rayhan', riotIds: ['main#OLY', 'smurf#EUW'] }],
+    history: {
+      'main#OLY': [
+        game(true, 10, { matchId: 'p1', account: 'main#OLY', tier: 21, rr: 70, champion: { name: 'Omen' } }),
+        game(true, 11, { matchId: 'p2', account: 'main#OLY', champion: { name: 'Omen' } }),
+      ],
+      // Joué APRÈS le compte principal : c'est ce rang-là qui écrasait l'autre.
+      'smurf#EUW': [game(false, 12, { matchId: 'p3', account: 'smurf#EUW', tier: 3, rr: 12, acs: 340, champion: { name: 'Reyna' } })],
+    },
+    gains: [
+      { memberName: 'Rayhan', riotId: 'main#OLY', delta: 44 },
+      { memberName: 'Rayhan', riotId: 'smurf#EUW', delta: -17 },
+    ],
+  }).buildValoRecapEmbeds('daily');
+
+  assert.match(smurf[0].description, /\*\*Rayhan \(main\)\*\* · `\+44 RR` · Ascendant 1 70 RR/, 'le compte principal garde son rang et son RR');
+  assert.match(smurf[0].description, /\*\*Rayhan \(smurf\)\*\* · `-17 RR` · Fer 1 12 RR/, 'le smurf a sa propre ligne');
+  assert.match(smurf[0].description, /100% WR \(2-0\)/, 'winrate du compte principal, sans la défaite du smurf');
+  assert.match(smurf[0].description, /0% WR \(0-1\)/, 'winrate du smurf, sans les victoires du principal');
+  // L'ACS aussi est propre au compte : 340 sur le smurf, 200 sur le principal.
+  assert.match(smurf[0].description, /🟩🟩 · 100% WR \(2-0\) · 1\.75 KDA · 200 ACS/, 'stats du compte principal');
+  assert.match(smurf[0].description, /🟥 · 0% WR \(0-1\) · 1\.75 KDA · 340 ACS/, 'stats du smurf, non moyennées avec le principal');
+  // Le total collectif, lui, reste celui du membre : rien n'est compté deux fois.
+  assert.match(smurf[0].author, /\+27 RR/);
+  assert.match(smurf[0].description, /3 games · 67% WR collectif/);
+
+  // ─── Deux comptes au même pseudo : le tag devient nécessaire ──────────────
+  const sameName = await loadRecap({
+    members: [{ name: 'Nico', riotIds: ['Nico#EUW', 'Nico#OLY'] }],
+    history: {
+      'Nico#EUW': [game(true, 1, { matchId: 'q1', account: 'Nico#EUW', champion: { name: 'Omen' } })],
+      'Nico#OLY': [game(false, 2, { matchId: 'q2', account: 'Nico#OLY', champion: { name: 'Reyna' } })],
+    },
+    gains: [{ memberName: 'Nico', riotId: 'Nico#EUW', delta: 19 }],
+  }).buildValoRecapEmbeds('daily');
+  assert.match(sameName[0].description, /\*\*Nico \(Nico#EUW\)\*\*/, 'pseudos identiques : on affiche le tag');
+  assert.match(sameName[0].description, /\*\*Nico \(Nico#OLY\)\*\*/);
+
+  // ─── Un seul compte actif : le nom du membre suffit ───────────────────────
+  // Le multi-comptes ne doit pas alourdir le cas courant.
+  assert.match(embed.description, /🥇 \*\*Liam\*\* ·/, 'un seul compte actif : pas de parenthèse');
 
   console.log('valo-recap: un seul embed, classement, rang, frise et rôle validés');
 })().catch(error => { console.error(error); process.exit(1); });

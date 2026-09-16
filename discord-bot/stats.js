@@ -12,6 +12,9 @@ async function lolHistoryFor(riotIds) {
   const history = await fbGet('live/lolHistory').catch(() => null);
   return Object.values(history || {})
     .filter(entry => riotIds.some(id => id.toLowerCase() === String(entry.playerName || '').toLowerCase()))
+    // Même champ que côté Valorant, pour que les récaps traitent les deux jeux
+    // de la même façon.
+    .map(entry => ({ ...entry, account: entry.playerName || '' }))
     .sort((a, b) => (b.ts || 0) - (a.ts || 0));
 }
 
@@ -36,6 +39,10 @@ async function valorantHistoryFor(riotIds) {
       const isReporter = report.playerPuuid && self.puuid && report.playerPuuid === self.puuid;
       return {
         matchId: report.matchId || '',
+        // Compte ayant réellement joué cette partie. Un membre peut en avoir
+        // plusieurs, à des rangs très différents : les fondre donnait un rang
+        // et un winrate qui n'appartenaient à aucun des deux.
+        account: self.name || '',
         // Dit si tier/rr sont renseignés : seul le rapporteur porte son rang.
         isReporter: !!isReporter,
         win: report.result === 'win' ? true : report.result === 'loss' ? false : null,
