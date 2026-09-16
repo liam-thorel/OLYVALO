@@ -15,6 +15,7 @@ const { historyFor, aggregateKDA, averageCs, winrateLabel } = require('./stats.j
 const { formatLolRank, mostPlayedPosition, formatPosition } = require('./lol-rank.js');
 const { allRankGains, resetRankGains } = require('./rank-tracking.js');
 const { getRecapChannelId } = require('./recap-channel.js');
+const { splitByAccount, accountLabel } = require('./recap-accounts.js');
 
 const CHECK_INTERVAL_MS = 5 * 60 * 1000;
 const DAILY_HOUR = 7; // heure locale Europe/Paris
@@ -89,31 +90,41 @@ async function buildQueueRecapEmbeds(queueKey, period, sinceTs = null) {
   const [gains, members] = await Promise.all([allRankGains(cfg.rankBucket, period), ensureRoster()]);
 
   // Même refonte que le récap Valorant : le LP et les stats sortaient dans deux
-  // messages distincts pour les mêmes joueurs. On les réunit par membre, car un
-  // joueur peut n'avoir que l'un des deux signaux.
-  const deltaByMember = new Map();
+  // messages distincts pour les mêmes joueurs. On les réunit ici, car un compte
+  // peut n'avoir que l'un des deux signaux.
+  //
+  // L'unité est le COMPTE, pas le membre : un joueur qui a un smurf avait son
+  // rang tiré de sa dernière partie, quel que soit le compte, et un winrate
+  // mélangeant les deux.
+  const deltaByAccount = new Map();
   gains.forEach(gain => {
-    deltaByMember.set(gain.memberName, (deltaByMember.get(gain.memberName) || 0) + gain.delta);
+    const key = String(gain.riotId || '').trim().toLowerCase();
+    if (!key) return;
+    deltaByAccount.set(key, (deltaByAccount.get(key) || 0) + gain.delta);
   });
 
-  const rows = await Promise.all(members.map(async member => {
+  const rows = (await Promise.all(members.map(async member => {
     const entries = (await historyFor('lol', member.riotIds)).filter(entry => entry.queueId === cfg.queueId);
     const recent = sinceTs ? entries.filter(entry => (entry.ts || 0) > sinceTs) : entries;
-    const withResult = recent.filter(entry => typeof entry.win === 'boolean');
-    const wins = withResult.filter(entry => entry.win).length;
-    return {
-      name: member.name,
-      delta: deltaByMember.get(member.name) ?? null,
-      games: recent.length,
-      kda: aggregateKDA(recent),
-      cs: averageCs(recent),
-      rank: latestRank(recent),
-      position: formatPosition(mostPlayedPosition(recent)),
-      strip: resultStrip(withResult),
-      entriesWithResult: withResult.length,
-      wins,
-    };
-  }));
+    const accounts = splitByAccount(member, recent, deltaByAccount);
+    const siblings = accounts.map(row => row.account);
+    return accounts.map(({ account, entries: played, delta }) => {
+      const withResult = played.filter(entry => typeof entry.win === 'boolean');
+      const wins = withResult.filter(entry => entry.win).length;
+      return {
+        name: accountLabel(member.name, account, siblings),
+        delta,
+        games: played.length,
+        kda: aggregateKDA(played),
+        cs: averageCs(played),
+        rank: latestRank(played),
+        position: formatPosition(mostPlayedPosition(played)),
+        strip: resultStrip(withResult),
+        entriesWithResult: withResult.length,
+        wins,
+      };
+    });
+  }))).flat();
 
   const active = rows
     .filter(row => row.games > 0 || row.delta != null)

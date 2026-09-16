@@ -11,7 +11,7 @@ function loadRecap({ members, history, gains }) {
     if (request === './rank-tracking.js') return { allRankGains: async () => gains, resetRankGains: async () => {} };
     if (request === './stats.js') {
       const real = original('./stats.js', parent, isMain);
-      return { ...real, historyFor: async (game, ids) => history[ids[0]] || [] };
+      return { ...real, historyFor: async (game, ids) => ids.flatMap(id => history[id] || []) };
     }
     if (request === 'discord.js') {
       return { EmbedBuilder: class {
@@ -43,7 +43,7 @@ const game = (win, ts, extra = {}) => ({
       ],
       'c#1': [game(false, 3, { rankAfter: { tier: 'PLATINUM', division: 'IV', lp: 31 }, position: 'utility', cs: 38 })],
     },
-    gains: [{ memberName: 'Liam', delta: 61 }, { memberName: 'Rayhan', delta: -22 }],
+    gains: [{ memberName: 'Liam', riotId: 'a#1', delta: 61 }, { memberName: 'Rayhan', riotId: 'c#1', delta: -22 }],
   });
 
   const embeds = await buildQueueRecapEmbeds('solo', 'daily');
@@ -70,7 +70,7 @@ const game = (win, ts, extra = {}) => ({
   const flex = await loadRecap({
     members: [{ name: 'Nico', riotIds: ['b#1'] }],
     history: { 'b#1': [game(true, 1, { queueId: 440, position: 'top' }), game(true, 2, { queueId: 420 })] },
-    gains: [{ memberName: 'Nico', delta: 15 }],
+    gains: [{ memberName: 'Nico', riotId: 'b#1', delta: 15 }],
   }).buildQueueRecapEmbeds('flex', 'daily');
   assert.match(flex[0].author, /🟣 Récap Flex/);
   assert.match(flex[0].description, /1 game ·/, 'seule la game Flex doit compter');
@@ -79,7 +79,7 @@ const game = (win, ts, extra = {}) => ({
   const down = await loadRecap({
     members: [{ name: 'Rayhan', riotIds: ['c#1'] }],
     history: { 'c#1': [] },
-    gains: [{ memberName: 'Rayhan', delta: -22 }],
+    gains: [{ memberName: 'Rayhan', riotId: 'c#1', delta: -22 }],
   }).buildQueueRecapEmbeds('solo', 'daily');
   assert.equal(down[0].color, 0xff5f6d);
   assert.match(down[0].description, /🥇 \*\*Rayhan\*\* · `-22 LP`/);
@@ -90,6 +90,49 @@ const game = (win, ts, extra = {}) => ({
     members: [{ name: 'Liam', riotIds: ['a#1'] }], history: { 'a#1': [] }, gains: [],
   }).buildQueueRecapEmbeds('solo', 'daily');
   assert.deepEqual(silent, []);
+
+  // ─── Un membre, deux comptes ────────────────────────────────────────────
+  // Même défaut que côté Valorant : les deux comptes tenaient sur une ligne, avec
+  // le rang de la dernière partie jouée et un winrate mélangeant les deux niveaux.
+  const smurf = await loadRecap({
+    members: [{ name: 'Rayhan', riotIds: ['main#OLY', 'smurf#EUW'] }],
+    history: {
+      'main#OLY': [
+        game(true, 10, { account: 'main#OLY', rankAfter: { tier: 'DIAMOND', division: 'I', lp: 55 }, position: 'jungle' }),
+        game(true, 11, { account: 'main#OLY', position: 'jungle' }),
+      ],
+      // Joué APRÈS le compte principal : c'est ce rang-là qui écrasait l'autre.
+      'smurf#EUW': [game(false, 12, { account: 'smurf#EUW', rankAfter: { tier: 'SILVER', division: 'III', lp: 8 }, position: 'top', cs: 90 })],
+    },
+    gains: [
+      { memberName: 'Rayhan', riotId: 'main#OLY', delta: 48 },
+      { memberName: 'Rayhan', riotId: 'smurf#EUW', delta: -15 },
+    ],
+  }).buildQueueRecapEmbeds('solo', 'daily');
+
+  assert.match(smurf[0].description, /\*\*Rayhan \(main\)\*\* · `\+48 LP` · Diamant 1 55 LP/, 'le compte principal garde son rang et son LP');
+  assert.match(smurf[0].description, /\*\*Rayhan \(smurf\)\*\* · `-15 LP` · Argent 3 8 LP/, 'le smurf a sa propre ligne');
+  // Le CS aussi est propre au compte : 210 sur le principal, 90 sur le smurf.
+  assert.match(smurf[0].description, /🟩🟩 · 100% WR \(2-0\) · 4\.75 KDA · 210 CS/, 'stats du compte principal');
+  assert.match(smurf[0].description, /🟥 · 0% WR \(0-1\) · 4\.75 KDA · 90 CS/, 'stats du smurf, non moyennées avec le principal');
+  // Le total collectif, lui, reste celui du membre : rien n'est compté deux fois.
+  assert.match(smurf[0].author, /\+33 LP/);
+  assert.match(smurf[0].description, /3 games · 67% WR collectif/);
+
+  // ─── Deux comptes au même pseudo : le tag devient nécessaire ──────────────
+  const sameName = await loadRecap({
+    members: [{ name: 'Nico', riotIds: ['Nico#EUW', 'Nico#OLY'] }],
+    history: {
+      'Nico#EUW': [game(true, 1, { account: 'Nico#EUW', position: 'top' })],
+      'Nico#OLY': [game(false, 2, { account: 'Nico#OLY', position: 'bottom' })],
+    },
+    gains: [{ memberName: 'Nico', riotId: 'Nico#EUW', delta: 21 }],
+  }).buildQueueRecapEmbeds('solo', 'daily');
+  assert.match(sameName[0].description, /\*\*Nico \(Nico#EUW\)\*\*/, 'pseudos identiques : on affiche le tag');
+  assert.match(sameName[0].description, /\*\*Nico \(Nico#OLY\)\*\*/);
+
+  // ─── Un seul compte actif : le nom du membre suffit ─────────────────────
+  assert.match(embed.description, /🥇 \*\*Liam\*\* ·/, 'un seul compte actif : pas de parenthèse');
 
   console.log('lol-recap: un seul embed par file, classement, rang et poste validés');
 })().catch(error => { console.error(error); process.exit(1); });

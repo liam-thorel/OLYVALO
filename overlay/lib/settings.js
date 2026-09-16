@@ -14,6 +14,10 @@ const DEFAULTS = {
   // cliquer dedans pour s'en servir — ce clic rend le focus, et la barre avec.
   neverFocus: false,
   openAtLogin: true,
+  // Dernier verdict de Windows déjà signalé à l'utilisateur. Sans lui, un
+  // démarrage bloqué rouvrirait la même boîte de dialogue à chaque ouverture
+  // de session — c'est-à-dire précisément au pire moment.
+  startupWarnedFor: '',
   opacity: 0.95,
   bounds: null,          // { x, y, width, height } — position mémorisée
 };
@@ -57,6 +61,7 @@ function sanitize(raw) {
     autoShow: typeof input.autoShow === 'boolean' ? input.autoShow : DEFAULTS.autoShow,
     neverFocus: typeof input.neverFocus === 'boolean' ? input.neverFocus : DEFAULTS.neverFocus,
     openAtLogin: typeof input.openAtLogin === 'boolean' ? input.openAtLogin : DEFAULTS.openAtLogin,
+    startupWarnedFor: typeof input.startupWarnedFor === 'string' ? input.startupWarnedFor : DEFAULTS.startupWarnedFor,
     opacity: Number.isFinite(opacity) ? Math.min(1, Math.max(MIN_OPACITY, opacity)) : DEFAULTS.opacity,
     bounds: isValidBounds(input.bounds) ? {
       x: Math.round(input.bounds.x), y: Math.round(input.bounds.y),

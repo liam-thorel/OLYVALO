@@ -24,6 +24,7 @@ const { parseSettings, sanitize } = require('./lib/settings.js');
 const { isAllowedUrl, isSafeExternalUrl, siteUrl } = require('./lib/url-policy.js');
 const { createLogger } = require('./lib/logger.js');
 const { setupAutoUpdate, shouldCheck, updateLabel, FIRST_CHECK_DELAY_MS } = require('./lib/updater.js');
+const { loginItemVerdict, unblockCommand, verdictMessage, STARTUP_SETTINGS_URL } = require('./lib/login-item.js');
 
 const TITLEBAR_HEIGHT = 36;
 // La vue compacte est dessinée pour une colonne étroite posée sur le côté de
@@ -46,6 +47,9 @@ let shownGame = '';
 let firstRun = false;
 let updater = null;
 let lastUpdateCheckAt = 0;
+// Dernier verdict de Windows sur le démarrage automatique, pour que le menu
+// de la zone de notification dise la vérité plutôt que l'intention.
+let loginItemStatus = 'ok';
 let log = (...parts) => console.log(...parts); // remplacé dès que userData est connu
 
 const settingsPath = () => path.join(app.getPath('userData'), 'settings.json');
@@ -326,23 +330,103 @@ function registerHotkey() {
  * n'existera plus au prochain démarrage de Windows. Le lanceur portable publie
  * le chemin du vrai .exe dans PORTABLE_EXECUTABLE_FILE.
  */
-function applyLoginItem() {
-  const portableExe = process.env.PORTABLE_EXECUTABLE_FILE;
+function loginItemTarget() {
+  return process.env.PORTABLE_EXECUTABLE_FILE || process.execPath;
+}
+
+/** Lève le blocage posé par Windows. Résout `true` si la commande a abouti. */
+function unblockLoginItem(name) {
+  const command = unblockCommand(name);
+  if (!command) return Promise.resolve(false);
+  return new Promise(resolve => {
+    execFile(command.file, command.args, { windowsHide: true }, error => {
+      if (error) log('[demarrage-windows] déblocage impossible —', error.message);
+      resolve(!error);
+    });
+  });
+}
+
+/**
+ * Inscrit (ou retire) l'application au démarrage de Windows, puis VÉRIFIE ce
+ * que Windows en a réellement fait — voir lib/login-item.js : une case cochée
+ * et une application qui démarre sont deux choses différentes.
+ *
+ * `explicit` distingue le réglage appliqué à chaque lancement de celui que
+ * l'utilisateur vient de cocher lui-même. Dans le second cas seulement on
+ * lève un blocage posé par Windows : l'intention est fraîche et sans
+ * ambiguïté. Au démarrage, on se contente de le constater et de le dire —
+ * une application qui se réactive toute seule après avoir été désactivée
+ * dans le Gestionnaire des tâches n'est pas un comportement acceptable.
+ */
+async function applyLoginItem({ explicit = false } = {}) {
+  // En développement (npm start), process.execPath est electron.exe :
+  // l'inscrire au démarrage lancerait Electron à vide à chaque ouverture de
+  // session, et laisserait une entrée que l'application packagée ne saurait
+  // pas retirer.
+  if (!app.isPackaged) {
+    log('[demarrage-windows] ignoré — application non packagée');
+    return;
+  }
+
+  const target = loginItemTarget();
+  const options = { openAtLogin: settings.openAtLogin, path: target, args: [] };
+
   try {
-    app.setLoginItemSettings(portableExe
-      ? { openAtLogin: settings.openAtLogin, path: portableExe, args: [] }
-      : { openAtLogin: settings.openAtLogin });
-    // Windows peut refuser silencieusement (stratégie de groupe, antivirus,
-    // entrée supprimée par un nettoyeur). On relit ce qu'il a réellement
-    // retenu plutôt que de supposer que l'appel a suffi.
-    const effectif = app.getLoginItemSettings().openAtLogin;
-    if (effectif === settings.openAtLogin) {
-      log('[demarrage-windows]', settings.openAtLogin ? 'activé' : 'désactivé', portableExe ? '(portable)' : '');
-    } else {
-      log('[demarrage-windows] REFUSÉ par Windows — demandé:', settings.openAtLogin, 'effectif:', effectif);
-    }
+    app.setLoginItemSettings(options);
   } catch (error) {
+    loginItemStatus = 'refused';
     log('[demarrage-windows] échec —', error.message);
+    return;
+  }
+
+  // La relecture DOIT porter les mêmes path/args que l'écriture, sinon
+  // Electron répond pour l'exécutable par défaut — c'est-à-dire à côté dès
+  // qu'on est en mode portable.
+  const readback = app.getLoginItemSettings(options);
+  let verdict = loginItemVerdict({ wanted: settings.openAtLogin, readback, execPath: target });
+
+  if (verdict.status === 'blocked' && explicit) {
+    log('[demarrage-windows] bloqué par Windows — levée du blocage sur', verdict.name);
+    if (await unblockLoginItem(verdict.name)) {
+      verdict = loginItemVerdict({
+        wanted: settings.openAtLogin,
+        readback: app.getLoginItemSettings(options),
+        execPath: target,
+      });
+    }
+  }
+
+  loginItemStatus = verdict.status;
+  log('[demarrage-windows]', settings.openAtLogin ? 'demandé: activé' : 'demandé: désactivé',
+    '— verdict:', verdict.status, '— exécutable:', target,
+    readback.wasOpenedAtLogin ? '(cette session a été ouverte au démarrage)' : '');
+
+  refreshTrayMenu();
+
+  // Le journal ne suffit pas : personne ne va le lire pour comprendre pourquoi
+  // « rien ne se passe » au démarrage. On le dit une fois, à l'écran, et on
+  // laisse l'utilisateur ouvrir la page des Paramètres concernée.
+  const message = verdictMessage(verdict.status);
+  if (!message || !settings.openAtLogin) {
+    // Rien à signaler : on oublie l'avertissement précédent, pour qu'un blocage
+    // qui reviendrait plus tard soit de nouveau signalé.
+    if (settings.startupWarnedFor) { settings.startupWarnedFor = ''; saveSettings(); }
+    return;
+  }
+  if (!explicit && settings.startupWarnedFor === verdict.status) return;
+
+  settings.startupWarnedFor = verdict.status;
+  saveSettings();
+
+  const buttons = verdict.status === 'blocked' ? ['Ouvrir les Paramètres', 'Plus tard'] : ['Fermer'];
+  const choice = await dialog.showMessageBox({
+    type: 'warning', title: 'OLYCITY Overlay', message: 'Démarrage avec Windows', detail: message,
+    buttons, defaultId: 0, cancelId: buttons.length - 1, noLink: true,
+  }).catch(() => null);
+
+  if (verdict.status === 'blocked' && choice?.response === 0) {
+    shell.openExternal(STARTUP_SETTINGS_URL).catch(error =>
+      log('[demarrage-windows] ouverture des Paramètres impossible —', error.message));
   }
 }
 
@@ -369,13 +453,26 @@ function refreshTrayMenu() {
       },
     },
     {
-      label: 'Démarrer avec Windows', type: 'checkbox', checked: settings.openAtLogin,
+      // Le libellé porte le verdict de Windows : cocher la case et démarrer
+      // réellement sont deux choses différentes, et l'écart est invisible
+      // partout ailleurs.
+      label: settings.openAtLogin && loginItemStatus === 'blocked'
+        ? 'Démarrer avec Windows (bloqué par Windows)'
+        : settings.openAtLogin && loginItemStatus === 'refused'
+          ? 'Démarrer avec Windows (refusé par Windows)'
+          : 'Démarrer avec Windows',
+      type: 'checkbox', checked: settings.openAtLogin,
       click: menuItem => {
         settings.openAtLogin = menuItem.checked;
         saveSettings();
-        applyLoginItem();
+        // Coché à la main : intention fraîche, on lève un blocage éventuel.
+        applyLoginItem({ explicit: true }).catch(error => log('[demarrage-windows]', error.message));
       },
     },
+    ...(settings.openAtLogin && loginItemStatus === 'blocked' ? [{
+      label: 'Ouvrir les réglages de démarrage de Windows',
+      click: () => shell.openExternal(STARTUP_SETTINGS_URL).catch(() => {}),
+    }] : []),
     { type: 'separator' },
     { label: `Raccourci : ${settings.hotkey}`, enabled: false },
     { type: 'separator' },
@@ -430,7 +527,7 @@ if (!app.requestSingleInstanceLock()) {
     }
 
     registerHotkey();
-    applyLoginItem();
+    applyLoginItem().catch(error => log('[demarrage-windows]', error.stack || error.message));
 
     // require() tardif : en développement (npm start) le paquet peut ne pas
     // être installé, et l'absence de mise à jour automatique ne doit pas

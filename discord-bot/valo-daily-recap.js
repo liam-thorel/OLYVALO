@@ -15,6 +15,7 @@ const { allRankGains, resetRankGains } = require('./rank-tracking.js');
 const { getRecapChannelId } = require('./recap-channel.js');
 const { ensureAgentRoles, mostPlayedRole, formatRole } = require('./agent-roles.js');
 const { formatValorantRank } = require('./valorant-rank.js');
+const { splitByAccount, accountLabel } = require('./recap-accounts.js');
 
 const DAILY_HOUR = 7; // heure locale Europe/Paris
 const DAILY_MINUTE = 30;
@@ -89,34 +90,44 @@ async function buildValoRecapEmbeds(period, sinceTs = null) {
 
   // Le RR (rank-tracking, accumulé à chaque fin de game) et les stats
   // (historique des games) étaient présentés dans deux messages distincts pour
-  // les mêmes joueurs et la même période. On les réunit par membre : un joueur
-  // peut n'avoir que l'un des deux (RR sans stats si le rapport de fin de game
-  // a manqué, stats sans RR si aucune game classée n'a bougé le rang).
-  const deltaByMember = new Map();
+  // les mêmes joueurs et la même période. On les réunit ici : un compte peut
+  // n'avoir que l'un des deux (RR sans stats si le rapport de fin de game a
+  // manqué, stats sans RR si aucune game classée n'a bougé le rang).
+  //
+  // L'unité est le COMPTE, pas le membre : rank-tracking stocke déjà par Riot
+  // ID, et fondre les comptes d'un même joueur donnait un rang pris au hasard
+  // (celui de la dernière game) et un winrate mêlant deux niveaux de jeu.
+  const deltaByAccount = new Map();
   gains.forEach(gain => {
-    deltaByMember.set(gain.memberName, (deltaByMember.get(gain.memberName) || 0) + gain.delta);
+    const key = String(gain.riotId || '').trim().toLowerCase();
+    if (!key) return;
+    deltaByAccount.set(key, (deltaByAccount.get(key) || 0) + gain.delta);
   });
 
-  const rows = await Promise.all(members.map(async member => {
+  const rows = (await Promise.all(members.map(async member => {
     const entries = rankedOnly('valorant', await historyFor('valorant', member.riotIds));
     const recent = sinceTs ? entries.filter(entry => (entry.ts || 0) > sinceTs) : entries;
-    const withResult = recent.filter(entry => typeof entry.win === 'boolean');
-    const wins = withResult.filter(entry => entry.win).length;
-    return {
-      name: member.name,
-      delta: deltaByMember.get(member.name) ?? null,
-      games: recent.length,
-      winRatePct: withResult.length ? Math.round((wins / withResult.length) * 100) : null,
-      kda: aggregateKDA(recent),
-      acs: averageAcs(recent),
-      hs: averageHsPercent(recent),
-      rank: latestRank(recent),
-      role: formatRole(mostPlayedRole(recent, roleTable)),
-      strip: resultStrip(withResult),
-      entriesWithResult: withResult.length,
-      wins,
-    };
-  }));
+    const accounts = splitByAccount(member, recent, deltaByAccount);
+    const siblings = accounts.map(row => row.account);
+    return accounts.map(({ account, entries: played, delta }) => {
+      const withResult = played.filter(entry => typeof entry.win === 'boolean');
+      const wins = withResult.filter(entry => entry.win).length;
+      return {
+        name: accountLabel(member.name, account, siblings),
+        delta,
+        games: played.length,
+        winRatePct: withResult.length ? Math.round((wins / withResult.length) * 100) : null,
+        kda: aggregateKDA(played),
+        acs: averageAcs(played),
+        hs: averageHsPercent(played),
+        rank: latestRank(played),
+        role: formatRole(mostPlayedRole(played, roleTable)),
+        strip: resultStrip(withResult),
+        entriesWithResult: withResult.length,
+        wins,
+      };
+    });
+  }))).flat();
 
   const active = rows
     .filter(row => row.games > 0 || row.delta != null)

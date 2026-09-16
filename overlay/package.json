@@ -1,7 +1,7 @@
 {
   "name": "olycity-overlay",
   "productName": "OLYCITY Overlay",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "Le site OLYCITY en surimpression, au lancement du jeu ou au raccourci clavier",
   "main": "main.js",
   "private": true,
