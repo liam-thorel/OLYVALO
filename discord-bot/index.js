@@ -27,6 +27,7 @@ const { recordRankGain, lolRankPoints } = require('./rank-tracking.js');
 const { recordAward } = require('./valorant-awards.js');
 const { buildRankProgressLine } = require('./valorant-rank.js');
 const { isRankedValorantMode, isValorantDeathmatch, isNonRankedLolQueue } = require('./stats.js');
+const { accountMark, accountDetail } = require('./account-kind.js');
 const { playReward: playRewardFor } = require('./play-rewards.js');
 const { isHalfTime, ownScore, oddsFromScore } = require('./live-odds.js');
 const { createBoundedSet, createExpiringMap } = require('./bounded-memory.js');
@@ -210,7 +211,9 @@ function buildValorantGroupEmbed(rosterPlayers) {
   const first = rosterPlayers[0]?.session;
   const lines = rosterPlayers.map(({ member, session: s }) => {
     const sideLabel = s.side ? (s.side === 'ATTAQUE' ? '⚔️ Attaque' : '🛡️ Défense') : null;
-    return sideLabel ? `**${member.name}** — ${sideLabel}` : `**${member.name}**`;
+    // L'embed a la place de nommer le compte, pas seulement sa nature.
+    const name = `**${member.name}**${accountDetail(member, s.playerName)}`;
+    return sideLabel ? `${name} — ${sideLabel}` : name;
   });
   return new EmbedBuilder()
     .setColor(meta.startColor)
@@ -316,7 +319,11 @@ async function notifyValorantGameStart(session, snapshot) {
     return;
   }
 
-  const namesKey = rosterPlayers.map(({ member }) => member.name).sort().join(',');
+  // La clé porte le COMPTE et pas seulement le membre : un joueur qui enchaîne
+  // sur son autre compte lance une vraie nouvelle partie, et sa notification
+  // était avalée par la fenêtre anti-doublon. Une même partie revue deux fois
+  // garde le même compte, donc le garde-fou reste aussi efficace qu'avant.
+  const namesKey = rosterPlayers.map(({ member, session: s }) => `${member.name}:${String(s.playerName || '').toLowerCase()}`).sort().join(',');
   if (alreadyNotifiedRecently(recentValorantStarts, namesKey)) return;
 
   if (matchId) notifiedValorantMatches.add(matchId);
@@ -328,13 +335,15 @@ async function notifyValorantGameStart(session, snapshot) {
   if (channelIds.size === 0) return;
 
   const embeds = [buildValorantGroupEmbed(rosterPlayers)];
-  const names = rosterPlayers.map(({ member }) => member.name).join(', ');
+  // « (main) » / « (smurf) » plutôt que le nom du compte : l'en-tête doit
+  // rester lisible avec cinq joueurs stackés. Le détail est dans l'embed.
+  const names = rosterPlayers.map(({ member, session: s }) => `**${member.name}**${accountMark(member, s.playerName)}`).join(', ');
   const stackBanner = rosterPlayers.length > 1 ? `🔥 **STACK OLYCITY** — ${rosterPlayers.length} joueurs dans la même game !\n` : '';
 
   await Promise.all([...channelIds].map(async channelId => {
     try {
       const channel = await client.channels.fetch(channelId);
-      await channel.send({ content: `${stackBanner}${GAME_META.valorant.emoji} **${names}** en game !`, embeds });
+      await channel.send({ content: `${stackBanner}${GAME_META.valorant.emoji} ${names} en game !`, embeds });
     } catch (error) {
       console.error(`[notify:valorant] échec envoi salon ${channelId} —`, error.message);
     }
@@ -731,7 +740,7 @@ function buildLolPlayerEmbed(member, session) {
   const embed = new EmbedBuilder()
     .setColor(GAME_META.lol.color)
     .setAuthor({
-      name: `${positionIcon ? `${positionIcon} ` : ''}${member.name} — ${championName}`,
+      name: `${positionIcon ? `${positionIcon} ` : ''}${member.name}${accountDetail(member, session.playerName)} — ${championName}`,
       iconURL: session.champion?.image || member.avatar || undefined,
     });
 
@@ -772,7 +781,11 @@ async function notifyLolGameStart(session, snapshot) {
     return;
   }
 
-  const namesKey = rosterPlayers.map(({ member }) => member.name).sort().join(',');
+  // La clé porte le COMPTE et pas seulement le membre : un joueur qui enchaîne
+  // sur son autre compte lance une vraie nouvelle partie, et sa notification
+  // était avalée par la fenêtre anti-doublon. Une même partie revue deux fois
+  // garde le même compte, donc le garde-fou reste aussi efficace qu'avant.
+  const namesKey = rosterPlayers.map(({ member, session: s }) => `${member.name}:${String(s.playerName || '').toLowerCase()}`).sort().join(',');
   if (alreadyNotifiedRecently(recentLolStarts, namesKey)) return;
 
   if (matchId) notifiedLolMatches.add(matchId);
@@ -784,13 +797,13 @@ async function notifyLolGameStart(session, snapshot) {
   if (channelIds.size === 0) return;
 
   const embeds = rosterPlayers.map(({ session: s, member }) => buildLolPlayerEmbed(member, s)).slice(0, 10);
-  const names = rosterPlayers.map(({ member }) => member.name).join(', ');
+  const names = rosterPlayers.map(({ member, session: s }) => `**${member.name}**${accountMark(member, s.playerName)}`).join(', ');
   const stackBanner = rosterPlayers.length > 1 ? `🔥 **STACK OLYCITY** — ${rosterPlayers.length} joueurs dans la même game !\n` : '';
 
   await Promise.all([...channelIds].map(async channelId => {
     try {
       const channel = await client.channels.fetch(channelId);
-      await channel.send({ content: `${stackBanner}${GAME_META.lol.emoji} **${names}** en game LoL !`, embeds });
+      await channel.send({ content: `${stackBanner}${GAME_META.lol.emoji} ${names} en game LoL !`, embeds });
     } catch (error) {
       console.error(`[notify:lol] échec envoi salon ${channelId} —`, error.message);
     }

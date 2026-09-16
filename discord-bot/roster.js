@@ -3,7 +3,7 @@ const { fbGet } = require('./firebase.js');
 
 const REFRESH_MS = 5 * 60 * 1000;
 
-let members = [];       // [{ id, name, avatar, riotIds: ['name#tag', ...], puuids: [...] }]
+let members = [];       // [{ id, name, avatar, riotIds: ['name#tag', ...], mainRiotId, puuids: [...] }]
 let riotIdIndex = {};   // 'name#tag' lowercase -> member
 let memberIdIndex = {}; // id de membre -> member
 let puuidIndex = {};    // puuid -> member
@@ -36,10 +36,27 @@ function slugify(name) {
  * joueur renommé disparaissait donc silencieusement du suivi malgré une
  * correction qui semblait faite.
  */
+function formatRosterAccount(account) {
+  if (!account?.name) return null;
+  return account.tag ? `${account.name}#${account.tag}` : String(account.name);
+}
+
 function riotIdsFromRoster(player) {
   return [player?.riot, ...(player?.smurfs || [])]
-    .filter(account => account?.name)
-    .map(account => (account.tag ? `${account.name}#${account.tag}` : String(account.name)));
+    .map(formatRosterAccount)
+    .filter(Boolean);
+}
+
+/**
+ * Compte principal déclaré, quand il l'est.
+ *
+ * roster.json est la SEULE source qui distingue le compte principal des
+ * smurfs (`riot` d'un côté, `smurfs` de l'autre). Les comptes ajoutés depuis
+ * l'admin n'ont pas cette notion — on renvoie alors `null` plutôt que de
+ * désigner le premier venu, ce qui reviendrait à inventer.
+ */
+function mainRiotIdFromRoster(player) {
+  return formatRosterAccount(player?.riot);
 }
 
 function indexRoster(roster, overlay) {
@@ -48,13 +65,14 @@ function indexRoster(roster, overlay) {
 
   const staticMembers = roster.map(player => ({
     id: slugify(player.name), name: player.name, avatar: player.avatar || null,
-    discordId: extractDiscordId(player.avatar), riotIds: riotIdsFromRoster(player), puuids: [],
+    discordId: extractDiscordId(player.avatar), riotIds: riotIdsFromRoster(player),
+    mainRiotId: mainRiotIdFromRoster(player), puuids: [],
   }));
 
   const staticIds = new Set(staticMembers.map(m => m.id));
   const extraMembers = Object.entries(overlayMembers)
     .filter(([id]) => !staticIds.has(id))
-    .map(([id, m]) => ({ id, name: m.name, avatar: m.avatar || null, discordId: extractDiscordId(m.avatar), riotIds: [], puuids: [] }));
+    .map(([id, m]) => ({ id, name: m.name, avatar: m.avatar || null, discordId: extractDiscordId(m.avatar), riotIds: [], mainRiotId: null, puuids: [] }));
 
   members = [...staticMembers, ...extraMembers];
 
