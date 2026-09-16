@@ -52,6 +52,38 @@ jobs:
             echo "::notice::Pas de dossier overlay/ à cette révision — rien à construire."
           fi
 
+      # Le tag est saisi à la main dans le formulaire : un espace avant ou
+      # après ne se voit pas, et « v4.17.11 » avec une espace en tête a déjà
+      # coûté une construction complète avant d'échouer au téléversement.
+      - name: Normaliser le tag visé
+        id: tag
+        shell: bash
+        run: |
+          set -euo pipefail
+          raw='${{ inputs.tag || github.ref_name }}'
+          clean=$(printf '%s' "$raw" | tr -d '\r' | sed -E 's/^[[:space:]]+//; s/[[:space:]]+$//')
+          [ -n "$clean" ] || { echo "::error::Aucun tag fourni."; exit 1; }
+          [ "$clean" = "$raw" ] || echo "::notice::Tag normalisé : « $raw » → « $clean »"
+          echo "value=$clean" >> "$GITHUB_OUTPUT"
+
+      # Construire pendant trois minutes pour découvrir ensuite que la release
+      # de destination n'existe pas est une perte sèche. On le vérifie tout de
+      # suite — sauf sur un push de tag, où la release est encore en train
+      # d'être créée par le workflow du Live.
+      - name: Vérifier que la release de destination existe
+        if: steps.guard.outputs.present == 'true' && github.event_name == 'workflow_dispatch'
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          tag='${{ steps.tag.outputs.value }}'
+          if ! gh release view "$tag" --repo '${{ github.repository }}' > /dev/null 2>&1; then
+            echo "::error::La release $tag n'existe pas. Releases disponibles :"
+            gh release list --repo '${{ github.repository }}' --limit 10
+            exit 1
+          fi
+
       - uses: actions/setup-node@v4
         if: steps.guard.outputs.present == 'true'
         with:
@@ -96,7 +128,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
-          tag='${{ inputs.tag || github.ref_name }}'
+          tag='${{ steps.tag.outputs.value }}'
           # La release peut ne pas exister encore lors d'un push de tag : le
           # workflow du Live la crée de son côté, on l'attend brièvement plutôt
           # que d'échouer sur une course entre les deux.
@@ -105,8 +137,10 @@ jobs:
               # Le .blockmap permet à electron-updater de ne télécharger que
               # les octets qui changent d'une version à l'autre.
               files=(overlay/dist/OLYCITY-Overlay-Setup.exe overlay/dist/latest.yml)
+              # Sans `|| true`, un glob qui ne correspond à rien fait échouer
+              # l'étape sous `set -e` alors que le .blockmap est facultatif.
               for extra in overlay/dist/*.blockmap; do
-                [ -f "$extra" ] && files+=("$extra")
+                [ -f "$extra" ] && files+=("$extra") || true
               done
               gh release upload "$tag" "${files[@]}" --clobber --repo '${{ github.repository }}'
               exit 0
