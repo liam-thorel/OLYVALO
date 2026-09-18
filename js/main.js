@@ -17,6 +17,7 @@ import { storage } from './storage.js';
 import { avatarLayersHTML } from './avatars.mjs';
 import { initAdminPage } from './admin.mjs?v=20260826-cold-load-recovery';
 import { initBettingPage } from './betting-page.mjs?v=20260828-page-stream-lifecycle';
+import { initRrCurvePage } from './rr-curve-page.mjs?v=20260918-courbes';
 import { initCoopGamesPage } from './coop-games-page.mjs?v=20260828-page-stream-lifecycle';
 import { getGameMode, initGameMode, setGameMode } from './game-mode.mjs?v=20260824-home-title';
 import { initLolHistoryPage, initLolLivePage } from './lol-pages.mjs?v=20260828-first-visit-recovery';
@@ -170,7 +171,7 @@ window.OLYCITY = {
   },
 
   nav(page, pushHistory = true) {
-    if (!['home', 'maps', 'roster', 'live', 'history', 'admin', 'betting', 'games'].includes(page)) page = 'home';
+    if (!['home', 'maps', 'roster', 'live', 'history', 'courbes', 'admin', 'betting', 'games'].includes(page)) page = 'home';
     if (getGameMode() === 'lol' && page === 'maps') page = 'home';
     this.closeMobileNavMenu();
     sessionStorage.setItem('olycity-page', page);
@@ -180,6 +181,7 @@ window.OLYCITY = {
       maps: 'OLYCITY — Maps & Comps',
       roster: 'OLYCITY — Roster',
       history: 'OLYCITY — Historique',
+      courbes: 'OLYCITY — Courbes',
       admin: 'OLYCITY — Admin',
       betting: 'OLYCITY — Paris',
       games: 'OLYCITY — Jeux du Discord',
@@ -216,6 +218,9 @@ window.OLYCITY = {
       if (getGameMode() === 'lol') initLolHistoryPage();
       else initHistoryPage();
     }
+    if (page === 'courbes') {
+      initRrCurvePage();
+    }
     if (page === 'admin') {
       initAdminPage();
     }
@@ -229,7 +234,7 @@ window.OLYCITY = {
     if (navBtn) {
       navBtn.classList.add('active');
       navBtn.setAttribute('aria-current', 'page');
-      const morePages = ['roster', 'games', 'betting'];
+      const morePages = ['roster', 'courbes', 'games', 'betting'];
       const moreTrigger = document.getElementById('mobile-nav-more-trigger');
       if (morePages.includes(page) && moreTrigger) {
         moreTrigger.classList.add('active');
@@ -921,7 +926,7 @@ async function boot() {
     } else {
       // No state = home or hash-based
       const hash = window.location.hash.replace('#', '');
-      if (hash && ['maps','roster','live','history','admin','betting','games'].includes(hash)) {
+      if (hash && ['maps','roster','live','history','courbes','admin','betting','games'].includes(hash)) {
         window.OLYCITY.nav(hash, false);
       } else if (!hash || hash === 'home') {
         window.OLYCITY.nav('home', false);
@@ -938,7 +943,7 @@ async function boot() {
   });
   // Push initial history state
   const initHash = window.location.hash.replace('#','');
-  const validPages = ['maps','roster','live','history','admin','betting','games'];
+  const validPages = ['maps','roster','live','history','courbes','admin','betting','games'];
   const initPage = validPages.includes(initHash)
     ? initHash
     : !initHash && validPages.includes(savedPage) ? savedPage : 'home';
