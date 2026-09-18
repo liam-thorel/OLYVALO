@@ -1073,3 +1073,50 @@ body.agent-mode .footer{ display:none; }
 .history-player > strong { color: var(--text); font-size: 12px; white-space: nowrap; }
 .history-player > span:last-child { color: var(--muted); font-size: 11px; text-align: right; white-space: nowrap; }
 .history-legacy-note { padding: 18px; color: var(--muted); border: 1px solid var(--border); background: var(--bg); font-size: 13px; }
+
+/* ═══════════ COURBES DE PROGRESSION ═══════════ */
+/* Le graphique est un SVG construit à la main (js/rr-curve-page.mjs) : le site
+   n'embarque aucune bibliothèque de tracé, et une ligne brisée n'en vaut pas
+   une. Tout est donc mis en forme ici. */
+
+.curve-chart-wrap{
+  border:1px solid rgba(255,255,255,.1); border-radius:14px;
+  background:rgba(255,255,255,.02); padding:8px; overflow:hidden;
+}
+/* Le viewBox porte le ratio : la courbe se redimensionne sans média-requête. */
+.curve-chart{ display:block; width:100%; height:auto; }
+
+.curve-grid-line{ stroke:rgba(255,255,255,.07); stroke-width:1; }
+.curve-grid-label{ fill:rgba(255,255,255,.34); font-size:10px; font-family:inherit; }
+.curve-axis-date{ fill:rgba(255,255,255,.4); font-size:11px; font-family:inherit; }
+.curve-axis-date-end{ text-anchor:end; }
+
+.curve-line{ fill:none; stroke-width:2.2; stroke-linejoin:round; stroke-linecap:round; }
+.curve-dot{ opacity:.85; }
+
+.curve-legend{ display:flex; flex-wrap:wrap; gap:8px; margin-top:16px; }
+.curve-legend-item{
+  display:inline-flex; align-items:center; gap:8px;
+  padding:6px 12px; border-radius:999px; cursor:pointer;
+  border:1px solid rgba(255,255,255,.12); background:transparent;
+  color:var(--txt-2,#b6bccd); font-size:13px; font-family:inherit;
+  /* Un compte masqué reste lisible : il doit pouvoir être rallumé. */
+  opacity:.5; transition:opacity .15s, border-color .15s, color .15s;
+}
+.curve-legend-item.active{ opacity:1; border-color:var(--curve-color); color:#fff; }
+.curve-legend-item:hover{ opacity:1; }
+.curve-legend-dot{ width:11px; height:11px; border-radius:50%; background:var(--curve-color); flex:none; }
+/* Le smurf est en pointillés sur la courbe : l'anneau le rappelle ici. */
+.curve-legend-dot.smurf{ background:transparent; border:2.5px solid var(--curve-color); }
+.curve-legend-tag{
+  font-size:10px; text-transform:uppercase; letter-spacing:.06em;
+  color:rgba(255,255,255,.45); border:1px solid rgba(255,255,255,.14);
+  border-radius:4px; padding:1px 5px;
+}
+
+.curve-empty{ color:var(--txt-2,#b6bccd); padding:28px 4px; text-align:center; }
+
+@media (max-width:640px){
+  .curve-legend-item{ font-size:12px; padding:6px 10px; }
+  .curve-chart-wrap{ padding:4px; border-radius:10px; }
+}

@@ -25,6 +25,7 @@ const { isAllowedUrl, isSafeExternalUrl, siteUrl } = require('./lib/url-policy.j
 const { createLogger } = require('./lib/logger.js');
 const { setupAutoUpdate, shouldCheck, updateLabel, FIRST_CHECK_DELAY_MS } = require('./lib/updater.js');
 const { loginItemVerdict, unblockCommand, verdictMessage, STARTUP_SETTINGS_URL } = require('./lib/login-item.js');
+const { hotkeyOptions, hotkeyLabel, hotkeyStatusLabel } = require('./lib/hotkey.js');
 
 const TITLEBAR_HEIGHT = 36;
 // La vue compacte est dessinée pour une colonne étroite posée sur le côté de
@@ -256,6 +257,7 @@ async function pollGames() {
   if (transition === 'launched') {
     const games = Object.entries(running).filter(([, on]) => on).map(([game]) => game).join(', ');
     log('[jeu] lancé :', games);
+    ensureHotkeyAlive(`lancement de ${games}`);
     apply(reduce(state, 'game-launched'));
     logWindowState('après lancement du jeu');
   } else if (transition === 'closed') {
@@ -310,18 +312,58 @@ function registerHotkey() {
   // l'enregistrement : sans repli, l'overlay deviendrait inaccessible pour qui
   // n'a pas d'icône dans la zone de notification visible.
   const registered = globalShortcut.register(settings.hotkey, () => {
+    // Tracé AVANT d'agir : c'est ce qui permet de distinguer « la touche ne
+    // nous parvient pas » de « elle nous parvient mais la fenêtre ne se voit
+    // pas ». Sans cette ligne, les deux pannes sont indiscernables.
+    log('[raccourci]', hotkeyLabel(settings.hotkey), 'reçu');
     apply(reduce(state, 'hotkey'));
     logWindowState('après raccourci');
   });
   if (!registered) {
-    console.error(`[hotkey] ${settings.hotkey} est déjà pris par une autre application`);
+    log('[raccourci]', hotkeyLabel(settings.hotkey), '— refusé, déjà pris par une autre application');
     if (settings.hotkey !== 'Control+Shift+F8') {
       settings.hotkey = 'Control+Shift+F8';
       saveSettings();
-      globalShortcut.register(settings.hotkey, () => apply(reduce(state, 'hotkey')));
+      return registerHotkey();
     }
+  } else {
+    log('[raccourci]', hotkeyLabel(settings.hotkey), '— enregistré');
   }
   return registered;
+}
+
+/**
+ * Une autre application peut prendre la combinaison APRÈS notre démarrage :
+ * RegisterHotKey est premier arrivé premier servi, et rien ne nous prévient.
+ * On revérifie donc au lancement d'une partie — le moment exact où le
+ * raccourci sert.
+ */
+function ensureHotkeyAlive(reason) {
+  const alive = globalShortcut.isRegistered(settings.hotkey);
+  if (alive) {
+    log('[raccourci]', hotkeyLabel(settings.hotkey), '— actif', `(${reason})`);
+    return true;
+  }
+  log('[raccourci]', hotkeyLabel(settings.hotkey), '— PERDU, nouvel essai', `(${reason})`);
+  const recovered = registerHotkey();
+  refreshTrayMenu();
+  return recovered;
+}
+
+/** Change la combinaison depuis le menu, et dit tout de suite si ça a pris. */
+function setHotkey(accelerator) {
+  const previous = settings.hotkey;
+  settings.hotkey = accelerator;
+  saveSettings();
+  const registered = registerHotkey();
+  refreshTrayMenu();
+  if (registered) return;
+  dialog.showMessageBox({
+    type: 'warning', title: 'OLYCITY Overlay', message: 'Raccourci indisponible',
+    detail: `${hotkeyLabel(accelerator)} est déjà pris par une autre application (jeu, Discord, NVIDIA, Steam…).\n\nWindows n'accorde une combinaison qu'à une seule application à la fois. Essaies-en une autre dans le menu.`,
+    buttons: ['Fermer'], noLink: true,
+  }).catch(() => {});
+  log('[raccourci] retour à', hotkeyLabel(previous));
 }
 
 /**
@@ -474,7 +516,16 @@ function refreshTrayMenu() {
       click: () => shell.openExternal(STARTUP_SETTINGS_URL).catch(() => {}),
     }] : []),
     { type: 'separator' },
-    { label: `Raccourci : ${settings.hotkey}`, enabled: false },
+    {
+      // C'était une étiquette morte : le raccourci ne se changeait qu'en
+      // éditant settings.json à la main. Quand une autre application détient
+      // la combinaison, il n'y avait donc aucune porte de sortie.
+      label: hotkeyStatusLabel(settings.hotkey, globalShortcut.isRegistered(settings.hotkey)),
+      submenu: hotkeyOptions(settings.hotkey).map(choice => ({
+        label: hotkeyLabel(choice), type: 'radio', checked: choice === settings.hotkey,
+        click: () => setHotkey(choice),
+      })),
+    },
     { type: 'separator' },
     // Pour qu'un diagnostic à distance ne demande pas de naviguer jusqu'à
     // %APPDATA% à l'aveugle.

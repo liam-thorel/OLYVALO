@@ -101,6 +101,7 @@
     -webkit-backdrop-filter: blur(18px) saturate(160%);
   }
   .page-nav > .page-nav-btn[data-page="roster"],
+  .page-nav > .page-nav-btn[data-page="courbes"],
   .page-nav > .page-nav-btn[data-page="games"],
   .page-nav > .page-nav-btn[data-page="betting"] { display: none !important; }
   .nav-maps-dropdown { flex: 1 1 0; min-width: 0; }
