@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import {
   MEMBER_COLORS, accountColor, valorantLadderPoint, lolLadderPoint, ladderLabel,
   accountIndex, valorantAccountSeries, lolAccountSeries, seriesLabel,
-  curvePresets, applyPreset, seriesKey, plotLayout, seriesPath,
+  defaultVisible, seriesKey, plotLayout, seriesPath,
 } from '../js/rr-curve-utils.mjs';
 
 const MEMBERS = [
@@ -128,20 +128,15 @@ assert.equal(seriesLabel(series[0], series), 'Rayhan · RayBaz');
 assert.equal(seriesLabel({ member: 'Noé', account: 'baby hayabusa#NoWaY' }, [{ member: 'Noé' }]), 'Noé',
   'un seul compte tracé : le nom suffit');
 
-// ─── Préréglages ─────────────────────────────────────────────────────────────
-const presets = curvePresets(series);
-assert.equal(presets[0].id, 'mains', 'on ouvre sur les comptes principaux');
-assert.deepEqual(applyPreset(series, presets[0]), ['raybaz#oly'], 'les smurfs sont masqués au départ');
+// ─── Sélection d'ouverture ───────────────────────────────────────────────────
+// Les smurfs, deux à quatre rangs plus bas, étireraient l'échelle verticale au
+// point d'aplatir les courbes qu'on vient regarder.
+assert.deepEqual(defaultVisible(series), ['raybaz#oly'], 'on ouvre sur les comptes principaux');
 
-const parJoueur = presets.find(p => p.id === 'all-Rayhan');
-assert.ok(parJoueur, 'un préréglage par joueur ayant des smurfs');
-assert.equal(parJoueur.label, 'Tous les comptes de Rayhan');
-assert.deepEqual(applyPreset(series, parJoueur).sort(), ['raybaz#oly', 'rbz#3030']);
-
-// Proposer « les comptes de Noé » quand Noé n'a pas de smurf n'ouvrirait qu'un
-// doublon du préréglage principal.
-assert.equal(presets.some(p => p.id === 'all-Noé'), false);
-assert.equal(applyPreset(series, null).length, series.length, 'sans préréglage, tout est visible');
+// Aucun principal tracé : mieux vaut tout montrer qu'un graphique vide.
+const queDesSmurfs = series.filter(s => !s.isMain);
+assert.deepEqual(defaultVisible(queDesSmurfs), ['rbz#3030']);
+assert.deepEqual(defaultVisible([]), []);
 
 // ─── Tracé ───────────────────────────────────────────────────────────────────
 const layout = plotLayout(series, { width: 1000, height: 400, padding: 40 });

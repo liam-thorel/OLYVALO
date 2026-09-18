@@ -212,31 +212,20 @@ export function seriesLabel(series, all = []) {
   return `${series.member} · ${short}`;
 }
 
-// ─── Préréglages ─────────────────────────────────────────────────────────────
+// ─── Sélection ───────────────────────────────────────────────────────────────
 
 /**
- * Les préréglages sont construits à partir des séries RÉELLEMENT présentes :
- * proposer « les comptes de Liam » quand Liam n'a rien joué n'ouvrirait qu'un
- * graphique vide.
+ * Comptes affichés à l'ouverture : les principaux.
+ *
+ * C'est la lecture que l'on vient chercher ; les smurfs, deux à quatre rangs
+ * plus bas, étireraient l'échelle verticale au point d'aplatir les courbes
+ * qu'on regarde. La légende permet ensuite de les allumer un par un.
  */
-export function curvePresets(series = []) {
-  const presets = [{ id: 'mains', label: 'Comptes principaux', match: s => s.isMain }];
-  const membersWithSmurfs = [...new Set(series.filter(s => !s.isMain).map(s => s.member))];
-
-  membersWithSmurfs.sort((a, b) => a.localeCompare(b, 'fr')).forEach(member => {
-    presets.push({ id: `all-${member}`, label: `Tous les comptes de ${member}`, match: s => s.member === member });
-  });
-
-  if (series.length > presets.length) {
-    presets.push({ id: 'everything', label: 'Tous les comptes', match: () => true });
-  }
-  return presets;
-}
-
-/** Applique un préréglage et retourne les clés de séries à afficher. */
-export function applyPreset(series = [], preset) {
-  if (!preset) return series.map(seriesKey);
-  return series.filter(preset.match).map(seriesKey);
+export function defaultVisible(series = []) {
+  const mains = series.filter(s => s.isMain);
+  // Aucun compte principal tracé (que des smurfs, ou un roster incomplet) :
+  // mieux vaut tout montrer qu'un graphique vide.
+  return (mains.length ? mains : series).map(seriesKey);
 }
 
 export function seriesKey(series) {

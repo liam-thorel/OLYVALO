@@ -45,17 +45,26 @@ assert.match(page, /valorantAccountSeries|lolAccountSeries/);
 // Le balisage vit dans un module de vue sans DOM : c'est lui que teste
 // rr-curve-view.test.mjs, et lui qu'affiche l'aperçu de conception.
 assert.match(page, /from '\.\/rr-curve-view\.mjs/);
-assert.match(page, /renderCurvePage\(\{ allSeries, visible, presets, activePreset, game \}\)/);
+assert.match(page, /renderCurvePage\(\{ allSeries, visible, game \}\)/);
 
 // ─── Ouverture sur les comptes principaux ────────────────────────────────────
-assert.match(page, /activePreset = presets\[0\]\?\.id \|\| 'mains'/, 'on ouvre sur les mains');
+assert.match(page, /visible = new Set\(defaultVisible\(allSeries\)\)/, 'on ouvre sur les mains');
+
+// initRrCurvePage() est rappelée à chaque changement de jeu : attacher
+// l'écouteur là en ajoutait un par bascule, et deux écouteurs font un clic qui
+// allume puis éteint aussitôt — la légende cessait de répondre.
+assert.match(page, /function listenOnce/);
+assert.match(page, /if \(listening\) return;/);
+assert.equal((page.match(/addEventListener\('click'/g) || []).length, 1, 'un seul écouteur de clic');
 
 // ─── Mise en forme présente ──────────────────────────────────────────────────
-['.curve-presets', '.curve-chart', '.curve-legend-item', '.curve-legend-dot.smurf', '.curve-empty']
+['.curve-chart', '.curve-legend-item', '.curve-legend-dot.smurf', '.curve-empty']
   .forEach(selector => assert.ok(css.includes(selector), `${selector} doit être stylé`));
 // Le SVG se redimensionne par son viewBox : sans largeur fluide il déborderait
 // sur téléphone.
 assert.match(css, /\.curve-chart\{[^}]*width:100%/);
+// La rangée de préréglages est retirée : plus rien ne doit la styler.
+assert.doesNotMatch(css, /\.curve-preset/, 'CSS mort à ne pas laisser derrière');
 
 console.log('rr-curve-page: onglet câblé de bout en bout, sources et échappement vérifiés');
 

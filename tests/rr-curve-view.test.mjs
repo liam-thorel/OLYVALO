@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
-import { renderCurvePage, renderChart, renderLegend, renderPresets, gridLines, escapeHTML } from '../js/rr-curve-view.mjs';
-import { valorantAccountSeries, curvePresets, applyPreset, seriesKey, plotLayout } from '../js/rr-curve-utils.mjs';
+import { renderCurvePage, renderChart, renderLegend, gridLines, escapeHTML } from '../js/rr-curve-view.mjs';
+import { valorantAccountSeries, defaultVisible, seriesKey, plotLayout } from '../js/rr-curve-utils.mjs';
 
 const MEMBERS = [
   { name: 'Rayhan', riotIds: ['RayBaz#OLY', 'rbz#3030'] },
@@ -15,8 +15,7 @@ const series = valorantAccountSeries({
   e: { reports: { r: report('Wong Chi Ming#2046', 1_200_000, 18, 55) } },
   f: { reports: { r: report('Wong Chi Ming#2046', 2_200_000, 19, 22) } },
 }, MEMBERS);
-const presets = curvePresets(series);
-const mains = new Set(applyPreset(series, presets[0]));
+const mains = new Set(defaultVisible(series));
 
 // ─── Échappement ─────────────────────────────────────────────────────────────
 // Les Riot ID sont choisis par des inconnus et atterrissent dans du HTML
@@ -75,16 +74,12 @@ assert.match(legend, /Rayhan · rbz/);
 assert.ok(legend.includes('Liam'), 'Liam figure dans la légende');
 assert.doesNotMatch(legend, /Liam · /, 'un seul compte : aucune précision à ajouter');
 
-// ─── Préréglages ─────────────────────────────────────────────────────────────
-const chips = renderPresets(presets, 'mains');
-assert.match(chips, /class="curve-preset active"[^>]*data-preset="mains"/);
-assert.match(chips, /Tous les comptes de Rayhan/);
-assert.doesNotMatch(chips, /Tous les comptes de Liam/, 'Liam n’a pas de smurf : rien à proposer');
-
 // ─── Page complète ───────────────────────────────────────────────────────────
-const html = renderCurvePage({ allSeries: series, visible: mains, presets, activePreset: 'mains', game: 'valorant' });
-['curve-presets', 'curve-chart-wrap', 'curve-legend'].forEach(cls =>
+const html = renderCurvePage({ allSeries: series, visible: mains, game: 'valorant' });
+['curve-chart-wrap', 'curve-legend'].forEach(cls =>
   assert.ok(html.includes(cls), `${cls} doit être rendu`));
+// La rangée de préréglages a été retirée : la légende est le seul réglage.
+assert.doesNotMatch(html, /curve-preset/, 'plus aucun préréglage');
 assert.match(renderCurvePage({}), /Aucune progression à afficher/);
 
 console.log('rr-curve-view: balisage, couleurs, pointillés des smurfs et échappement validés');

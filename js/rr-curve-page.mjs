@@ -13,31 +13,43 @@
 
 import { fetchJsonWithRetry } from './request-utils.mjs?v=20260825-first-load-recovery';
 import { getGameMode } from './game-mode.mjs';
-import { valorantAccountSeries, lolAccountSeries, curvePresets, applyPreset } from './rr-curve-utils.mjs?v=20260918-courbes';
+import { valorantAccountSeries, lolAccountSeries, defaultVisible } from './rr-curve-utils.mjs?v=20260918-courbes';
 import { renderCurvePage, emptyState } from './rr-curve-view.mjs?v=20260918-courbes';
 
 const FIREBASE_URL = 'https://realtime-database-5bb9f-default-rtdb.europe-west1.firebasedatabase.app';
 
 let allSeries = [];
 let visible = new Set();
-let presets = [];
-let activePreset = 'mains';
 let currentGame = '';
 let loaded = false;
+let listening = false;
 
 async function fbGet(path) {
   return fetchJsonWithRetry(`${FIREBASE_URL}/${path}.json`, { timeoutMs: 12_000, init: { cache: 'no-store' } });
 }
 
 function render(root, game) {
-  root.innerHTML = renderCurvePage({ allSeries, visible, presets, activePreset, game });
+  root.innerHTML = renderCurvePage({ allSeries, visible, game });
 }
 
-function selectPreset(id) {
-  const preset = presets.find(p => p.id === id);
-  if (!preset) return;
-  activePreset = id;
-  visible = new Set(applyPreset(allSeries, preset));
+/**
+ * Un seul écouteur pour toute la vie de la page.
+ *
+ * initRrCurvePage() est rappelée à chaque changement de jeu : en attachant
+ * l'écouteur là, chaque bascule en ajoutait un. Deux écouteurs, c'est un clic
+ * qui allume puis éteint aussitôt — la légende cessait de répondre.
+ */
+function listenOnce(root) {
+  if (listening) return;
+  listening = true;
+  root.addEventListener('click', event => {
+    const legendBtn = event.target.closest('.curve-legend-item');
+    if (!legendBtn) return;
+    const key = legendBtn.dataset.series;
+    if (visible.has(key)) visible.delete(key);
+    else visible.add(key);
+    render(root, currentGame);
+  });
 }
 
 export async function initRrCurvePage() {
@@ -72,31 +84,11 @@ export async function initRrCurvePage() {
   }));
 
   allSeries = game === 'lol' ? lolAccountSeries(history, members) : valorantAccountSeries(history, members);
-  presets = curvePresets(allSeries);
-  // On ouvre sur les comptes principaux : c'est la lecture que l'on vient
-  // chercher, les smurfs brouilleraient l'échelle dès l'arrivée.
-  activePreset = presets[0]?.id || 'mains';
-  selectPreset(activePreset);
+  visible = new Set(defaultVisible(allSeries));
   loaded = true;
 
   render(root, game);
-
-  root.addEventListener('click', event => {
-    const presetBtn = event.target.closest('.curve-preset');
-    if (presetBtn) {
-      selectPreset(presetBtn.dataset.preset);
-      render(root, currentGame);
-      return;
-    }
-    const legendBtn = event.target.closest('.curve-legend-item');
-    if (!legendBtn) return;
-    const key = legendBtn.dataset.series;
-    if (visible.has(key)) visible.delete(key);
-    else visible.add(key);
-    // Un réglage à la main n'est plus un préréglage : ne plus le prétendre.
-    activePreset = '';
-    render(root, currentGame);
-  });
+  listenOnce(root);
 }
 
 // Le mode de jeu peut changer pendant que la page est ouverte : les deux

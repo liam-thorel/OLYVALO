@@ -1079,16 +1079,6 @@ body.agent-mode .footer{ display:none; }
    n'embarque aucune bibliothèque de tracé, et une ligne brisée n'en vaut pas
    une. Tout est donc mis en forme ici. */
 
-.curve-presets{ display:flex; flex-wrap:wrap; gap:8px; margin-bottom:16px; }
-.curve-preset{
-  padding:7px 14px; border-radius:999px; cursor:pointer;
-  border:1px solid rgba(255,255,255,.14); background:rgba(255,255,255,.04);
-  color:var(--txt-2,#b6bccd); font-size:13px; font-family:inherit;
-  transition:border-color .15s, background .15s, color .15s;
-}
-.curve-preset:hover{ border-color:rgba(255,255,255,.3); color:#fff; }
-.curve-preset.active{ border-color:var(--accent,#ff4656); background:color-mix(in srgb,var(--accent,#ff4656) 16%,transparent); color:#fff; }
-
 .curve-chart-wrap{
   border:1px solid rgba(255,255,255,.1); border-radius:14px;
   background:rgba(255,255,255,.02); padding:8px; overflow:hidden;
@@ -1127,6 +1117,6 @@ body.agent-mode .footer{ display:none; }
 .curve-empty{ color:var(--txt-2,#b6bccd); padding:28px 4px; text-align:center; }
 
 @media (max-width:640px){
-  .curve-preset,.curve-legend-item{ font-size:12px; padding:6px 10px; }
+  .curve-legend-item{ font-size:12px; padding:6px 10px; }
   .curve-chart-wrap{ padding:4px; border-radius:10px; }
 }

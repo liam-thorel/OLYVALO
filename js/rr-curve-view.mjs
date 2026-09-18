@@ -99,18 +99,12 @@ export function renderLegend(allSeries, visible) {
   }).join('');
 }
 
-export function renderPresets(presets, activePreset) {
-  return presets.map(preset => `<button class="curve-preset${preset.id === activePreset ? ' active' : ''}"
-      data-preset="${escapeHTML(preset.id)}" aria-pressed="${preset.id === activePreset}">${escapeHTML(preset.label)}</button>`).join('');
-}
-
 /** Contenu complet de l'onglet. C'est ce que la page injecte, et ce que l'aperçu affiche. */
-export function renderCurvePage({ allSeries = [], visible = new Set(), presets = [], activePreset = '', game = 'valorant' } = {}) {
+export function renderCurvePage({ allSeries = [], visible = new Set(), game = 'valorant' } = {}) {
   if (allSeries.length === 0) {
     return emptyState('Aucune progression à afficher pour le moment — il faut au moins deux parties classées sur un même compte.');
   }
   return `
-    <div class="curve-presets" role="group" aria-label="Préréglages">${renderPresets(presets, activePreset)}</div>
     <div class="curve-chart-wrap">${renderChart(allSeries, visible, game)}</div>
     <div class="curve-legend" role="group" aria-label="Comptes affichés">${renderLegend(allSeries, visible)}</div>`;
 }
