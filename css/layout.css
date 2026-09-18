@@ -1091,8 +1091,10 @@ body.agent-mode .footer{ display:none; }
 .curve-axis-date{ fill:rgba(255,255,255,.4); font-size:11px; font-family:inherit; }
 .curve-axis-date-end{ text-anchor:end; }
 
-.curve-line{ fill:none; stroke-width:2.2; stroke-linejoin:round; stroke-linecap:round; }
-.curve-dot{ opacity:.85; }
+.curve-line{ fill:none; stroke-width:1.7; stroke-linejoin:round; stroke-linecap:round; }
+.curve-dot{ opacity:.9; }
+/* Le tracé survolé passe devant : avec dix comptes, les courbes se croisent. */
+.curve-line:hover{ stroke-width:2.6; }
 
 .curve-legend{ display:flex; flex-wrap:wrap; gap:8px; margin-top:16px; }
 .curve-legend-item{
