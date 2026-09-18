@@ -42,11 +42,10 @@ assert.match(page, /data\/roster\.json/, 'le roster porte la séparation main /
 assert.match(page, /from '\.\/rr-curve-utils\.mjs/);
 assert.match(page, /valorantAccountSeries|lolAccountSeries/);
 
-// Tout contenu venu de Firebase passe par un échappement : les Riot ID sont
-// choisis par des inconnus et atterrissent dans du HTML construit à la main.
-assert.match(page, /function escapeHTML/);
-assert.match(page, /escapeHTML\(seriesLabel\(s, allSeries\)\)/, 'le nom de compte est échappé');
-assert.match(page, /escapeHTML\(s\.color\)/, 'la couleur aussi, elle finit dans un attribut');
+// Le balisage vit dans un module de vue sans DOM : c'est lui que teste
+// rr-curve-view.test.mjs, et lui qu'affiche l'aperçu de conception.
+assert.match(page, /from '\.\/rr-curve-view\.mjs/);
+assert.match(page, /renderCurvePage\(\{ allSeries, visible, presets, activePreset, game \}\)/);
 
 // ─── Ouverture sur les comptes principaux ────────────────────────────────────
 assert.match(page, /activePreset = presets\[0\]\?\.id \|\| 'mains'/, 'on ouvre sur les mains');
