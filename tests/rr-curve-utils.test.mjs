@@ -3,6 +3,7 @@ import {
   MEMBER_COLORS, accountColor, valorantLadderPoint, lolLadderPoint, ladderLabel,
   accountIndex, valorantAccountSeries, lolAccountSeries, seriesLabel,
   defaultVisible, seriesKey, plotLayout, seriesPath, curveDiagnostics, untrackedReason,
+  buildMembers, puuidIndex,
 } from '../js/rr-curve-utils.mjs';
 
 const MEMBERS = [
@@ -134,6 +135,47 @@ assert.deepEqual(valorantAccountSeries({
   m1: { reports: { r: { ...rapportDunAutre, ts: 1 } } },
   m2: { reports: { r: { ...rapportDunAutre, ts: 2 } } },
 }, MEMBERS), [], 'le rang du rapporteur n’est pas prêté à ses coéquipiers');
+
+// ─── Le roster ne tient pas dans roster.json ─────────────────────────────────
+// `data/roster.json` ne porte que les comptes déclarés à la main. Les comptes
+// ajoutés depuis l'admin, et les puuids de TOUS les comptes, vivent dans
+// rosterOverlay. Ne lire que le premier rendait invisible un joueur dont le
+// compte courant a été enregistré là — ou qui s'était renommé depuis.
+const rosterFichier = [{ name: 'Liam', riot: { name: 'Ancien Nom', tag: '0000' } }];
+const overlay = {
+  members: { invite: { name: 'Invité' } },
+  accounts: {
+    liam: { k1: { name: 'Wong Chi Ming', tag: '2046', puuid: 'puuid-liam' } },
+    invite: { k1: { name: 'Guest', tag: 'EUW', puuid: 'puuid-invite' } },
+  },
+};
+const fusionnes = buildMembers(rosterFichier, overlay);
+const liam = fusionnes.find(m => m.name === 'Liam');
+assert.deepEqual(liam.riotIds, ['Ancien Nom#0000', 'Wong Chi Ming#2046'], 'les deux sources sont fusionnées');
+assert.deepEqual(liam.puuids, ['puuid-liam'], 'le puuid vient de rosterOverlay');
+assert.ok(fusionnes.some(m => m.name === 'Invité'), 'un membre ajouté depuis l’admin existe aussi');
+// Un compte déjà déclaré dans roster.json ne doit pas être ajouté deux fois.
+assert.equal(buildMembers([{ name: 'Liam', riot: { name: 'Wong Chi Ming', tag: '2046' } }],
+  { accounts: { liam: { k1: { name: 'Wong Chi Ming', tag: '2046' } } } })[0].riotIds.length, 1);
+assert.deepEqual(buildMembers(null, null), []);
+assert.deepEqual(buildMembers([], {}), []);
+
+// Le puuid est l'identifiant Riot PERMANENT : il retrouve le joueur même quand
+// le Riot ID du rapport ne figure nulle part dans le roster.
+assert.equal(puuidIndex(fusionnes).get('puuid-liam').member, 'Liam');
+const renomme = ts => ({
+  playerPuuid: 'puuid-liam', player: 'Encore Un Autre Nom#9999', ts,
+  mode: 'competitive', rr: { tier: 21, after: 40 + ts }, players: [],
+});
+const parPuuid = valorantAccountSeries({ a: { reports: { r: renomme(1) } }, b: { reports: { r: renomme(2) } } }, fusionnes);
+assert.equal(parPuuid.length, 1, 'le joueur est retrouvé par son puuid');
+assert.equal(parPuuid[0].member, 'Liam');
+
+// Un puuid inconnu du roster ne crée pas de série fantôme.
+assert.deepEqual(valorantAccountSeries({
+  a: { reports: { r: { ...renomme(1), playerPuuid: 'puuid-inconnu' } } },
+  b: { reports: { r: { ...renomme(2), playerPuuid: 'puuid-inconnu' } } },
+}, fusionnes), []);
 
 // ─── L'ancienne forme d'historique ───────────────────────────────────────────
 // Les parties écrites avant l'introduction du nœud `reports` portent leurs
