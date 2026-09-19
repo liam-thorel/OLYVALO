@@ -99,6 +99,24 @@ async function fetchCompetitiveActMatches({ region, name, tag, puuid, expectedSe
 /**
  * Synchronise un joueur sur tout l'acte compétitif disponible.
  */
+/**
+ * PUUID et région d'un Riot ID, via la clé HenrikDev déjà configurée.
+ *
+ * Le PUUID d'un compte Riot est GLOBAL : celui que renvoie cet endpoint est
+ * le même que celui qu'emploient Valorant et League of Legends. En revanche
+ * l'endpoint ne connaît que les comptes ayant joué à Valorant — un compte
+ * exclusivement LoL répond 404, et il faut alors saisir le PUUID à la main.
+ */
+export async function fetchAccountIdentity(name, tag) {
+  const data = await fetchHenrik(`/v1/account/${encodeURIComponent(String(name).trim())}/${encodeURIComponent(String(tag).trim())}`);
+  return {
+    puuid: String(data?.data?.puuid || ''),
+    region: String(data?.data?.region || ''),
+    name: String(data?.data?.name || ''),
+    tag: String(data?.data?.tag || ''),
+  };
+}
+
 export async function syncPlayer(player) {
   if (!player.riot) throw new Error('NO_RIOT_ID');
   const { name, tag, region } = player.riot;

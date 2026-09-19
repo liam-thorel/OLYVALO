@@ -183,3 +183,32 @@ const sansRole = buildMembers(
 assert.equal(sansRole[0].riotIds[0], 'Ancien#0000');
 
 console.log('admin-attribution: le rôle choisi produit bien un effet');
+
+// ─── Récupération du PUUID depuis l'API ──────────────────────────────────────
+// La clé HenrikDev est déjà configurée dans l'admin : inutile d'envoyer
+// quelqu'un chercher un puuid sur un site tiers et le recopier à la main.
+assert.match(admin, /data-action="fetch-puuid"/, 'le bouton est rendu');
+assert.match(admin, /fetchAccountIdentity\(name, tag\)/, 'et il interroge l’API');
+assert.match(admin, /from '\.\/henrik\.js/);
+
+// Le puuid récupéré est écrit, la région seulement si elle est vide : une
+// valeur saisie à la main ne doit pas être écrasée par l'API.
+assert.match(admin, /if \(identity\.region && !row\.region\)/);
+
+// Un compte sans tag ne peut pas être interrogé — on le dit plutôt que
+// d'envoyer une requête qui échouera.
+assert.match(admin, /if \(!name \|\| !tag\)/);
+
+// Chaque échec de l'API doit produire une phrase lisible : un code comme
+// « NOT_FOUND » ne dit rien à qui remplit un formulaire.
+['NO_API_KEY', 'AUTH_REQUIRED', 'RATE_LIMIT', 'COMPTE_PRIVE', 'NOT_FOUND', 'NETWORK'].forEach(code =>
+  assert.ok(admin.includes(`case '${code}'`), `${code} doit être traduit`));
+// Le cas le plus déroutant mérite son explication : un compte LoL pur n'existe
+// pas côté Valorant.
+assert.match(admin, /exclusivement LoL n’y figure pas/);
+
+const henrik = readFileSync(path.join(path.dirname(fileURLToPath(import.meta.url)), '..', 'js', 'henrik.js'), 'utf8');
+assert.match(henrik, /export async function fetchAccountIdentity/);
+assert.match(henrik, /\/v1\/account\/\$\{encodeURIComponent/, 'le Riot ID est encodé : les pseudos contiennent des espaces');
+
+console.log('admin-attribution: récupération du PUUID branchée sur la clé existante');
