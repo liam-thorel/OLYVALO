@@ -108,6 +108,38 @@ assert.notEqual(smurf.color, main.color);
 // points lui donnerait le rang de Rayhan.
 assert.equal(series.some(s => s.member === 'Liam'), false, 'seul le rapporteur porte son rang');
 
+// ─── Le rapporteur s'identifie par son puuid, pas par `report.player` ────────
+// `report.player` vient de la PRÉSENCE Riot, incomplète selon les files : le
+// script la laisse alors vide. S'appuyer dessus faisait disparaître du
+// graphique des joueurs ayant des dizaines de parties enregistrées.
+const sansPresence = (ts, rr) => ({
+  player: '', playerPuuid: 'puuid-rayhan', ts, mode: 'competitive', rr: { tier: 21, after: rr },
+  players: [{ name: 'RayBaz#OLY', puuid: 'puuid-rayhan' }, { name: 'Inconnu#404', puuid: 'autre' }],
+});
+const recupere = valorantAccountSeries({
+  m1: { reports: { r: sansPresence(1, 40) } },
+  m2: { reports: { r: sansPresence(2, 65) } },
+}, MEMBERS);
+assert.equal(recupere.length, 1, 'le compte est retrouvé sans la présence Riot');
+assert.equal(recupere[0].member, 'Rayhan');
+assert.equal(recupere[0].points.length, 2);
+
+// Le rapport d'un COÉQUIPIER ne doit pas donner ses points au membre : seul
+// le rapporteur porte son rang après-match.
+const rapportDunAutre = {
+  player: '', playerPuuid: 'puuid-inconnu', mode: 'competitive', rr: { tier: 21, after: 40 },
+  players: [{ name: 'RayBaz#OLY', puuid: 'puuid-rayhan' }, { name: 'Inconnu#404', puuid: 'puuid-inconnu' }],
+};
+assert.deepEqual(valorantAccountSeries({
+  m1: { reports: { r: { ...rapportDunAutre, ts: 1 } } },
+  m2: { reports: { r: { ...rapportDunAutre, ts: 2 } } },
+}, MEMBERS), [], 'le rang du rapporteur n’est pas prêté à ses coéquipiers');
+
+// Un rapport ancien sans `players[]` reste lisible par son champ `player`.
+const ancien = ts => ({ player: 'RayBaz#OLY', ts, mode: 'competitive', rr: { tier: 21, after: 50 } });
+assert.equal(valorantAccountSeries({ m1: { reports: { r: ancien(1) } }, m2: { reports: { r: ancien(2) } } },
+  MEMBERS).length, 1, 'repli sur `player` pour les rapports sans liste de joueurs');
+
 // Deux rapports pour la même partie ne doivent pas doubler le point.
 const doublon = valorantAccountSeries({
   m1: { reports: { a: report('RayBaz#OLY', 1000, 21, 40), b: report('RayBaz#OLY', 1000, 21, 40) } },
