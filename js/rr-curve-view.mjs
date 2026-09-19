@@ -10,7 +10,7 @@
  * rendent des chaînes.
  */
 
-import { seriesLabel, seriesKey, plotLayout, seriesPath, seriesAreaPath, ladderLabel, darken, TIME_RANGES } from './rr-curve-utils.mjs?v=20260919-courbes';
+import { seriesLabel, seriesKey, plotLayout, seriesPath, seriesAreaPath, ladderLabel, darken, TIME_RANGES } from './rr-curve-utils.mjs?v=20260919b-courbes';
 
 export function escapeHTML(value) {
   return String(value ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -150,11 +150,14 @@ export function renderRanges(activeRange) {
  */
 export function renderUntracked(untracked = []) {
   if (untracked.length === 0) return '';
-  const noms = untracked.map(entry => escapeHTML(entry.isMain
-    ? entry.member
-    : `${entry.member} · ${String(entry.account).split('#')[0]}`));
-  return `<p class="curve-untracked">Sans courbe : ${noms.join(', ')}.
-    Une partie ne porte que le rang du joueur dont son script l’a enregistrée — il en faut deux sur un même compte.</p>`;
+  // Une ligne par compte avec SA raison : quatre causes différentes empêchent
+  // de tracer une courbe, et elles ne se corrigent pas de la même façon. Les
+  // confondre sous « aucune partie » envoie chercher au mauvais endroit.
+  const lignes = untracked.map(entry => {
+    const nom = entry.isMain ? entry.member : `${entry.member} · ${String(entry.account).split('#')[0]}`;
+    return `<li><strong>${escapeHTML(nom)}</strong> — ${escapeHTML(entry.reason || 'aucune partie trouvée')}</li>`;
+  }).join('');
+  return `<div class="curve-untracked"><p>Comptes sans courbe :</p><ul>${lignes}</ul></div>`;
 }
 
 /** Contenu complet de l'onglet. C'est ce que la page injecte, et ce que l'aperçu affiche. */

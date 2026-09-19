@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import {
   MEMBER_COLORS, accountColor, valorantLadderPoint, lolLadderPoint, ladderLabel,
   accountIndex, valorantAccountSeries, lolAccountSeries, seriesLabel,
-  defaultVisible, seriesKey, plotLayout, seriesPath,
+  defaultVisible, seriesKey, plotLayout, seriesPath, curveDiagnostics, untrackedReason,
 } from '../js/rr-curve-utils.mjs';
 
 const MEMBERS = [
@@ -134,6 +134,55 @@ assert.deepEqual(valorantAccountSeries({
   m1: { reports: { r: { ...rapportDunAutre, ts: 1 } } },
   m2: { reports: { r: { ...rapportDunAutre, ts: 2 } } },
 }, MEMBERS), [], 'le rang du rapporteur n’est pas prêté à ses coéquipiers');
+
+// ─── L'ancienne forme d'historique ───────────────────────────────────────────
+// Les parties écrites avant l'introduction du nœud `reports` portent leurs
+// champs à plat. Le lecteur d'historique du site les gère déjà ; les courbes
+// les ignoraient en silence — soit tout l'historique d'avant ce changement.
+const rapportAPlat = ts => ({
+  map: 'Ascent', mode: 'competitive', ts, player: 'RayBaz#OLY',
+  rr: { tier: 21, after: 30 + ts },
+});
+const ancienFormat = valorantAccountSeries({ m1: rapportAPlat(1), m2: rapportAPlat(2) }, MEMBERS);
+assert.equal(ancienFormat.length, 1, 'une entrée à plat reste un rapport');
+assert.equal(ancienFormat[0].points.length, 2);
+
+// Une entrée à plat SANS map n'est pas un rapport : on ne l'invente pas.
+assert.deepEqual(valorantAccountSeries({ m1: { ts: 1, rr: { tier: 21, after: 40 } } }, MEMBERS), []);
+
+// ─── Pourquoi un compte n'a pas de courbe ────────────────────────────────────
+// Quatre causes, qui ne se corrigent pas de la même façon. Les confondre sous
+// « aucune partie » envoie chercher au mauvais endroit.
+const diag = (history, membres = MEMBERS) => curveDiagnostics(history, membres);
+const cle = 'raybaz#oly';
+
+const sansRang = diag({ m1: { reports: { r: {
+  mode: 'competitive', playerPuuid: 'p', ts: 1,
+  players: [{ name: 'RayBaz#OLY', puuid: 'p' }],
+} } } });
+assert.match(untrackedReason(sansRang.get(cle)), /sans le rang de fin de partie/);
+
+const horsClasse = diag({ m1: { reports: { r: {
+  mode: 'unrated', playerPuuid: 'p', ts: 1,
+  players: [{ name: 'RayBaz#OLY', puuid: 'p' }],
+} } } });
+assert.match(untrackedReason(horsClasse.get(cle)), /aucune en file classée/);
+
+// Vu dans une partie, mais c'est un AUTRE joueur qui l'a enregistrée : son
+// script ne tourne pas, et c'est une panne complètement différente.
+const enregistreParUnAutre = diag({ m1: { reports: { r: {
+  mode: 'competitive', playerPuuid: 'autre', ts: 1, rr: { tier: 21, after: 40 },
+  players: [{ name: 'RayBaz#OLY', puuid: 'p' }, { name: 'X#1', puuid: 'autre' }],
+} } } });
+assert.match(untrackedReason(enregistreParUnAutre.get(cle)), /enregistrées par un autre joueur/);
+
+const uneSeule = diag({ m1: { reports: { r: {
+  mode: 'competitive', playerPuuid: 'p', ts: 1, rr: { tier: 21, after: 40 },
+  players: [{ name: 'RayBaz#OLY', puuid: 'p' }],
+} } } });
+assert.match(untrackedReason(uneSeule.get(cle)), /il en faut deux/);
+
+assert.match(untrackedReason(undefined), /aucune partie trouvée/);
 
 // Un rapport ancien sans `players[]` reste lisible par son champ `player`.
 const ancien = ts => ({ player: 'RayBaz#OLY', ts, mode: 'competitive', rr: { tier: 21, after: 50 } });

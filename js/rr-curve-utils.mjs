@@ -143,6 +143,54 @@ export function withinRange(series = [], rangeId = 'all', now = Date.now()) {
 }
 
 /**
+ * Ce que l'historique contient pour chaque compte du roster.
+ *
+ * Quatre raisons différentes empêchent de tracer une courbe, et elles ne se
+ * corrigent pas de la même façon. Les confondre sous « aucune partie » envoie
+ * chercher au mauvais endroit — c'est arrivé.
+ */
+export function curveDiagnostics(historyRoot, members = []) {
+  const index = accountIndex(members);
+  const stats = new Map();
+  const ensure = key => {
+    if (!stats.has(key)) stats.set(key, { seen: 0, reported: 0, reportedRanked: 0, withRank: 0 });
+    return stats.get(key);
+  };
+
+  Object.values(historyRoot || {}).forEach(match => {
+    reportsOf(match).forEach(report => {
+      // Vu comme JOUEUR : la partie existe, même si un autre l'a enregistrée.
+      (report?.players || []).forEach(player => {
+        const known = index.get(lower(player?.name));
+        if (known) ensure(lower(known.account)).seen += 1;
+      });
+
+      const identity = reporterAccount(report, index);
+      if (!identity) return;
+      const row = ensure(lower(identity.account));
+      row.reported += 1;
+      if (lower(report?.mode) !== 'competitive') return;
+      row.reportedRanked += 1;
+      if (valorantLadderPoint(report?.rr?.tier, report?.rr?.after) !== null) row.withRank += 1;
+    });
+  });
+
+  return stats;
+}
+
+/** Pourquoi ce compte n'a pas de courbe, en une phrase. */
+export function untrackedReason(stat) {
+  const { seen = 0, reported = 0, reportedRanked = 0, withRank = 0 } = stat || {};
+  if (withRank === 1) return 'une seule partie classée avec le rang enregistré — il en faut deux';
+  if (reportedRanked > 0) {
+    return `${reportedRanked} partie${reportedRanked > 1 ? 's' : ''} classée${reportedRanked > 1 ? 's' : ''} enregistrée${reportedRanked > 1 ? 's' : ''}, mais sans le rang de fin de partie`;
+  }
+  if (reported > 0) return `${reported} partie${reported > 1 ? 's' : ''} enregistrée${reported > 1 ? 's' : ''}, aucune en file classée`;
+  if (seen > 0) return `vu dans ${seen} partie${seen > 1 ? 's' : ''}, toutes enregistrées par un autre joueur — son script n’a rien publié`;
+  return 'aucune partie trouvée dans l’historique';
+}
+
+/**
  * Comptes du roster dont aucune courbe ne peut être tracée.
  *
  * Un compte n'apparaît que si SON script a publié le rapport de fin de
@@ -150,13 +198,17 @@ export function withinRange(series = [], rangeId = 'all', now = Date.now()) {
  * fait pas tourner OLYCITY Live est donc absent du graphique sans que rien ne
  * l'explique — d'où cette liste, affichée en légende.
  */
-export function untrackedAccounts(members = [], series = []) {
+export function untrackedAccounts(members = [], series = [], diagnostics = new Map()) {
   const tracked = new Set(series.map(seriesKey));
   const missing = [];
   members.forEach(member => {
     (member?.riotIds || []).forEach((riotId, position) => {
-      if (tracked.has(lower(riotId))) return;
-      missing.push({ member: member.name, account: riotId, smurfIndex: position, isMain: position === 0 });
+      const key = lower(riotId);
+      if (tracked.has(key)) return;
+      missing.push({
+        member: member.name, account: riotId, smurfIndex: position, isMain: position === 0,
+        reason: untrackedReason(diagnostics.get(key)),
+      });
     });
   });
   return missing;
@@ -236,6 +288,21 @@ function sortedPoints(points) {
 }
 
 /**
+ * Rapports d'une entrée d'historique, ANCIENNE FORME COMPRISE.
+ *
+ * Les entrées écrites avant l'introduction du nœud `reports` portent leurs
+ * champs à plat sur la partie elle-même. Le lecteur d'historique du site les
+ * gère déjà (js/history-utils.mjs) ; les courbes, non — elles ignoraient donc
+ * en silence toutes les parties d'avant ce changement de format.
+ */
+function reportsOf(match) {
+  if (!match || typeof match !== 'object') return [];
+  const nested = match.reports && typeof match.reports === 'object' ? Object.values(match.reports) : [];
+  if (nested.length) return nested.filter(report => report && typeof report === 'object');
+  return match.map ? [match] : [];
+}
+
+/**
  * Compte du roster ayant PRODUIT ce rapport.
  *
  * On passe par `players[] + playerPuuid` avant `report.player`, et c'est
@@ -268,7 +335,7 @@ export function valorantAccountSeries(historyRoot, members = []) {
   const byAccount = new Map();
 
   Object.values(historyRoot || {}).forEach(match => {
-    Object.values(match?.reports || {}).forEach(report => {
+    reportsOf(match).forEach(report => {
       if (lower(report?.mode) !== 'competitive') return;
       const value = valorantLadderPoint(report?.rr?.tier, report?.rr?.after);
       if (value === null) return;

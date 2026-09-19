@@ -51,7 +51,14 @@ assert.match(page, /renderCurvePage\(\{ allSeries: shown, visible, game, range, 
 // relire l'historique, ni perdre les comptes cochés.
 assert.match(page, /const shown = withinRange\(allSeries, range\)/);
 assert.match(page, /range = rangeBtn\.dataset\.range/);
-assert.match(page, /untracked = untrackedAccounts\(members, allSeries\)/);
+assert.match(page, /untrackedAccounts\(members, allSeries, curveDiagnostics\(history, members\)\)/);
+
+// La chaîne d'import doit changer à chaque livraison, sinon le navigateur
+// sert le module qu'il a déjà — et aucun correctif n'atteint personne.
+const versionPage = main.match(/rr-curve-page\.mjs\?v=([^']+)'/)?.[1];
+const versionUtils = page.match(/rr-curve-utils\.mjs\?v=([^']+)'/)?.[1];
+assert.ok(versionPage && versionUtils, 'les imports sont versionnés');
+assert.equal(versionPage, versionUtils, 'toute la chaîne partage la même version');
 
 // ─── Ouverture sur les comptes principaux ────────────────────────────────────
 assert.match(page, /visible = new Set\(defaultVisible\(allSeries\)\)/, 'on ouvre sur les mains');

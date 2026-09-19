@@ -13,8 +13,8 @@
 
 import { fetchJsonWithRetry } from './request-utils.mjs?v=20260825-first-load-recovery';
 import { getGameMode } from './game-mode.mjs';
-import { valorantAccountSeries, lolAccountSeries, defaultVisible, withinRange, untrackedAccounts } from './rr-curve-utils.mjs?v=20260919-courbes';
-import { renderCurvePage, emptyState } from './rr-curve-view.mjs?v=20260919-courbes';
+import { valorantAccountSeries, lolAccountSeries, defaultVisible, withinRange, untrackedAccounts, curveDiagnostics } from './rr-curve-utils.mjs?v=20260919b-courbes';
+import { renderCurvePage, emptyState } from './rr-curve-view.mjs?v=20260919b-courbes';
 
 const FIREBASE_URL = 'https://realtime-database-5bb9f-default-rtdb.europe-west1.firebasedatabase.app';
 
@@ -95,7 +95,11 @@ export async function initRrCurvePage() {
   }));
 
   allSeries = game === 'lol' ? lolAccountSeries(history, members) : valorantAccountSeries(history, members);
-  untracked = untrackedAccounts(members, allSeries);
+  // Le diagnostic ne sert qu'à EXPLIQUER une absence, jamais à décider d'une
+  // courbe : côté LoL il n'a pas de sens, l'historique y est déjà par compte.
+  untracked = game === 'lol'
+    ? untrackedAccounts(members, allSeries)
+    : untrackedAccounts(members, allSeries, curveDiagnostics(history, members));
   visible = new Set(defaultVisible(allSeries));
   loaded = true;
 
