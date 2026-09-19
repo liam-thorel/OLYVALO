@@ -13,7 +13,7 @@ module.exports = {
     const members = await ensureRoster();
 
     const ratios = await Promise.all(members.map(async member => {
-      const entries = rankedOnly('valorant', await historyFor('valorant', member.riotIds));
+      const entries = rankedOnly('valorant', await historyFor('valorant', member));
       return { name: member.name, ratio: killDeathRatio(entries), games: entries.length };
     }));
     const ratioLines = ratios

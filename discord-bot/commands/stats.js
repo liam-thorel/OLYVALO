@@ -33,7 +33,7 @@ module.exports = {
       return;
     }
 
-    const entries = rankedOnly(game, await historyFor(game, member.riotIds));
+    const entries = rankedOnly(game, await historyFor(game, member));
     if (entries.length === 0) {
       await interaction.editReply(`Pas encore de game classée enregistrée pour **${member.name}** en ${GAME_LABELS[game]}.`);
       return;

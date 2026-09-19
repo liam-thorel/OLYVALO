@@ -11,7 +11,7 @@ function loadRecap({ members, history, gains }) {
     if (request === './rank-tracking.js') return { allRankGains: async () => gains, resetRankGains: async () => {} };
     if (request === './stats.js') {
       const real = original('./stats.js', parent, isMain);
-      return { ...real, historyFor: async (game, ids) => ids.flatMap(id => history[id] || []) };
+      return { ...real, historyFor: async (game, member) => (member.riotIds || []).flatMap(id => history[id] || []) };
     }
     if (request === 'discord.js') {
       return { EmbedBuilder: class {

@@ -19,7 +19,7 @@ function loadRecap({ members, history, gains }) {
     if (request === './stats.js') {
       const real = original('./stats.js', parent, isMain);
       // rankedOnly n'est PAS stubé : c'est lui qu'on veut voir à l'œuvre.
-      return { ...real, historyFor: async (game, ids) => ids.flatMap(id => history[id] || []) };
+      return { ...real, historyFor: async (game, member) => (member.riotIds || []).flatMap(id => history[id] || []) };
     }
     if (request === 'discord.js') {
       return { EmbedBuilder: class {
