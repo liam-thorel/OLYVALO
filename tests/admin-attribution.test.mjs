@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import {
   ROLES, attributionRows, attributionWarnings, deletionPlan,
-  isValidPuuid, reassignPlan, riotIdOf, roleOf,
+  isValidPuuid, reassignPlan, riotIdOf, roleOf, overlayKeyFor,
 } from '../js/admin-attribution.mjs';
 
 const ROSTER = [
@@ -51,16 +51,19 @@ const rows = attributionRows({
 });
 assert.equal(rows.length, 5, 'les deux sources sont inventoriées');
 
-// roster.json est versionné dans le dépôt : l'admin n'y écrit pas. Le masquer
-// donnerait une vue fausse ; le rendre modifiable ferait croire à une
-// écriture qui n'arriverait jamais.
+// Un compte du dépôt reste MODIFIABLE : la première modification créera son
+// override dans Firebase. Le verrouiller rendait l'écran inutilisable — dix
+// des comptes du roster sont déclarés là.
 const declare = rows.find(row => row.riotId === 'Wong Chi Ming#2046');
-assert.equal(declare.editable, false);
+assert.equal(declare.editable, true);
 assert.equal(roleOf(declare), 'main');
 assert.equal(declare.region, 'eu');
+// En revanche on ne peut pas l'EFFACER : le fichier est versionné.
+assert.equal(declare.removable, false);
+assert.equal(declare.declaredInRepo, true);
 
 const ajoute = rows.find(row => row.riotId === 'Nouveau#OLY');
-assert.equal(ajoute.editable, true);
+assert.equal(ajoute.removable, true, 'une entrée purement Firebase s’efface');
 assert.equal(ajoute.key, 'k1', 'la clé est gardée : c’est elle qu’on écrira');
 assert.equal(ajoute.puuid, PUUID_A);
 
@@ -103,15 +106,47 @@ assert.ok(attributionWarnings([
 
 assert.deepEqual(attributionWarnings([{ member: 'Liam', riotId: 'A#1', puuid: PUUID_A }]), []);
 
+// ─── Un compte déclaré des deux côtés ne fait qu'UNE carte ───────────────────
+// C'est le cas normal dès qu'on renseigne un puuid sur un compte du roster.
+// Deux cartes pour un seul compte, dont une verrouillée, rendaient l'écran
+// impraticable.
+const fusion = attributionRows({
+  roster: [{ name: 'Liam', riot: { name: 'Wong Chi Ming', tag: '2046', region: 'eu' } }],
+  overlay: { accounts: { liam: { k9: { name: 'Wong Chi Ming', tag: '2046', puuid: PUUID_A, role: 'main' } } } },
+});
+assert.equal(fusion.length, 1, 'un compte, une carte');
+assert.deepEqual(fusion[0].sources, ['roster.json', 'rosterOverlay']);
+assert.equal(fusion[0].key, 'k9', 'la clé de l’override est retenue');
+assert.equal(fusion[0].puuid, PUUID_A, 'le puuid vient de l’override');
+assert.equal(fusion[0].region, 'eu', 'la région du dépôt est conservée à défaut');
+assert.equal(fusion[0].editable, true);
+assert.equal(fusion[0].removable, false, 'déclaré dans le dépôt : masquable, pas effaçable');
+
+// Deux comptes réellement différents restent deux cartes.
+assert.equal(attributionRows({
+  roster: [{ name: 'Liam', riot: { name: 'A', tag: '1' } }],
+  overlay: { accounts: { liam: { k1: { name: 'B', tag: '2' } } } },
+}).length, 2);
+
+// ─── Clé d'override ──────────────────────────────────────────────────────────
+// Déterministe : modifier deux fois le même compte réécrit la MÊME entrée.
+// Une clé aléatoire fabriquerait les doublons qu'on cherche à supprimer.
+assert.equal(overlayKeyFor('Wong Chi Ming#2046'), overlayKeyFor('Wong Chi Ming#2046'));
+assert.doesNotMatch(overlayKeyFor('A#1/B.C$D[E]'), /[.#$[\]/]/, 'aucun caractère interdit par Firebase');
+assert.notEqual(overlayKeyFor('A#1'), overlayKeyFor('B#2'));
+
 // ─── Suppression ─────────────────────────────────────────────────────────────
 const plan = deletionPlan([
-  { member: 'Liam', riotId: 'A#1', memberId: 'liam', key: 'k1', editable: true, pendingDeletion: true },
-  { member: 'Liam', riotId: 'B#2', memberId: 'liam', key: 'k2', editable: true, pendingDeletion: false },
-  // Non modifiable : l'admin n'écrit pas dans roster.json, marquer n'y ferait rien.
-  { member: 'Noé', riotId: 'C#3', memberId: 'noe', key: '', editable: false, pendingDeletion: true },
+  { member: 'Liam', riotId: 'A#1', memberId: 'liam', key: 'k1', removable: true, pendingDeletion: true },
+  { member: 'Liam', riotId: 'B#2', memberId: 'liam', key: 'k2', removable: true, pendingDeletion: false },
+  // Déclaré dans le dépôt : on ne peut pas l'effacer, on le MASQUE.
+  { member: 'Noé', riotId: 'C#3', memberId: 'noe', key: '', removable: false, pendingDeletion: true },
 ]);
-assert.equal(plan.length, 1);
+assert.equal(plan.length, 2);
+assert.equal(plan[0].action, 'delete');
 assert.equal(plan[0].path, 'rosterOverlay/accounts/liam/k1');
+assert.equal(plan[1].action, 'hide', 'un compte du dépôt se masque');
+assert.equal(plan[1].key, overlayKeyFor('C#3'), 'sous une clé dérivée de son Riot ID');
 assert.deepEqual(deletionPlan([]), []);
 
 // ─── Réattribution ───────────────────────────────────────────────────────────
@@ -137,6 +172,26 @@ const admin = readFileSync(path.join(path.dirname(fileURLToPath(import.meta.url)
 
 assert.match(admin, /from '\.\/admin-attribution\.mjs/, 'la logique vient du module testé');
 assert.match(admin, /<div id="admin-attribution">\$\{renderAttributionHTML\(\)\}<\/div>/, 'la section est rendue');
+
+// ─── Les comptes du dépôt doivent être réglables ─────────────────────────────
+// Dix des comptes du roster sont déclarés dans data/roster.json. Les
+// verrouiller rendait l'écran inutilisable ; on crée donc un override à la
+// première modification, que les lecteurs fusionnent par Riot ID.
+assert.match(admin, /async function writablePath\(row\)/);
+assert.match(admin, /if \(row\.key\) return `rosterOverlay\/accounts/, 'l’override existant est réutilisé');
+assert.match(admin, /const key = overlayKeyFor\(row\.riotId\)/, 'sinon une clé déterministe est dérivée');
+// Aucune écriture ne doit court-circuiter cette création : elle échouerait
+// silencieusement sur un compte du dépôt, qui n'a pas de clé.
+assert.doesNotMatch(admin, /fbPut\(`rosterOverlay\/accounts\/\$\{row\.memberId\}\/\$\{row\.key\}/);
+// Et plus aucun contrôle désactivé.
+assert.doesNotMatch(admin, /\$\{disabled\}/, 'plus de contrôle verrouillé');
+
+// ─── Masquer plutôt qu'effacer ───────────────────────────────────────────────
+// Le fichier roster.json est versionné : l'admin ne peut pas l'en retirer.
+assert.match(admin, /if \(entry\.action === 'delete'\) await fbDelete/);
+assert.match(admin, /\/hidden`, true\)/, 'le compte est masqué du roster vivant');
+// La confirmation dit lequel des deux gestes s'applique à chaque compte.
+assert.match(admin, /effacé' : 'masqué du roster'/);
 assert.match(admin, /Attribution des comptes/);
 
 // Les cinq actions de la carte doivent être émises ET écoutées.
@@ -243,3 +298,19 @@ assert.match(admin, /knownPuuidFor\(row\.riotId/, 'la source locale est consult�
 assert.match(admin, /const identity = local[\s\S]{0,120}await fetchAccountIdentity/, 'l’API n’est appelée qu’à défaut');
 
 console.log('admin-attribution: le PUUID est celui du compte Riot, LoL compris');
+
+// ─── Le masquage doit produire un effet ──────────────────────────────────────
+// Un drapeau que personne ne lit ne masquerait rien.
+const masque = buildMembers(
+  [{ name: 'Liam', riot: { name: 'Vieux', tag: '0000' }, smurfs: [{ name: 'Actuel', tag: 'OLY' }] }],
+  { accounts: { liam: { k1: { name: 'Vieux', tag: '0000', hidden: true } } } },
+);
+assert.deepEqual(masque[0].riotIds, ['Actuel#OLY'], 'le compte masqué quitte le roster');
+
+// Sans le drapeau, il reste : on ne retire rien sans qu'un humain l'ait demandé.
+assert.equal(buildMembers(
+  [{ name: 'Liam', riot: { name: 'Vieux', tag: '0000' }, smurfs: [{ name: 'Actuel', tag: 'OLY' }] }],
+  { accounts: { liam: { k1: { name: 'Vieux', tag: '0000' } } } },
+)[0].riotIds.length, 2);
+
+console.log('admin-attribution: masquage effectif sur les lecteurs de roster');

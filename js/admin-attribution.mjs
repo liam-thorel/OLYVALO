@@ -59,6 +59,74 @@ export function roleOf(row = {}) {
  * dans Firebase. Les masquer donnerait une vue fausse du roster ; les rendre
  * modifiables ferait croire à une écriture qui n'arriverait jamais.
  */
+/**
+ * Clé Firebase stable pour un compte, dérivée de son Riot ID.
+ *
+ * Déterministe à dessein : modifier deux fois un compte de roster.json doit
+ * réécrire la MÊME entrée d'override, pas en créer une seconde. Une clé
+ * aléatoire (fbPost) fabriquerait exactement les doublons qu'on cherche à
+ * supprimer.
+ */
+export function overlayKeyFor(riotId) {
+  return `oly-${String(riotId || '').replace(/[.#$[\]/]/g, '_').toLowerCase()}`;
+}
+
+/** Deux entrées décrivent-elles le même compte ? Le puuid tranche, sinon le Riot ID. */
+function identityKey(row) {
+  return row.puuid ? `puuid:${lower(row.puuid)}` : `riot:${lower(row.riotId)}`;
+}
+
+/**
+ * Fusionne les entrées qui décrivent le MÊME compte.
+ *
+ * roster.json et rosterOverlay peuvent parler du même compte — c'est même le
+ * cas normal dès qu'on renseigne un puuid sur un compte du roster. Les
+ * afficher séparément donnait deux cartes pour un seul compte, dont une
+ * verrouillée : impossible d'en faire quoi que ce soit.
+ */
+function mergeRows(rows) {
+  const byIdentity = new Map();
+  const order = [];
+
+  rows.forEach(row => {
+    // L'override porte le puuid ; l'entrée du dépôt ne l'a pas encore. On
+    // rapproche donc aussi par Riot ID avant de conclure à deux comptes.
+    const viaRiotId = [...byIdentity.values()].find(existing => lower(existing.riotId) === lower(row.riotId));
+    const key = viaRiotId ? identityKey(viaRiotId) : identityKey(row);
+    if (!byIdentity.has(key)) {
+      byIdentity.set(key, { ...row, sources: [row.source] });
+      order.push(key);
+      return;
+    }
+    const merged = byIdentity.get(key);
+    merged.sources.push(row.source);
+    // L'override l'emporte sur le dépôt : c'est lui qu'un humain a réglé.
+    if (row.source === 'rosterOverlay') {
+      merged.key = row.key;
+      merged.memberId = row.memberId;
+      merged.member = row.member;
+      merged.role = row.role || merged.role;
+      merged.puuid = row.puuid || merged.puuid;
+      merged.region = row.region || merged.region;
+      merged.pendingDeletion = row.pendingDeletion;
+      merged.games = row.games;
+      merged.monitoring = row.monitoring;
+    } else {
+      merged.position = row.position;
+      merged.puuid = merged.puuid || row.puuid;
+      merged.region = merged.region || row.region;
+    }
+    merged.declaredInRepo = merged.declaredInRepo || row.source === 'roster.json';
+  });
+
+  return order.map(key => {
+    const row = byIdentity.get(key);
+    // Tout est modifiable : une carte du dépôt sans override en crée un à la
+    // première modification. Seule la SUPPRESSION diffère — voir `removable`.
+    return { ...row, editable: true, removable: !row.declaredInRepo };
+  });
+}
+
 export function attributionRows({ roster = [], overlay = null } = {}) {
   const rows = [];
 
@@ -68,7 +136,7 @@ export function attributionRows({ roster = [], overlay = null } = {}) {
       .filter(account => account?.name)
       .forEach((account, position) => {
         rows.push({
-          source: 'roster.json', editable: false, key: '',
+          source: 'roster.json', declaredInRepo: true, key: '',
           memberId, member: player.name, position,
           riotId: riotIdOf(account), puuid: String(account.puuid || ''),
           region: String(account.region || ''), role: '', pendingDeletion: false,
@@ -83,7 +151,8 @@ export function attributionRows({ roster = [], overlay = null } = {}) {
     Object.entries(accounts || {}).forEach(([key, account]) => {
       if (!account?.name && !account?.playerName) return;
       rows.push({
-        source: 'rosterOverlay', editable: true, key,
+        hidden: account.hidden === true,
+        source: 'rosterOverlay', declaredInRepo: false, key,
         memberId, member, position: null,
         riotId: riotIdOf(account), puuid: String(account.puuid || ''),
         region: String(account.region || ''), role: String(account.role || ''),
@@ -93,7 +162,7 @@ export function attributionRows({ roster = [], overlay = null } = {}) {
     });
   });
 
-  return rows.sort((left, right) =>
+  return mergeRows(rows).sort((left, right) =>
     left.member.localeCompare(right.member, 'fr')
     || ROLES.indexOf(roleOf(left)) - ROLES.indexOf(roleOf(right))
     || left.riotId.localeCompare(right.riotId, 'fr'));
@@ -169,14 +238,24 @@ export function attributionWarnings(rows = []) {
   return warnings;
 }
 
-/** Comptes marqués à supprimer, et le chemin Firebase de chacun. */
+/**
+ * Ce qu'il faut faire des comptes marqués.
+ *
+ * Deux gestes distincts, parce que les deux sources ne se suppriment pas de
+ * la même façon :
+ *
+ *  - `delete` : l'entrée n'existe que dans Firebase, on l'efface ;
+ *  - `hide` : le compte est déclaré dans data/roster.json, versionné dans le
+ *    dépôt. L'admin ne peut pas l'en retirer — on pose donc un drapeau que
+ *    les lecteurs de roster respectent. Le compte disparaît partout sans
+ *    qu'il faille un commit, et son historique reste lisible si on revient.
+ */
 export function deletionPlan(rows = []) {
   return rows
-    .filter(row => row.pendingDeletion && row.editable && row.key)
-    .map(row => ({
-      member: row.member, riotId: row.riotId,
-      path: `rosterOverlay/accounts/${row.memberId}/${row.key}`,
-    }));
+    .filter(row => row.pendingDeletion)
+    .map(row => (row.removable && row.key
+      ? { action: 'delete', member: row.member, riotId: row.riotId, path: `rosterOverlay/accounts/${row.memberId}/${row.key}` }
+      : { action: 'hide', member: row.member, riotId: row.riotId, memberId: row.memberId, key: row.key || overlayKeyFor(row.riotId) }));
 }
 
 /**

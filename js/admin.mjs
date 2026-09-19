@@ -359,20 +359,19 @@ function renderAttributionHTML() {
     const role = roleOf(row);
     const live = accountLiveState({ name: row.riotId.split('#')[0], tag: row.riotId.split('#')[1] || '', puuid: row.puuid, games: row.games },
       { lolClients, lolSessions, valorantClients, valorantSessions });
-    const disabled = row.editable ? '' : 'disabled';
     const roleBoutons = ['main', 'smurf'].map(value =>
-      `<button type="button" class="admin-attr-role${role === value ? ' active' : ''}" data-action="set-role" data-role="${value}" ${disabled}>${ROLE_LABELS[value]}</button>`).join('');
+      `<button type="button" class="admin-attr-role${role === value ? ' active' : ''}" data-action="set-role" data-role="${value}">${ROLE_LABELS[value]}</button>`).join('');
 
     return `
-      <div class="admin-attr-card${row.pendingDeletion ? ' pending-delete' : ''}${row.editable ? '' : ' locked'}"
-           data-member="${escapeHTML(row.memberId)}" data-key="${escapeHTML(row.key)}">
+      <div class="admin-attr-card${row.pendingDeletion ? ' pending-delete' : ''}"
+           data-riotid="${escapeHTML(row.riotId)}">
         <div class="admin-attr-head">
           <strong>${escapeHTML(row.riotId)}</strong>
           <span class="admin-status ${live.state}">${escapeHTML(live.label)}</span>
         </div>
         <div class="admin-attr-owner">
           <label>Joueur
-            <select data-action="reassign" ${disabled}>
+            <select data-action="reassign">
               ${membres.map(member => `<option value="${escapeHTML(member.id)}" ${member.id === row.memberId ? 'selected' : ''}>${escapeHTML(member.name)}</option>`).join('')}
             </select>
           </label>
@@ -380,16 +379,17 @@ function renderAttributionHTML() {
         </div>
         <label class="admin-attr-field">PUUID
           <span class="admin-attr-puuid">
-            <input data-action="set-puuid" value="${escapeHTML(row.puuid)}" placeholder="00000000-0000-0000-0000-000000000000" spellcheck="false" ${disabled}>
-            <button type="button" class="admin-btn admin-btn-small" data-action="fetch-puuid" title="Récupérer depuis l’API Valorant" ${disabled}>⤓</button>
+            <input data-action="set-puuid" value="${escapeHTML(row.puuid)}" placeholder="00000000-0000-0000-0000-000000000000" spellcheck="false">
+            <button type="button" class="admin-btn admin-btn-small" data-action="fetch-puuid" title="Récupérer depuis l’API Valorant">⤓</button>
           </span>
         </label>
         <label class="admin-attr-field">Région
-          <input data-action="set-region" value="${escapeHTML(row.region)}" placeholder="eu / euw1" ${disabled}>
+          <input data-action="set-region" value="${escapeHTML(row.region)}" placeholder="eu / euw1">
         </label>
         <div class="admin-attr-foot">
-          <span class="admin-dim">${row.editable ? 'Modifiable ici' : 'Déclaré dans roster.json — non modifiable depuis l’admin'}</span>
-          ${row.editable ? `<button type="button" class="admin-btn admin-btn-small ${row.pendingDeletion ? 'admin-btn-danger' : ''}" data-action="toggle-delete">${row.pendingDeletion ? '↩ Annuler' : '🗑 À supprimer'}</button>` : ''}
+          <span class="admin-dim">${escapeHTML(row.sources.join(' + '))}</span>
+          <button type="button" class="admin-btn admin-btn-small ${row.pendingDeletion ? 'admin-btn-danger' : ''}" data-action="toggle-delete"
+                  title="${row.removable ? 'Efface l’entrée' : 'Déclaré dans roster.json : sera masqué du roster, pas effacé du dépôt'}">${row.pendingDeletion ? '↩ Annuler' : (row.removable ? '🗑 À supprimer' : '🚫 À masquer')}</button>
         </div>
       </div>`;
   }).join('');
@@ -721,19 +721,38 @@ function wireEvents(root) {
   const rowOf = element => {
     const card = element.closest('.admin-attr-card');
     if (!card) return null;
-    const { member, key } = card.dataset;
-    return attributionState().find(entry => entry.memberId === member && entry.key === key) || null;
+    const { riotid: riotId } = card.dataset;
+    return attributionState().find(entry => entry.riotId === riotId) || null;
   };
+
+  /**
+   * Chemin d'écriture d'un compte, en créant son override si besoin.
+   *
+   * Dix des comptes du roster sont déclarés dans data/roster.json, versionné
+   * dans le dépôt : l'admin ne peut pas y écrire. On dépose donc un override
+   * dans Firebase, que les lecteurs de roster fusionnent par Riot ID — aucun
+   * doublon n'apparaît, et le compte devient réglable.
+   */
+  async function writablePath(row) {
+    if (row.key) return `rosterOverlay/accounts/${row.memberId}/${row.key}`;
+    const key = overlayKeyFor(row.riotId);
+    const [name, tag = ''] = row.riotId.split('#');
+    await fbPut(`rosterOverlay/accounts/${row.memberId}/${key}`, {
+      name, tag, region: row.region || '', puuid: row.puuid || '',
+      games: row.games || ['valorant'], source: 'roster.json', addedAt: Date.now(),
+    });
+    return `rosterOverlay/accounts/${row.memberId}/${key}`;
+  }
 
   attributionRoot?.addEventListener('click', async event => {
     const roleBtn = event.target.closest('button[data-action="set-role"]');
     if (roleBtn) {
       const row = rowOf(roleBtn);
-      if (!row?.editable) return;
+      if (!row) return;
       // Recliquer le rôle actif l'efface : sans ça, un rôle posé par erreur ne
       // pourrait plus être retiré, seulement remplacé par l'autre.
       const next = roleOf(row) === roleBtn.dataset.role ? null : roleBtn.dataset.role;
-      await fbPut(`rosterOverlay/accounts/${row.memberId}/${row.key}/role`, next);
+      await fbPut(`${await writablePath(row)}/role`, next);
       await reloadAndRender(root);
       return;
     }
@@ -741,10 +760,10 @@ function wireEvents(root) {
     const deleteBtn = event.target.closest('button[data-action="toggle-delete"]');
     if (deleteBtn) {
       const row = rowOf(deleteBtn);
-      if (!row?.editable) return;
+      if (!row) return;
       // Un marquage n'efface rien : il alimente la liste que l'on relit avant
       // de purger, en une fois et sous mot de passe.
-      await fbPut(`rosterOverlay/accounts/${row.memberId}/${row.key}/pendingDeletion`, !row.pendingDeletion);
+      await fbPut(`${await writablePath(row)}/pendingDeletion`, !row.pendingDeletion);
       await reloadAndRender(root);
       return;
     }
@@ -767,10 +786,9 @@ function wireEvents(root) {
           ? { puuid: local, region: '' }
           : await fetchAccountIdentity(name, tag);
         if (!identity.puuid) throw new Error('NOT_FOUND');
-        await fbPut(`rosterOverlay/accounts/${row.memberId}/${row.key}/puuid`, identity.puuid);
-        if (identity.region && !row.region) {
-          await fbPut(`rosterOverlay/accounts/${row.memberId}/${row.key}/region`, identity.region);
-        }
+        const base = await writablePath(row);
+        await fbPut(`${base}/puuid`, identity.puuid);
+        if (identity.region && !row.region) await fbPut(`${base}/region`, identity.region);
         await reloadAndRender(root);
       } catch (error) {
         fetchBtn.disabled = false;
@@ -785,9 +803,15 @@ function wireEvents(root) {
       const plan = deletionPlan(attributionState());
       if (plan.length === 0) return;
       const ok = await confirmWithPassword(
-        `Tape le mot de passe admin pour supprimer définitivement ${plan.length} compte(s) :\n${plan.map(entry => `· ${entry.member} — ${entry.riotId}`).join('\n')}`);
+        `Tape le mot de passe admin pour appliquer sur ${plan.length} compte(s) :\n${plan.map(entry =>
+          `· ${entry.member} — ${entry.riotId} (${entry.action === 'delete' ? 'effacé' : 'masqué du roster'})`).join('\n')}`);
       if (!ok) return;
-      for (const entry of plan) await fbDelete(entry.path);
+      for (const entry of plan) {
+        // Un compte de roster.json ne peut pas être effacé — le fichier est
+        // versionné. On pose un drapeau que les lecteurs de roster respectent.
+        if (entry.action === 'delete') await fbDelete(entry.path);
+        else await fbPut(`rosterOverlay/accounts/${entry.memberId}/${entry.key}/hidden`, true);
+      }
       await reloadAndRender(root);
     }
   });
@@ -796,9 +820,12 @@ function wireEvents(root) {
     const select = event.target.closest('select[data-action="reassign"]');
     if (select) {
       const row = rowOf(select);
-      const plan = reassignPlan(row, select.value);
+      if (!row) return;
+      await writablePath(row); // crée l'override si le compte vient du dépôt
+      const source = attributionState().find(entry => entry.riotId === row.riotId);
+      const plan = reassignPlan({ ...source, editable: true }, select.value);
       if (!plan) return;
-      const account = overlayAccounts?.[row.memberId]?.[row.key];
+      const account = overlayAccounts?.[source.memberId]?.[source.key];
       if (!account) return;
       // On ÉCRIT avant d'effacer : une coupure entre les deux laisse un
       // doublon visible et réparable, jamais un compte perdu.
@@ -811,7 +838,7 @@ function wireEvents(root) {
     const input = event.target.closest('input[data-action="set-puuid"], input[data-action="set-region"]');
     if (!input) return;
     const row = rowOf(input);
-    if (!row?.editable) return;
+    if (!row) return;
     const value = input.value.trim();
 
     if (input.dataset.action === 'set-puuid') {
@@ -825,9 +852,9 @@ function wireEvents(root) {
       }
       input.classList.remove('invalid');
       input.setCustomValidity?.('');
-      await fbPut(`rosterOverlay/accounts/${row.memberId}/${row.key}/puuid`, value.toLowerCase() || null);
+      await fbPut(`${await writablePath(row)}/puuid`, value.toLowerCase() || null);
     } else {
-      await fbPut(`rosterOverlay/accounts/${row.memberId}/${row.key}/region`, value || null);
+      await fbPut(`${await writablePath(row)}/region`, value || null);
     }
     await reloadAndRender(root);
   });

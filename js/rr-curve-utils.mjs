@@ -300,9 +300,13 @@ export function buildMembers(roster = [], overlay = null) {
   const members = [...fromRoster, ...extras];
   members.forEach(member => {
     let explicitMain = '';
+    const hidden = new Set();
     Object.values(accounts[member.id] || {}).forEach(account => {
       if (!account?.name) return;
       const riotId = account.tag ? `${account.name}#${account.tag}` : String(account.name);
+      // Masqué depuis l'admin : un compte de roster.json ne peut pas être
+      // effacé du dépôt, mais il peut être retiré du roster vivant.
+      if (account.hidden === true) { hidden.add(lower(riotId)); return; }
       if (!member.riotIds.some(known2 => lower(known2) === lower(riotId))) member.riotIds.push(riotId);
       const puuid = String(account.puuid || '');
       if (puuid && !member.puuids.includes(puuid)) member.puuids.push(puuid);
@@ -311,6 +315,7 @@ export function buildMembers(roster = [], overlay = null) {
     // La position dans la liste porte le rôle (0 = principal) : un compte
     // désigné principal dans l'admin doit donc passer en tête, sinon le
     // réglage resterait sans effet sur les couleurs et les libellés.
+    if (hidden.size) member.riotIds = member.riotIds.filter(riotId => !hidden.has(lower(riotId)));
     if (!explicitMain) return;
     const index = member.riotIds.findIndex(riotId => lower(riotId) === lower(explicitMain));
     if (index > 0) member.riotIds.unshift(...member.riotIds.splice(index, 1));

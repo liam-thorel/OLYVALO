@@ -81,6 +81,15 @@ function indexRoster(roster, overlay) {
     if (!accounts) return;
     Object.values(accounts).forEach(account => {
       const riotId = `${account.name}#${account.tag}`;
+      // Compte retiré depuis l'admin. Un compte déclaré dans roster.json ne
+      // peut pas être effacé d'ici — le fichier est versionné — mais il peut
+      // être masqué : il disparaît partout sans qu'un commit soit nécessaire.
+      if (account.hidden === true) {
+        member.riotIds = member.riotIds.filter(known => known.toLowerCase() !== riotId.toLowerCase());
+        if (account.puuid) member.puuids = member.puuids.filter(puuid => puuid !== String(account.puuid));
+        if (member.mainRiotId && member.mainRiotId.toLowerCase() === riotId.toLowerCase()) member.mainRiotId = null;
+        return;
+      }
       // Rôle choisi à la main dans l'admin : il l'emporte sur la position
       // dans roster.json, qui n'était qu'une convention d'écriture.
       if (String(account.role || '').toLowerCase() === 'main') member.mainRiotId = riotId;
