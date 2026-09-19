@@ -13,8 +13,8 @@
 
 import { fetchJsonWithRetry } from './request-utils.mjs?v=20260825-first-load-recovery';
 import { getGameMode } from './game-mode.mjs';
-import { valorantAccountSeries, lolAccountSeries, defaultVisible } from './rr-curve-utils.mjs?v=20260918-courbes';
-import { renderCurvePage, emptyState } from './rr-curve-view.mjs?v=20260918-courbes';
+import { valorantAccountSeries, lolAccountSeries, defaultVisible, withinRange, untrackedAccounts } from './rr-curve-utils.mjs?v=20260919-courbes';
+import { renderCurvePage, emptyState } from './rr-curve-view.mjs?v=20260919-courbes';
 
 const FIREBASE_URL = 'https://realtime-database-5bb9f-default-rtdb.europe-west1.firebasedatabase.app';
 
@@ -23,13 +23,18 @@ let visible = new Set();
 let currentGame = '';
 let loaded = false;
 let listening = false;
+let range = 'all';
+let untracked = [];
 
 async function fbGet(path) {
   return fetchJsonWithRetry(`${FIREBASE_URL}/${path}.json`, { timeoutMs: 12_000, init: { cache: 'no-store' } });
 }
 
 function render(root, game) {
-  root.innerHTML = renderCurvePage({ allSeries, visible, game });
+  // Le filtrage se fait au rendu et non au chargement : changer de plage ne
+  // doit pas relire l'historique, et les comptes cochés restent les mêmes.
+  const shown = withinRange(allSeries, range);
+  root.innerHTML = renderCurvePage({ allSeries: shown, visible, game, range, untracked });
 }
 
 /**
@@ -43,6 +48,12 @@ function listenOnce(root) {
   if (listening) return;
   listening = true;
   root.addEventListener('click', event => {
+    const rangeBtn = event.target.closest('.curve-range');
+    if (rangeBtn) {
+      range = rangeBtn.dataset.range;
+      render(root, currentGame);
+      return;
+    }
     const legendBtn = event.target.closest('.curve-legend-item');
     if (!legendBtn) return;
     const key = legendBtn.dataset.series;
@@ -84,6 +95,7 @@ export async function initRrCurvePage() {
   }));
 
   allSeries = game === 'lol' ? lolAccountSeries(history, members) : valorantAccountSeries(history, members);
+  untracked = untrackedAccounts(members, allSeries);
   visible = new Set(defaultVisible(allSeries));
   loaded = true;
 

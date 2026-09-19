@@ -45,7 +45,13 @@ assert.match(page, /valorantAccountSeries|lolAccountSeries/);
 // Le balisage vit dans un module de vue sans DOM : c'est lui que teste
 // rr-curve-view.test.mjs, et lui qu'affiche l'aperçu de conception.
 assert.match(page, /from '\.\/rr-curve-view\.mjs/);
-assert.match(page, /renderCurvePage\(\{ allSeries, visible, game \}\)/);
+assert.match(page, /renderCurvePage\(\{ allSeries: shown, visible, game, range, untracked \}\)/);
+
+// Le filtrage par plage se fait au RENDU : changer de plage ne doit pas
+// relire l'historique, ni perdre les comptes cochés.
+assert.match(page, /const shown = withinRange\(allSeries, range\)/);
+assert.match(page, /range = rangeBtn\.dataset\.range/);
+assert.match(page, /untracked = untrackedAccounts\(members, allSeries\)/);
 
 // ─── Ouverture sur les comptes principaux ────────────────────────────────────
 assert.match(page, /visible = new Set\(defaultVisible\(allSeries\)\)/, 'on ouvre sur les mains');
