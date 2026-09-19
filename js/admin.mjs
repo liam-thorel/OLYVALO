@@ -20,6 +20,7 @@ import { isLiveRecordExpired, liveDataStore, staleLiveRecords } from './live-dat
 import { mergeMemberProfiles } from './member-profiles.mjs?v=20260823-profile-picker';
 import { readSiteVitals } from './site-telemetry.mjs?v=20260825-site-health';
 import { attributionRows, attributionWarnings, deletionPlan, reassignPlan, roleOf, isValidPuuid } from './admin-attribution.mjs?v=20260919-attribution';
+import { fetchAccountIdentity } from './henrik.js?v=20260919-account-puuid';
 
 const FIREBASE_URL = 'https://realtime-database-5bb9f-default-rtdb.europe-west1.firebasedatabase.app';
 // SHA-256 du mot de passe admin. Pour le changer : recalcule le hash d'un
@@ -326,6 +327,19 @@ function renderDiscoveredHTML() {
 
 const ROLE_LABELS = { main: 'Principal', smurf: 'Smurf', unknown: 'Non défini' };
 
+/** Un code d'erreur d'API ne dit rien à qui remplit un formulaire. */
+function henrikPuuidError(error) {
+  switch (error?.message) {
+    case 'NO_API_KEY': return 'Aucune clé HenrikDev enregistrée — ajoute-la plus haut dans l’admin.';
+    case 'AUTH_REQUIRED': return 'La clé HenrikDev est refusée : elle a expiré ou a été révoquée.';
+    case 'RATE_LIMIT': return 'Quota HenrikDev atteint — réessaie dans une minute.';
+    case 'COMPTE_PRIVE': return 'Ce compte est privé : l’API ne renvoie pas son identité.';
+    case 'NOT_FOUND': return 'Riot ID introuvable côté Valorant. Un compte exclusivement LoL n’y figure pas — saisis le PUUID à la main.';
+    case 'NETWORK': return 'API HenrikDev injoignable.';
+    default: return `Échec de la récupération : ${error?.message || 'erreur inconnue'}`;
+  }
+}
+
 function attributionState() {
   return attributionRows({ roster: staticRoster, overlay: { members: overlayMembers, accounts: overlayAccounts } });
 }
@@ -365,7 +379,10 @@ function renderAttributionHTML() {
           <div class="admin-attr-roles" role="group" aria-label="Rôle du compte">${roleBoutons}</div>
         </div>
         <label class="admin-attr-field">PUUID
-          <input data-action="set-puuid" value="${escapeHTML(row.puuid)}" placeholder="00000000-0000-0000-0000-000000000000" spellcheck="false" ${disabled}>
+          <span class="admin-attr-puuid">
+            <input data-action="set-puuid" value="${escapeHTML(row.puuid)}" placeholder="00000000-0000-0000-0000-000000000000" spellcheck="false" ${disabled}>
+            <button type="button" class="admin-btn admin-btn-small" data-action="fetch-puuid" title="Récupérer depuis l’API Valorant" ${disabled}>⤓</button>
+          </span>
         </label>
         <label class="admin-attr-field">Région
           <input data-action="set-region" value="${escapeHTML(row.region)}" placeholder="eu / euw1" ${disabled}>
@@ -732,6 +749,31 @@ function wireEvents(root) {
       return;
     }
 
+    const fetchBtn = event.target.closest('button[data-action="fetch-puuid"]');
+    if (fetchBtn) {
+      const row = rowOf(fetchBtn);
+      if (!row?.editable) return;
+      const [name, tag] = row.riotId.split('#');
+      if (!name || !tag) { alert('Ce compte n’a pas de tag : impossible d’interroger l’API.'); return; }
+      const previous = fetchBtn.textContent;
+      fetchBtn.disabled = true;
+      fetchBtn.textContent = '…';
+      try {
+        const identity = await fetchAccountIdentity(name, tag);
+        if (!identity.puuid) throw new Error('NOT_FOUND');
+        await fbPut(`rosterOverlay/accounts/${row.memberId}/${row.key}/puuid`, identity.puuid);
+        if (identity.region && !row.region) {
+          await fbPut(`rosterOverlay/accounts/${row.memberId}/${row.key}/region`, identity.region);
+        }
+        await reloadAndRender(root);
+      } catch (error) {
+        fetchBtn.disabled = false;
+        fetchBtn.textContent = previous;
+        alert(henrikPuuidError(error));
+      }
+      return;
+    }
+
     const purgeBtn = event.target.closest('button[data-action="purge-marked"]');
     if (purgeBtn) {
       const plan = deletionPlan(attributionState());
@@ -991,6 +1033,8 @@ const ADMIN_CSS = `
 .admin-attr-field,.admin-attr-owner label{display:flex;flex-direction:column;gap:4px;flex:1 1 140px;font-size:11px;color:var(--muted,#8992aa)}
 .admin-attr-field input,.admin-attr-owner select{padding:6px 8px;border-radius:7px;border:1px solid rgba(255,255,255,.14);background:rgba(0,0,0,.25);color:inherit;font:inherit;font-size:12px}
 .admin-attr-field input.invalid{border-color:rgba(255,70,86,.8)}
+.admin-attr-puuid{display:flex;gap:6px;align-items:center}
+.admin-attr-puuid input{flex:1;min-width:0}
 .admin-attr-field input:disabled,.admin-attr-owner select:disabled{opacity:.5;cursor:not-allowed}
 .admin-attr-roles{display:flex;gap:4px}
 .admin-attr-role{padding:6px 12px;border-radius:999px;border:1px solid rgba(255,255,255,.14);background:transparent;color:var(--muted,#8992aa);font:inherit;font-size:12px;cursor:pointer}
