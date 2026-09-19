@@ -205,10 +205,41 @@ assert.match(admin, /if \(!name \|\| !tag\)/);
   assert.ok(admin.includes(`case '${code}'`), `${code} doit être traduit`));
 // Le cas le plus déroutant mérite son explication : un compte LoL pur n'existe
 // pas côté Valorant.
-assert.match(admin, /exclusivement LoL n’y figure pas/);
+assert.match(admin, /ne joue qu’à LoL, lance son script/, "le message dit quoi FAIRE, pas seulement ce qui a échoué");
 
 const henrik = readFileSync(path.join(path.dirname(fileURLToPath(import.meta.url)), '..', 'js', 'henrik.js'), 'utf8');
 assert.match(henrik, /export async function fetchAccountIdentity/);
 assert.match(henrik, /\/v1\/account\/\$\{encodeURIComponent/, 'le Riot ID est encodé : les pseudos contiennent des espaces');
 
 console.log('admin-attribution: récupération du PUUID branchée sur la clé existante');
+
+// ─── Le PUUID appartient au compte Riot, pas au jeu ──────────────────────────
+// Le script LoL publie le sien (summoner.puuid) au même titre que le script
+// Valorant (entitlements.subject), et le bot les résout depuis un index
+// unique. On lit donc ce qui est déjà publié avant d'appeler l'API Valorant —
+// qui, elle, ignore les comptes n'ayant jamais joué à Valorant.
+const { knownPuuidFor } = await import('../js/admin-attribution.mjs');
+
+assert.equal(
+  knownPuuidFor('LoLOnly#EUW', { lolClients: { k: { playerName: 'LoLOnly#EUW', puuid: PUUID_B } } }),
+  PUUID_B, 'un compte purement LoL a bien un puuid, publié par son script');
+
+// Les clients Valorant sont indexés PAR puuid : quand la valeur ne le répète
+// pas, la clé le porte.
+assert.equal(
+  knownPuuidFor('Sans#Valeur', { valorantClients: { [PUUID_A]: { playerName: 'Sans#Valeur' } } }),
+  PUUID_A, 'le puuid est lu sur la clé à défaut de la valeur');
+
+// Une clé qui n'est pas un puuid ne doit surtout pas être prise pour un.
+assert.equal(knownPuuidFor('X#1', { valorantClients: { 'X#1': { playerName: 'X#1' } } }), '');
+assert.equal(knownPuuidFor('Inconnu#1', { lolClients: {} }), '');
+assert.equal(knownPuuidFor('', {}), '');
+assert.equal(knownPuuidFor('A#1', {}), '');
+
+// Un puuid mal formé publié par un script ne doit pas être recopié.
+assert.equal(knownPuuidFor('A#1', { lolClients: { k: { playerName: 'A#1', puuid: 'bidon' } } }), '');
+
+assert.match(admin, /knownPuuidFor\(row\.riotId/, 'la source locale est consultée en premier');
+assert.match(admin, /const identity = local[\s\S]{0,120}await fetchAccountIdentity/, 'l’API n’est appelée qu’à défaut');
+
+console.log('admin-attribution: le PUUID est celui du compte Riot, LoL compris');
