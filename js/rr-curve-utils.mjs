@@ -448,12 +448,16 @@ export function valorantAccountSeries(historyRoot, members = []) {
 /** Séries LoL. Chaque entrée porte déjà le compte (`playerName`) et son rang. */
 export function lolAccountSeries(lolHistory, members = []) {
   const index = accountIndex(members);
+  const byPuuid = puuidIndex(members);
   const byAccount = new Map();
 
   Object.values(lolHistory || {}).forEach(entry => {
     const value = lolLadderPoint(entry?.rankAfter);
     if (value === null) return;
-    const identity = index.get(lower(entry?.playerName));
+    // Le puuid d'abord : il survit aux renommages. Le nom reste le repli pour
+    // les entrées écrites avant sa publication, et pour les comptes dont le
+    // puuid n'est pas renseigné.
+    const identity = byPuuid.get(String(entry?.puuid || '').trim()) || index.get(lower(entry?.playerName));
     if (!identity) return;
     const ts = Number(entry?.ts || 0);
     if (!ts) return;
