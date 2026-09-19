@@ -19,7 +19,7 @@ import { fetchJsonWithRetry, fetchJsonWithTimeout } from './request-utils.mjs?v=
 import { isLiveRecordExpired, liveDataStore, staleLiveRecords } from './live-data-store.mjs?v=20260810-firebase-connection-fix';
 import { mergeMemberProfiles } from './member-profiles.mjs?v=20260823-profile-picker';
 import { readSiteVitals } from './site-telemetry.mjs?v=20260825-site-health';
-import { attributionRows, attributionWarnings, deletionPlan, reassignPlan, roleOf, isValidPuuid } from './admin-attribution.mjs?v=20260919-attribution';
+import { attributionRows, attributionWarnings, deletionPlan, reassignPlan, roleOf, isValidPuuid, knownPuuidFor } from './admin-attribution.mjs?v=20260919b-attribution';
 import { fetchAccountIdentity } from './henrik.js?v=20260919-account-puuid';
 
 const FIREBASE_URL = 'https://realtime-database-5bb9f-default-rtdb.europe-west1.firebasedatabase.app';
@@ -334,7 +334,7 @@ function henrikPuuidError(error) {
     case 'AUTH_REQUIRED': return 'La clé HenrikDev est refusée : elle a expiré ou a été révoquée.';
     case 'RATE_LIMIT': return 'Quota HenrikDev atteint — réessaie dans une minute.';
     case 'COMPTE_PRIVE': return 'Ce compte est privé : l’API ne renvoie pas son identité.';
-    case 'NOT_FOUND': return 'Riot ID introuvable côté Valorant. Un compte exclusivement LoL n’y figure pas — saisis le PUUID à la main.';
+    case 'NOT_FOUND': return 'Riot ID introuvable côté Valorant. Si ce compte ne joue qu’à LoL, lance son script une fois : il publiera son PUUID, que ce bouton reprendra ensuite sans passer par l’API.';
     case 'NETWORK': return 'API HenrikDev injoignable.';
     default: return `Échec de la récupération : ${error?.message || 'erreur inconnue'}`;
   }
@@ -759,7 +759,13 @@ function wireEvents(root) {
       fetchBtn.disabled = true;
       fetchBtn.textContent = '…';
       try {
-        const identity = await fetchAccountIdentity(name, tag);
+        // Ce que les scripts ont déjà publié d'abord : le script LoL publie
+        // le puuid du compte au même titre que celui de Valorant, et cette
+        // source couvre les comptes que l'API Valorant ne connaît pas.
+        const local = knownPuuidFor(row.riotId, { lolClients, valorantClients, lolSessions, valorantSessions, discovered });
+        const identity = local
+          ? { puuid: local, region: '' }
+          : await fetchAccountIdentity(name, tag);
         if (!identity.puuid) throw new Error('NOT_FOUND');
         await fbPut(`rosterOverlay/accounts/${row.memberId}/${row.key}/puuid`, identity.puuid);
         if (identity.region && !row.region) {

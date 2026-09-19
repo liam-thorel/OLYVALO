@@ -99,6 +99,34 @@ export function attributionRows({ roster = [], overlay = null } = {}) {
     || left.riotId.localeCompare(right.riotId, 'fr'));
 }
 
+/**
+ * PUUID déjà présent dans les données live, pour un Riot ID donné.
+ *
+ * Le PUUID appartient au COMPTE RIOT, pas au jeu : le script LoL publie le
+ * sien (`summoner.puuid`) exactement comme le script Valorant publie le sien
+ * (`entitlements.subject`), et le bot les résout depuis un index unique.
+ *
+ * On regarde donc ici avant d'appeler l'API Valorant : ça couvre les comptes
+ * qui n'ont jamais joué à Valorant — que cette API ignore — et ça ne coûte
+ * aucun quota.
+ */
+export function knownPuuidFor(riotId, pools = {}) {
+  const wanted = lower(riotId);
+  if (!wanted) return '';
+  for (const pool of Object.values(pools)) {
+    for (const [key, entry] of Object.entries(pool || {})) {
+      if (!entry || typeof entry !== 'object') continue;
+      const name = lower(entry.playerName || riotIdOf(entry));
+      if (name !== wanted) continue;
+      // Les clients Valorant sont indexés PAR puuid : quand la valeur ne le
+      // répète pas, la clé le porte.
+      const puuid = String(entry.puuid || '').trim() || (isValidPuuid(key) ? key : '');
+      if (isValidPuuid(puuid)) return puuid.toLowerCase();
+    }
+  }
+  return '';
+}
+
 /** Problèmes qu'un humain doit trancher avant tout nettoyage. */
 export function attributionWarnings(rows = []) {
   const warnings = [];
