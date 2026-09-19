@@ -299,13 +299,21 @@ export function buildMembers(roster = [], overlay = null) {
 
   const members = [...fromRoster, ...extras];
   members.forEach(member => {
+    let explicitMain = '';
     Object.values(accounts[member.id] || {}).forEach(account => {
       if (!account?.name) return;
       const riotId = account.tag ? `${account.name}#${account.tag}` : String(account.name);
       if (!member.riotIds.some(known2 => lower(known2) === lower(riotId))) member.riotIds.push(riotId);
       const puuid = String(account.puuid || '');
       if (puuid && !member.puuids.includes(puuid)) member.puuids.push(puuid);
+      if (lower(account.role) === 'main') explicitMain = riotId;
     });
+    // La position dans la liste porte le rôle (0 = principal) : un compte
+    // désigné principal dans l'admin doit donc passer en tête, sinon le
+    // réglage resterait sans effet sur les couleurs et les libellés.
+    if (!explicitMain) return;
+    const index = member.riotIds.findIndex(riotId => lower(riotId) === lower(explicitMain));
+    if (index > 0) member.riotIds.unshift(...member.riotIds.splice(index, 1));
   });
   return members;
 }

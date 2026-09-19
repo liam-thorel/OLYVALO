@@ -19,6 +19,7 @@ import { fetchJsonWithRetry, fetchJsonWithTimeout } from './request-utils.mjs?v=
 import { isLiveRecordExpired, liveDataStore, staleLiveRecords } from './live-data-store.mjs?v=20260810-firebase-connection-fix';
 import { mergeMemberProfiles } from './member-profiles.mjs?v=20260823-profile-picker';
 import { readSiteVitals } from './site-telemetry.mjs?v=20260825-site-health';
+import { attributionRows, attributionWarnings, deletionPlan, reassignPlan, roleOf, isValidPuuid } from './admin-attribution.mjs?v=20260919-attribution';
 
 const FIREBASE_URL = 'https://realtime-database-5bb9f-default-rtdb.europe-west1.firebasedatabase.app';
 // SHA-256 du mot de passe admin. Pour le changer : recalcule le hash d'un
@@ -323,6 +324,69 @@ function renderDiscoveredHTML() {
     </div>`).join('')}</div>`;
 }
 
+const ROLE_LABELS = { main: 'Principal', smurf: 'Smurf', unknown: 'Non défini' };
+
+function attributionState() {
+  return attributionRows({ roster: staticRoster, overlay: { members: overlayMembers, accounts: overlayAccounts } });
+}
+
+function renderAttributionHTML() {
+  const rows = attributionState();
+  if (rows.length === 0) return '<p class="admin-dim">Aucun compte déclaré.</p>';
+
+  const warnings = attributionWarnings(rows);
+  const marques = deletionPlan(rows);
+  const membres = allMembers();
+
+  const avertissements = warnings.length ? `<ul class="admin-attr-warnings">${warnings.map(warning =>
+    `<li class="${warning.level}">${escapeHTML(warning.message)}</li>`).join('')}</ul>` : '';
+
+  const cartes = rows.map(row => {
+    const role = roleOf(row);
+    const live = accountLiveState({ name: row.riotId.split('#')[0], tag: row.riotId.split('#')[1] || '', puuid: row.puuid, games: row.games },
+      { lolClients, lolSessions, valorantClients, valorantSessions });
+    const disabled = row.editable ? '' : 'disabled';
+    const roleBoutons = ['main', 'smurf'].map(value =>
+      `<button type="button" class="admin-attr-role${role === value ? ' active' : ''}" data-action="set-role" data-role="${value}" ${disabled}>${ROLE_LABELS[value]}</button>`).join('');
+
+    return `
+      <div class="admin-attr-card${row.pendingDeletion ? ' pending-delete' : ''}${row.editable ? '' : ' locked'}"
+           data-member="${escapeHTML(row.memberId)}" data-key="${escapeHTML(row.key)}">
+        <div class="admin-attr-head">
+          <strong>${escapeHTML(row.riotId)}</strong>
+          <span class="admin-status ${live.state}">${escapeHTML(live.label)}</span>
+        </div>
+        <div class="admin-attr-owner">
+          <label>Joueur
+            <select data-action="reassign" ${disabled}>
+              ${membres.map(member => `<option value="${escapeHTML(member.id)}" ${member.id === row.memberId ? 'selected' : ''}>${escapeHTML(member.name)}</option>`).join('')}
+            </select>
+          </label>
+          <div class="admin-attr-roles" role="group" aria-label="Rôle du compte">${roleBoutons}</div>
+        </div>
+        <label class="admin-attr-field">PUUID
+          <input data-action="set-puuid" value="${escapeHTML(row.puuid)}" placeholder="00000000-0000-0000-0000-000000000000" spellcheck="false" ${disabled}>
+        </label>
+        <label class="admin-attr-field">Région
+          <input data-action="set-region" value="${escapeHTML(row.region)}" placeholder="eu / euw1" ${disabled}>
+        </label>
+        <div class="admin-attr-foot">
+          <span class="admin-dim">${row.editable ? 'Modifiable ici' : 'Déclaré dans roster.json — non modifiable depuis l’admin'}</span>
+          ${row.editable ? `<button type="button" class="admin-btn admin-btn-small ${row.pendingDeletion ? 'admin-btn-danger' : ''}" data-action="toggle-delete">${row.pendingDeletion ? '↩ Annuler' : '🗑 À supprimer'}</button>` : ''}
+        </div>
+      </div>`;
+  }).join('');
+
+  const purge = marques.length
+    ? `<div class="admin-attr-purge">
+         <span>${marques.length} compte${marques.length > 1 ? 's' : ''} marqué${marques.length > 1 ? 's' : ''} : ${escapeHTML(marques.map(entry => entry.riotId).join(', '))}</span>
+         <button type="button" class="admin-btn admin-btn-danger admin-btn-small" data-action="purge-marked">Supprimer définitivement</button>
+       </div>`
+    : '';
+
+  return `${avertissements}${purge}<div class="admin-attr-grid">${cartes}</div>`;
+}
+
 function renderMembersHTML() {
   return allMembers().map(member => {
     const accounts = accountsForMember(member.id);
@@ -511,6 +575,14 @@ function render() {
         <div id="admin-add-member-form-wrap"></div>
         <div id="admin-members" class="admin-members-grid">${renderMembersHTML()}</div>
       </section>
+
+      <section class="admin-section">
+        <div class="admin-section-head">
+          <h3>Attribution des comptes</h3>
+          <span class="admin-dim">Qui possède quoi, et sous quelle identité</span>
+        </div>
+        <div id="admin-attribution">${renderAttributionHTML()}</div>
+      </section>
     </div>`;
   wireEvents(root);
   startHealthRefresh(root);
@@ -625,6 +697,91 @@ function wireEvents(root) {
       if (entry.source !== 'lol') await fbDelete(`discovered/${key}`);
       await reloadAndRender(root);
     }
+  });
+
+  const attributionRoot = root.querySelector('#admin-attribution');
+
+  const rowOf = element => {
+    const card = element.closest('.admin-attr-card');
+    if (!card) return null;
+    const { member, key } = card.dataset;
+    return attributionState().find(entry => entry.memberId === member && entry.key === key) || null;
+  };
+
+  attributionRoot?.addEventListener('click', async event => {
+    const roleBtn = event.target.closest('button[data-action="set-role"]');
+    if (roleBtn) {
+      const row = rowOf(roleBtn);
+      if (!row?.editable) return;
+      // Recliquer le rôle actif l'efface : sans ça, un rôle posé par erreur ne
+      // pourrait plus être retiré, seulement remplacé par l'autre.
+      const next = roleOf(row) === roleBtn.dataset.role ? null : roleBtn.dataset.role;
+      await fbPut(`rosterOverlay/accounts/${row.memberId}/${row.key}/role`, next);
+      await reloadAndRender(root);
+      return;
+    }
+
+    const deleteBtn = event.target.closest('button[data-action="toggle-delete"]');
+    if (deleteBtn) {
+      const row = rowOf(deleteBtn);
+      if (!row?.editable) return;
+      // Un marquage n'efface rien : il alimente la liste que l'on relit avant
+      // de purger, en une fois et sous mot de passe.
+      await fbPut(`rosterOverlay/accounts/${row.memberId}/${row.key}/pendingDeletion`, !row.pendingDeletion);
+      await reloadAndRender(root);
+      return;
+    }
+
+    const purgeBtn = event.target.closest('button[data-action="purge-marked"]');
+    if (purgeBtn) {
+      const plan = deletionPlan(attributionState());
+      if (plan.length === 0) return;
+      const ok = await confirmWithPassword(
+        `Tape le mot de passe admin pour supprimer définitivement ${plan.length} compte(s) :\n${plan.map(entry => `· ${entry.member} — ${entry.riotId}`).join('\n')}`);
+      if (!ok) return;
+      for (const entry of plan) await fbDelete(entry.path);
+      await reloadAndRender(root);
+    }
+  });
+
+  attributionRoot?.addEventListener('change', async event => {
+    const select = event.target.closest('select[data-action="reassign"]');
+    if (select) {
+      const row = rowOf(select);
+      const plan = reassignPlan(row, select.value);
+      if (!plan) return;
+      const account = overlayAccounts?.[row.memberId]?.[row.key];
+      if (!account) return;
+      // On ÉCRIT avant d'effacer : une coupure entre les deux laisse un
+      // doublon visible et réparable, jamais un compte perdu.
+      await fbPut(plan.to, account);
+      await fbDelete(plan.from);
+      await reloadAndRender(root);
+      return;
+    }
+
+    const input = event.target.closest('input[data-action="set-puuid"], input[data-action="set-region"]');
+    if (!input) return;
+    const row = rowOf(input);
+    if (!row?.editable) return;
+    const value = input.value.trim();
+
+    if (input.dataset.action === 'set-puuid') {
+      // Un puuid mal saisi rattacherait silencieusement les parties de
+      // quelqu'un d'autre — ou de personne. On refuse plutôt que d'écrire.
+      if (value && !isValidPuuid(value)) {
+        input.classList.add('invalid');
+        input.setCustomValidity?.('PUUID invalide');
+        input.reportValidity?.();
+        return;
+      }
+      input.classList.remove('invalid');
+      input.setCustomValidity?.('');
+      await fbPut(`rosterOverlay/accounts/${row.memberId}/${row.key}/puuid`, value.toLowerCase() || null);
+    } else {
+      await fbPut(`rosterOverlay/accounts/${row.memberId}/${row.key}/region`, value || null);
+    }
+    await reloadAndRender(root);
   });
 
   root.querySelector('#admin-members')?.addEventListener('click', async event => {
@@ -820,6 +977,30 @@ const ADMIN_CSS = `
 .admin-btn-danger{background:rgba(255,95,109,.12);border-color:rgba(255,95,109,.35);color:#ff5f6d}
 .admin-btn-small{padding:4px 8px;font-size:11px}
 .admin-members-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(360px,100%),1fr));gap:16px;margin-top:16px}
+
+/* ── Attribution des comptes ── */
+.admin-attr-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(320px,100%),1fr));gap:14px;margin-top:14px}
+.admin-attr-card{display:flex;flex-direction:column;gap:10px;padding:14px;border:1px solid rgba(255,255,255,.1);border-radius:12px;background:rgba(255,255,255,.02)}
+/* Un compte marqué doit se voir d'un coup d'œil : c'est la liste qu'on relit
+   avant de purger. */
+.admin-attr-card.pending-delete{border-color:rgba(255,70,86,.55);background:rgba(255,70,86,.06)}
+.admin-attr-card.locked{opacity:.72}
+.admin-attr-head{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.admin-attr-head strong{font-size:14px;word-break:break-all}
+.admin-attr-owner{display:flex;flex-wrap:wrap;gap:10px;align-items:flex-end}
+.admin-attr-field,.admin-attr-owner label{display:flex;flex-direction:column;gap:4px;flex:1 1 140px;font-size:11px;color:var(--muted,#8992aa)}
+.admin-attr-field input,.admin-attr-owner select{padding:6px 8px;border-radius:7px;border:1px solid rgba(255,255,255,.14);background:rgba(0,0,0,.25);color:inherit;font:inherit;font-size:12px}
+.admin-attr-field input.invalid{border-color:rgba(255,70,86,.8)}
+.admin-attr-field input:disabled,.admin-attr-owner select:disabled{opacity:.5;cursor:not-allowed}
+.admin-attr-roles{display:flex;gap:4px}
+.admin-attr-role{padding:6px 12px;border-radius:999px;border:1px solid rgba(255,255,255,.14);background:transparent;color:var(--muted,#8992aa);font:inherit;font-size:12px;cursor:pointer}
+.admin-attr-role.active{border-color:var(--accent,#ff4656);background:color-mix(in srgb,var(--accent,#ff4656) 18%,transparent);color:#fff}
+.admin-attr-role:disabled{opacity:.5;cursor:not-allowed}
+.admin-attr-foot{display:flex;align-items:center;justify-content:space-between;gap:10px;font-size:11px}
+.admin-attr-warnings{margin:12px 0 0;padding-left:18px;font-size:12px;line-height:1.6}
+.admin-attr-warnings li.error{color:#ff5f6d}
+.admin-attr-warnings li.warn{color:#f5c842}
+.admin-attr-purge{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:10px;margin-top:12px;padding:10px 12px;border-radius:10px;border:1px solid rgba(255,70,86,.4);background:rgba(255,70,86,.07);font-size:12px}
 .admin-member-card{min-width:0;overflow:hidden;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.08);border-radius:8px;padding:16px}
 .admin-member-head{display:flex;align-items:center;gap:10px;margin-bottom:12px}
 .admin-delete-member{margin-left:auto}
