@@ -35,7 +35,7 @@ async function getChannelId() {
 async function buildValorantLeaderboardEmbed() {
   const members = await ensureRoster();
   const rows = await Promise.all(members.map(async member => {
-    const entries = rankedOnly('valorant', await historyFor('valorant', member.riotIds));
+    const entries = rankedOnly('valorant', await historyFor('valorant', member));
     const latest = entries.find(e => e.tier != null);
     if (!latest) return null;
     return { name: member.name, tier: latest.tier, rr: latest.rr ?? 0 };
@@ -61,7 +61,7 @@ async function buildValorantLeaderboardEmbed() {
 async function buildLolSoloLeaderboardEmbed() {
   const members = await ensureRoster();
   const rows = await Promise.all(members.map(async member => {
-    const entries = await historyFor('lol', member.riotIds);
+    const entries = await historyFor('lol', member);
     const latest = entries.find(e => e.queueId === 420 && e.rankAfter?.tier);
     if (!latest) return null;
     const points = lolRankPoints(latest.rankAfter);

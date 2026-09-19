@@ -105,7 +105,7 @@ async function buildValoRecapEmbeds(period, sinceTs = null) {
   });
 
   const rows = (await Promise.all(members.map(async member => {
-    const entries = rankedOnly('valorant', await historyFor('valorant', member.riotIds));
+    const entries = rankedOnly('valorant', await historyFor('valorant', member));
     const recent = sinceTs ? entries.filter(entry => (entry.ts || 0) > sinceTs) : entries;
     const accounts = splitByAccount(member, recent, deltaByAccount);
     const siblings = accounts.map(row => row.account);

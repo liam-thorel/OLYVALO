@@ -104,7 +104,7 @@ async function buildQueueRecapEmbeds(queueKey, period, sinceTs = null) {
   });
 
   const rows = (await Promise.all(members.map(async member => {
-    const entries = (await historyFor('lol', member.riotIds)).filter(entry => entry.queueId === cfg.queueId);
+    const entries = (await historyFor('lol', member)).filter(entry => entry.queueId === cfg.queueId);
     const recent = sinceTs ? entries.filter(entry => (entry.ts || 0) > sinceTs) : entries;
     const accounts = splitByAccount(member, recent, deltaByAccount);
     const siblings = accounts.map(row => row.account);

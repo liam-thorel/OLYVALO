@@ -81,6 +81,9 @@ function indexRoster(roster, overlay) {
     if (!accounts) return;
     Object.values(accounts).forEach(account => {
       const riotId = `${account.name}#${account.tag}`;
+      // Rôle choisi à la main dans l'admin : il l'emporte sur la position
+      // dans roster.json, qui n'était qu'une convention d'écriture.
+      if (String(account.role || '').toLowerCase() === 'main') member.mainRiotId = riotId;
       // rosterOverlay et roster.json peuvent déclarer le même compte.
       if (!member.riotIds.some(known => known.toLowerCase() === riotId.toLowerCase())) {
         member.riotIds.push(riotId);

@@ -8,17 +8,47 @@ const { fbGet } = require('./firebase.js');
 
 const HISTORY_SAMPLE_SIZE = 20;
 
-async function lolHistoryFor(riotIds) {
+const lower = value => String(value || '').trim().toLowerCase();
+
+/**
+ * Identité d'un membre, sous la forme que consomment les lecteurs
+ * d'historique. Accepte encore un simple tableau de Riot ID pour ne rien
+ * casser chez un appelant oublié, mais c'est le membre complet qu'il faut
+ * passer : lui seul porte l'identifiant stable.
+ */
+function identityOf(member) {
+  if (Array.isArray(member)) return { id: '', riotIds: member, puuids: [] };
+  return {
+    id: String(member?.id || ''),
+    riotIds: member?.riotIds || [],
+    puuids: (member?.puuids || []).map(String).filter(Boolean),
+  };
+}
+
+/**
+ * Historique LoL d'un membre.
+ *
+ * Les entrées ne portent pas de puuid, mais elles portent `memberId` — écrit
+ * par le script à l'installation, insensible aux renommages. On s'appuie
+ * dessus en priorité ; le Riot ID ne sert plus que pour les entrées écrites
+ * avant que ce champ n'existe.
+ */
+async function lolHistoryFor(member) {
+  const identity = identityOf(member);
+  const names = new Set(identity.riotIds.map(lower));
   const history = await fbGet('live/lolHistory').catch(() => null);
   return Object.values(history || {})
-    .filter(entry => riotIds.some(id => id.toLowerCase() === String(entry.playerName || '').toLowerCase()))
+    .filter(entry => (identity.id && entry.memberId === identity.id) || names.has(lower(entry.playerName)))
     // Même champ que côté Valorant, pour que les récaps traitent les deux jeux
     // de la même façon.
     .map(entry => ({ ...entry, account: entry.playerName || '' }))
     .sort((a, b) => (b.ts || 0) - (a.ts || 0));
 }
 
-async function valorantHistoryFor(riotIds) {
+async function valorantHistoryFor(member) {
+  const identity = identityOf(member);
+  const names = new Set(identity.riotIds.map(lower));
+  const puuids = new Set(identity.puuids);
   const historyRoot = await fbGet('live/history').catch(() => null);
   const allReports = [];
   Object.values(historyRoot || {}).forEach(match => {
@@ -27,7 +57,12 @@ async function valorantHistoryFor(riotIds) {
 
   const mapped = allReports
     .map(report => {
-      const self = (report.players || []).find(p => riotIds.some(id => id.toLowerCase() === String(p.name || '').toLowerCase()));
+      // Le puuid d'abord : identifiant Riot permanent, il survit aux
+      // renommages là où le Riot ID d'un vieux rapport ne correspond plus à
+      // celui déclaré dans le roster. Le nom reste en repli pour les comptes
+      // dont le puuid n'a pas encore été enregistré.
+      const self = (report.players || []).find(p => p.puuid && puuids.has(String(p.puuid)))
+        || (report.players || []).find(p => names.has(lower(p.name)));
       if (!self) return null;
       // report.rr est le rang APRÈS-MATCH précis, mais il n'appartient qu'au
       // joueur dont le script a généré ce rapport (report.playerPuuid) — pas
@@ -94,12 +129,12 @@ function dedupeByMatch(entries) {
   return [...byMatch.values(), ...withoutMatchId];
 }
 
-async function historyFor(game, riotIds) {
-  return game === 'lol' ? lolHistoryFor(riotIds) : valorantHistoryFor(riotIds);
+async function historyFor(game, member) {
+  return game === 'lol' ? lolHistoryFor(member) : valorantHistoryFor(member);
 }
 
-async function winrateFor(game, riotIds, championOrAgentName) {
-  const entries = await historyFor(game, riotIds);
+async function winrateFor(game, member, championOrAgentName) {
+  const entries = await historyFor(game, member);
   const withResult = entries.filter(e => typeof e.win === 'boolean');
   const recent = withResult.slice(0, HISTORY_SAMPLE_SIZE);
   const overall = recent.length ? recent.filter(e => e.win).length / recent.length : null;

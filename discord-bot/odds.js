@@ -70,7 +70,7 @@ async function estimateOdds(game, rosterPlayers) {
 
   const signals = await Promise.all(rosterPlayers.map(async player => {
     const rankSignal = normalizedRankSignal(game, player.rank);
-    const winrates = await winrateFor(game, player.member.riotIds, player.championOrAgentName);
+    const winrates = await winrateFor(game, player.member, player.championOrAgentName);
 
     const winrateSignal = winrates.overall != null ? winrates.overall - 0.5 : 0;
     const championSignal = winrates.champion != null ? winrates.champion - 0.5 : 0;
