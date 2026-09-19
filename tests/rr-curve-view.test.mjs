@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
-import { renderCurvePage, renderChart, renderLegend, gridLines, escapeHTML } from '../js/rr-curve-view.mjs';
-import { valorantAccountSeries, defaultVisible, seriesKey, plotLayout } from '../js/rr-curve-utils.mjs';
+import { renderCurvePage, renderChart, renderLegend, renderRanges, renderUntracked, gridLines, escapeHTML } from '../js/rr-curve-view.mjs';
+import { valorantAccountSeries, defaultVisible, seriesKey, plotLayout, untrackedAccounts, TIME_RANGES } from '../js/rr-curve-utils.mjs';
 
 const MEMBERS = [
   { name: 'Rayhan', riotIds: ['RayBaz#OLY', 'rbz#3030'] },
@@ -33,7 +33,7 @@ assert.match(dangereux, /&lt;script&gt;/);
 
 // ─── Graphique ───────────────────────────────────────────────────────────────
 const chart = renderChart(series, mains, 'valorant');
-assert.match(chart, /<svg class="curve-chart" viewBox="0 0 900 235"/);
+assert.match(chart, /<svg class="curve-chart" viewBox="0 0 760 300"/);
 // Un tracé par compte visible, et seulement ceux-là.
 assert.equal((chart.match(/class="curve-line"/g) || []).length, 2, 'deux mains visibles');
 assert.match(chart, /stroke="#f5c842"/, 'Rayhan garde le jaune de son avatar');
@@ -79,10 +79,48 @@ assert.match(legend, /Rayhan · rbz/);
 assert.ok(legend.includes('Liam'), 'Liam figure dans la légende');
 assert.doesNotMatch(legend, /Liam · /, 'un seul compte : aucune précision à ajouter');
 
+// ─── Quadrillage et aires ────────────────────────────────────────────────────
+// Un quadrillage sans traits verticaux n'en est pas un : rien ne rattache un
+// creux à un moment.
+const verticaux = [...chart.matchAll(/<line class="curve-grid-line"[^>]*x1="([\d.]+)"[^>]*x2="([\d.]+)"/g)]
+  .filter(m => m[1] === m[2]);
+assert.ok(verticaux.length >= 5, 'des traits verticaux, pas seulement des horizontaux');
+assert.match(chart, /shape-rendering="crispEdges"/, 'les traits du quadrillage restent nets');
+// Le trait de la courbe ne doit pas épaissir quand le SVG est agrandi.
+assert.match(chart, /vector-effect="non-scaling-stroke"/);
+
+// Une aire par courbe affichée, chacune avec SON dégradé.
+assert.equal((chart.match(/class="curve-area"/g) || []).length, 2, 'une aire par compte affiché');
+assert.equal((chart.match(/<linearGradient id="curve-fill-\d+"/g) || []).length, 2);
+assert.match(chart, /<path class="curve-area" d="[^"]*Z"/, 'l’aire est un tracé refermé');
+// Elle est assombrie et très transparente : elle ne doit pas manger la courbe.
+const opacites = [...chart.matchAll(/stop-opacity="([\d.]+)"/g)].map(m => Number(m[1]));
+assert.ok(Math.max(...opacites) <= 0.35, 'l’aire reste très transparente');
+assert.ok(opacites.includes(0), 'le dégradé s’efface vers le bas');
+
+// ─── Plage de temps ──────────────────────────────────────────────────────────
+const plages = renderRanges('30d');
+TIME_RANGES.forEach(r => assert.ok(plages.includes(`data-range="${r.id}"`), `plage ${r.id} proposée`));
+assert.match(plages, /class="curve-range active"[^>]*data-range="30d"/);
+assert.equal((plages.match(/aria-pressed="true"/g) || []).length, 1, 'une seule plage active');
+
+// ─── Comptes sans courbe ─────────────────────────────────────────────────────
+// Un joueur absent du graphique l'était sans explication, et la première
+// hypothèse est que le site a un bug — alors que son script n'a rien publié.
+const absents = untrackedAccounts([...MEMBERS, { name: 'Noé', riotIds: ['hayabusa#NoWaY'] }], series);
+assert.ok(absents.some(a => a.member === 'Noé'), 'Noé n’a aucune partie enregistrée');
+const bloc = renderUntracked(absents);
+assert.match(bloc, /Sans courbe :/);
+assert.match(bloc, /Noé/);
+assert.match(bloc, /son script l’a enregistrée/, 'la raison est donnée, pas seulement le constat');
+assert.equal(renderUntracked([]), '', 'rien à dire quand tout le monde est tracé');
+
 // ─── Page complète ───────────────────────────────────────────────────────────
-const html = renderCurvePage({ allSeries: series, visible: mains, game: 'valorant' });
-['curve-chart-wrap', 'curve-legend'].forEach(cls =>
+const html = renderCurvePage({ allSeries: series, visible: mains, game: 'valorant', range: 'all', untracked: absents });
+['curve-chart-wrap', 'curve-legend', 'curve-ranges', 'curve-untracked'].forEach(cls =>
   assert.ok(html.includes(cls), `${cls} doit être rendu`));
+// Même sans courbe traçable, la raison de l'absence doit s'afficher.
+assert.match(renderCurvePage({ untracked: absents }), /Sans courbe :/);
 // La rangée de préréglages a été retirée : la légende est le seul réglage.
 assert.doesNotMatch(html, /curve-preset/, 'plus aucun préréglage');
 assert.match(renderCurvePage({}), /Aucune progression à afficher/);

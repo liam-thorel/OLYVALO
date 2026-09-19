@@ -90,6 +90,78 @@ export function accountColor(memberName, smurfIndex = 0, extraIndex = 0) {
   return `hsl(${Math.round(hsl.h)} ${Math.round(s)}% ${Math.round(l)}%)`;
 }
 
+/**
+ * Version assombrie d'une couleur, pour l'aire sous la courbe.
+ *
+ * Accepte les deux formats que produit accountColor : hexadécimal pour les
+ * couleurs du roster, hsl() pour les déclinaisons et les teintes de rechange.
+ */
+export function darken(color, amount = 0.45) {
+  const value = String(color || '');
+  const hsl = value.startsWith('hsl') ? parseHsl(value) : hexToHsl(value);
+  if (!hsl) return value;
+  return `hsl(${Math.round(hsl.h)} ${Math.round(hsl.s)}% ${Math.round(clamp(hsl.l * (1 - amount), 6, 100))}%)`;
+}
+
+function parseHsl(value) {
+  const match = String(value).match(/hsl\(\s*([\d.]+)[\s,]+([\d.]+)%[\s,]+([\d.]+)%/i);
+  return match ? { h: Number(match[1]), s: Number(match[2]), l: Number(match[3]) } : null;
+}
+
+// ─── Plage de temps ──────────────────────────────────────────────────────────
+
+const DAY_MS = 86_400_000;
+
+export const TIME_RANGES = [
+  { id: '7d', label: '7 jours', days: 7 },
+  { id: '30d', label: '30 jours', days: 30 },
+  { id: '90d', label: '3 mois', days: 90 },
+  { id: 'all', label: 'Tout', days: null },
+];
+
+/**
+ * Restreint les séries à une fenêtre de temps.
+ *
+ * Le point qui PRÉCÈDE la fenêtre est conservé s'il existe : sans lui la
+ * courbe commencerait au premier match de la période, et le rang d'entrée
+ * dans la fenêtre — d'où le joueur part — serait invisible.
+ */
+export function withinRange(series = [], rangeId = 'all', now = Date.now()) {
+  const range = TIME_RANGES.find(entry => entry.id === rangeId);
+  if (!range?.days) return series;
+  const since = now - range.days * DAY_MS;
+
+  return series
+    .map(entry => {
+      const inside = entry.points.filter(point => point.ts >= since);
+      if (inside.length === 0) return { ...entry, points: [] };
+      const firstIndex = entry.points.indexOf(inside[0]);
+      const withAnchor = firstIndex > 0 ? [entry.points[firstIndex - 1], ...inside] : inside;
+      return { ...entry, points: withAnchor };
+    })
+    .filter(entry => entry.points.length >= 2);
+}
+
+/**
+ * Comptes du roster dont aucune courbe ne peut être tracée.
+ *
+ * Un compte n'apparaît que si SON script a publié le rapport de fin de
+ * partie : seul le rapporteur porte son rang après-match. Un joueur qui ne
+ * fait pas tourner OLYCITY Live est donc absent du graphique sans que rien ne
+ * l'explique — d'où cette liste, affichée en légende.
+ */
+export function untrackedAccounts(members = [], series = []) {
+  const tracked = new Set(series.map(seriesKey));
+  const missing = [];
+  members.forEach(member => {
+    (member?.riotIds || []).forEach((riotId, position) => {
+      if (tracked.has(lower(riotId))) return;
+      missing.push({ member: member.name, account: riotId, smurfIndex: position, isMain: position === 0 });
+    });
+  });
+  return missing;
+}
+
 // ─── Échelles de rang ────────────────────────────────────────────────────────
 
 /** Valorant : palier 3 = Fer 1, trois paliers par rang, 0–100 RR par palier. */
@@ -306,6 +378,23 @@ export function plotLayout(visibleSeries = [], { width = 900, height = 320, padd
  * toujours entre les deux points qu'elle relie : elle arrondit les angles
  * sans rien inventer.
  */
+/**
+ * Aire sous la courbe, refermée sur le bas du cadre.
+ *
+ * Fermer sur la base plutôt que sur la courbe d'en dessous est délibéré : les
+ * courbes se CROISENT, et « la courbe du dessous » change en cours de route.
+ * Un dégradé très transparent superpose les aires, ce qui donne les bandes
+ * attendues sans jamais se tromper de voisin.
+ */
+export function seriesAreaPath(series, layout) {
+  const line = seriesPath(series, layout);
+  const points = series?.points;
+  if (!line || !points?.length || points.length < 2) return '';
+  const base = layout.height - layout.padding;
+  return `${line} L${layout.x(points[points.length - 1].ts).toFixed(1)},${base.toFixed(1)}`
+    + ` L${layout.x(points[0].ts).toFixed(1)},${base.toFixed(1)} Z`;
+}
+
 export function seriesPath(series, layout) {
   const points = series?.points;
   if (!layout || !points?.length) return '';
