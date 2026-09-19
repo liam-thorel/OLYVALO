@@ -395,7 +395,11 @@ async function notifyValorantGameEnd(sessions) {
   //
   // Sans round ouvert sur ce matchId, resolveBetting ne fait rien : l'appeler
   // pour toutes les fins de partie ne coûte qu'une lecture.
-  const betting = await resolveBetting('valorant', matchId, outcome).catch(error => {
+  // Une égalité n'a ni gagnant ni perdant : aucun pari ne peut être tranché,
+  // on rembourse — mais en le disant, plutôt qu'en le faisant passer pour une
+  // partie dont le résultat a été perdu.
+  const drawReason = primary.result?.result === 'draw' ? 'draw' : '';
+  const betting = await resolveBetting('valorant', matchId, outcome, drawReason).catch(error => {
     console.error('[betting:resolve]', error.message);
     return null;
   });
@@ -443,7 +447,9 @@ async function notifyValorantGameEnd(sessions) {
   const playerData = await Promise.all(withResultPlayers.map(async ({ session, member }) => {
     const result = session.result;
     const localOutcome = result.result === 'win' ? 'win' : result.result === 'loss' ? 'lose' : null;
-    const rewardAmount = playRewardFor({ game: 'valorant', mode: valorantMode, won: localOutcome === 'win' });
+    // `result.result` et non `localOutcome` : ce dernier écrase l'égalité en
+    // `null`, et le barème la comptait alors comme une défaite.
+    const rewardAmount = playRewardFor({ game: 'valorant', mode: valorantMode, outcome: result.result });
     const playReward = await creditPlayReward(member, rewardAmount).catch(error => {
       console.error('[play-reward]', error.message);
       return null;
@@ -607,7 +613,10 @@ async function notifyLolGameEnd(sessions) {
   const playerData = await Promise.all(withResultPlayers.map(async ({ session, member }) => {
     const result = session.result;
     const localOutcome = result.win === true ? 'win' : result.win === false ? 'lose' : null;
-    const rewardAmount = playRewardFor({ game: 'lol', queueId: lolQueueId, won: localOutcome === 'win' });
+    const rewardAmount = playRewardFor({
+      game: 'lol', queueId: lolQueueId,
+      outcome: result.win === true ? 'win' : result.win === false ? 'loss' : 'draw',
+    });
     const playReward = await creditPlayReward(member, rewardAmount).catch(error => {
       console.error('[play-reward]', error.message);
       return null;
@@ -921,7 +930,7 @@ async function openBettingRound(game, matchId, channelId, rosterPlayers, viewUrl
 // rounds distincts, un par salon), on les résout tous et on retourne le
 // résultat de chacun indexé par channelId — chaque salon n'affichera que
 // son propre pool de paris. Retourne null si aucun round n'existait.
-async function resolveBetting(game, matchId, outcome) {
+async function resolveBetting(game, matchId, outcome, reason = '') {
   if (!matchId) return null;
   const entries = await roundsForMatch(game, matchId);
   if (entries.length === 0) return null;
@@ -934,7 +943,7 @@ async function resolveBetting(game, matchId, outcome) {
 
     if (!outcome) {
       await cancelRound(key);
-      byChannel[round.channelId] = { cancelled: true, results: [] };
+      byChannel[round.channelId] = { cancelled: true, reason, results: [] };
       continue;
     }
 
@@ -976,7 +985,11 @@ async function creditCasualPlayRewards(game, sessions) {
       game,
       mode: result.mode ?? session.mode,
       queueId: result.queueId ?? session.queueId,
-      won: game === 'lol' ? result.win === true : result.result === 'win',
+      // Hors classé le montant est fixe, mais on transmet l'issue réelle pour
+      // que ce barème reste juste si ces modes venaient à en dépendre.
+      outcome: game === 'lol'
+        ? (result.win === true ? 'win' : result.win === false ? 'loss' : 'draw')
+        : result.result,
     });
     if (!amount) return;
     await creditPlayReward(member, amount)
@@ -986,14 +999,22 @@ async function creditCasualPlayRewards(game, sessions) {
 
 function formatPlayReward(amount, outcome) {
   if (!amount) return null;
-  return `🎁 **+${amount} points** pour avoir ${outcome === 'win' ? 'gagné' : 'joué'} cette partie.`;
+  const verbe = outcome === 'win' ? 'gagné' : outcome === 'draw' ? 'égalisé sur' : 'joué';
+  return `🎁 **+${amount} points** pour avoir ${verbe} cette partie.`;
 }
 
 // Construit le bloc "💰 Paris" à intégrer dans le message de fin de game.
 // Retourne null s'il n'y a rien à afficher (aucun round, ou round sans paris).
 function formatBettingSection(betting) {
   if (!betting) return null;
-  if (betting.cancelled) return '↩️ **Paris** — résultat indisponible, remboursés intégralement.';
+  if (betting.cancelled) {
+    // Une égalité et une partie sans résultat remboursaient toutes deux, mais
+    // le message annonçait « résultat indisponible » dans les deux cas : une
+    // égalité passait ainsi pour un raté du bot.
+    return betting.reason === 'draw'
+      ? '🤝 **Paris** — égalité, mises remboursées intégralement.'
+      : '↩️ **Paris** — résultat indisponible, remboursés intégralement.';
+  }
   if (betting.results.length === 0) return null;
   const lines = betting.results.map(r => {
     const streakNote = r.won && r.streak >= 3 ? ` 🔥x${r.streak}` : '';

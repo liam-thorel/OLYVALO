@@ -27,9 +27,20 @@ assert.notEqual(accountColor('Rayhan', 1), MEMBER_COLORS.Rayhan);
 // Une teinte partagée entre joueurs différents casserait la lecture.
 assert.notEqual(teinte(accountColor('Rayhan', 1)), teinte(accountColor('Liam', 1)));
 
-// Un membre hors palette ne doit pas faire planter le rendu.
-assert.equal(accountColor('Inconnu', 0), '#8992aa');
-assert.ok(accountColor('Inconnu', 1).startsWith('hsl('));
+// Un membre hors palette (ajouté depuis l'admin) recevait le MÊME gris que
+// tous les autres : deux invités étaient impossibles à distinguer.
+const gapTeinte = (a, b) => { const d = Math.abs(a - b) % 360; return d > 180 ? 360 - d : d; };
+const teinteDe = couleur => Number(String(couleur).match(/hsl\(([\d.]+)/)?.[1]);
+const invites = [0, 1, 2, 3, 4].map(i => teinteDe(accountColor('Invité', 0, i)));
+assert.equal(new Set(invites).size, invites.length, 'cinq invités, cinq teintes');
+invites.forEach((teinte, i) => invites.slice(i + 1).forEach(autre =>
+  assert.ok(gapTeinte(teinte, autre) >= 25, `teintes trop proches : ${teinte} et ${autre}`)));
+// Et aucune ne doit se confondre avec une couleur du roster.
+[355, 180, 45, 259, 31].forEach(reservee => invites.forEach(teinte =>
+  assert.ok(gapTeinte(teinte, reservee) >= 25, `${teinte} empiète sur une couleur du roster`)));
+// Un index hors liste se replie proprement plutôt que de rendre « hsl(undefined) ».
+assert.match(accountColor('Invité', 0, 99), /^hsl\(\d+ /);
+assert.match(accountColor('Invité', 1, 0), /^hsl\(/, 'le smurf d’un invité reste une déclinaison');
 
 // ─── Échelles ────────────────────────────────────────────────────────────────
 assert.equal(valorantLadderPoint(21, 70), 2170);
@@ -148,10 +159,65 @@ assert.ok(layout.y(layout.maxValue) < layout.y(layout.minValue));
 // Marge de 5 % : aucune courbe ne colle au bord.
 assert.ok(layout.y(2160) > layout.padding, 'le sommet garde de l’air');
 
+// Deux points : un segment droit, il n'y a rien à lisser.
 const path = seriesPath(main, layout);
 assert.match(path, /^M[\d.]+,[\d.]+ L[\d.]+,[\d.]+$/);
-assert.equal(seriesPath(main, null), '');
-assert.equal(seriesPath({ points: [] }, layout), '');
+
+// ─── Le lissage ne doit RIEN inventer ────────────────────────────────────────
+// Le lissage évident (Catmull-Rom) dépasse : entre deux parties la courbe monte
+// au-dessus du point le plus haut. Sur un graphique de rang, ça dessine un
+// palier que le joueur n'a jamais atteint.
+//
+// On échantillonne la VRAIE courbe et non les points de contrôle : ceux-ci
+// touchent légitimement la borne de l'interpolation monotone, et les lire
+// laisserait croire à un dépassement qui n'existe pas.
+function echantillonner(d, pas = 24) {
+  const nombres = [...d.matchAll(/(-?[\d.]+),(-?[\d.]+)/g)].map(m => [Number(m[1]), Number(m[2])]);
+  const ys = [];
+  let from = nombres[0];
+  for (let i = 1; i + 2 < nombres.length + 1; i += 3) {
+    const [c1, c2, to] = [nombres[i], nombres[i + 1], nombres[i + 2]];
+    if (!to) break;
+    for (let k = 0; k <= pas; k++) {
+      const t = k / pas;
+      const u = 1 - t;
+      ys.push(u * u * u * from[1] + 3 * u * u * t * c1[1] + 3 * u * t * t * c2[1] + t * t * t * to[1]);
+    }
+    from = to;
+  }
+  return ys;
+}
+
+const pic = [{ ts: 0, value: 100 }, { ts: 1, value: 100 }, { ts: 2, value: 300 },
+  { ts: 3, value: 100 }, { ts: 4, value: 100 }];
+const piclay = plotLayout([{ points: pic }], { width: 500, height: 300, padding: 0 });
+const courbe = seriesPath({ points: pic }, piclay);
+assert.match(courbe, /^M[\d.]+,[\d.]+ C/, 'trois points et plus : des cubiques, plus des segments');
+
+// y décroît quand la valeur monte : le minimum d'y est le sommet à l'écran.
+// Le chemin SVG arrondit ses coordonnées au dixième de pixel : la tolérance
+// couvre cet arrondi, et rien de plus. Un vrai dépassement de lissage se
+// compte en pixels, pas en centièmes.
+const ARRONDI = 0.06;
+const surPic = echantillonner(courbe);
+assert.ok(Math.min(...surPic) >= piclay.y(300) - ARRONDI, 'la courbe ne dépasse jamais le sommet réel');
+assert.ok(Math.max(...surPic) <= piclay.y(100) + ARRONDI, 'ni ne plonge sous le creux réel');
+
+// Une suite strictement croissante doit le rester : aucun faux recul entre
+// deux parties gagnées.
+const strictementCroissant = [{ ts: 0, value: 10 }, { ts: 1, value: 20 }, { ts: 2, value: 24 }, { ts: 3, value: 60 }];
+const montlay = plotLayout([{ points: strictementCroissant }], { width: 400, height: 200, padding: 0 });
+const surMontee = echantillonner(seriesPath({ points: strictementCroissant }, montlay));
+surMontee.forEach((y, i) => { if (i) assert.ok(y <= surMontee[i - 1] + ARRONDI, `faux recul à l’échantillon ${i}`); });
+
+// Et le lissage doit vraiment arrondir : sur une montée régulière, la courbe
+// s'écarte de la ligne brisée qui reliait les points.
+const anguleux = strictementCroissant.map(p => montlay.y(p.value));
+assert.ok(Math.max(...surMontee.map((y, i) => Math.abs(y - (anguleux[0] + (anguleux[3] - anguleux[0]) * i / (surMontee.length - 1))))) > 1,
+  'la courbe n’est pas une simple droite');
+
+assert.equal(seriesPath({ points: [{ ts: 1, value: 1 }] }, layout),
+  `M${layout.x(1).toFixed(1)},${layout.y(1).toFixed(1)}`, 'un point isolé reste un point');
 
 // Tout joué le même jour : on centre plutôt que de diviser par zéro.
 const plat = plotLayout([{ points: [{ ts: 5, value: 10 }, { ts: 5, value: 20 }] }], { width: 800, height: 300 });

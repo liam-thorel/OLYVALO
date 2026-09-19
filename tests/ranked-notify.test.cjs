@@ -5,6 +5,12 @@ const Module = require('node:module');
 const sent = [];
 // Points de participation réellement crédités.
 const credited = [];
+// Paris remboursés / tranchés pendant le test.
+const refunded = [];
+const resolved = [];
+// Parties pour lesquelles un pari est ouvert — la production n'en ouvre qu'en
+// file classée, le stub doit refléter ça plutôt que d'en offrir à toutes.
+const OPEN_ROUNDS = new Set();
 
 function loadBot() {
   const original = Module._load;
@@ -38,8 +44,12 @@ function loadBot() {
       case './betting.js':
         return {
           openRound: async () => ({ key: 'k', round: {}, isNew: false }),
-          closeRound: async () => null, resolveRound: async () => null, cancelRound: async () => null,
-          roundsForMatch: async () => [], placeBet: async () => ({ ok: false }),
+          closeRound: async () => null,
+          resolveRound: async (key, outcome) => { resolved.push({ key, outcome }); return { round: {}, results: [] }; },
+          cancelRound: async key => { refunded.push(key); return {}; },
+          roundsForMatch: async (game, matchId) => (OPEN_ROUNDS.has(matchId)
+            ? [[`k-${matchId}`, { channelId: 'salon-1', messageId: null }]] : []),
+          placeBet: async () => ({ ok: false }),
           attachMessage: async () => {}, BETTING_WINDOW_MS: 1000,
         };
       case './weekly.js': return { startWeeklyScheduler: () => {} };
@@ -69,7 +79,15 @@ function loadBot() {
           on() { return this; } once() { return this; } isReady() { return true; }
           async login() { return 'stub'; }
         }
-        return new Proxy({ Client, Collection, GatewayIntentBits: { Guilds: 1 } }, {
+        // Un vrai EmbedBuilder, et pas le proxy fourre-tout : le bloc « Paris »
+        // part dans une description d'embed, invisible autrement.
+        class EmbedBuilder {
+          setColor() { return this; } setTimestamp() { return this; } setThumbnail() { return this; }
+          setAuthor(a) { this.author = a?.name; return this; }
+          setDescription(d) { this.description = d; return this; }
+          addFields(...f) { this.fields = f.flat(); return this; }
+        }
+        return new Proxy({ Client, Collection, EmbedBuilder, GatewayIntentBits: { Guilds: 1 } }, {
           get: (t, prop) => (prop in t ? t[prop] : chain()),
         });
       }
@@ -301,5 +319,40 @@ const endResult = mode => ({
   await notifyValorantGameEnd([rankedLoss]);
   assert.equal(credited[0].amount, 50, 'classée perdue = 50 points');
 
-  console.log('ranked-notify: seules les files classées notifient, sur Valorant comme sur LoL');
+  // ─── Match nul ─────────────────────────────────────────────────────────────
+  // Une égalité n'est pas une défaite. Elle valait pourtant le montant d'une
+  // défaite, parce que l'issue passait par un booléen `won` : « ni gagné » y
+  // devient mécaniquement « perdu ».
+  sent.length = 0; credited.length = 0; refunded.length = 0; resolved.length = 0;
+  const nul = session('competitive');
+  nul.active = false;
+  nul.result = { ...endResult('competitive'), result: 'draw' };
+  OPEN_ROUNDS.add(nul.matchId);
+  await notifyValorantGameEnd([nul]);
+
+  assert.equal(credited[0].amount, 100, 'classée nulle = 100 points, entre la victoire et la défaite');
+
+  // Aucun pari ne peut être tranché sans gagnant : on rembourse.
+  assert.deepEqual(resolved, [], 'aucun pari tranché sur une égalité');
+  assert.equal(refunded.length, 1, 'les mises sont remboursées');
+
+  // Et on le DIT. Une égalité et une partie sans résultat remboursaient toutes
+  // deux, mais le message annonçait « résultat indisponible » dans les deux
+  // cas : une égalité passait pour un raté du bot.
+  const messageNul = sent.map(entry => JSON.stringify(entry.payload)).join('\n');
+  assert.match(messageNul, /égalité, mises remboursées/i, 'le remboursement est annoncé comme une égalité');
+  assert.doesNotMatch(messageNul, /résultat indisponible/, 'et pas comme un résultat perdu');
+  assert.match(messageNul, /Égalité/, 'la carte de fin de partie annonce bien une égalité');
+
+  // Une partie vraiment sans résultat garde son message d'origine.
+  sent.length = 0; refunded.length = 0;
+  const sansResultat = session('competitive');
+  sansResultat.active = false;
+  sansResultat.result = { ...endResult('competitive'), result: 'unknown' };
+  OPEN_ROUNDS.add(sansResultat.matchId);
+  await notifyValorantGameEnd([sansResultat]);
+  assert.equal(refunded.length, 1, 'remboursé aussi');
+  assert.match(sent.map(e => JSON.stringify(e.payload)).join('\n'), /résultat indisponible/);
+
+  console.log('ranked-notify: seules les files classées notifient, et une égalité n’est pas une défaite');
 })().catch(error => { console.error(error); process.exit(1); });

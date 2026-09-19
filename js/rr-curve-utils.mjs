@@ -20,7 +20,21 @@ export const MEMBER_COLORS = {
   Mathis: '#a87fff',
   Noé: '#ff8200',
 };
-const FALLBACK_COLOR = '#8992aa';
+/**
+ * Teintes de rechange pour les membres hors palette — quelqu'un ajouté depuis
+ * l'admin. Tous recevaient le MÊME gris : deux invités étaient alors
+ * impossibles à distinguer, et leurs smurfs aussi.
+ *
+ * Elles sont attribuées par ORDRE et non par hachage du nom : un hachage ne
+ * garantit aucun écart entre deux teintes, et les tentatives de corriger après
+ * coup (décaler jusqu'à sortir d'une zone interdite) font converger des noms
+ * différents vers la même couleur. Une liste fixe l'écart une fois pour toutes.
+ *
+ * Chacune est à plus de 25° des cinq du roster et des autres. Au-delà de cinq
+ * invités simultanés la liste se répète — on préfère une répétition annoncée à
+ * un calcul qui prétend l'éviter.
+ */
+const EXTRA_HUES = [120, 210, 300, 75, 145];
 
 const VALORANT_RANKS = ['Fer', 'Bronze', 'Argent', 'Or', 'Platine', 'Diamant', 'Ascendant', 'Immortel', 'Radiant'];
 const LOL_TIER_ORDER = ['IRON', 'BRONZE', 'SILVER', 'GOLD', 'PLATINUM', 'EMERALD', 'DIAMOND', 'MASTER', 'GRANDMASTER', 'CHALLENGER'];
@@ -56,11 +70,19 @@ const clamp = (value, min, max) => Math.min(max, Math.max(min, value));
  * déclinaisons et non comme d'autres joueurs. Les écarts alternent clair/
  * sombre afin que deux smurfs restent distinguables l'un de l'autre.
  */
-export function accountColor(memberName, smurfIndex = 0) {
-  const base = MEMBER_COLORS[memberName] || FALLBACK_COLOR;
-  if (!smurfIndex) return base;
-  const hsl = hexToHsl(base);
-  if (!hsl) return base;
+/**
+ * Teinte d'un membre absent de la palette — quelqu'un ajouté depuis l'admin.
+ *
+ * Tous recevaient le MÊME gris : deux invités étaient alors impossibles à
+ * distinguer, et leurs smurfs aussi. On dérive donc une teinte stable de leur
+ * nom, en évitant celles des cinq du roster.
+ */
+export function accountColor(memberName, smurfIndex = 0, extraIndex = 0) {
+  const known = MEMBER_COLORS[memberName];
+  const hue = EXTRA_HUES[((extraIndex % EXTRA_HUES.length) + EXTRA_HUES.length) % EXTRA_HUES.length];
+  const hsl = known ? hexToHsl(known) : { h: hue, s: 62, l: 58 };
+  if (!smurfIndex) return known || `hsl(${hue} 62% 58%)`;
+  if (!hsl) return known;
   const step = Math.ceil(smurfIndex / 2);
   const lighter = smurfIndex % 2 === 1;
   const l = clamp(hsl.l + (lighter ? 1 : -1) * step * 16, 24, 82);
@@ -192,11 +214,17 @@ export function lolAccountSeries(lolHistory, members = []) {
 }
 
 function finalize(byAccount) {
+  // Ordre alphabétique des membres hors palette : la couleur d'un invité ne
+  // doit pas changer parce qu'un autre a joué une partie de plus.
+  const extras = [...new Set([...byAccount.values()]
+    .map(series => series.member)
+    .filter(member => !(member in MEMBER_COLORS)))].sort((a, b) => a.localeCompare(b, 'fr'));
+
   return [...byAccount.values()]
     .map(series => ({
       ...series,
       isMain: series.smurfIndex === 0,
-      color: accountColor(series.member, series.smurfIndex),
+      color: accountColor(series.member, series.smurfIndex, extras.indexOf(series.member)),
       points: sortedPoints(series.points),
     }))
     // Un seul point ne trace pas de courbe : il n'y a encore rien à lire.
@@ -265,9 +293,53 @@ export function plotLayout(visibleSeries = [], { width = 900, height = 320, padd
   return { x, y, minTs, maxTs, minValue, maxValue, width, height, padding };
 }
 
+/**
+ * Tracé lissé, en cubiques monotones (Fritsch–Carlson).
+ *
+ * Le lissage évident — Catmull-Rom, ou des tangentes prises sur les voisins —
+ * DÉPASSE : entre deux parties la courbe monte au-dessus du point le plus
+ * haut avant de redescendre. Sur un graphique de rang, ça dessine un palier
+ * que le joueur n'a jamais atteint. C'est un mensonge discret et permanent,
+ * exactement le genre que personne ne vient vérifier.
+ *
+ * L'interpolation monotone borne les tangentes pour que la courbe reste
+ * toujours entre les deux points qu'elle relie : elle arrondit les angles
+ * sans rien inventer.
+ */
 export function seriesPath(series, layout) {
-  if (!layout || !series?.points?.length) return '';
-  return series.points
-    .map((point, i) => `${i === 0 ? 'M' : 'L'}${layout.x(point.ts).toFixed(1)},${layout.y(point.value).toFixed(1)}`)
-    .join(' ');
+  const points = series?.points;
+  if (!layout || !points?.length) return '';
+
+  const xs = points.map(point => layout.x(point.ts));
+  const ys = points.map(point => layout.y(point.value));
+  const start = `M${xs[0].toFixed(1)},${ys[0].toFixed(1)}`;
+  if (points.length === 1) return start;
+  if (points.length === 2) return `${start} L${xs[1].toFixed(1)},${ys[1].toFixed(1)}`;
+
+  // Pentes des segments, puis tangente en chaque point.
+  const slopes = [];
+  for (let i = 0; i < points.length - 1; i++) {
+    const dx = xs[i + 1] - xs[i];
+    slopes.push(dx === 0 ? 0 : (ys[i + 1] - ys[i]) / dx);
+  }
+
+  const tangents = [slopes[0]];
+  for (let i = 1; i < slopes.length; i++) {
+    // Changement de sens (un sommet ou un creux) : tangente plate, sinon la
+    // courbe dépasserait le point d'inflexion.
+    if (slopes[i - 1] * slopes[i] <= 0) { tangents.push(0); continue; }
+    const average = (slopes[i - 1] + slopes[i]) / 2;
+    const limit = 3 * Math.min(Math.abs(slopes[i - 1]), Math.abs(slopes[i]));
+    tangents.push(Math.sign(average) * Math.min(Math.abs(average), limit));
+  }
+  tangents.push(slopes[slopes.length - 1]);
+
+  let path = start;
+  for (let i = 0; i < points.length - 1; i++) {
+    const dx = (xs[i + 1] - xs[i]) / 3;
+    path += ` C${(xs[i] + dx).toFixed(1)},${(ys[i] + tangents[i] * dx).toFixed(1)}`
+      + ` ${(xs[i + 1] - dx).toFixed(1)},${(ys[i + 1] - tangents[i + 1] * dx).toFixed(1)}`
+      + ` ${xs[i + 1].toFixed(1)},${ys[i + 1].toFixed(1)}`;
+  }
+  return path;
 }

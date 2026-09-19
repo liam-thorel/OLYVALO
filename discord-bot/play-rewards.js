@@ -18,6 +18,10 @@ const { isRankedValorantMode, isRankedLolQueue } = require('./game-modes.js');
 // ne vaut pas une classée gagnée.
 const RANKED_WIN = 150;
 const RANKED_LOSS = 50;
+// Une égalité n'est pas une défaite. Elle valait pourtant 50 points, parce que
+// l'issue transitait par un booléen `won` — et un booléen ne sait pas dire
+// « ni l'un ni l'autre ».
+const RANKED_DRAW = 100;
 
 const VALORANT_UNRATED = 75;
 const LOL_NORMAL = 100;
@@ -34,16 +38,24 @@ function normalize(mode) {
   return String(mode || '').trim().toLowerCase();
 }
 
+/** Barème classé selon l'issue. Une issue inconnue est traitée comme une défaite. */
+function rankedAmount(outcome) {
+  if (outcome === 'win') return RANKED_WIN;
+  if (outcome === 'draw') return RANKED_DRAW;
+  return RANKED_LOSS;
+}
+
 /**
  * Montant à créditer pour une partie terminée.
  *
- * `won` n'est lu qu'en classé. Retourne 0 si on ne sait pas de quelle partie
- * il s'agit : mieux vaut ne rien créditer que de distribuer des points sur un
- * rapport incomplet.
+ * `outcome` ('win' | 'loss' | 'draw') n'est lu qu'en classé. C'était un
+ * booléen `won` : une égalité tombait donc du côté « perdu » sans que rien ne
+ * le signale. Retourne 0 si on ne sait pas de quelle partie il s'agit — mieux
+ * vaut ne rien créditer que de distribuer des points sur un rapport incomplet.
  */
-function playReward({ game, mode, queueId, won } = {}) {
+function playReward({ game, mode, queueId, outcome } = {}) {
   if (game === 'lol') {
-    if (isRankedLolQueue(queueId)) return won ? RANKED_WIN : RANKED_LOSS;
+    if (isRankedLolQueue(queueId)) return rankedAmount(outcome);
     if (queueId === null || queueId === undefined || queueId === '') return 0;
     const numeric = Number(queueId);
     if (!Number.isFinite(numeric)) return 0; // file inconnue : on s'abstient
@@ -51,7 +63,7 @@ function playReward({ game, mode, queueId, won } = {}) {
   }
 
   if (game === 'valorant') {
-    if (isRankedValorantMode(mode)) return won ? RANKED_WIN : RANKED_LOSS;
+    if (isRankedValorantMode(mode)) return rankedAmount(outcome);
     const normalized = normalize(mode);
     if (!normalized) return 0; // mode inconnu : on s'abstient
     return normalized === VALORANT_UNRATED_MODE ? VALORANT_UNRATED : FUN;
@@ -67,5 +79,5 @@ function rewardDependsOnOutcome({ game, mode, queueId } = {}) {
 
 module.exports = {
   playReward, rewardDependsOnOutcome,
-  RANKED_WIN, RANKED_LOSS, VALORANT_UNRATED, LOL_NORMAL, FUN, LOL_NORMAL_QUEUES,
+  RANKED_WIN, RANKED_LOSS, RANKED_DRAW, VALORANT_UNRATED, LOL_NORMAL, FUN, LOL_NORMAL_QUEUES,
 };

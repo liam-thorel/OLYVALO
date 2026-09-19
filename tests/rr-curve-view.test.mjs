@@ -33,13 +33,13 @@ assert.match(dangereux, /&lt;script&gt;/);
 
 // ─── Graphique ───────────────────────────────────────────────────────────────
 const chart = renderChart(series, mains, 'valorant');
-assert.match(chart, /<svg class="curve-chart" viewBox="0 0 900 340"/);
+assert.match(chart, /<svg class="curve-chart" viewBox="0 0 900 235"/);
 // Un tracé par compte visible, et seulement ceux-là.
 assert.equal((chart.match(/class="curve-line"/g) || []).length, 2, 'deux mains visibles');
 assert.match(chart, /stroke="#f5c842"/, 'Rayhan garde le jaune de son avatar');
 assert.match(chart, /stroke="#3fcfcf"/, 'Liam garde le cyan');
 // Le smurf est masqué par le préréglage d'ouverture.
-assert.doesNotMatch(chart, /stroke-dasharray="6 4"/, 'aucun smurf tracé au départ');
+assert.doesNotMatch(chart, /stroke-dasharray="5 4"/, 'aucun smurf tracé au départ');
 
 // Les infobulles nomment le rang, pas la valeur brute de l'échelle. Le nom
 // précise le compte parce que Rayhan en a deux de tracés — et il le précise
@@ -47,10 +47,15 @@ assert.doesNotMatch(chart, /stroke-dasharray="6 4"/, 'aucun smurf tracé au dép
 assert.match(chart, /<title>Rayhan · RayBaz — Ascendant 1 · 72 RR/);
 assert.doesNotMatch(chart, /<title>[^<]*2172/, 'la valeur interne ne doit pas fuir à l’écran');
 
+// Une pastille par partie faisait trois cents disques avec dix comptes : la
+// courbe disparaissait sous ses propres points. Seul le dernier est marqué.
+assert.equal((chart.match(/class="curve-dot"/g) || []).length, 2, 'une pastille par compte affiché');
+assert.match(chart, /<path class="curve-line"[^>]*>\s*<title>/, 'le tracé lui-même porte l’infobulle');
+
 // Avec les smurfs, le trait devient pointillé.
 const tout = renderChart(series, new Set(series.map(seriesKey)), 'valorant');
 assert.equal((tout.match(/class="curve-line"/g) || []).length, 3);
-assert.match(tout, /stroke-dasharray="6 4"/, 'le smurf se trace en pointillés');
+assert.match(tout, /stroke-dasharray="5 4"/, 'le smurf se trace en pointillés');
 
 assert.match(renderChart(series, new Set(), 'valorant'), /Aucun compte sélectionné/);
 

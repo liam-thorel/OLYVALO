@@ -23,8 +23,10 @@ export function emptyState(message) {
 }
 
 const CHART_WIDTH = 900;
-const CHART_HEIGHT = 340;
-const CHART_PADDING = 44;
+// Plus bas qu'à l'origine (340) : le cadre occupait un écran de téléphone
+// entier pour une information qui se lit en un coup d'œil.
+const CHART_HEIGHT = 235;
+const CHART_PADDING = 34;
 
 /**
  * Graduations horizontales.
@@ -72,11 +74,19 @@ export function renderChart(allSeries, visible, game) {
       <line class="curve-grid-line" x1="${CHART_PADDING}" x2="${CHART_WIDTH - CHART_PADDING}" y1="${line.y.toFixed(1)}" y2="${line.y.toFixed(1)}"></line>
       <text class="curve-grid-label" x="4" y="${(line.y + 4).toFixed(1)}">${escapeHTML(line.label)}</text>`).join('');
 
-  const paths = shown.map(s => `
+  // Une pastille par partie faisait trois cents disques à l'écran avec dix
+  // comptes : la courbe disparaissait sous ses propres points. Seul le dernier
+  // est marqué — c'est le rang actuel, la seule valeur qu'on lit vraiment sur
+  // un point précis. Le reste se lit comme une ligne.
+  const paths = shown.map(s => {
+    const last = s.points[s.points.length - 1];
+    const titre = escapeHTML(`${seriesLabel(s, allSeries)} — ${ladderLabel(game, last.value)} · ${dateLabel(last.ts)}`);
+    return `
       <path class="curve-line" d="${seriesPath(s, layout)}" stroke="${escapeHTML(s.color)}"
-            stroke-dasharray="${s.isMain ? 'none' : '6 4'}"></path>
-      ${s.points.map(point => `<circle class="curve-dot" cx="${layout.x(point.ts).toFixed(1)}" cy="${layout.y(point.value).toFixed(1)}" r="3"
-          fill="${escapeHTML(s.color)}"><title>${escapeHTML(`${seriesLabel(s, allSeries)} — ${ladderLabel(game, point.value)} · ${dateLabel(point.ts)}`)}</title></circle>`).join('')}`).join('');
+            stroke-dasharray="${s.isMain ? 'none' : '5 4'}"><title>${titre}</title></path>
+      <circle class="curve-dot" cx="${layout.x(last.ts).toFixed(1)}" cy="${layout.y(last.value).toFixed(1)}" r="3.2"
+          fill="${escapeHTML(s.color)}"><title>${titre}</title></circle>`;
+  }).join('');
 
   return `
     <svg class="curve-chart" viewBox="0 0 ${CHART_WIDTH} ${CHART_HEIGHT}" role="img"
