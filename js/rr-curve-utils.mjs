@@ -236,6 +236,26 @@ function sortedPoints(points) {
 }
 
 /**
+ * Compte du roster ayant PRODUIT ce rapport.
+ *
+ * On passe par `players[] + playerPuuid` avant `report.player`, et c'est
+ * essentiel : `report.player` vient de la PRÉSENCE Riot, qui est incomplète
+ * selon les files (le script le note lui-même) et vaut alors la chaîne vide.
+ * Les noms de `players[]`, eux, viennent des détails de fin de partie —
+ * autrement dit de l'API, pas d'un statut affiché. S'appuyer sur `player`
+ * faisait disparaître du graphique des joueurs qui avaient pourtant des
+ * dizaines de parties enregistrées.
+ *
+ * C'est la même identification que celle des récaps (discord-bot/stats.js),
+ * et pour la même raison : seul le rapporteur porte son rang après-match.
+ */
+function reporterAccount(report, index) {
+  const self = (report?.players || []).find(player =>
+    player?.puuid && report.playerPuuid && player.puuid === report.playerPuuid);
+  return (self && index.get(lower(self.name))) || index.get(lower(report?.player)) || null;
+}
+
+/**
  * Séries Valorant, une par compte.
  *
  * Seul le rapporteur d'une partie porte SON rang après-match (`report.rr`) —
@@ -252,7 +272,7 @@ export function valorantAccountSeries(historyRoot, members = []) {
       if (lower(report?.mode) !== 'competitive') return;
       const value = valorantLadderPoint(report?.rr?.tier, report?.rr?.after);
       if (value === null) return;
-      const identity = index.get(lower(report.player));
+      const identity = reporterAccount(report, index);
       if (!identity) return;
       const ts = Number(report.ts || report.endTs || 0);
       if (!ts) return;
