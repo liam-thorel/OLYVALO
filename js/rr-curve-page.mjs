@@ -13,8 +13,8 @@
 
 import { fetchJsonWithRetry } from './request-utils.mjs?v=20260825-first-load-recovery';
 import { getGameMode } from './game-mode.mjs';
-import { valorantAccountSeries, lolAccountSeries, defaultVisible, withinRange, untrackedAccounts, curveDiagnostics } from './rr-curve-utils.mjs?v=20260919b-courbes';
-import { renderCurvePage, emptyState } from './rr-curve-view.mjs?v=20260919b-courbes';
+import { valorantAccountSeries, lolAccountSeries, defaultVisible, withinRange, untrackedAccounts, curveDiagnostics, buildMembers } from './rr-curve-utils.mjs?v=20260919c-courbes';
+import { renderCurvePage, emptyState } from './rr-curve-view.mjs?v=20260919c-courbes';
 
 const FIREBASE_URL = 'https://realtime-database-5bb9f-default-rtdb.europe-west1.firebasedatabase.app';
 
@@ -76,10 +76,15 @@ export async function initRrCurvePage() {
   root.innerHTML = '<p class="curve-empty">Chargement des courbes…</p>';
 
   let roster = [];
+  let overlay = null;
   let history = null;
   try {
-    [roster, history] = await Promise.all([
+    // rosterOverlay n'est pas un détail : il porte les puuids et les comptes
+    // ajoutés depuis l'admin. Sans lui, un joueur dont le compte courant a été
+    // enregistré là — ou qui s'est renommé — reste invisible.
+    [roster, overlay, history] = await Promise.all([
       fetch('data/roster.json', { cache: 'no-store' }).then(r => r.json()).catch(() => []),
+      fbGet('rosterOverlay').catch(() => null),
       fbGet(game === 'lol' ? 'live/lolHistory' : 'live/history').catch(() => null),
     ]);
   } catch {
@@ -87,12 +92,7 @@ export async function initRrCurvePage() {
     return;
   }
 
-  const members = (Array.isArray(roster) ? roster : []).map(player => ({
-    name: player?.name || '',
-    riotIds: [player?.riot, ...(player?.smurfs || [])]
-      .filter(account => account?.name)
-      .map(account => (account.tag ? `${account.name}#${account.tag}` : String(account.name))),
-  }));
+  const members = buildMembers(roster, overlay);
 
   allSeries = game === 'lol' ? lolAccountSeries(history, members) : valorantAccountSeries(history, members);
   // Le diagnostic ne sert qu'à EXPLIQUER une absence, jamais à décider d'une

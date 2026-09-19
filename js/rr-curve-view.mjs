@@ -10,7 +10,7 @@
  * rendent des chaînes.
  */
 
-import { seriesLabel, seriesKey, plotLayout, seriesPath, seriesAreaPath, ladderLabel, darken, TIME_RANGES } from './rr-curve-utils.mjs?v=20260919b-courbes';
+import { seriesLabel, seriesKey, plotLayout, seriesPath, seriesAreaPath, ladderLabel, darken, TIME_RANGES } from './rr-curve-utils.mjs?v=20260919c-courbes';
 
 export function escapeHTML(value) {
   return String(value ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));

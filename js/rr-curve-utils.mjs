@@ -151,6 +151,7 @@ export function withinRange(series = [], rangeId = 'all', now = Date.now()) {
  */
 export function curveDiagnostics(historyRoot, members = []) {
   const index = accountIndex(members);
+  const byPuuid = puuidIndex(members);
   const stats = new Map();
   const ensure = key => {
     if (!stats.has(key)) stats.set(key, { seen: 0, reported: 0, reportedRanked: 0, withRank: 0 });
@@ -165,7 +166,7 @@ export function curveDiagnostics(historyRoot, members = []) {
         if (known) ensure(lower(known.account)).seen += 1;
       });
 
-      const identity = reporterAccount(report, index);
+      const identity = reporterAccount(report, index, byPuuid);
       if (!identity) return;
       const row = ensure(lower(identity.account));
       row.reported += 1;
@@ -261,6 +262,54 @@ export function ladderLabel(game, value) {
 
 const lower = value => String(value || '').trim().toLowerCase();
 
+function slugify(value) {
+  return String(value || '')
+    .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-+|-+$)/g, '');
+}
+
+/**
+ * Membres du roster, comptes ET puuids.
+ *
+ * `data/roster.json` ne porte que les comptes déclarés à la main. Les comptes
+ * ajoutés depuis l'admin — et les puuids de TOUS les comptes — vivent dans
+ * `rosterOverlay/accounts`. Ne lire que le premier fichier, ce que faisaient
+ * les courbes, rendait invisible tout joueur dont le compte courant a été
+ * enregistré depuis l'admin, ou qui s'est renommé depuis.
+ *
+ * Même fusion que discord-bot/roster.js, et pour la même raison.
+ */
+export function buildMembers(roster = [], overlay = null) {
+  const accounts = overlay?.accounts || {};
+  const overlayMembers = overlay?.members || {};
+
+  const fromRoster = (Array.isArray(roster) ? roster : []).map(player => ({
+    id: slugify(player?.name),
+    name: player?.name || '',
+    riotIds: [player?.riot, ...(player?.smurfs || [])]
+      .filter(account => account?.name)
+      .map(account => (account.tag ? `${account.name}#${account.tag}` : String(account.name))),
+    puuids: [],
+  }));
+
+  const known = new Set(fromRoster.map(member => member.id));
+  const extras = Object.entries(overlayMembers)
+    .filter(([id]) => !known.has(id))
+    .map(([id, member]) => ({ id, name: member?.name || id, riotIds: [], puuids: [] }));
+
+  const members = [...fromRoster, ...extras];
+  members.forEach(member => {
+    Object.values(accounts[member.id] || {}).forEach(account => {
+      if (!account?.name) return;
+      const riotId = account.tag ? `${account.name}#${account.tag}` : String(account.name);
+      if (!member.riotIds.some(known2 => lower(known2) === lower(riotId))) member.riotIds.push(riotId);
+      const puuid = String(account.puuid || '');
+      if (puuid && !member.puuids.includes(puuid)) member.puuids.push(puuid);
+    });
+  });
+  return members;
+}
+
 /**
  * Index compte → membre, avec le rang du compte dans sa liste (0 = principal).
  *
@@ -274,6 +323,28 @@ export function accountIndex(members = []) {
       const key = lower(riotId);
       if (!key || index.has(key)) return;
       index.set(key, { member: member.name, account: riotId, smurfIndex: position });
+    });
+  });
+  return index;
+}
+
+/**
+ * Index puuid → membre. Le puuid est l'identifiant Riot PERMANENT : il
+ * survit aux renommages, là où le Riot ID d'un rapport ancien ne correspond
+ * plus à celui déclaré dans le roster.
+ *
+ * On rattache au compte principal du membre : le puuid dit de QUI il s'agit,
+ * pas sur lequel de ses comptes — et `rosterOverlay` ne conserve qu'un puuid
+ * par compte enregistré, ce qui suffit à retrouver le bon.
+ */
+export function puuidIndex(members = []) {
+  const index = new Map();
+  members.forEach(member => {
+    (member?.puuids || []).forEach((puuid, position) => {
+      const key = String(puuid || '').trim();
+      if (!key || index.has(key)) return;
+      const riotId = member.riotIds?.[position] ?? member.riotIds?.[0] ?? member.name;
+      index.set(key, { member: member.name, account: riotId, smurfIndex: member.riotIds?.[position] ? position : 0 });
     });
   });
   return index;
@@ -316,10 +387,18 @@ function reportsOf(match) {
  * C'est la même identification que celle des récaps (discord-bot/stats.js),
  * et pour la même raison : seul le rapporteur porte son rang après-match.
  */
-function reporterAccount(report, index) {
+function reporterAccount(report, index, byPuuid = new Map()) {
+  // 1. Le puuid du rapporteur. Identifiant Riot permanent : il survit aux
+  //    renommages, là où un Riot ID ancien ne correspond plus au roster.
+  const direct = byPuuid.get(String(report?.playerPuuid || '').trim());
+  if (direct) return direct;
+  // 2. Son nom dans les détails de fin de partie — de l'API, pas d'un statut.
   const self = (report?.players || []).find(player =>
     player?.puuid && report.playerPuuid && player.puuid === report.playerPuuid);
-  return (self && index.get(lower(self.name))) || index.get(lower(report?.player)) || null;
+  const named = self && index.get(lower(self.name));
+  if (named) return named;
+  // 3. La présence Riot, incomplète selon les files : dernier recours.
+  return index.get(lower(report?.player)) || null;
 }
 
 /**
@@ -332,6 +411,7 @@ function reporterAccount(report, index) {
  */
 export function valorantAccountSeries(historyRoot, members = []) {
   const index = accountIndex(members);
+  const byPuuid = puuidIndex(members);
   const byAccount = new Map();
 
   Object.values(historyRoot || {}).forEach(match => {
@@ -339,7 +419,7 @@ export function valorantAccountSeries(historyRoot, members = []) {
       if (lower(report?.mode) !== 'competitive') return;
       const value = valorantLadderPoint(report?.rr?.tier, report?.rr?.after);
       if (value === null) return;
-      const identity = reporterAccount(report, index);
+      const identity = reporterAccount(report, index, byPuuid);
       if (!identity) return;
       const ts = Number(report.ts || report.endTs || 0);
       if (!ts) return;
