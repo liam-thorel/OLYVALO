@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { renderCurvePage, renderChart, renderLegend, renderRanges, renderUntracked, gridLines, escapeHTML } from '../js/rr-curve-view.mjs';
-import { valorantAccountSeries, defaultVisible, seriesKey, plotLayout, untrackedAccounts, TIME_RANGES } from '../js/rr-curve-utils.mjs';
+import { valorantAccountSeries, defaultVisible, seriesKey, plotLayout, untrackedAccounts, curveDiagnostics, TIME_RANGES } from '../js/rr-curve-utils.mjs';
 
 const MEMBERS = [
   { name: 'Rayhan', riotIds: ['RayBaz#OLY', 'rbz#3030'] },
@@ -107,12 +107,19 @@ assert.equal((plages.match(/aria-pressed="true"/g) || []).length, 1, 'une seule 
 // ─── Comptes sans courbe ─────────────────────────────────────────────────────
 // Un joueur absent du graphique l'était sans explication, et la première
 // hypothèse est que le site a un bug — alors que son script n'a rien publié.
-const absents = untrackedAccounts([...MEMBERS, { name: 'Noé', riotIds: ['hayabusa#NoWaY'] }], series);
+const rosterLarge = [...MEMBERS, { name: 'Noé', riotIds: ['hayabusa#NoWaY'] }];
+const absents = untrackedAccounts(rosterLarge, series, curveDiagnostics({
+  a: { reports: { r: report('RayBaz#OLY', 1_000_000, 21, 40) } },
+  b: { reports: { r: report('RayBaz#OLY', 2_000_000, 21, 72) } },
+}, rosterLarge));
 assert.ok(absents.some(a => a.member === 'Noé'), 'Noé n’a aucune partie enregistrée');
 const bloc = renderUntracked(absents);
-assert.match(bloc, /Sans courbe :/);
+assert.match(bloc, /Comptes sans courbe/);
 assert.match(bloc, /Noé/);
-assert.match(bloc, /son script l’a enregistrée/, 'la raison est donnée, pas seulement le constat');
+// Chaque compte porte SA raison : quatre causes différentes empêchent de
+// tracer une courbe, et elles ne se corrigent pas de la même façon.
+assert.match(bloc, /<li><strong>Noé<\/strong> — aucune partie trouvée/);
+assert.equal((bloc.match(/<li>/g) || []).length, absents.length, 'une ligne par compte absent');
 assert.equal(renderUntracked([]), '', 'rien à dire quand tout le monde est tracé');
 
 // ─── Page complète ───────────────────────────────────────────────────────────
@@ -120,7 +127,7 @@ const html = renderCurvePage({ allSeries: series, visible: mains, game: 'valoran
 ['curve-chart-wrap', 'curve-legend', 'curve-ranges', 'curve-untracked'].forEach(cls =>
   assert.ok(html.includes(cls), `${cls} doit être rendu`));
 // Même sans courbe traçable, la raison de l'absence doit s'afficher.
-assert.match(renderCurvePage({ untracked: absents }), /Sans courbe :/);
+assert.match(renderCurvePage({ untracked: absents }), /Comptes sans courbe/);
 // La rangée de préréglages a été retirée : la légende est le seul réglage.
 assert.doesNotMatch(html, /curve-preset/, 'plus aucun préréglage');
 assert.match(renderCurvePage({}), /Aucune progression à afficher/);

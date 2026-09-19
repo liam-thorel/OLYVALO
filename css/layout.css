@@ -1108,10 +1108,14 @@ body.agent-mode .footer{ display:none; }
 .curve-range.active{ border-color:var(--accent,#ff4656); background:color-mix(in srgb,var(--accent,#ff4656) 14%,transparent); color:#fff; }
 
 .curve-untracked{
-  margin:14px 0 0; padding:10px 12px; border-radius:10px;
+  margin:14px 0 0; padding:10px 14px; border-radius:10px;
   border:1px solid rgba(255,255,255,.08); background:rgba(255,255,255,.02);
-  color:var(--txt-2,#8992aa); font-size:12px; line-height:1.55;
+  color:var(--txt-2,#8992aa); font-size:12px; line-height:1.6;
 }
+.curve-untracked p{ margin:0 0 6px; }
+.curve-untracked ul{ margin:0; padding-left:18px; }
+.curve-untracked li{ margin:2px 0; }
+.curve-untracked strong{ color:var(--text,#e7eaf3); font-weight:600; }
 .curve-grid-label{ fill:rgba(255,255,255,.34); font-size:10px; font-family:inherit; }
 .curve-axis-date{ fill:rgba(255,255,255,.4); font-size:11px; font-family:inherit; }
 .curve-axis-date-end{ text-anchor:end; }
