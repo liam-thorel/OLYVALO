@@ -59,6 +59,23 @@ function loadStats(data) {
   assert.equal(sien.length, 2, 'les deux parties du membre, quel que soit le nom');
   assert.equal(sien.some(e => e.memberId === 'autre'), false, 'et aucune de quelqu’un d’autre');
 
+  // Le puuid prime sur tout : il est publié par le script depuis la v4.18 et
+  // survit aussi bien à un renommage qu'à un changement de memberId.
+  const avecPuuid = loadStats({
+    'live/lolHistory': {
+      a: { playerName: 'Ancien#EUW', puuid: 'puuid-liam', memberId: 'autre-id', ts: 1, win: true, queueId: 420 },
+      b: { playerName: 'Inconnu#EUW', puuid: 'puuid-liam', ts: 2, win: false, queueId: 420 },
+      c: { playerName: 'X#EUW', puuid: 'puuid-nico', ts: 3, win: true, queueId: 420 },
+    },
+  });
+  const parPuuid = await avecPuuid.historyFor('lol', { id: 'liam', riotIds: [], puuids: ['puuid-liam'] });
+  assert.equal(parPuuid.length, 2, 'retrouvé par puuid, sans nom ni memberId concordants');
+  assert.equal(parPuuid.some(e => e.puuid === 'puuid-nico'), false);
+
+  // Un compte SANS puuid enregistré reste suivi : tout le monde n'en a pas.
+  const lolSansPuuid = await avecPuuid.historyFor('lol', { id: '', riotIds: ['Ancien#EUW'], puuids: [] });
+  assert.equal(lolSansPuuid.length, 1, 'le repli par nom reste en place');
+
   // Entrée ancienne sans memberId : le nom reste le seul recours.
   const legacy = loadStats({
     'live/lolHistory': { a: { playerName: 'Ancien#EUW', ts: 1, win: true, queueId: 420 } },

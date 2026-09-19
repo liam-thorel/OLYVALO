@@ -353,3 +353,30 @@ assert.equal(plotLayout([{ points: [{ ts: 1, value: 1 }] }], {}), null);
 assert.equal(seriesKey({ account: 'RayBaz#OLY' }), 'raybaz#oly');
 
 console.log('rr-curve-utils: séries par compte, couleurs déclinées, échelles de rang et tracé validés');
+
+// ─── LoL : le puuid prime, le nom reste le repli ─────────────────────────────
+// Le script publie le puuid depuis la v4.18. Les entrées antérieures n'en ont
+// pas, et tous les comptes n'ont pas le leur renseigné : les deux chemins
+// doivent marcher.
+const lolAvecPuuid = lolAccountSeries({
+  a: { playerName: 'Renommé#EUW', puuid: 'puuid-rayhan', ts: 1, rankAfter: { tier: 'GOLD', division: 'II', lp: 20 } },
+  b: { playerName: 'Encore Autre#EUW', puuid: 'puuid-rayhan', ts: 2, rankAfter: { tier: 'GOLD', division: 'II', lp: 55 } },
+}, [{ name: 'Rayhan', riotIds: ['RayBaz#OLY'], puuids: ['puuid-rayhan'] }]);
+assert.equal(lolAvecPuuid.length, 1, 'retrouvé malgré deux noms différents');
+assert.equal(lolAvecPuuid[0].member, 'Rayhan');
+assert.equal(lolAvecPuuid[0].points.length, 2);
+
+// Sans puuid côté roster, le nom suffit encore.
+const lolSansPuuid = lolAccountSeries({
+  a: { playerName: 'RayBaz#OLY', ts: 1, rankAfter: { tier: 'GOLD', division: 'II', lp: 20 } },
+  b: { playerName: 'RayBaz#OLY', ts: 2, rankAfter: { tier: 'GOLD', division: 'II', lp: 55 } },
+}, [{ name: 'Rayhan', riotIds: ['RayBaz#OLY'], puuids: [] }]);
+assert.equal(lolSansPuuid.length, 1, 'le repli par nom est intact');
+
+// Un puuid inconnu du roster ne crée pas de série fantôme.
+assert.deepEqual(lolAccountSeries({
+  a: { playerName: 'X#1', puuid: 'inconnu', ts: 1, rankAfter: { tier: 'GOLD', division: 'II', lp: 20 } },
+  b: { playerName: 'X#1', puuid: 'inconnu', ts: 2, rankAfter: { tier: 'GOLD', division: 'II', lp: 55 } },
+}, [{ name: 'Rayhan', riotIds: ['RayBaz#OLY'], puuids: ['puuid-rayhan'] }]), []);
+
+console.log('rr-curve-utils: côté LoL, puuid prioritaire et repli par nom conservé');

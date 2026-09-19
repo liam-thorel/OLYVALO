@@ -512,6 +512,11 @@ function createLolWatcher({
       active: false,
       ts: Date.now(),
       playerName: sessionKey,
+      // Identifiant Riot permanent, seul à survivre à un renommage. Il est
+      // publié partout ailleurs (session active, client, profil) ; son absence
+      // ici forçait le bot et les courbes à retomber sur le nom ou le
+      // memberId pour tout l'historique de fin de partie.
+      puuid: identitySnapshot?.puuid || '',
       // Reporté aussi sur la fin de game : c'est ce message-là que le bot lit
       // pour poster le résumé et résoudre les paris.
       memberId: member?.memberId || '',
@@ -529,6 +534,7 @@ function createLolWatcher({
       key: lolHistoryKey(currentMatchId, sessionKey, matchStartedAt),
       value: {
         playerName: sessionKey,
+        puuid: identitySnapshot?.puuid || '',
         memberId: member?.memberId || '',
         member: member?.memberName || '',
         ts: Date.now(),

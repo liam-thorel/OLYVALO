@@ -28,17 +28,20 @@ function identityOf(member) {
 /**
  * Historique LoL d'un membre.
  *
- * Les entrées ne portent pas de puuid, mais elles portent `memberId` — écrit
- * par le script à l'installation, insensible aux renommages. On s'appuie
- * dessus en priorité ; le Riot ID ne sert plus que pour les entrées écrites
- * avant que ce champ n'existe.
+ * Trois identifiants, du plus sûr au moins sûr : le puuid (permanent, publié
+ * depuis la v4.18), le memberId (choisi à l'installation du script, insensible
+ * aux renommages), puis le Riot ID pour les entrées plus anciennes — et pour
+ * les comptes dont le puuid n'a pas encore été renseigné.
  */
 async function lolHistoryFor(member) {
   const identity = identityOf(member);
   const names = new Set(identity.riotIds.map(lower));
+  const puuids = new Set(identity.puuids);
   const history = await fbGet('live/lolHistory').catch(() => null);
   return Object.values(history || {})
-    .filter(entry => (identity.id && entry.memberId === identity.id) || names.has(lower(entry.playerName)))
+    .filter(entry => (entry.puuid && puuids.has(String(entry.puuid)))
+      || (identity.id && entry.memberId === identity.id)
+      || names.has(lower(entry.playerName)))
     // Même champ que côté Valorant, pour que les récaps traitent les deux jeux
     // de la même façon.
     .map(entry => ({ ...entry, account: entry.playerName || '' }))
