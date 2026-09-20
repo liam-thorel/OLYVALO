@@ -144,37 +144,56 @@ export function milestoneStep(rangeId) {
 /**
  * Réduit une série à un point par période.
  *
- * On garde le DERNIER point de chaque période : c'est le rang atteint à la
- * fin de celle-ci, la seule valeur qui décrive où le joueur en est. Prendre
- * la moyenne lisserait les montées réelles ; prendre le premier ignorerait
- * tout ce qui s'est passé ensuite.
+ * Le point TRACÉ porte le MEILLEUR rang de la période, pas celui de sa fin.
+ * Un pic atteint puis reperdu dans la même quinzaine disparaissait
+ * complètement du graphique : sur la plage « Tout », une montée en Immortel
+ * suivie d'une redescente ne laissait aucune trace. La courbe dessine donc
+ * l'enveloppe des sommets.
  *
- * Les extrémités sont toujours conservées : le premier point donne le rang de
- * départ, le dernier le rang actuel — l'arrondir à une période le rendrait
- * faux au moment où on le regarde.
+ * La bulle, elle, donne le rang RÉEL à ce moment-là — `current`. Les deux
+ * diffèrent dès que la période s'est mal terminée, et c'est voulu : la courbe
+ * dit ce qui a été atteint, la bulle où on en était.
+ *
+ * Les extrémités restent intactes : le rang de départ et le rang actuel ne
+ * doivent jamais être remplacés par un sommet, sous peine d'annoncer un rang
+ * qu'on n'a plus.
  */
 export function milestones(points = [], stepMs = DAY_MS) {
   if (points.length <= 2 || !(stepMs > 0)) return points;
 
-  const kept = [];
+  const buckets = [];
   let bucket = null;
   points.forEach(point => {
     const slot = Math.floor(point.ts / stepMs);
     if (bucket && bucket.slot === slot) {
-      bucket.point = point;
+      bucket.last = point;
+      if (point.value > bucket.peak.value) bucket.peak = point;
       bucket.games += 1;
       return;
     }
-    if (bucket) kept.push(bucket);
-    bucket = { slot, point, games: 1 };
+    if (bucket) buckets.push(bucket);
+    bucket = { slot, peak: point, last: point, games: 1 };
   });
-  if (bucket) kept.push(bucket);
+  if (bucket) buckets.push(bucket);
 
-  const series = kept.map(entry => ({ ...entry.point, games: entry.games }));
+  const series = buckets.map(entry => ({
+    ...entry.last,
+    // Tracé au sommet, daté de la fin de période : c'est à cette date que la
+    // bulle rapporte le rang réel.
+    value: entry.peak.value,
+    peakTs: entry.peak.ts,
+    current: entry.last.value,
+    games: entry.games,
+  }));
+
+  const borne = point => ({ ...point, current: point.value, peakTs: point.ts, games: 1 });
   const first = points[0];
   const last = points[points.length - 1];
-  if (series[0].ts !== first.ts) series.unshift({ ...first, games: 1 });
-  if (series[series.length - 1].ts !== last.ts) series.push({ ...last, games: 1 });
+  if (series[0].ts !== first.ts) series.unshift(borne(first));
+  const fin = series[series.length - 1];
+  // Le dernier point doit porter le rang ACTUEL, jamais un sommet : sinon on
+  // annoncerait un rang que le joueur n'a plus.
+  if (fin.ts !== last.ts || fin.value !== last.value) series[series.length - 1] = borne(last);
   return series;
 }
 

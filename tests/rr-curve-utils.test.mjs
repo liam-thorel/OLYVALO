@@ -431,11 +431,11 @@ assert.ok(parJour.length < quotidien.length / 3, 'la réduction est massive');
 assert.equal(parJour[0].ts, quotidien[0].ts);
 assert.equal(parJour[0].value, quotidien[0].value);
 
-// Ensuite, on garde le DERNIER point de chaque période : c'est le rang atteint
-// à la fin de celle-ci. Une moyenne lisserait les montées réelles.
+// Ensuite, chaque période est réduite à un point daté de sa FIN, tracé sur son
+// MEILLEUR rang. Une moyenne lisserait les montées réelles.
 const premierJour = quotidien.filter(p => p.ts < maintenant - 28 * JOUR);
-assert.equal(parJour[1].value, premierJour[premierJour.length - 1].value,
-  'le rang de fin de période, pas le premier ni la moyenne');
+assert.equal(parJour[1].value, Math.max(...premierJour.map(p => p.value)),
+  'le sommet de la période, pas le premier point ni la moyenne');
 assert.equal(parJour[1].games, premierJour.length, 'le nombre de parties de la période est retenu');
 
 // Les extrémités sont intactes : le rang actuel arrondi à une quinzaine
@@ -459,5 +459,35 @@ assert.equal(milestones(quotidien, 0).length, quotidien.length, 'un pas nul ne s
 // plage où les points sont les plus nombreux, donc la plus illisible sans.
 const toutes = withinRange([{ account: 'a#1', points: quotidien }], 'all', maintenant);
 assert.ok(toutes[0].points.length < 12, `« Tout » doit être agrégé, obtenu ${toutes[0].points.length}`);
+
+// ─── Sommet tracé, rang réel dans la bulle ───────────────────────────────────
+// Un pic atteint puis reperdu dans la même période disparaissait entièrement :
+// sur « Tout », une montée en Immortel suivie d'une redescente ne laissait
+// aucune trace. La courbe dessine donc l'enveloppe des sommets — mais la bulle
+// doit continuer à dire où le joueur en était VRAIMENT à cette date, sinon on
+// lui annoncerait un rang qu'il n'a plus.
+const montagne = [
+  { ts: maintenant - 6 * JOUR, value: 2000 },
+  { ts: maintenant - 5 * JOUR, value: 2100 },
+  { ts: maintenant - 5 * JOUR + 3_600_000, value: 2400 }, // sommet du jour
+  { ts: maintenant - 5 * JOUR + 7_200_000, value: 2150 }, // reperdu avant le soir
+  { ts: maintenant - 4 * JOUR, value: 2200 },
+  { ts: maintenant - 3 * JOUR, value: 2160 },
+];
+const avecPic = milestones(montagne, JOUR);
+const jourDuPic = avecPic.find(point => point.games === 3);
+assert.ok(jourDuPic, 'la journée à trois parties est bien agrégée en un point');
+assert.equal(jourDuPic.value, 2400, 'le point est TRACÉ sur le sommet de la période');
+assert.equal(jourDuPic.current, 2150, 'la bulle porte le rang réel à la fin de la période');
+assert.equal(jourDuPic.ts, maintenant - 5 * JOUR + 7_200_000, 'daté de la fin de période');
+assert.equal(jourDuPic.peakTs, maintenant - 5 * JOUR + 3_600_000, 'la date du sommet reste connue');
+
+// Les extrémités portent leur propre valeur des deux côtés : un rang de départ
+// ou un rang actuel remplacé par un sommet serait un mensonge pur et simple.
+assert.equal(avecPic[0].value, 2000);
+assert.equal(avecPic[0].current, 2000);
+const dernierPic = avecPic[avecPic.length - 1];
+assert.equal(dernierPic.value, 2160, 'le rang actuel n’est jamais remplacé par un sommet');
+assert.equal(dernierPic.current, 2160);
 
 console.log('rr-curve-utils: paliers par période, extrémités préservées');

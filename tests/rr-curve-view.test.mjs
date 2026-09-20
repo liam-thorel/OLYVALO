@@ -165,3 +165,26 @@ assert.ok(grilleLol.some(line => line.label === 'Diamant IV'), 'sous Master, la 
 assert.ok(grilleLol.some(line => line.label === 'Master'), 'au-dessus, elle disparaît');
 
 console.log('rr-curve-view: grille adaptée à l’amplitude affichée');
+
+// ─── La bulle dit le rang réel, la pastille le sommet ────────────────────────
+// Un pic atteint puis reperdu dans la même période est TRACÉ (sinon il
+// disparaîtrait du graphique), mais la bulle doit annoncer où le joueur en
+// était vraiment à cette date — et nommer le sommet, faute de quoi la pastille
+// paraîtrait mal placée.
+const avecSommet = renderChart([{
+  member: 'Liam', account: 'Liam#EUW', smurfIndex: 0, isMain: true, color: '#3fcfcf',
+  points: [
+    { ts: 1, value: 2000, current: 2000, games: 1 },
+    { ts: 2, value: 2400, current: 2150, games: 3 },
+    { ts: 3, value: 2160, current: 2160, games: 1 },
+  ],
+}], new Set(['liam#euw']), 'valorant');
+
+assert.match(avecSommet, /<title>Liam — Ascendant 1 · 50 RR[^<]*· 3 parties · sommet Immortel 1 · 0 RR<\/title>/,
+  'la bulle donne le rang réel, puis nomme le sommet de la période');
+assert.doesNotMatch(avecSommet, /<title>Liam — Immortel 1 · 0 RR[^<]*3 parties/,
+  'le sommet ne doit jamais être annoncé comme le rang du moment');
+// Quand les deux coïncident, pas de mention parasite.
+assert.match(avecSommet, /<title>Liam — Ascendant 1 · 60 RR · 01 janv\. · 1 partie<\/title>/);
+
+console.log('rr-curve-view: bulle au rang réel, pastille au sommet');
