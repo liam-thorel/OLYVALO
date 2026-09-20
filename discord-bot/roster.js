@@ -41,9 +41,24 @@ function formatRosterAccount(account) {
   return account.tag ? `${account.name}#${account.tag}` : String(account.name);
 }
 
+function rosterAccounts(player) {
+  return [player?.riot, ...(player?.smurfs || [])].filter(account => account?.name);
+}
+
 function riotIdsFromRoster(player) {
-  return [player?.riot, ...(player?.smurfs || [])]
-    .map(formatRosterAccount)
+  return rosterAccounts(player).map(formatRosterAccount).filter(Boolean);
+}
+
+/**
+ * PUUID déclarés dans roster.json.
+ *
+ * Le fichier ne portait que des pseudos : l'identité d'un membre dépendait
+ * donc d'un nom, qui change. Le PUUID y est désormais lu au même titre que
+ * ceux enregistrés depuis l'admin — même liste, même priorité.
+ */
+function puuidsFromRoster(player) {
+  return rosterAccounts(player)
+    .map(account => String(account.puuid || '').trim())
     .filter(Boolean);
 }
 
@@ -66,7 +81,7 @@ function indexRoster(roster, overlay) {
   const staticMembers = roster.map(player => ({
     id: slugify(player.name), name: player.name, avatar: player.avatar || null,
     discordId: extractDiscordId(player.avatar), riotIds: riotIdsFromRoster(player),
-    mainRiotId: mainRiotIdFromRoster(player), puuids: [],
+    mainRiotId: mainRiotIdFromRoster(player), puuids: puuidsFromRoster(player),
   }));
 
   const staticIds = new Set(staticMembers.map(m => m.id));
@@ -108,7 +123,12 @@ function indexRoster(roster, overlay) {
   puuidIndex = {};
   members.forEach(member => {
     memberIdIndex[member.id] = member;
-    member.riotIds.forEach(riotId => { riotIdIndex[riotId.toLowerCase()] = member; });
+    // L'index par nom ne sert plus qu'aux comptes SANS puuid connu : dès
+    // qu'un compte est identifié, son pseudo cesse d'être une clé — c'est
+    // précisément ce qui cassait à chaque renommage.
+    if (member.puuids.length === 0) {
+      member.riotIds.forEach(riotId => { riotIdIndex[riotId.toLowerCase()] = member; });
+    }
     member.puuids.forEach(puuid => { puuidIndex[puuid] = member; });
   });
 }
