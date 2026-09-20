@@ -13,7 +13,7 @@ import { syncAccount as henrikSyncAccount, syncAllPlayers as henrikSyncAll, pers
 import { rosterAccounts } from './roster-card-utils.mjs?v=20260920-puuid';
 import { statsKey, readStats, writeStats, selectedAccount, toggleSelection, needsSync } from './account-stats.mjs?v=20260920-puuid';
 import { setStoredKey, storedKey, forgetCachedKey } from './henrik-key.mjs';
-import { rosterHTML, guestCardHTML, mapSectionHTML, agentPageHTML, navMapsHTML, compHTML } from './render.js?v=20260920-puuid-accounts';
+import { rosterHTML, guestCardHTML, mapSectionHTML, agentPageHTML, navMapsHTML, compHTML, globalNotesHTML } from './render.js?v=20260920-puuid-accounts';
 import { initTheme, initTilt, initParallax, initSearch, initKeyboard, initHeroParticles, initWheelLogos, initLivePage, initHistoryPage } from './interactions.js?v=20260920-live-resilience-fix';
 import { storage } from './storage.js';
 import { avatarLayersHTML } from './avatars.mjs';
