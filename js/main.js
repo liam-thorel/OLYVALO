@@ -7,12 +7,12 @@ import { mergeLineups } from './lineup-utils.mjs?v=20260913-lineup-contrib';
 import { valorantApi } from './api.js';
 import { fetchJsonWithRetry, fetchJsonWithTimeout } from './request-utils.mjs?v=20260825-first-load-recovery';
 
-const SITE_VERSION = '20260902-patch1305-live-modes';
+const SITE_VERSION = '20260920-live-resilience';
 const BOOT_RETRY_KEY = 'olycity-boot-retry';
 import { syncPlayer as henrikSyncPlayer, syncAllPlayers as henrikSyncAll, persistPlayerStats } from './henrik.js?v=20260809-val-roster-season';
 import { setStoredKey, storedKey, forgetCachedKey } from './henrik-key.mjs';
 import { rosterHTML, guestCardHTML, mapSectionHTML, agentPageHTML, navMapsHTML, compHTML } from './render.js?v=20260902-patch1305';
-import { initTheme, initTilt, initParallax, initSearch, initKeyboard, initHeroParticles, initWheelLogos, initLivePage, initHistoryPage } from './interactions.js?v=20260902-patch1305-live-modes';
+import { initTheme, initTilt, initParallax, initSearch, initKeyboard, initHeroParticles, initWheelLogos, initLivePage, initHistoryPage } from './interactions.js?v=20260920-live-resilience';
 import { storage } from './storage.js';
 import { avatarLayersHTML } from './avatars.mjs';
 import { initAdminPage } from './admin.mjs?v=20260826-cold-load-recovery';
@@ -28,7 +28,7 @@ import { initHomeDashboard } from './home-dashboard.mjs?v=20260825-human-banner'
 import { initHomeGroup } from './home-group.mjs?v=20260828-page-stream-lifecycle';
 import { initPwaInstall } from './pwa-install.mjs?v=20260901-deploy-updates';
 import { initSiteTelemetry } from './site-telemetry.mjs?v=20260825-site-health';
-import { liveDataStore, liveTimestamp } from './live-data-store.mjs?v=20260810-firebase-connection-fix';
+import { liveDataStore, liveTimestamp } from './live-data-store.mjs?v=20260920-live-resilience';
 export { state };
 
 initSiteTelemetry();
@@ -809,7 +809,10 @@ async function boot() {
       const activePage = document.querySelector('.spa-page.active')?.id?.replace('page-', '') || state.currentPage;
       const usefulPageVisible = ['page-home', 'page-live', 'page-admin']
         .some(id => document.getElementById(id)?.classList.contains('active'));
-      if (usefulPageVisible) void liveDataStore.refresh({ timeoutMs:3_500 });
+      if (usefulPageVisible) {
+        void liveDataStore.recoverIfSilent();
+        void liveDataStore.refresh({ timeoutMs:3_500 });
+      }
       if (activePage === 'games') initCoopGamesPage(state.MEMBERS);
       if (activePage === 'history') {
         if (getGameMode() === 'lol') void initLolHistoryPage();
@@ -818,6 +821,7 @@ async function boot() {
     };
     document.addEventListener('visibilitychange', resumePageData);
     window.addEventListener('pageshow', resumePageData);
+    window.addEventListener('focus', resumePageData);
     window.addEventListener('online', resumePageData);
   }
 

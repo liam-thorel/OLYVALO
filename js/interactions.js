@@ -13,7 +13,7 @@ import {
   stableServerForSession,
   stableSessionForRender,
 } from './live-sessions.mjs?v=20260809-live-server-local';
-import { freshLiveClients, groupLiveClients, isVersionAtLeast, LIVE_SESSION_STALE_MS, liveClientSummary } from './live-clients.mjs?v=20260901-live-grace';
+import { chooseLiveSession, freshLiveClients, groupLiveClients, isVersionAtLeast, liveClientSummary, liveSessionSignal, recoveringLiveClients, retainRecentLiveClients } from './live-clients.mjs?v=20260920-live-resilience';
 import { buildLiveIdentityIndex, resolveLiveIdentity } from './live-identities.mjs?v=20260809-live-groups';
 import { updateScriptDownload } from './downloads.mjs?v=20260912-separate-downloads';
 import { PLAYERS as LOL_ROSTER_PLAYERS } from './lol-roster.mjs?v=20260809-lol-sync';
@@ -22,7 +22,7 @@ import { avatarLayersHTML } from './avatars.mjs?v=20260720-avatars';
 import { filterHistoryGames, historyDailyPerformances, historyGameForOwner, historyMode, historyOwnerKey, historyOwnerLabel, historyPlayerName, historyPlayerPerformance, historyPlayerPerformances, historyRankedPlayers, historyReports, historyTrackerUrl, isHistorySelf, normalizeHistoryEntries } from './history-utils.mjs?v=20260827-riot-ids-tracker';
 import { initCurse } from './curse.mjs?v=20260828-page-stream-lifecycle';
 import { fetchJsonWithTimeout } from './request-utils.mjs?v=20260809-route-load-stable';
-import { liveDataStore, liveTimestamp } from './live-data-store.mjs?v=20260810-firebase-connection-fix';
+import { liveDataStore, liveTimestamp } from './live-data-store.mjs?v=20260920-live-resilience';
 import { createHistoryPager } from './history-pager.mjs?v=20260826-cold-load-recovery';
 import { createHistoryDisclosureState } from './history-disclosure-state.mjs';
 
@@ -424,6 +424,8 @@ export function initLivePage() {
   let lastStoreSessions = null;
   let lastClients = {};
   let liveStoreStatus = {};
+  let lastConfirmedSession = null;
+  let liveSignalState = 'ended';
   let byMatchCache = {};
   const stableRosterCache = new Map();
   const stablePregameCache = new Map();
@@ -548,39 +550,51 @@ export function initLivePage() {
     if (!panel || !label || !detail || !version || !list) return;
 
     ensureRosterCache();
-    const clients = freshLiveClients(lastClients, lastSessions);
-    const summary = liveClientSummary(clients);
+    const freshClients = freshLiveClients(lastClients, lastSessions);
+    const recoveringClients = recoveringLiveClients(lastClients, lastSessions);
+    const clients = [...freshClients, ...recoveringClients];
+    const summary = liveClientSummary(freshClients);
+    const transportIssue = Boolean(liveStoreStatus.valorantClients?.error || liveStoreStatus.valorantSessions?.error);
 
-    if (!summary.total) {
+    if (!summary.total && !recoveringClients.length) {
       const channels = [liveStoreStatus.valorantClients, liveStoreStatus.valorantSessions].filter(Boolean);
       const loading = channels.some(status => !status.loaded);
       const reconnecting = channels.some(status => status.error);
       panel.dataset.state = reconnecting ? 'error' : 'offline';
-      label.textContent = loading ? 'Connexion aux données Live'
-        : reconnecting ? 'Reconnexion au Live'
-          : 'Aucun script connecté';
-      detail.textContent = loading ? 'Synchronisation Firebase en cours'
-        : reconnecting ? 'Les dernières données restent affichées'
-          : 'Les membres actifs apparaîtront ici';
+      label.textContent = reconnecting ? 'Reconnexion au Live'
+        : loading ? 'Connexion aux données Live' : 'Aucun script connecté';
+      detail.textContent = reconnecting ? 'Les dernières données restent affichées'
+        : loading ? 'Synchronisation Firebase en cours' : 'Les membres actifs apparaîtront ici';
       version.textContent = '—';
       list.innerHTML = '';
       updateScriptDownload(download);
-      if (waitingTitle) waitingTitle.textContent = loading ? 'Connexion au Live…' : 'Aucun script connecté';
-      if (waitingDetail) waitingDetail.textContent = loading
-        ? 'Vérification des membres connectés.'
-        : 'Lance OLYCITY Live : la prochaine partie apparaîtra ici automatiquement.';
+      if (waitingTitle) waitingTitle.textContent = reconnecting ? 'Reconnexion au Live…'
+        : loading ? 'Connexion au Live…'
+        : liveSignalState === 'expired' ? 'Suivi interrompu' : 'Aucun script connecté';
+      if (waitingDetail) waitingDetail.textContent = reconnecting
+        ? 'La connexion sera relancée automatiquement.'
+        : loading ? 'Vérification des membres connectés.'
+        : liveSignalState === 'expired'
+          ? 'Le dernier signal était trop ancien. La partie reviendra automatiquement si le script reprend.'
+          : 'Lance OLYCITY Live : la prochaine partie apparaîtra ici automatiquement.';
       return;
     }
 
-    panel.dataset.state = summary.inGame ? 'in-game'
+    panel.dataset.state = !summary.total || transportIssue ? 'error' : summary.inGame ? 'in-game'
       : summary.agentSelect ? 'agent-select'
         : summary.issues ? 'error' : 'idle';
-    label.textContent = `${summary.total} membre${summary.total > 1 ? 's' : ''} en ligne`;
-    detail.textContent = [
+    label.textContent = summary.total
+      ? `${summary.total} membre${summary.total > 1 ? 's' : ''} en ligne`
+      : 'Signal des scripts interrompu';
+    detail.textContent = !summary.total
+      ? `${recoveringClients.length} dernier${recoveringClients.length > 1 ? 's' : ''} état${recoveringClients.length > 1 ? 's' : ''} conservé${recoveringClients.length > 1 ? 's' : ''} · reconnexion en cours`
+      : [
       summary.inGame && `${summary.inGame} en partie`,
       summary.agentSelect && `${summary.agentSelect} en Agent Select`,
       summary.ready && `${summary.ready} prêt${summary.ready > 1 ? 's' : ''}`,
       summary.issues && `${summary.issues} en erreur`,
+      recoveringClients.length && `${recoveringClients.length} signal${recoveringClients.length > 1 ? 's' : ''} perdu${recoveringClients.length > 1 ? 's' : ''}`,
+      transportIssue && 'Flux Live en reconnexion',
     ].filter(Boolean).join(' · ');
     const versions = [...new Set(clients.map(client => client.version).filter(Boolean))];
     const updateNeeded = versions.length > 1 || Boolean(latestLiveVersion && clients.some(client => (
@@ -602,8 +616,9 @@ export function initLivePage() {
       const avatar = profile
         ? avatarLayersHTML(profile.member, profile.avatar)
         : `<span class="live-client-initial">${safeName.slice(0, 1).toUpperCase()}</span>`;
-      const stateLabel = client.standby ? 'Riot Client en attente' : (DIAGNOSTIC_LABELS[client.state] || 'Script connecté');
-      const safeState = DIAGNOSTIC_LABELS[client.state] ? client.state : 'online';
+      const recovering = client.age >= 60000;
+      const stateLabel = recovering ? 'Signal interrompu' : client.standby ? 'Riot Client en attente' : (DIAGNOSTIC_LABELS[client.state] || 'Script connecté');
+      const safeState = recovering ? 'error' : DIAGNOSTIC_LABELS[client.state] ? client.state : 'online';
       const context = compactContext ? client.error || '' : [client.map, client.server, client.side, client.error].filter(Boolean).join(' · ');
       const riotId = escapeDiagnosticText(client.playerName || '');
       return `<div class="live-client-chip${client.puuid === selectedSession ? ' selected' : ''}" data-state="${safeState}"${riotId ? ` title="${riotId}"` : ''}>
@@ -631,11 +646,6 @@ export function initLivePage() {
   }
 
   const diagnosticTicker = setInterval(renderDiagnostic, 5000);
-
-  const isFreshSession = (session, now = Date.now()) => {
-    const updatedAt = liveTimestamp(session, now);
-    return Number.isFinite(updatedAt) && updatedAt > 0 && now - updatedAt < LIVE_SESSION_STALE_MS;
-  };
 
   function handleSSE(e) {
     try {
@@ -681,21 +691,34 @@ export function initLivePage() {
         }
       }
       const sessions = lastSessions;
-      updateSessionPicker(sessions);
-
       const now = Date.now();
-      const active = Object.entries(sessions).filter(([,s]) => s?.active && (s?.mapClean || s?.map) && isFreshSession(s, now));
-      if (active.length === 1) selectedSession = active[0][0];
-      
-      // Pick session — ONLY from the staleness-filtered active list
-      const activeMap = Object.fromEntries(active);
-      if (selectedSession && !activeMap[selectedSession]) selectedSession = active[0]?.[0] || null;
-      let liveData = selectedSession ? activeMap[selectedSession] : (active[0]?.[1] || null);
+      const pickerSessions = { ...sessions };
+      if (selectedSession && !sessions[selectedSession]
+        && lastConfirmedSession?.key === selectedSession
+        && ['live', 'recovering'].includes(liveSessionSignal(lastConfirmedSession.data, now))) {
+        pickerSessions[selectedSession] = lastConfirmedSession.data;
+      }
+      updateSessionPicker(pickerSessions);
+
+      const choice = chooseLiveSession(sessions, selectedSession, lastConfirmedSession, now);
+      const { active, selectedEnded } = choice;
+      if (selectedEnded) lastConfirmedSession = null;
+      selectedSession = choice.selectedSession;
+      let liveData = choice.data;
       liveData = mergeSelectedSessionData(liveData, selectedSession, byMatchCache);
       liveData = stableSessionForRender(liveData, selectedSession, stablePregameCache);
+      const signalState = choice.recoveredFromCache ? 'recovering'
+        : !liveData && lastConfirmedSession && !selectedEnded ? 'expired'
+          : liveSessionSignal(liveData, now);
+      if (!choice.recoveredFromCache && ['live', 'recovering'].includes(signalState)) {
+        lastConfirmedSession = { key:selectedSession, data:liveData, confirmedAt:now };
+      }
+      if (signalState === 'ended' && selectedEnded) lastConfirmedSession = null;
+      liveSignalState = signalState;
 
       // Key tracks ALL active sessions so any update triggers re-render
       const key = JSON.stringify({
+        signalState,
         active: liveData?.active, map: liveData?.mapClean, mode: liveData?.mode,
         phase: liveData?.phase, roundPhase: liveData?.roundPhase,
         matchId: liveData?.matchId, side: liveData?.side,
@@ -707,7 +730,7 @@ export function initLivePage() {
       if (key !== lastDataKey) {
         lastDataKey = key;
         currentLiveData = liveData;
-        updateUI(currentLiveData);
+        updateUI(currentLiveData, signalState);
       }
     } catch(err) { console.error(err); }
   }
@@ -715,9 +738,7 @@ export function initLivePage() {
     liveStoreStatus = snapshot.status || {};
     const nextClients = snapshot.valorantClients || {};
     const nextSessions = snapshot.valorantSessions || {};
-    if (nextClients !== lastClients) {
-      lastClients = nextClients;
-    }
+    lastClients = retainRecentLiveClients(lastClients, nextClients);
     if (nextSessions !== lastStoreSessions) {
       lastStoreSessions = nextSessions;
       handleSSE({
@@ -739,7 +760,7 @@ export function initLivePage() {
     if (!page) return;
 
     const _now = Date.now();
-    const active = Object.entries(sessions).filter(([,s]) => s?.active && (s?.mapClean || s?.map) && isFreshSession(s, _now));
+    const active = Object.entries(sessions).filter(([,s]) => ['live', 'recovering'].includes(liveSessionSignal(s, _now)));
     
     byMatchCache = groupLiveSessions(active);
 
@@ -782,6 +803,7 @@ export function initLivePage() {
       ${Object.entries(byMatch).map(([mid, sessions]) => {
         const first = sessions[0];
         const isSelected = sessions.some(p => p.puuid === renderSelected);
+        const recovering = sessions.every(session => liveSessionSignal(session, _now) === 'recovering');
         const map = first.mapClean || first.map || '?';
         const mode = first.mode || '';
         const server = first.server || '';
@@ -808,7 +830,7 @@ export function initLivePage() {
             <span>${escapeDiagnosticText(names)}</span>
             <small>${escapeDiagnosticText([mode, server].filter(Boolean).join(' · '))}</small>
           </span>
-          <span class="live-session-state">${isSelected ? 'Affichée' : 'Voir'}</span>
+          <span class="live-session-state">${recovering ? 'Reconnexion' : isSelected ? 'Affichée' : 'Voir'}</span>
         </button>`;
       }).join('')}
       </div>`;
@@ -825,9 +847,14 @@ export function initLivePage() {
     const mergedData = mergeSelectedSessionData(rawData, selectedSession, byMatchCache);
     const data = stableSessionForRender(mergedData, selectedSession, stablePregameCache);
     if (data) {
+      const signalState = liveSessionSignal(data);
+      if (['live', 'recovering'].includes(signalState)) {
+        lastConfirmedSession = { key:puuid, data, confirmedAt:Date.now() };
+      }
+      liveSignalState = signalState;
       lastDataKey = '';
       currentLiveData = data;
-      updateUI(data);
+      updateUI(data, signalState);
     }
   };
 
@@ -851,27 +878,26 @@ export function initLivePage() {
     } catch { _mapsCache = null; }
   }
 
-  function updateUI(data) {
+  function updateUI(data, signalState = liveSessionSignal(data)) {
     const waiting = document.getElementById('live-waiting');
     const content = document.getElementById('live-content');
     const dot = document.getElementById('live-dot');
+    const notice = document.getElementById('live-signal-notice');
     const selectedClient = lastClients[selectedSession] || {};
 
-    if (!data?.active) {
-      // Debounce — only hide after 3s to avoid Firebase reconnect flashes
-      if (!updateUI._hideTimer) {
-        updateUI._hideTimer = setTimeout(() => {
-          if (waiting) waiting.style.display = 'flex';
-          if (content) content.style.display = 'none';
-          if (dot && document.documentElement.dataset.game === 'valorant') dot.style.display = 'none';
-          curse?.setLive(false);
-          updateUI._hideTimer = null;
-        }, 3000);
-      }
+    if (!data?.active || signalState === 'expired' || signalState === 'invalid') {
+      if (notice) notice.hidden = true;
+      if (waiting) waiting.style.display = 'flex';
+      if (content) content.style.display = 'none';
+      if (dot && document.documentElement.dataset.game === 'valorant') dot.style.display = 'none';
+      curse?.setLive(false);
       return;
     }
-    // Cancel pending hide if we got active data
-    if (updateUI._hideTimer) { clearTimeout(updateUI._hideTimer); updateUI._hideTimer = null; }
+
+    if (notice) {
+      notice.hidden = signalState !== 'recovering';
+      if (signalState === 'recovering') notice.textContent = 'Signal Live interrompu · dernier état connu affiché, reconnexion en cours.';
+    }
 
     if (waiting?.style.display !== 'none')  waiting.style.display  = 'none';
     if (content?.style.display !== 'block') content.style.display  = 'block';

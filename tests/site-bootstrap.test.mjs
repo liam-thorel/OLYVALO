@@ -390,7 +390,7 @@ test('Live and Admin share one realtime Firebase store', () => {
     .flatMap(file => [...fs.readFileSync(new URL(file, jsDirectory), 'utf8').matchAll(/from ['"](\.\/live-data-store\.mjs\?v=[^'"]+)['"]/g)])
     .map(match => match[1]);
   assert.deepEqual([...new Set(liveStoreSpecifiers)], [
-    './live-data-store.mjs?v=20260810-firebase-connection-fix',
+    './live-data-store.mjs?v=20260920-live-resilience',
   ]);
   assert.match(liveDataStore, /valorantClients: 'live\/clients'/);
   assert.match(interactions, /liveDataStore\.subscribe/);

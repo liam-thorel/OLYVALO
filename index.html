@@ -17,7 +17,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Tomorrow:wght@400;500;600;700&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="./css/tokens.css?v=20260824-page-shell">
-  <link rel="stylesheet" href="./css/layout.css?v=20260901-live-redesign">
+  <link rel="stylesheet" href="./css/layout.css?v=20260920-live-resilience">
   <link rel="stylesheet" href="./css/components.css?v=20260827-team-logo-contrast">
   <link rel="stylesheet" href="./css/home.css?v=20260825-human-banner">
   <link rel="stylesheet" href="./css/agent-page.css?v=20260720-avatars">
@@ -532,6 +532,7 @@
         <span id="live-waiting-detail">Le Live apparaîtra automatiquement dès qu’une partie commencera.</span>
       </div>
       <div class="live-content" id="live-content" style="display:none">
+        <div class="live-signal-notice" id="live-signal-notice" role="status" hidden></div>
         <!-- Identité du match + joueurs -->
         <div class="live-header" id="live-header">
           <img class="live-match-art" id="live-map-img" src="" alt="">
@@ -595,6 +596,6 @@
   <!-- Firebase SDK -->
   <!-- Présence Firebase -->
   <script src="./js/presence.js?v=20260720-avatars"></script>
-  <script type="module" src="./js/main.js?v=20260902-patch1305-live-modes"></script>
+  <script type="module" src="./js/main.js?v=20260920-live-resilience"></script>
 </body>
 </html>

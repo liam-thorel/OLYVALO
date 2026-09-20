@@ -535,6 +535,12 @@ body.agent-mode .footer{ display:none; }
 }
 .live-waiting { display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 60px 32px; }
 .live-content { width: 100%; }
+.live-signal-notice {
+  margin: 0 0 12px; padding: 10px 14px; border: 1px solid rgba(245,200,66,.35);
+  border-left: 3px solid #f5c842; background: rgba(245,200,66,.08);
+  color: #f6de91; font: 600 12px/1.45 'DM Sans', sans-serif;
+}
+.live-signal-notice[hidden] { display: none; }
 
 /* Shared async states: stable layout instead of a lone "Chargement" label. */
 .data-state-card {

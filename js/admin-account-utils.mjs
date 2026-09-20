@@ -1,4 +1,4 @@
-import { liveTimestamp } from './live-data-store.mjs?v=20260810-firebase-connection-fix';
+import { liveTimestamp } from './live-data-store.mjs?v=20260920-live-resilience';
 
 const VALID_GAMES = new Set(['valorant', 'lol']);
 

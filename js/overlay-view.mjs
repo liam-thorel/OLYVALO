@@ -7,7 +7,7 @@
  * site pour la connexion temps réel à Firebase.
  */
 
-import { liveDataStore, FIREBASE_URL } from './live-data-store.mjs';
+import { liveDataStore, FIREBASE_URL } from './live-data-store.mjs?v=20260920-live-resilience';
 import {
   groupActiveGames, isAgentSelect, displayNameFor, openBets, countdownLabel, escapeHtml, matchSkins,
   modeLabelFor, gameHeadline,

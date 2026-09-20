@@ -11,6 +11,7 @@ const LIVE_ROOT_KEYS = Object.freeze(Object.fromEntries(
   Object.entries(LIVE_CHANNELS).map(([channel, path]) => [path.split('/').at(-1), channel]),
 ));
 export const LIVE_RETENTION_MS = Object.freeze({ active:24 * 60 * 60 * 1000, ended:2 * 60 * 60 * 1000 });
+export const LIVE_STREAM_SILENCE_MS = 75_000;
 
 export function liveTimestamp(entry = {}, referenceNow = Date.now()) {
   const value = Number(entry.ts || entry.lastSeen || entry.updatedAt || 0);
@@ -101,6 +102,9 @@ export function createLiveDataStore({
   const revisions = Object.fromEntries(Object.keys(LIVE_CHANNELS).map(channel => [channel, 0]));
   let started = false;
   let refreshPromise = null;
+  let lastStreamActivityAt = 0;
+  let lastRecoveryAt = 0;
+  let watchdogTimer = null;
 
   const snapshot = () => ({
     ...data,
@@ -126,20 +130,33 @@ export function createLiveDataStore({
     emit();
   }
 
-  function start() {
-    if (started) return;
-    started = true;
-    if (!EventSourceImpl) return;
+  function openStream() {
     const source = new EventSourceImpl(`${firebaseUrl}/live.json`);
+    lastStreamActivityAt = Date.now();
     const handle = event => {
       try {
+        lastStreamActivityAt = Date.now();
         routeLiveRootEvent({ ...JSON.parse(event.data), eventType:event.type })
           .forEach(({ channel, message }) => apply(channel, message));
       } catch (error) { console.error('[OLYCITY] Live data', error); }
     };
     source.addEventListener('put', handle);
     source.addEventListener('patch', handle);
+    source.addEventListener('keep-alive', () => { lastStreamActivityAt = Date.now(); });
+    const terminalError = event => {
+      const reason = event.type === 'auth_revoked' ? 'auth_revoked' : 'stream_cancelled';
+      Object.keys(channelState).forEach(channel => {
+        channelState[channel].connected = false;
+        channelState[channel].error = reason;
+      });
+      emit();
+      source.close();
+      lastStreamActivityAt = 0;
+    };
+    source.addEventListener('cancel', terminalError);
+    source.addEventListener('auth_revoked', terminalError);
     source.onopen = () => {
+      lastStreamActivityAt = Date.now();
       Object.keys(channelState).forEach(channel => {
         channelState[channel].connected = true;
         channelState[channel].error = '';
@@ -156,6 +173,31 @@ export function createLiveDataStore({
     sources.set('live', source);
   }
 
+  function start() {
+    if (started) return;
+    started = true;
+    if (!EventSourceImpl) return;
+    openStream();
+    watchdogTimer = setInterval(() => { void recoverIfSilent(); }, 15_000);
+    watchdogTimer.unref?.();
+  }
+
+  async function recoverIfSilent(now = Date.now()) {
+    if (!started || !EventSourceImpl || !sources.has('live')) return false;
+    if (lastStreamActivityAt && now - lastStreamActivityAt < LIVE_STREAM_SILENCE_MS) return false;
+    if (now - lastRecoveryAt < 30_000) return false;
+    lastRecoveryAt = now;
+    Object.keys(channelState).forEach(channel => {
+      channelState[channel].connected = false;
+      channelState[channel].error = 'stream_silent';
+    });
+    emit();
+    sources.get('live').close();
+    openStream();
+    await refresh();
+    return true;
+  }
+
   async function refresh({ timeoutMs = 4_000 } = {}) {
     start();
     if (refreshPromise) return refreshPromise;
@@ -170,7 +212,7 @@ export function createLiveDataStore({
         channelState[channel] = {
           loaded: true,
           connected: channelState[channel].connected,
-          error: '',
+          error: channelState[channel].connected ? '' : (channelState[channel].error || 'reconnecting'),
           updatedAt: Date.now(),
         };
       });
@@ -194,13 +236,17 @@ export function createLiveDataStore({
   }
 
   function destroy() {
+    if (watchdogTimer) clearInterval(watchdogTimer);
+    watchdogTimer = null;
     sources.forEach(source => source.close());
     sources.clear();
     listeners.clear();
     started = false;
+    lastStreamActivityAt = 0;
+    lastRecoveryAt = 0;
   }
 
-  return { apply, destroy, refresh, snapshot, start, subscribe };
+  return { apply, destroy, recoverIfSilent, refresh, snapshot, start, subscribe };
 }
 
 export const liveDataStore = createLiveDataStore();

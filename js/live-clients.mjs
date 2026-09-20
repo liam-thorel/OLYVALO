@@ -1,10 +1,40 @@
-import { liveTimestamp } from './live-data-store.mjs?v=20260810-firebase-connection-fix';
+import { liveTimestamp } from './live-data-store.mjs?v=20260920-live-resilience';
 
 // Deux ou trois requêtes Riot locales peuvent ponctuellement prendre plus de
 // 30 s. Le site garde donc le dernier état fiable une minute ; le script reste
 // la source de vérité et continue d'actualiser son heartbeat toutes les 2 s.
 export const LIVE_CLIENT_STALE_MS = 60000;
 export const LIVE_SESSION_STALE_MS = 60000;
+export const LIVE_RECOVERY_MS = 180000;
+
+export function liveSessionSignal(session, now = Date.now()) {
+  if (!session?.active) return 'ended';
+  if (!session.mapClean && !session.map) return 'invalid';
+  const lastSeen = Math.max(liveTimestamp(session, now) || 0, Number(session.heartbeatAt) || 0);
+  if (!lastSeen) return 'expired';
+  const age = Math.max(0, now - lastSeen);
+  if (age < LIVE_SESSION_STALE_MS) return 'live';
+  return age < LIVE_RECOVERY_MS ? 'recovering' : 'expired';
+}
+
+export function chooseLiveSession(sessions = {}, selectedSession = null, lastConfirmed = null, now = Date.now()) {
+  const active = Object.entries(sessions)
+    .filter(([, session]) => ['live', 'recovering'].includes(liveSessionSignal(session, now)));
+  const activeMap = Object.fromEntries(active);
+  const selectedEnded = sessions[selectedSession]?.active === false;
+  const cachedSignal = liveSessionSignal(lastConfirmed?.data, now);
+  const canRecoverSelection = selectedSession && !selectedEnded
+    && lastConfirmed?.key === selectedSession
+    && now - lastConfirmed.confirmedAt < LIVE_RECOVERY_MS
+    && (cachedSignal === 'live' || cachedSignal === 'recovering');
+
+  if (!selectedSession || (!activeMap[selectedSession] && !canRecoverSelection)) {
+    selectedSession = active[0]?.[0] || null;
+  }
+  const recoveredFromCache = Boolean(selectedSession && !activeMap[selectedSession] && canRecoverSelection);
+  const data = activeMap[selectedSession] || (recoveredFromCache ? lastConfirmed.data : null);
+  return { active, selectedSession, data, recoveredFromCache, selectedEnded };
+}
 
 export function normalizeLiveClientState(client = {}) {
   const presenceUnavailable = client.riotClient === true
@@ -30,7 +60,7 @@ export function isVersionAtLeast(version, minimum) {
   return true;
 }
 
-export function freshLiveClients(clients = {}, sessions = {}, now = Date.now()) {
+function liveClientsWithAge(clients = {}, sessions = {}, now = Date.now()) {
   return Object.entries(clients)
     .filter(([, client]) => client && typeof client === 'object')
     .map(([puuid, client]) => {
@@ -44,12 +74,30 @@ export function freshLiveClients(clients = {}, sessions = {}, now = Date.now()) 
         age: ts ? Math.max(0, now - ts) : Infinity,
       });
     })
-    .filter(client => client.online && client.age < LIVE_CLIENT_STALE_MS)
     // Heartbeats arrive at slightly different times every few seconds. Sorting
     // by timestamp made every chip jump to the front after its own heartbeat.
     // The PUUID is stable for the lifetime of an account, so the visual order
     // now remains deterministic while status and details keep updating.
     .sort((a, b) => a.puuid.localeCompare(b.puuid));
+}
+
+export function freshLiveClients(clients = {}, sessions = {}, now = Date.now()) {
+  return liveClientsWithAge(clients, sessions, now)
+    .filter(client => client.online && client.age < LIVE_CLIENT_STALE_MS);
+}
+
+export function recoveringLiveClients(clients = {}, sessions = {}, now = Date.now()) {
+  return liveClientsWithAge(clients, sessions, now)
+    .filter(client => client.online && client.age >= LIVE_CLIENT_STALE_MS && client.age < LIVE_RECOVERY_MS);
+}
+
+export function retainRecentLiveClients(previous = {}, incoming = {}, now = Date.now()) {
+  const retained = Object.fromEntries(Object.entries(previous).filter(([key, client]) => {
+    if (Object.prototype.hasOwnProperty.call(incoming, key) || !client?.online) return false;
+    const timestamp = liveTimestamp(client, now);
+    return timestamp > 0 && now - timestamp < LIVE_RECOVERY_MS;
+  }));
+  return { ...retained, ...incoming };
 }
 
 const STATE_PRIORITY = { 'in-game': 0, 'agent-select': 1, idle: 2, online: 2, error: 3, 'riot-offline': 3 };

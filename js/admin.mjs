@@ -16,7 +16,7 @@ import { accountLiveState, accountRiotId, discoveryRows, normalizeGames } from '
 import { buildScriptHealth, scriptDiagnosticText, scriptHealthSummary } from './admin-health-utils.mjs?v=20260814-admin-current-script';
 import { validateLineup, lineupCoverage, mergeLineups } from './lineup-utils.mjs?v=20260913-lineup-contrib';
 import { fetchJsonWithRetry, fetchJsonWithTimeout } from './request-utils.mjs?v=20260825-first-load-recovery';
-import { isLiveRecordExpired, liveDataStore, staleLiveRecords } from './live-data-store.mjs?v=20260810-firebase-connection-fix';
+import { isLiveRecordExpired, liveDataStore, staleLiveRecords } from './live-data-store.mjs?v=20260920-live-resilience';
 import { mergeMemberProfiles } from './member-profiles.mjs?v=20260823-profile-picker';
 import { readSiteVitals } from './site-telemetry.mjs?v=20260825-site-health';
 import { attributionRows, attributionWarnings, deletionPlan, reassignPlan, roleOf, isValidPuuid, knownPuuidFor } from './admin-attribution.mjs?v=20260919b-attribution';

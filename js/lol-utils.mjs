@@ -1,4 +1,4 @@
-import { liveTimestamp } from './live-data-store.mjs?v=20260810-firebase-connection-fix';
+import { liveTimestamp } from './live-data-store.mjs?v=20260920-live-resilience';
 
 export const LOL_FRESH_MS = 55_000;
 

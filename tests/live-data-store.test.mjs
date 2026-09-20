@@ -95,3 +95,38 @@ test('refresh removes cached records that no longer exist remotely', async () =>
   const snapshot = await store.refresh();
   assert.deepEqual(snapshot.valorantClients, { current:{ ts:20 } });
 });
+
+test('silent realtime stream is restarted and refreshed without a page reload', async () => {
+  const instances = [];
+  class FakeEventSource {
+    constructor(url) { this.url = url; this.closed = false; this.listeners = {}; instances.push(this); }
+    addEventListener(type, handler) { this.listeners[type] = handler; }
+    close() { this.closed = true; }
+  }
+  const store = createLiveDataStore({
+    EventSourceImpl:FakeEventSource,
+    fetchJson:async () => ({ sessions:{ player:{ active:true, mapClean:'Ascent', ts:Date.now() } } }),
+  });
+  store.start();
+  assert.equal(await store.recoverIfSilent(Date.now() + 60_000), false);
+  assert.equal(await store.recoverIfSilent(Date.now() + 76_000), true);
+  assert.equal(instances.length, 2);
+  assert.equal(instances[0].closed, true);
+  assert.equal(store.snapshot().valorantSessions.player.mapClean, 'Ascent');
+  store.destroy();
+});
+
+test('keep-alive events prevent unnecessary stream recovery', async () => {
+  const instances = [];
+  class FakeEventSource {
+    constructor() { this.listeners = {}; instances.push(this); }
+    addEventListener(type, handler) { this.listeners[type] = handler; }
+    close() {}
+  }
+  const store = createLiveDataStore({ EventSourceImpl:FakeEventSource, fetchJson:async () => ({}) });
+  store.start();
+  instances[0].listeners['keep-alive']();
+  assert.equal(await store.recoverIfSilent(Date.now() + 30_000), false);
+  assert.equal(instances.length, 1);
+  store.destroy();
+});

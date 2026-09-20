@@ -1,5 +1,5 @@
 import { groupLolSessions, lolKda, lolMapLabel, normalizeLolHistory, summarizeLolDays } from './lol-utils.mjs?v=20260915-lol-all-modes';
-import { liveDataStore } from './live-data-store.mjs?v=20260810-firebase-connection-fix';
+import { liveDataStore } from './live-data-store.mjs?v=20260920-live-resilience';
 import { createHistoryPager } from './history-pager.mjs?v=20260826-cold-load-recovery';
 import { createHistoryDisclosureState } from './history-disclosure-state.mjs';
 
