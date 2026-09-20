@@ -882,11 +882,11 @@ export function initLivePage() {
     const waiting = document.getElementById('live-waiting');
     const content = document.getElementById('live-content');
     const dot = document.getElementById('live-dot');
-    const notice = document.getElementById('live-signal-notice');
+    const signalNotice = document.getElementById('live-signal-notice');
     const selectedClient = lastClients[selectedSession] || {};
 
     if (!data?.active || signalState === 'expired' || signalState === 'invalid') {
-      if (notice) notice.hidden = true;
+      if (signalNotice) signalNotice.hidden = true;
       if (waiting) waiting.style.display = 'flex';
       if (content) content.style.display = 'none';
       if (dot && document.documentElement.dataset.game === 'valorant') dot.style.display = 'none';
@@ -894,9 +894,9 @@ export function initLivePage() {
       return;
     }
 
-    if (notice) {
-      notice.hidden = signalState !== 'recovering';
-      if (signalState === 'recovering') notice.textContent = 'Signal Live interrompu · dernier état connu affiché, reconnexion en cours.';
+    if (signalNotice) {
+      signalNotice.hidden = signalState !== 'recovering';
+      if (signalState === 'recovering') signalNotice.textContent = 'Signal Live interrompu · dernier état connu affiché, reconnexion en cours.';
     }
 
     if (waiting?.style.display !== 'none')  waiting.style.display  = 'none';

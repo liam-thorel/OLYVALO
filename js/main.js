@@ -7,12 +7,12 @@ import { mergeLineups } from './lineup-utils.mjs?v=20260913-lineup-contrib';
 import { valorantApi } from './api.js';
 import { fetchJsonWithRetry, fetchJsonWithTimeout } from './request-utils.mjs?v=20260825-first-load-recovery';
 
-const SITE_VERSION = '20260920-live-resilience';
+const SITE_VERSION = '20260920-live-resilience-fix';
 const BOOT_RETRY_KEY = 'olycity-boot-retry';
 import { syncPlayer as henrikSyncPlayer, syncAllPlayers as henrikSyncAll, persistPlayerStats } from './henrik.js?v=20260809-val-roster-season';
 import { setStoredKey, storedKey, forgetCachedKey } from './henrik-key.mjs';
 import { rosterHTML, guestCardHTML, mapSectionHTML, agentPageHTML, navMapsHTML, compHTML } from './render.js?v=20260902-patch1305';
-import { initTheme, initTilt, initParallax, initSearch, initKeyboard, initHeroParticles, initWheelLogos, initLivePage, initHistoryPage } from './interactions.js?v=20260920-live-resilience';
+import { initTheme, initTilt, initParallax, initSearch, initKeyboard, initHeroParticles, initWheelLogos, initLivePage, initHistoryPage } from './interactions.js?v=20260920-live-resilience-fix';
 import { storage } from './storage.js';
 import { avatarLayersHTML } from './avatars.mjs';
 import { initAdminPage } from './admin.mjs?v=20260826-cold-load-recovery';
