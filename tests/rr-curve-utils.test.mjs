@@ -380,3 +380,25 @@ assert.deepEqual(lolAccountSeries({
 }, [{ name: 'Rayhan', riotIds: ['RayBaz#OLY'], puuids: ['puuid-rayhan'] }]), []);
 
 console.log('rr-curve-utils: côté LoL, puuid prioritaire et repli par nom conservé');
+
+// ─── roster.json porte désormais le PUUID ────────────────────────────────────
+// Le fichier ne contenait que des pseudos : l'identité d'un joueur dépendait
+// d'un nom, qui change. Le PUUID y est lu au même titre que ceux de l'admin.
+const rosterAvecPuuid = buildMembers([{
+  name: 'Liam',
+  riot: { name: 'Wong Chi Ming', tag: '2046', puuid: 'puuid-liam' },
+  smurfs: [{ name: 'Xi Jinping', tag: '5378', puuid: 'puuid-smurf' }, { name: 'Sans Id', tag: '0000' }],
+}], null);
+assert.deepEqual(rosterAvecPuuid[0].puuids, ['puuid-liam', 'puuid-smurf'],
+  'les puuids du fichier alimentent l’identité');
+assert.equal(rosterAvecPuuid[0].riotIds.length, 3, 'sans perdre les comptes qui n’en ont pas');
+
+// Et ils résolvent l'historique, même sous un nom inconnu du roster.
+const parRosterPuuid = valorantAccountSeries({
+  a: { reports: { r: { playerPuuid: 'puuid-liam', player: 'Nom Jamais Vu#9999', ts: 1, mode: 'competitive', rr: { tier: 21, after: 40 }, players: [] } } },
+  b: { reports: { r: { playerPuuid: 'puuid-liam', player: 'Nom Jamais Vu#9999', ts: 2, mode: 'competitive', rr: { tier: 21, after: 60 }, players: [] } } },
+}, rosterAvecPuuid);
+assert.equal(parRosterPuuid.length, 1);
+assert.equal(parRosterPuuid[0].member, 'Liam');
+
+console.log('rr-curve-utils: le PUUID de roster.json est lu et résout l’historique');

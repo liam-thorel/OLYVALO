@@ -283,14 +283,18 @@ export function buildMembers(roster = [], overlay = null) {
   const accounts = overlay?.accounts || {};
   const overlayMembers = overlay?.members || {};
 
-  const fromRoster = (Array.isArray(roster) ? roster : []).map(player => ({
-    id: slugify(player?.name),
-    name: player?.name || '',
-    riotIds: [player?.riot, ...(player?.smurfs || [])]
-      .filter(account => account?.name)
-      .map(account => (account.tag ? `${account.name}#${account.tag}` : String(account.name))),
-    puuids: [],
-  }));
+  const fromRoster = (Array.isArray(roster) ? roster : []).map(player => {
+    const declared = [player?.riot, ...(player?.smurfs || [])].filter(account => account?.name);
+    return {
+      id: slugify(player?.name),
+      name: player?.name || '',
+      riotIds: declared.map(account => (account.tag ? `${account.name}#${account.tag}` : String(account.name))),
+      // roster.json ne portait que des pseudos : l'identité dépendait d'un nom,
+      // qui change. Le PUUID y est désormais lu au même titre que ceux de
+      // l'admin.
+      puuids: declared.map(account => String(account.puuid || '').trim()).filter(Boolean),
+    };
+  });
 
   const known = new Set(fromRoster.map(member => member.id));
   const extras = Object.entries(overlayMembers)

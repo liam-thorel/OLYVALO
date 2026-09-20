@@ -30,8 +30,18 @@ indexRoster(
   },
 );
 
-// 1. Le chemin historique marche toujours.
-assert.equal(roster.memberByRiotId('ancienpseudo#EUW')?.name, 'Nico');
+// 1. Un compte IDENTIFIÉ ne s'indexe plus par son pseudo.
+// C'est le cœur du changement : tant que le nom restait une clé, un
+// renommage cassait la résolution. Nico a un puuid, donc son ancien pseudo
+// ne résout plus rien — et c'est voulu.
+assert.equal(roster.memberByRiotId('ancienpseudo#EUW'), null,
+  'un compte à puuid n’est plus atteignable par son pseudo');
+assert.equal(roster.memberByPuuid('puuid-nico')?.name, 'Nico', 'il l’est par son puuid');
+
+// Un compte SANS puuid garde son pseudo comme seule clé : le retirer le
+// ferait disparaître, et tout le monde n'a pas encore son identifiant.
+assert.equal(roster.memberByRiotId('loganmain#OLY')?.name, 'Logan',
+  'le repli par pseudo survit pour les comptes non identifiés');
 
 // 2. Le cas qui cassait : Nico se renomme, plus aucun Riot ID ne correspond.
 const renamed = { playerName: 'NouveauPseudo#OLY', puuid: 'puuid-nico', memberId: 'nico' };
