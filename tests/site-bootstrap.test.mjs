@@ -216,7 +216,7 @@ test('mobile data pages keep readable spacing, controls and roster details', () 
   assert.match(responsive, /\.section-inner\s*\{\s*padding:\s*0/);
   assert.match(lolStyles, /\.lol-roster-champion strong\{font-size:10px\}/);
   assert.match(coopStyles, /\.coop-cover\{aspect-ratio:16\/7\}/);
-  assert.match(page, /lol-mode\.css\?v=20260825-community-foundation/);
+  assert.match(page, /lol-mode\.css\?v=20260920-roster-cards/);
   assert.match(page, /coop-games\.css\?v=20260824-mobile-data-cache/);
   assert.match(designSystem, /\.history-filter-group\s*\{\s*grid-template-columns:\s*55px minmax\(0,1fr\)/);
   assert.match(designSystem, /\.coop-filter-field:last-child\s*\{\s*flex-basis:\s*100%/);
@@ -417,4 +417,49 @@ test('initial data failure retries and reaches the global recovery instead of le
 test('the service worker only removes obsolete OLYCITY caches', () => {
   const worker = fs.readFileSync(new URL('../sw.js', import.meta.url), 'utf8');
   assert.match(worker, /key\.startsWith\('olycity-runtime-'\)/);
+});
+
+test('roster cards surface the Riot ID, the smurfs and why a card is empty', () => {
+  // Le Riot ID était la grande absence de l'écran : il n'existait que dans
+  // l'URL du bouton Tracker. Les smurfs, eux, n'étaient affichés nulle part,
+  // ni ceux de roster.json ni ceux enregistrés depuis l'admin.
+  assert.match(render, /rosterAccounts\(p, state\.ROSTER_OVERLAY\)/,
+    'les comptes viennent du dépôt ET de l’admin, comme pour les courbes');
+  assert.match(render, /class="player-riot-id"/);
+  assert.match(render, /class="player-smurf"/);
+  assert.match(render, /window\.OLYCITY\.copyRiotId\(this\)/);
+  assert.match(main, /async copyRiotId\(button\)/, 'le handler doit exister, sinon le clic est muet');
+
+  // `rosterOverlay` est une base Firebase ouverte en écriture : un Riot ID
+  // n'y est pas une donnée de confiance, et il finit dans un innerHTML.
+  assert.match(render, /const esc = value =>/, 'render.js doit avoir son échappement');
+  assert.match(render, /data-riot-id="\$\{esc\(main\.riotId\)\}"/, 'le Riot ID principal est échappé');
+  assert.match(render, /data-riot-id="\$\{esc\(account\.riotId\)\}"/, 'les smurfs aussi');
+
+  // Sans rang ni stats, la carte n'affichait qu'un trou.
+  assert.match(render, /cardStatus\(stats, \{ hasApiKey: Boolean\(storedKey\(\)\), hasRiot/);
+  assert.match(components, /\.player-status\b/, 'le bandeau doit être stylé');
+
+  // L'overlay doit être conservé au boot, sinon rosterAccounts ne voit jamais
+  // les comptes de l'admin.
+  assert.match(main, /state\.ROSTER_OVERLAY = memberOverlay \|\| null;/);
+
+  // Sur une ligne de cinq, les boutons Sync flottaient à cinq hauteurs.
+  assert.match(components, /\.player-actions \{[^}]*margin-top: auto;/,
+    'les actions tombent au fond de la carte');
+  assert.doesNotMatch(components, /\.player-actions \{\s*display: flex;\s*gap: 6px;\s*margin-top: 12px;\s*\}/,
+    'aucune règle plus bas ne doit réécraser margin-top');
+});
+
+test('LoL roster stat tiles fit their third of the card', () => {
+  // « Parties saison », « Rôle principal estimé » et « À déterminer » sortaient
+  // tronqués — « Parties … », « Rôle ob… », « À dét… » — dans une colonne d'un
+  // tiers de carte. Le détail est passé en infobulle.
+  assert.doesNotMatch(lolRoster, /<small>Parties saison<\/small>/);
+  assert.doesNotMatch(lolRoster, /<small>\$\{seasonRole \? 'Rôle principal estimé'/);
+  assert.doesNotMatch(lolRoster, /\|\| 'À déterminer'/);
+  assert.match(lolRoster, /<small>Rôle<\/small>/);
+  assert.match(lolRoster, /<div title="\$\{esc\(seasonRole \?/, 'le détail complet reste lisible au survol');
+  // La ligne du bas s'enroule sur deux lignes au lieu d'être coupée net.
+  assert.match(lolStyles, /\.lol-roster-stats span \{[^}]*-webkit-line-clamp:2/);
 });

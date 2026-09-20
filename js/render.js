@@ -7,6 +7,18 @@ import { valorantApi } from './api.js';
 import { state } from './state.mjs?v=20260806-lol-roster';
 import { formatRelTime } from './storage.js';
 import { avatarLayersHTML } from './avatars.mjs?v=20260720-avatars';
+import { rosterAccounts, cardStatus, isStale } from './roster-card-utils.mjs?v=20260920-roster';
+import { storedKey } from './henrik-key.mjs';
+
+/**
+ * Échappement HTML.
+ *
+ * Les comptes enregistrés depuis l'admin vivent dans `rosterOverlay`, une base
+ * Firebase ouverte en écriture : un Riot ID n'y est pas une donnée de
+ * confiance, et il finit dans un innerHTML.
+ */
+const esc = value => String(value ?? '').replace(/[&<>'"]/g, char =>
+  ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[char]));
 
 // ─── Agent YouTube trailers (IDs officiels Riot) ──
 // Fallback sur background art si YouTube bloque l'embed
@@ -378,8 +390,12 @@ export function rosterHTML() {
         </div>
       </div>` : '';
 
+    // Une synchro d'il y a trois semaines affiche un rang de l'acte précédent
+    // sans rien qui le signale : c'est pire qu'une carte vide, parce que ça se
+    // lit comme une donnée fraîche.
+    const stale = isStale(stats.syncedAt);
     const syncTime = stats.syncedAt
-      ? `<span class="player-sync-time">Sync · ${formatRelTime(stats.syncedAt)}</span>` : '';
+      ? `<span class="player-sync-time${stale ? ' is-stale' : ''}"${stale ? ' title="Ces chiffres datent — relance une synchro."' : ''}>${stale ? '⚠ ' : ''}Sync · ${formatRelTime(stats.syncedAt)}</span>` : '';
 
     const trackerUrl = p.riot
       ? `https://tracker.gg/valorant/profile/riot/${encodeURIComponent(p.riot.name)}%23${encodeURIComponent(p.riot.tag)}/overview`
@@ -397,6 +413,33 @@ export function rosterHTML() {
       </div>
       ${syncTime}` : '';
 
+    // Les comptes : celui du dépôt ET ceux enregistrés depuis l'admin. Le Riot
+    // ID n'apparaissait nulle part alors que c'est la première chose qu'on
+    // vient chercher ici ; les smurfs, eux, étaient purement et simplement
+    // invisibles.
+    const accounts = rosterAccounts(p, state.ROSTER_OVERLAY);
+    const main = accounts.find(account => account.isMain);
+    const smurfs = accounts.filter(account => !account.isMain);
+    const riotLine = main ? `
+        <button class="player-riot-id" type="button" data-riot-id="${esc(main.riotId)}"
+                onclick="window.OLYCITY.copyRiotId(this)" title="Copier ${esc(main.riotId)}">
+          <span class="player-riot-id-text">${esc(main.riotId)}</span><span class="player-riot-id-copy">⧉</span>
+        </button>` : '';
+    const smurfLine = smurfs.length ? `
+        <div class="player-smurfs" title="${esc(smurfs.map(account => account.riotId).join(' · '))}">
+          <span class="player-smurfs-label">${smurfs.length} smurf${smurfs.length > 1 ? 's' : ''}</span>
+          ${smurfs.map(account => `<button class="player-smurf" type="button" data-riot-id="${esc(account.riotId)}"
+             onclick="window.OLYCITY.copyRiotId(this)" title="Copier ${esc(account.riotId)}">${esc(account.riotId)}</button>`).join('')}
+        </div>` : '';
+
+    // Sans rang ni stats, la carte n'affichait qu'un trou : rien ne disait s'il
+    // fallait synchroniser, renseigner une clé ou jouer une classée.
+    const status = cardStatus(stats, { hasApiKey: Boolean(storedKey()), hasRiot: Boolean(main) });
+    const statusBanner = status ? `
+        <div class="player-status is-${status.kind}">
+          <strong>${esc(status.label)}</strong><span>${esc(status.hint)}</span>
+        </div>` : '';
+
     return `<div class="player-card" data-player-name="${p.name}">
       <div class="player-banner">
         <div class="player-banner-avatar">${avatarLayersHTML(p.name, p.avatar, valorantApi.agentImg(p.mains?.[0]))}</div>
@@ -408,8 +451,11 @@ export function rosterHTML() {
       <div class="player-body">
         <div class="player-name">${p.name}</div>
         <div class="player-role">${p.role}</div>
+        ${riotLine}
+        ${smurfLine}
         <div class="player-mains">${mains}</div>
         ${liveStatsRow}
+        ${statusBanner}
         ${syncBtn}
       </div>
     </div>`;
