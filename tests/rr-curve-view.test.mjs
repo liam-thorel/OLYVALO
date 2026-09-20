@@ -47,10 +47,16 @@ assert.doesNotMatch(chart, /stroke-dasharray="5 4"/, 'aucun smurf tracé au dép
 assert.match(chart, /<title>Rayhan · RayBaz — Ascendant 1 · 72 RR/);
 assert.doesNotMatch(chart, /<title>[^<]*2172/, 'la valeur interne ne doit pas fuir à l’écran');
 
-// Une pastille par partie faisait trois cents disques avec dix comptes : la
-// courbe disparaissait sous ses propres points. Seul le dernier est marqué.
-assert.equal((chart.match(/class="curve-dot"/g) || []).length, 2, 'une pastille par compte affiché');
-assert.match(chart, /<path class="curve-line"[^>]*>\s*<title>/, 'le tracé lui-même porte l’infobulle');
+// Les points sont des PALIERS : assez peu nombreux pour être tous affichés,
+// là où une pastille par partie faisait trois cents disques sous lesquels la
+// courbe disparaissait.
+const pastilles = (chart.match(/class="curve-dot/g) || []).length;
+assert.ok(pastilles >= 2, 'chaque palier est marqué');
+// Le dernier point se distingue : c'est le rang actuel.
+assert.equal((chart.match(/class="curve-dot last"/g) || []).length, 2, 'un dernier point par compte affiché');
+// Un disque de 3 px ne se vise pas à la souris : chaque palier a une cible
+// élargie et invisible.
+assert.equal((chart.match(/class="curve-hit"/g) || []).length, pastilles, 'une cible par palier');
 
 // Avec les smurfs, le trait devient pointillé.
 const tout = renderChart(series, new Set(series.map(seriesKey)), 'valorant');

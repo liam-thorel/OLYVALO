@@ -120,6 +120,65 @@ export const TIME_RANGES = [
 ];
 
 /**
+ * Pas d'échantillonnage par plage.
+ *
+ * Une partie classée dure une demi-heure : sur trois mois, ça fait des
+ * centaines de points collés les uns aux autres. La courbe devient un
+ * hérissement illisible, et survoler un point précis relève du hasard.
+ *
+ * On agrège donc par période — un point par jour sur 7 jours, un tous les
+ * trois jours sur 30, etc. La courbe s'apaise, et chaque point devient un
+ * repère qu'on peut viser et lire.
+ */
+const MILESTONE_MS = {
+  '7d': DAY_MS,
+  '30d': 3 * DAY_MS,
+  '90d': 7 * DAY_MS,
+  all: 14 * DAY_MS,
+};
+
+export function milestoneStep(rangeId) {
+  return MILESTONE_MS[rangeId] ?? MILESTONE_MS.all;
+}
+
+/**
+ * Réduit une série à un point par période.
+ *
+ * On garde le DERNIER point de chaque période : c'est le rang atteint à la
+ * fin de celle-ci, la seule valeur qui décrive où le joueur en est. Prendre
+ * la moyenne lisserait les montées réelles ; prendre le premier ignorerait
+ * tout ce qui s'est passé ensuite.
+ *
+ * Les extrémités sont toujours conservées : le premier point donne le rang de
+ * départ, le dernier le rang actuel — l'arrondir à une période le rendrait
+ * faux au moment où on le regarde.
+ */
+export function milestones(points = [], stepMs = DAY_MS) {
+  if (points.length <= 2 || !(stepMs > 0)) return points;
+
+  const kept = [];
+  let bucket = null;
+  points.forEach(point => {
+    const slot = Math.floor(point.ts / stepMs);
+    if (bucket && bucket.slot === slot) {
+      bucket.point = point;
+      bucket.games += 1;
+      return;
+    }
+    if (bucket) kept.push(bucket);
+    bucket = { slot, point, games: 1 };
+  });
+  if (bucket) kept.push(bucket);
+
+  const series = kept.map(entry => ({ ...entry.point, games: entry.games }));
+  const first = points[0];
+  const last = points[points.length - 1];
+  if (series[0].ts !== first.ts) series.unshift({ ...first, games: 1 });
+  if (series[series.length - 1].ts !== last.ts) series.push({ ...last, games: 1 });
+  return series;
+}
+
+/**
  * Restreint les séries à une fenêtre de temps.
  *
  * Le point qui PRÉCÈDE la fenêtre est conservé s'il existe : sans lui la
@@ -128,7 +187,13 @@ export const TIME_RANGES = [
  */
 export function withinRange(series = [], rangeId = 'all', now = Date.now()) {
   const range = TIME_RANGES.find(entry => entry.id === rangeId);
-  if (!range?.days) return series;
+  // « Tout » ne coupe rien, mais s'échantillonne comme le reste : c'est la
+  // plage où les points sont les plus nombreux, donc la plus illisible sans.
+  if (!range?.days) {
+    return series
+      .map(entry => ({ ...entry, points: milestones(entry.points, milestoneStep(rangeId)) }))
+      .filter(entry => entry.points.length >= 2);
+  }
   const since = now - range.days * DAY_MS;
 
   return series
@@ -137,7 +202,7 @@ export function withinRange(series = [], rangeId = 'all', now = Date.now()) {
       if (inside.length === 0) return { ...entry, points: [] };
       const firstIndex = entry.points.indexOf(inside[0]);
       const withAnchor = firstIndex > 0 ? [entry.points[firstIndex - 1], ...inside] : inside;
-      return { ...entry, points: withAnchor };
+      return { ...entry, points: milestones(withAnchor, milestoneStep(rangeId)) };
     })
     .filter(entry => entry.points.length >= 2);
 }
@@ -529,7 +594,11 @@ export function seriesKey(series) {
  * qui permet de comparer deux joueurs d'un coup d'œil. Une marge de 5 % évite
  * qu'une courbe ne colle au bord.
  */
-export function plotLayout(visibleSeries = [], { width = 900, height = 320, padding = 36 } = {}) {
+export function plotLayout(visibleSeries = [], { width = 900, height = 320, padding = 36, paddingLeft = null } = {}) {
+  // Les étiquettes de rang (« Ascendant 1 ») sont bien plus larges que la
+  // marge symétrique : elles empiétaient sur le tracé. Elles ont désormais
+  // leur propre gouttière à gauche.
+  const left = paddingLeft ?? padding;
   const points = visibleSeries.flatMap(s => s.points);
   if (points.length < 2) return null;
 
@@ -543,14 +612,14 @@ export function plotLayout(visibleSeries = [], { width = 900, height = 320, padd
   const minValue = rawMin - span * 0.05;
   const maxValue = rawMax + span * 0.05;
 
-  const innerWidth = width - padding * 2;
+  const innerWidth = width - left - padding;
   const innerHeight = height - padding * 2;
   // Une seule date (tout joué le même jour) : on centre plutôt que de diviser
   // par zéro.
-  const x = ts => (maxTs === minTs ? width / 2 : padding + ((ts - minTs) / (maxTs - minTs)) * innerWidth);
+  const x = ts => (maxTs === minTs ? left + innerWidth / 2 : left + ((ts - minTs) / (maxTs - minTs)) * innerWidth);
   const y = value => padding + (1 - (value - minValue) / (maxValue - minValue)) * innerHeight;
 
-  return { x, y, minTs, maxTs, minValue, maxValue, width, height, padding };
+  return { x, y, minTs, maxTs, minValue, maxValue, width, height, padding, paddingLeft: left };
 }
 
 /**
