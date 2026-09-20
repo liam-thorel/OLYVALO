@@ -11,6 +11,19 @@ const resolved = [];
 // Parties pour lesquelles un pari est ouvert — la production n'en ouvre qu'en
 // file classée, le stub doit refléter ça plutôt que d'en offrir à toutes.
 const OPEN_ROUNDS = new Set();
+// Paris réellement ouverts : « aucun message » et « message sans pari » sont
+// deux pannes différentes.
+const opened = [];
+// Callbacks d'écoute Firebase, pour rejouer une suite de snapshots.
+const watchers = new Map();
+// Minuteries de regroupement programmées (25 s en production) : on vérifie
+// qu'elles sont posées, sans faire durer le test une demi-minute.
+const pendingTimers = [];
+const realSetTimeout = global.setTimeout;
+global.setTimeout = (fn, delay, ...rest) => {
+  if (delay === 25 * 1000) { pendingTimers.push(fn); return { unref() {} }; }
+  return realSetTimeout(fn, delay, ...rest);
+};
 
 function loadBot() {
   const original = Module._load;
@@ -25,7 +38,8 @@ function loadBot() {
       case './config.js':
         return { DISCORD_TOKEN: 'x', DISCORD_CLIENT_ID: 'x', DISCORD_LOG_CHANNEL_ID: null, FIREBASE_URL: 'x', ROSTER_URL: 'x', ROLES_URL: 'x' };
       case './firebase.js':
-        return { fbGet: async () => null, fbPut: async () => true, fbDelete: async () => true, watchNode: () => () => {} };
+        return { fbGet: async () => null, fbPut: async () => true, fbDelete: async () => true,
+          watchNode: (path, onSnapshot) => { watchers.set(path, onSnapshot); return () => {}; } };
       case './roster.js':
         return {
           ensureRoster: async () => [],
@@ -43,7 +57,7 @@ function loadBot() {
       case './build-image.js': return { buildItemsImage: async () => null };
       case './betting.js':
         return {
-          openRound: async () => ({ key: 'k', round: {}, isNew: false }),
+          openRound: async args => { opened.push(args); return { key: 'k', round: {}, isNew: false }; },
           closeRound: async () => null,
           resolveRound: async (key, outcome) => { resolved.push({ key, outcome }); return { round: {}, results: [] }; },
           cancelRound: async key => { refunded.push(key); return {}; },
@@ -103,7 +117,7 @@ function loadBot() {
   return bot.__test;
 }
 
-const { notifyValorantGameStart, notifyValorantGameEnd, notifyLolGameStart, notifyLolGameEnd } = loadBot();
+const { notifyValorantGameStart, notifyValorantGameEnd, notifyLolGameStart, notifyLolGameEnd, watchGameSessions } = loadBot();
 
 let caseCounter = 0;
 const session = (mode, extra = {}) => {
@@ -354,5 +368,71 @@ const endResult = mode => ({
   assert.equal(refunded.length, 1, 'remboursé aussi');
   assert.match(sent.map(e => JSON.stringify(e.payload)).join('\n'), /résultat indisponible/);
 
+  // ─── Sélection d'agent : la file est dans queueId, pas dans mode ─────────
+  // Le script publie `mode: 'agent-select'` pendant le pick — une PHASE, pas
+  // une file ; la vraie file est dans `queueId`. Or c'est exactement à ce
+  // moment que la session passe de inactive à active, donc c'est ce payload-là
+  // que le bot examine pour décider s'il notifie. Il lisait `mode`, n'y voyait
+  // pas « competitive », et se taisait. Ensuite la session reste active : le
+  // départ n'est jamais réexaminé.
+  //
+  // Résultat en prod : plus aucun pari d'avant-match, alors que les cartes de
+  // fin de partie continuaient d'arriver normalement.
+  sent.length = 0; opened.length = 0;
+  const pick = session('agent-select', { queueId: 'competitive', phase: 'pregame' });
+  await notifyValorantGameStart(pick, { [pick.playerName]: pick });
+  assert.equal(sent.length, 1, 'la sélection d’agent annonce bien le départ de la partie');
+  assert.equal(opened.length, 1, 'et ouvre le pari d’avant-match');
+  assert.equal(opened[0].matchId, pick.matchId, 'sur le matchId de la partie, pour qu’il se résolve à la fin');
+
+  // La phase ne doit pas non plus ouvrir la porte à du non classé.
+  for (const file of ['unrated', 'swiftplay', 'deathmatch', 'spikerush']) {
+    sent.length = 0; opened.length = 0;
+    const casual = session('agent-select', { queueId: file, phase: 'pregame' });
+    await notifyValorantGameStart(casual, { [casual.playerName]: casual });
+    assert.deepEqual(sent, [], `agent-select en ${file} ne notifie pas`);
+    assert.equal(opened.length, 0, `et n’ouvre aucun pari en ${file}`);
+  }
+
+  // Un script d'avant le changement publiait la vraie file dans `mode` et pas
+  // de `queueId` : il doit continuer de fonctionner tel quel.
+  sent.length = 0; opened.length = 0;
+  const ancien = session('competitive', { phase: 'pregame' });
+  await notifyValorantGameStart(ancien, { [ancien.playerName]: ancien });
+  assert.equal(sent.length, 1, 'un poste pas encore à jour notifie toujours');
+
+  // Ni file ni phase exploitables : on se tait, plutôt que de faire passer un
+  // deathmatch pour une classée.
+  sent.length = 0; opened.length = 0;
+  const muet = session('agent-select', { phase: 'pregame' });
+  await notifyValorantGameStart(muet, { [muet.playerName]: muet });
+  assert.deepEqual(sent, [], 'sans file connue, aucune notification');
+
   console.log('ranked-notify: seules les files classées notifient, et une égalité n’est pas une défaite');
+  // ─── Filet : le départ est réexaminé à la sortie du pick ─────────────────
+  // La sélection d'agent et la partie sont UNE seule session active. Le départ
+  // n'était donc examiné qu'une fois, au pick — et si cette occasion était
+  // manquée (bot redémarré pendant le pick, identité pas encore résolue), il
+  // n'y avait plus jamais ni notification ni pari pour cette partie.
+  watchGameSessions('valorant', 'live/sessions');
+  const ecoute = watchers.get('live/sessions');
+  assert.ok(ecoute, 'la boucle d’écoute doit être branchée');
+
+  const joueur = 'Manque#OLY';
+  const base = { active: true, playerName: joueur, memberId: 'manque', matchId: 'match-pick' };
+  // Premier snapshot : le bot vient de se (re)connecter en plein pick. Il ne
+  // rattrape jamais un état déjà en cours — c'est voulu, sinon un redémarrage
+  // renotifierait toutes les parties en cours.
+  ecoute({ [joueur]: { ...base, mode: 'agent-select', queueId: 'competitive', phase: 'pregame' } });
+  await new Promise(resolve => setTimeout(resolve, 20));
+  sent.length = 0; opened.length = 0;
+
+  // Le pick se termine : la partie commence, la session reste active.
+  ecoute({ [joueur]: { ...base, mode: 'competitive', queueId: 'competitive', phase: '' } });
+  // Le regroupement attend 25 s avant d'envoyer : on ne vérifie ici que la
+  // PROGRAMMATION, pas l'envoi, sinon le test durerait une demi-minute.
+  assert.equal(pendingTimers.length, 1, 'la sortie du pick reprogramme l’annonce du départ');
+
+  console.log('ranked-notify: la sélection d’agent ouvre bien le pari d’avant-match');
+  console.log('ranked-notify: une annonce manquée pendant le pick est rattrapée au lancement');
 })().catch(error => { console.error(error); process.exit(1); });

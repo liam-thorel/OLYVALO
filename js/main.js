@@ -9,9 +9,11 @@ import { fetchJsonWithRetry, fetchJsonWithTimeout } from './request-utils.mjs?v=
 
 const SITE_VERSION = '20260920-live-resilience-fix';
 const BOOT_RETRY_KEY = 'olycity-boot-retry';
-import { syncPlayer as henrikSyncPlayer, syncAllPlayers as henrikSyncAll, persistPlayerStats } from './henrik.js?v=20260809-val-roster-season';
+import { syncAccount as henrikSyncAccount, syncAllPlayers as henrikSyncAll, persistPlayerStats } from './henrik.js?v=20260920-puuid';
+import { rosterAccounts } from './roster-card-utils.mjs?v=20260920-puuid';
+import { statsKey, readStats, writeStats, selectedAccount, toggleSelection, needsSync } from './account-stats.mjs?v=20260920-puuid';
 import { setStoredKey, storedKey, forgetCachedKey } from './henrik-key.mjs';
-import { rosterHTML, guestCardHTML, mapSectionHTML, agentPageHTML, navMapsHTML, compHTML } from './render.js?v=20260920-roster-cards';
+import { rosterHTML, guestCardHTML, mapSectionHTML, agentPageHTML, navMapsHTML, compHTML } from './render.js?v=20260920-puuid-accounts';
 import { initTheme, initTilt, initParallax, initSearch, initKeyboard, initHeroParticles, initWheelLogos, initLivePage, initHistoryPage } from './interactions.js?v=20260920-live-resilience-fix';
 import { storage } from './storage.js';
 import { avatarLayersHTML } from './avatars.mjs';
@@ -99,6 +101,7 @@ async function loadData() {
     custom.forEach(p => { if (!state.ROSTER.find(r => r.name === p.name)) state.ROSTER.push(p); });
   } catch(e) {}
   state.PLAYER_STATS = storage.getPlayerStats();
+  state.ACCOUNT_STATS = storage.getAccountStats();
 
   // Static mains from roster.json — not overridden by unreliable API topAgents
   state.ROSTER.forEach(p => {
@@ -697,24 +700,71 @@ window.OLYCITY = {
     );
   },
 
-  async syncPlayer(playerName) {
+  /**
+   * Comptes d'un joueur, dépôt et admin confondus, et celui affiché.
+   *
+   * Tout passe par le PUUID : c'est lui qui désigne un compte d'un bout à
+   * l'autre — la clé de ses statistiques, la sélection de la carte, et
+   * l'appel à l'API.
+   */
+  _accountsOf(playerName) {
     const player = state.ROSTER.find(p => p.name === playerName);
-    if (!player) return;
+    if (!player) return { player: null, accounts: [], shown: null };
+    const accounts = rosterAccounts(player, state.ROSTER_OVERLAY);
+    return { player, accounts, shown: selectedAccount(accounts, state.SELECTED_ACCOUNT[playerName] || '') };
+  },
+
+  _renderRoster() {
+    document.getElementById('roster-grid').innerHTML = rosterHTML() + guestCardHTML();
+    // Guest card Enter key listener (re-attach after render)
+    setTimeout(() => {
+      const gn = document.getElementById('guest-name');
+      const gt = document.getElementById('guest-tag');
+      [gn, gt].forEach(el => el?.addEventListener('keydown', e => {
+        if (e.key === 'Enter') window.OLYCITY.guestOpen('tracker', e);
+      }));
+    }, 50);
+  },
+
+  /**
+   * Bascule la carte sur un autre compte du joueur.
+   *
+   * Recliquer la puce déjà active ramène au principal. Les chiffres du compte
+   * choisi s'affichent aussitôt s'ils sont connus, et une synchro se déclenche
+   * seulement s'ils manquent ou datent : la clé HenrikDev est limitée en
+   * débit, et un aller-retour entre deux comptes ne doit pas la brûler.
+   */
+  async selectAccount(button) {
+    const playerName = button?.dataset?.player || '';
+    const clicked = button?.dataset?.accountKey || '';
+    if (!playerName || !clicked) return;
+    state.SELECTED_ACCOUNT[playerName] = toggleSelection(state.SELECTED_ACCOUNT[playerName] || '', clicked);
+    window.OLYCITY._renderRoster();
+    const { shown } = window.OLYCITY._accountsOf(playerName);
+    if (!shown) return;
+    if (needsSync(readStats(state.ACCOUNT_STATS, shown))) await window.OLYCITY.syncAccount(playerName);
+  },
+
+  async syncAccount(playerName) {
+    const { player, shown } = window.OLYCITY._accountsOf(playerName);
+    if (!player || !shown) return;
     setBtnState(playerName, 'syncing', 'Sync en cours…');
     try {
-      const stats = await henrikSyncPlayer(player);
-      state.PLAYER_STATS[playerName] = stats;
-      persistPlayerStats(playerName, stats);
+      const [name, tag] = String(shown.riotId || '').split('#');
+      const stats = await henrikSyncAccount({
+        puuid: shown.puuid, name, tag, riotId: shown.riotId,
+        region: player.riot?.region || 'eu',
+      });
+      // Rangées sous le PUUID observé quand l'API l'a révélé : un compte sans
+      // PUUID déclaré cesse ainsi d'être indexé sur un pseudo qui peut changer.
+      const stored = { ...shown, puuid: stats.puuid || shown.puuid };
+      state.ACCOUNT_STATS = writeStats(state.ACCOUNT_STATS, stored, stats);
+      if (shown.isMain) state.PLAYER_STATS[playerName] = stats;
+      storage.setAccountStats(state.ACCOUNT_STATS);
+      if (shown.isMain) persistPlayerStats(playerName, stats);
+      if (statsKey(stored) !== statsKey(shown)) state.SELECTED_ACCOUNT[playerName] = shown.isMain ? '' : statsKey(stored);
 
-      document.getElementById('roster-grid').innerHTML = rosterHTML() + guestCardHTML();
-  // Guest card Enter key listener (re-attach after render)
-  setTimeout(() => {
-    const gn = document.getElementById('guest-name');
-    const gt = document.getElementById('guest-tag');
-    [gn, gt].forEach(el => el?.addEventListener('keydown', e => {
-      if (e.key === 'Enter') window.OLYCITY.guestOpen('tracker', e);
-    }));
-  }, 50);
+      window.OLYCITY._renderRoster();
       setBtnState(playerName, 'synced', 'Synced ✓');
     } catch (e) {
       const msgs = {
@@ -734,6 +784,9 @@ window.OLYCITY = {
     }
   },
 
+  /** Compatibilité : l'ancien nom de l'action de synchronisation. */
+  syncPlayer(playerName) { return window.OLYCITY.syncAccount(playerName); },
+
   async syncAllPlayers() {
     const btn = document.getElementById('sync-all-btn');
     if (!btn) return;
@@ -745,7 +798,18 @@ window.OLYCITY = {
       onPlayerSynced(playerName, stats) {
         state.PLAYER_STATS[playerName] = stats;
         persistPlayerStats(playerName, stats);
-        document.getElementById('roster-grid').innerHTML = rosterHTML() + guestCardHTML();
+        // « Actualiser tout » ne touche que les comptes principaux, mais leurs
+        // stats doivent atterrir dans le magasin par PUUID comme les autres :
+        // sans cela, cliquer un smurf puis revenir au main resynchroniserait.
+        // Le compte principal, et non celui affiché : l'utilisateur peut avoir
+        // un smurf sélectionné pendant que « Actualiser tout » tourne.
+        const { accounts } = window.OLYCITY._accountsOf(playerName);
+        const main = accounts.find(account => account.isMain) || null;
+        if (main) {
+          state.ACCOUNT_STATS = writeStats(state.ACCOUNT_STATS, { ...main, puuid: stats.puuid || main.puuid }, stats);
+          storage.setAccountStats(state.ACCOUNT_STATS);
+        }
+        window.OLYCITY._renderRoster();
       },
       onPlayerError(playerName, msg) {
         setBtnState(playerName, 'error', msg === 'NOT_FOUND' ? 'Introuvable' : 'Erreur');
@@ -826,7 +890,7 @@ const KEEP_ACROSS_VERSIONS = new Set([
   'olycity-henrik-key', 'olycity-custom-players', 'olycity-theme',
   'olycity-profile', 'olycity-member-id', 'olycity-game',
   // Coûteux à refaire (une synchro Henrik complète par joueur).
-  'olycity-player-stats',
+  'olycity-player-stats', 'olycity-account-stats',
   // Caches conservés parce qu'ils accélèrent le premier écran.
   'olycity-static-data-cache', 'olycity-valorant-visuals', 'olycity-home-activity-seen',
   'olycity-home-group-night-v2', 'olycity-home-coop-games', 'olycity-site-vitals-v1',

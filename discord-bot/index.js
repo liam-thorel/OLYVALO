@@ -26,7 +26,7 @@ const { rewardForGamePlayed, getBalance } = require('./wallet.js');
 const { recordRankGain, lolRankPoints } = require('./rank-tracking.js');
 const { recordAward } = require('./valorant-awards.js');
 const { buildRankProgressLine } = require('./valorant-rank.js');
-const { isRankedValorantMode, isValorantDeathmatch, isNonRankedLolQueue } = require('./stats.js');
+const { isRankedValorantMode, isRankedValorantSession, isValorantDeathmatch, isNonRankedLolQueue } = require('./stats.js');
 const { accountMark, accountDetail } = require('./account-kind.js');
 const { playReward: playRewardFor } = require('./play-rewards.js');
 const { isHalfTime, ownScore, oddsFromScore } = require('./live-odds.js');
@@ -262,7 +262,7 @@ const halfTimeRounds = createBoundedSet(200);
  * retrouve tous les deux à la fin de la partie.
  */
 async function maybeOpenHalfTimeRound(session, snapshot) {
-  if (!isRankedValorantMode(session?.mode)) return;
+  if (!isRankedValorantSession(session)) return;
   const matchId = session?.matchId;
   if (!matchId || halfTimeRounds.has(matchId)) return;
   if (!isHalfTime(session.score)) return;
@@ -303,7 +303,10 @@ async function notifyValorantGameStart(session, snapshot) {
   // suit déjà que SoloQ et Flex. Non classé, Swift Play, Spike Rush, Escalade,
   // Réplication et les deathmatchs n'ont ni enjeu de rang ni sens pour les
   // paris — leurs stats ne sont pas comparables à celles d'une game classée.
-  if (!isRankedValorantMode(session.mode)) return;
+  // La file peut être rangée dans `queueId` : pendant la sélection d'agent,
+  // `mode` vaut 'agent-select'. C'est pourtant à cet instant que la session
+  // passe d'inactive à active, donc c'est ce payload-là qu'on examine.
+  if (!isRankedValorantSession(session)) return;
   const matchId = session.matchId;
   if (matchId && notifiedValorantMatches.has(matchId)) return;
 
@@ -1096,6 +1099,7 @@ function watchGameSessions(game, firebasePath) {
   // matchId n'avait pas toujours fini de se stabiliser à temps.
   const GROUPED_START_WINDOW_MS = 25 * 1000;
   const pendingStartTimers = new Map(); // matchId -> timer
+  const previousPhase = new Map(); // clé de session -> phase du tour précédent
   let latestSnapshot = null;
   let isFirstSnapshot = true;
 
@@ -1173,7 +1177,17 @@ function watchGameSessions(game, firebasePath) {
         maybeOpenHalfTimeRound(session, snapshot).catch(error => console.error('[betting:half]', error.message));
       }
 
-      if (previousActive.get(key)) continue; // déjà actif au tour précédent
+      // Filet de sécurité : la sélection d'agent et la partie sont une seule
+      // session active, donc le départ n'est examiné qu'UNE fois — au moment
+      // du pick. Si cette occasion est manquée (bot redémarré pendant le pick,
+      // identité pas encore résolue, file pas encore connue), il n'y a plus
+      // jamais de notification ni de pari pour cette partie. On réexamine donc
+      // à la sortie du pregame. notifiedValorantMatches déduplique par
+      // matchId : une partie déjà annoncée ne l'est pas deux fois.
+      const leftPregame = previousPhase.get(key) === 'pregame' && session?.phase !== 'pregame';
+      previousPhase.set(key, session?.phase || '');
+
+      if (previousActive.get(key) && !leftPregame) continue; // déjà actif au tour précédent
       if (isFirstSnapshot) { previousActive.set(key, true); continue; }
 
       const playerName = session?.playerName;
@@ -1191,7 +1205,7 @@ function watchGameSessions(game, firebasePath) {
         continue; // absence isolée tolérée — on garde la clé en mémoire
       }
       missingSince.delete(key);
-      previousActive.delete(key); resultNotified.delete(key);
+      previousActive.delete(key); resultNotified.delete(key); previousPhase.delete(key);
       clearPendingTimer(key);
     }
 
@@ -1232,4 +1246,8 @@ client.login(DISCORD_TOKEN).catch(error => console.error('[startup] login() a é
 module.exports = { __test: {
   notifyValorantGameStart, notifyValorantGameEnd, notifyLolGameStart, notifyLolGameEnd,
   maybeOpenHalfTimeRound,
+  // La boucle d'écoute décide QUAND le départ est examiné. C'est là que vit la
+  // règle « une session active n'est examinée qu'une fois », et donc là que se
+  // jouait la disparition des paris d'avant-match — pas dans le prédicat.
+  watchGameSessions,
 } };
