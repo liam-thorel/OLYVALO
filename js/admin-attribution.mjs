@@ -68,7 +68,10 @@ export function roleOf(row = {}) {
  * supprimer.
  */
 export function overlayKeyFor(riotId) {
-  return `oly-${String(riotId || '').replace(/[.#$[\]/]/g, '_').toLowerCase()}`;
+  // Firebase interdit . # $ [ ] / ; les espaces passent mais doivent être
+  // encodés dans l'URL à chaque lecture — un aller-retour de trop pour une
+  // clé qu'on construit nous-mêmes.
+  return `oly-${String(riotId || '').toLowerCase().replace(/[.#$[\]/\s]+/g, '_')}`;
 }
 
 /**
@@ -101,7 +104,10 @@ function mergeRows(rows) {
   rows.forEach(row => {
     const key = identityKey(row);
     if (!byIdentity.has(key)) {
-      byIdentity.set(key, { ...row, sources: [row.source], members: [row.member] });
+      byIdentity.set(key, {
+        ...row, sources: [row.source], members: [row.member],
+        overlayKeys: row.key ? [row.key] : [],
+      });
       order.push(key);
       return;
     }
@@ -110,6 +116,9 @@ function mergeRows(rows) {
     // Un même Riot ID rattaché à deux personnes est une erreur, pas une
     // fusion : on garde la trace pour la signaler sur la carte.
     if (!merged.members.includes(row.member)) merged.members.push(row.member);
+    // Deux entrées d'admin pour un même Riot ID : l'une est de trop, et sans
+    // cette trace la seconde disparaîtrait derrière la première.
+    if (row.key && !merged.overlayKeys.includes(row.key)) merged.overlayKeys.push(row.key);
     // L'override l'emporte sur le dépôt : c'est lui qu'un humain a réglé.
     if (row.source === 'rosterOverlay') {
       merged.key = row.key;
@@ -239,6 +248,9 @@ export function annotateDuplicates(rows = []) {
   });
 
   return rows.map(row => {
+    if (row.overlayKeys && row.overlayKeys.length > 1) {
+      return { ...row, duplicate: { kind: 'redundant', with: [], members: [], keys: row.overlayKeys } };
+    }
     if (row.members && row.members.length > 1) {
       return { ...row, duplicate: { kind: 'cross-member', with: [], members: row.members } };
     }
@@ -271,6 +283,9 @@ export function duplicateLabel(duplicate) {
   const autres = duplicate.with.join(', ');
   if (duplicate.kind === 'cross-member') {
     return `Rattaché à ${duplicate.members.join(' et ')} — un compte n’appartient qu’à une personne.`;
+  }
+  if (duplicate.kind === 'redundant') {
+    return `${duplicate.keys.length} entrées dans l’admin pour ce même compte — une seule est utilisée.`;
   }
   if (duplicate.kind === 'renamed') return `Même PUUID que ${autres} — renommage probable.`;
   return `Même pseudo que ${autres}, sans PUUID pour trancher.`;
@@ -316,6 +331,37 @@ export function attributionWarnings(rows = []) {
   });
 
   return warnings;
+}
+
+/**
+ * Comptes déclarés UNIQUEMENT dans data/roster.json.
+ *
+ * Ce sont eux qui empêchent de se passer du fichier : le seul identifiant
+ * commun aux deux sources est le Riot ID, donc un compte absent de l'admin
+ * disparaîtrait purement et simplement si on cessait de lire le dépôt.
+ *
+ * Les reprendre dans Firebase rend le fichier redondant — et cesser de le
+ * lire devient alors sans conséquence.
+ */
+export function adoptionPlan(rows = []) {
+  return rows
+    .filter(row => row.declaredInRepo && !row.key)
+    .map(row => {
+      const [name, tag = ''] = String(row.riotId).split('#');
+      const role = roleOf(row);
+      return {
+        member: row.member, memberId: row.memberId, riotId: row.riotId,
+        path: `rosterOverlay/accounts/${row.memberId}/${overlayKeyFor(row.riotId)}`,
+        value: {
+          name, tag, region: row.region || '', puuid: row.puuid || '',
+          // Le rôle était porté par la POSITION dans roster.json ; on le rend
+          // explicite au passage, sinon l'information se perdrait.
+          role: role === 'unknown' ? '' : role,
+          games: row.games || ['valorant'],
+          source: 'roster.json', addedAt: Date.now(),
+        },
+      };
+    });
 }
 
 /**

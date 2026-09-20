@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import {
   ROLES, attributionRows, attributionWarnings, deletionPlan,
   isValidPuuid, reassignPlan, riotIdOf, roleOf, overlayKeyFor,
-  annotateDuplicates, duplicateLabel,
+  annotateDuplicates, duplicateLabel, adoptionPlan,
 } from '../js/admin-attribution.mjs';
 
 const ROSTER = [
@@ -196,6 +196,44 @@ assert.equal(overlayKeyFor('Wong Chi Ming#2046'), overlayKeyFor('Wong Chi Ming#2
 assert.doesNotMatch(overlayKeyFor('A#1/B.C$D[E]'), /[.#$[\]/]/, 'aucun caractère interdit par Firebase');
 assert.notEqual(overlayKeyFor('A#1'), overlayKeyFor('B#2'));
 
+// ─── Se passer de roster.json ────────────────────────────────────────────────
+// On ne peut pas cesser de lire le fichier tant que des comptes n'existent
+// QUE là : le seul identifiant commun aux deux sources est le Riot ID, donc
+// les ignorer les ferait purement et simplement disparaître.
+const aReprendre = adoptionPlan(attributionRows({
+  roster: [{ name: 'Liam', riot: { name: 'Wong Chi Ming', tag: '2046', region: 'eu' }, smurfs: [{ name: 'Xi Jinping', tag: '5378' }] }],
+  overlay: { accounts: { liam: { k1: { name: 'Wong Chi Ming', tag: '2046', puuid: PUUID_A } } } },
+}));
+assert.equal(aReprendre.length, 1, 'le compte déjà géré dans l’admin est épargné');
+assert.equal(aReprendre[0].riotId, 'Xi Jinping#5378');
+assert.equal(aReprendre[0].value.name, 'Xi Jinping');
+assert.equal(aReprendre[0].value.tag, '5378');
+// Le rôle était porté par la POSITION dans roster.json : il doit devenir
+// explicite, sinon l'information se perd à la reprise.
+assert.equal(aReprendre[0].value.role, 'smurf');
+assert.equal(adoptionPlan(attributionRows({
+  roster: [{ name: 'Liam', riot: { name: 'A', tag: '1' } }],
+}))[0].value.role, 'main');
+
+// Une clé d'admin doit être utilisable telle quelle dans une URL Firebase :
+// un espace passerait, mais au prix d'un encodage à chaque lecture.
+assert.equal(overlayKeyFor('Wong Chi Ming#2046'), 'oly-wong_chi_ming_2046');
+assert.doesNotMatch(overlayKeyFor('A B#1'), /\s/);
+
+// Rien à reprendre une fois tout migré.
+assert.deepEqual(adoptionPlan(attributionRows({
+  overlay: { members: { liam: { name: 'Liam' } }, accounts: { liam: { k1: { name: 'A', tag: '1' } } } },
+})), []);
+
+// ─── Deux entrées d'admin pour un même compte ────────────────────────────────
+// Sans cette détection, la seconde disparaît derrière la première.
+const redondant = attributionRows({
+  overlay: { members: { liam: { name: 'Liam' } }, accounts: { liam: { a: { name: 'X', tag: '1' }, b: { name: 'X', tag: '1' } } } },
+});
+assert.equal(redondant.length, 1);
+assert.equal(redondant[0].duplicate.kind, 'redundant');
+assert.match(duplicateLabel(redondant[0].duplicate), /2 entrées dans l’admin/);
+
 // ─── Suppression ─────────────────────────────────────────────────────────────
 const plan = deletionPlan([
   { member: 'Liam', riotId: 'A#1', memberId: 'liam', key: 'k1', removable: true, pendingDeletion: true },
@@ -307,6 +345,10 @@ assert.match(admin, /data-action="fetch-puuid"/, 'le bouton est rendu');
 
 // ─── Le doublon se voit ET se marque sur la carte ────────────────────────────
 assert.match(admin, /data-action="mark-duplicate"/);
+assert.match(admin, /data-action="adopt-repo"/, 'la reprise en masse est proposée');
+// La reprise n'ÉCRIT que : rien n'est retiré de data/roster.json, versionné.
+assert.match(admin, /for \(const entry of plan\) await fbPut\(entry\.path, entry\.value\);/);
+assert.doesNotMatch(admin, /adopt-repo[\s\S]{0,400}fbDelete/, 'aucune suppression à la reprise');
 assert.match(admin, /duplicateLabel\(row\.duplicate\)/, 'la nature du doublon est affichée');
 // Un compte partagé entre deux personnes n'offre PAS le bouton : il faut
 // corriger le propriétaire, pas supprimer.

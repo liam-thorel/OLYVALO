@@ -400,6 +400,20 @@ function renderAttributionHTML() {
       </div>`;
   }).join('');
 
+  // Tant que des comptes n'existent QUE dans data/roster.json, le fichier
+  // reste indispensable : le seul identifiant commun aux deux sources est le
+  // Riot ID, donc les ignorer les ferait disparaître. Les reprendre ici rend
+  // le fichier redondant.
+  const aReprendre = adoptionPlan(rows);
+  const reprise = aReprendre.length
+    ? `<div class="admin-attr-adopt">
+         <span><strong>${aReprendre.length} compte${aReprendre.length > 1 ? 's' : ''}</strong> ${aReprendre.length > 1 ? 'existent' : 'existe'} uniquement dans <code>data/roster.json</code> :
+         ${escapeHTML(aReprendre.map(entry => entry.riotId).join(', '))}.
+         Tant que c'est le cas, le fichier reste la seule source pour ${aReprendre.length > 1 ? 'ces comptes' : 'ce compte'}.</span>
+         <button type="button" class="admin-btn admin-btn-small admin-btn-primary" data-action="adopt-repo">Les reprendre dans l’admin</button>
+       </div>`
+    : '<p class="admin-attr-adopt done">✔ Tous les comptes sont gérés depuis l’admin — <code>data/roster.json</code> n’est plus nécessaire pour les identifier.</p>';
+
   const purge = marques.length
     ? `<div class="admin-attr-purge">
          <span>${marques.length} compte${marques.length > 1 ? 's' : ''} marqué${marques.length > 1 ? 's' : ''} : ${escapeHTML(marques.map(entry => entry.riotId).join(', '))}</span>
@@ -407,7 +421,7 @@ function renderAttributionHTML() {
        </div>`
     : '';
 
-  return `${avertissements}${purge}<div class="admin-attr-grid">${cartes}</div>`;
+  return `${avertissements}${reprise}${purge}<div class="admin-attr-grid">${cartes}</div>`;
 }
 
 function renderMembersHTML() {
@@ -774,6 +788,20 @@ function wireEvents(root) {
       return;
     }
 
+    const adoptBtn = event.target.closest('button[data-action="adopt-repo"]');
+    if (adoptBtn) {
+      const plan = adoptionPlan(attributionState());
+      if (plan.length === 0) return;
+      adoptBtn.disabled = true;
+      adoptBtn.textContent = '…';
+      // Écriture seulement : rien n'est retiré de data/roster.json, qui est
+      // versionné. Les deux déclarations se rejoignent sur le même Riot ID,
+      // donc aucun doublon n'apparaît.
+      for (const entry of plan) await fbPut(entry.path, entry.value);
+      await reloadAndRender(root);
+      return;
+    }
+
     const dupBtn = event.target.closest('button[data-action="mark-duplicate"]');
     if (dupBtn) {
       const row = rowOf(dupBtn);
@@ -1094,6 +1122,9 @@ const ADMIN_CSS = `
 .admin-attr-dup.renamed{border:1px solid rgba(245,200,66,.4);background:rgba(245,200,66,.07);color:#f0cf7a}
 .admin-attr-dup.same-name{border:1px solid rgba(255,255,255,.14);background:rgba(255,255,255,.03);color:var(--muted,#8992aa)}
 .admin-attr-dup em{font-style:normal;opacity:.85}
+.admin-attr-adopt{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:10px;margin-top:12px;padding:10px 12px;border-radius:10px;border:1px solid rgba(63,207,207,.35);background:rgba(63,207,207,.07);font-size:12px;line-height:1.55}
+.admin-attr-adopt.done{display:block;border-color:rgba(63,207,107,.3);background:rgba(63,207,107,.06);color:var(--muted,#8992aa)}
+.admin-attr-adopt code{padding:1px 5px;border-radius:4px;background:rgba(0,0,0,.35);font-size:11px}
 .admin-attr-puuid input{flex:1;min-width:0}
 .admin-attr-field input:disabled,.admin-attr-owner select:disabled{opacity:.5;cursor:not-allowed}
 .admin-attr-roles{display:flex;gap:4px}
