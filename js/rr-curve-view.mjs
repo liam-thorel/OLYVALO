@@ -27,7 +27,10 @@ export function emptyState(message) {
 // Il est cadré par le CSS, on laisse du vide autour plutôt que de l'étirer.
 const CHART_WIDTH = 760;
 const CHART_HEIGHT = 300;
-const CHART_PADDING = 38;
+const CHART_PADDING = 24;
+// Largeur réservée aux étiquettes de rang. « Ascendant 1 » fait une soixantaine
+// de pixels : avec la marge commune, le texte se superposait aux courbes.
+const CHART_PADDING_LEFT = 78;
 // Nombre de traits verticaux du quadrillage. Assez pour donner le repère du
 // temps, pas assez pour qu'on les compte.
 const TIME_GRID_LINES = 6;
@@ -71,18 +74,18 @@ export function renderChart(allSeries, visible, game) {
   const shown = allSeries.filter(s => visible.has(seriesKey(s)));
   if (shown.length === 0) return emptyState('Aucun compte sélectionné.');
 
-  const layout = plotLayout(shown, { width: CHART_WIDTH, height: CHART_HEIGHT, padding: CHART_PADDING });
+  const layout = plotLayout(shown, { width: CHART_WIDTH, height: CHART_HEIGHT, padding: CHART_PADDING, paddingLeft: CHART_PADDING_LEFT });
   if (!layout) return emptyState('Pas encore assez de parties classées pour tracer une courbe.');
 
   const grid = gridLines(layout, game).map(line => `
-      <line class="curve-grid-line" shape-rendering="crispEdges" x1="${CHART_PADDING}" x2="${CHART_WIDTH - CHART_PADDING}" y1="${line.y.toFixed(1)}" y2="${line.y.toFixed(1)}"></line>
-      <text class="curve-grid-label" x="4" y="${(line.y + 4).toFixed(1)}">${escapeHTML(line.label)}</text>`).join('');
+      <line class="curve-grid-line" shape-rendering="crispEdges" x1="${CHART_PADDING_LEFT}" x2="${CHART_WIDTH - CHART_PADDING}" y1="${line.y.toFixed(1)}" y2="${line.y.toFixed(1)}"></line>
+      <text class="curve-grid-label" x="${CHART_PADDING_LEFT - 8}" y="${(line.y + 4).toFixed(1)}">${escapeHTML(line.label)}</text>`).join('');
 
   // Traits verticaux : sans eux le quadrillage n'en est pas un, et rien ne
   // rattache un creux à un moment.
-  const innerWidth = CHART_WIDTH - CHART_PADDING * 2;
+  const innerWidth = CHART_WIDTH - CHART_PADDING_LEFT - CHART_PADDING;
   const timeGrid = Array.from({ length: TIME_GRID_LINES + 1 }, (_, i) => {
-    const x = CHART_PADDING + (innerWidth * i) / TIME_GRID_LINES;
+    const x = CHART_PADDING_LEFT + (innerWidth * i) / TIME_GRID_LINES;
     return `<line class="curve-grid-line" shape-rendering="crispEdges" x1="${x.toFixed(1)}" x2="${x.toFixed(1)}" y1="${CHART_PADDING}" y2="${(CHART_HEIGHT - CHART_PADDING).toFixed(1)}"></line>`;
   }).join('');
 
@@ -91,25 +94,41 @@ export function renderChart(allSeries, visible, game) {
   // fond, et c'est la proximité de SA courbe qui doit colorer une bande.
   const gradients = shown.map((serie, index) => `
       <linearGradient id="curve-fill-${index}" x1="0" y1="0" x2="0" y2="1">
-        <stop offset="0%" stop-color="${escapeHTML(darken(serie.color))}" stop-opacity="0.30"></stop>
-        <stop offset="100%" stop-color="${escapeHTML(darken(serie.color))}" stop-opacity="0"></stop>
+        <stop offset="0%" stop-color="${escapeHTML(darken(serie.color))}" stop-opacity="0.26"></stop>
+        <stop offset="55%" stop-color="${escapeHTML(darken(serie.color))}" stop-opacity="0"></stop>
       </linearGradient>`).join('');
 
   const areas = shown.map((serie, index) =>
     `<path class="curve-area" d="${seriesAreaPath(serie, layout)}" fill="url(#curve-fill-${index})"></path>`).join('');
 
-  // Une pastille par partie faisait trois cents disques à l'écran avec dix
-  // comptes : la courbe disparaissait sous ses propres points. Seul le dernier
-  // est marqué — c'est le rang actuel, la seule valeur qu'on lit vraiment sur
-  // un point précis. Le reste se lit comme une ligne.
+  // Les points sont désormais des PALIERS — un par jour, par trois jours ou
+  // par quinzaine selon la plage (voir milestones()). Assez peu nombreux pour
+  // être tous affichés et visés à la souris, là où une pastille par partie
+  // faisait trois cents disques sous lesquels la courbe disparaissait.
   const paths = shown.map(s => {
-    const last = s.points[s.points.length - 1];
-    const titre = escapeHTML(`${seriesLabel(s, allSeries)} — ${ladderLabel(game, last.value)} · ${dateLabel(last.ts)}`);
+    const nom = seriesLabel(s, allSeries);
+    const dernier = s.points.length - 1;
+    const pastilles = s.points.map((point, index) => {
+      const x = layout.x(point.ts).toFixed(1);
+      const y = layout.y(point.value).toFixed(1);
+      const parties = point.games > 1 ? ` · ${point.games} parties` : point.games === 1 ? ' · 1 partie' : '';
+      // La bulle annonce le rang RÉEL à cette date ; le point, lui, est posé
+      // sur le sommet de la période. Quand les deux diffèrent — un pic atteint
+      // puis reperdu — on nomme le sommet, sinon la pastille paraîtrait mal
+      // placée.
+      const reel = Number.isFinite(point.current) ? point.current : point.value;
+      const sommet = reel !== point.value ? ` · sommet ${ladderLabel(game, point.value)}` : '';
+      const titre = escapeHTML(`${nom} — ${ladderLabel(game, reel)} · ${dateLabel(point.ts)}${parties}${sommet}`);
+      // Cible de survol élargie et invisible : un disque de 3 px ne se vise
+      // pas, et c'est pourtant lui qui porte la valeur qu'on vient lire.
+      return `<circle class="curve-hit" cx="${x}" cy="${y}" r="10"><title>${titre}</title></circle>`
+        + `<circle class="curve-dot${index === dernier ? ' last' : ''}" cx="${x}" cy="${y}" r="${index === dernier ? '3.4' : '2.4'}"
+             fill="${escapeHTML(s.color)}"><title>${titre}</title></circle>`;
+    }).join('');
     return `
       <path class="curve-line" d="${seriesPath(s, layout)}" stroke="${escapeHTML(s.color)}"
-            vector-effect="non-scaling-stroke" stroke-dasharray="${s.isMain ? 'none' : '5 4'}"><title>${titre}</title></path>
-      <circle class="curve-dot" cx="${layout.x(last.ts).toFixed(1)}" cy="${layout.y(last.value).toFixed(1)}" r="3.2"
-          fill="${escapeHTML(s.color)}"><title>${titre}</title></circle>`;
+            vector-effect="non-scaling-stroke" stroke-dasharray="${s.isMain ? 'none' : '5 4'}"></path>
+      ${pastilles}`;
   }).join('');
 
   return `
@@ -120,7 +139,7 @@ export function renderChart(allSeries, visible, game) {
       ${grid}
       ${areas}
       ${paths}
-      <text class="curve-axis-date" x="${CHART_PADDING}" y="${CHART_HEIGHT - 10}">${escapeHTML(dateLabel(layout.minTs))}</text>
+      <text class="curve-axis-date" x="${CHART_PADDING_LEFT}" y="${CHART_HEIGHT - 10}">${escapeHTML(dateLabel(layout.minTs))}</text>
       <text class="curve-axis-date curve-axis-date-end" x="${CHART_WIDTH - CHART_PADDING}" y="${CHART_HEIGHT - 10}">${escapeHTML(dateLabel(layout.maxTs))}</text>
     </svg>`;
 }

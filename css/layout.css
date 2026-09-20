@@ -1122,12 +1122,16 @@ body.agent-mode .footer{ display:none; }
 .curve-untracked ul{ margin:0; padding-left:18px; }
 .curve-untracked li{ margin:2px 0; }
 .curve-untracked strong{ color:var(--text,#e7eaf3); font-weight:600; }
-.curve-grid-label{ fill:rgba(255,255,255,.34); font-size:10px; font-family:inherit; }
+.curve-grid-label{ fill:rgba(255,255,255,.34); font-size:10px; font-family:inherit; text-anchor:end; }
 .curve-axis-date{ fill:rgba(255,255,255,.4); font-size:11px; font-family:inherit; }
 .curve-axis-date-end{ text-anchor:end; }
 
 .curve-line{ fill:none; stroke-width:1.7; stroke-linejoin:round; stroke-linecap:round; }
-.curve-dot{ opacity:.9; }
+.curve-dot{ opacity:.85; pointer-events:none; transition:r .12s; }
+.curve-dot.last{ opacity:1; }
+/* Cible de survol : un disque de 3 px ne se vise pas à la souris. */
+.curve-hit{ fill:transparent; cursor:crosshair; }
+.curve-hit:hover + .curve-dot{ r:5; opacity:1; }
 /* Le tracé survolé passe devant : avec dix comptes, les courbes se croisent. */
 .curve-line:hover{ stroke-width:2.6; }
 

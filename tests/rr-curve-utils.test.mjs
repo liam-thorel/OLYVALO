@@ -3,6 +3,7 @@ import {
   MEMBER_COLORS, accountColor, valorantLadderPoint, lolLadderPoint, ladderLabel,
   accountIndex, valorantAccountSeries, lolAccountSeries, seriesLabel,
   defaultVisible, seriesKey, plotLayout, seriesPath, curveDiagnostics, untrackedReason,
+  milestones, milestoneStep, withinRange,
   buildMembers, puuidIndex,
 } from '../js/rr-curve-utils.mjs';
 
@@ -402,3 +403,91 @@ assert.equal(parRosterPuuid.length, 1);
 assert.equal(parRosterPuuid[0].member, 'Liam');
 
 console.log('rr-curve-utils: le PUUID de roster.json est lu et résout l’historique');
+
+// ─── Paliers : un point par période, pas un par partie ───────────────────────
+// Une classée dure une demi-heure : sur trois mois ça fait des centaines de
+// points collés. La courbe devenait un hérissement, et viser un point précis
+// relevait du hasard.
+const JOUR = 86_400_000;
+const maintenant = Date.UTC(2026, 8, 20);
+const quotidien = [];
+for (let jour = 29; jour >= 0; jour--) {
+  for (let partie = 0; partie < 4; partie++) {
+    quotidien.push({ ts: maintenant - jour * JOUR + partie * 3_600_000, value: 2000 + (29 - jour) * 3 + partie });
+  }
+}
+
+assert.equal(milestoneStep('7d'), JOUR);
+assert.equal(milestoneStep('30d'), 3 * JOUR);
+assert.equal(milestoneStep('all'), 14 * JOUR);
+assert.equal(milestoneStep('inconnu'), 14 * JOUR, 'une plage inconnue ne fait pas planter le tracé');
+
+const parJour = milestones(quotidien, JOUR);
+assert.ok(parJour.length <= 32 && parJour.length >= 28, `un point par jour, obtenu ${parJour.length}`);
+assert.ok(parJour.length < quotidien.length / 3, 'la réduction est massive');
+
+// Le tout premier point est conservé tel quel : c'est le rang de DÉPART, il
+// ne doit pas être remplacé par la fin de sa période.
+assert.equal(parJour[0].ts, quotidien[0].ts);
+assert.equal(parJour[0].value, quotidien[0].value);
+
+// Ensuite, chaque période est réduite à un point daté de sa FIN, tracé sur son
+// MEILLEUR rang. Une moyenne lisserait les montées réelles.
+const premierJour = quotidien.filter(p => p.ts < maintenant - 28 * JOUR);
+assert.equal(parJour[1].value, Math.max(...premierJour.map(p => p.value)),
+  'le sommet de la période, pas le premier point ni la moyenne');
+assert.equal(parJour[1].games, premierJour.length, 'le nombre de parties de la période est retenu');
+
+// Les extrémités sont intactes : le rang actuel arrondi à une quinzaine
+// serait faux au moment même où on le regarde.
+assert.equal(parJour[parJour.length - 1].ts, quotidien[quotidien.length - 1].ts);
+assert.equal(parJour[parJour.length - 1].value, quotidien[quotidien.length - 1].value);
+
+// Un pas plus large réduit davantage, sans jamais perdre les bords.
+const parQuinzaine = milestones(quotidien, 14 * JOUR);
+assert.ok(parQuinzaine.length < parJour.length);
+assert.equal(parQuinzaine[0].ts, quotidien[0].ts);
+assert.equal(parQuinzaine[parQuinzaine.length - 1].ts, quotidien[quotidien.length - 1].ts);
+
+// Deux points ou moins : rien à agréger, on ne touche pas.
+assert.deepEqual(milestones([{ ts: 1, value: 1 }, { ts: 2, value: 2 }], JOUR),
+  [{ ts: 1, value: 1 }, { ts: 2, value: 2 }]);
+assert.deepEqual(milestones([], JOUR), []);
+assert.equal(milestones(quotidien, 0).length, quotidien.length, 'un pas nul ne supprime rien');
+
+// « Tout » ne coupe aucune date mais s'échantillonne quand même : c'est la
+// plage où les points sont les plus nombreux, donc la plus illisible sans.
+const toutes = withinRange([{ account: 'a#1', points: quotidien }], 'all', maintenant);
+assert.ok(toutes[0].points.length < 12, `« Tout » doit être agrégé, obtenu ${toutes[0].points.length}`);
+
+// ─── Sommet tracé, rang réel dans la bulle ───────────────────────────────────
+// Un pic atteint puis reperdu dans la même période disparaissait entièrement :
+// sur « Tout », une montée en Immortel suivie d'une redescente ne laissait
+// aucune trace. La courbe dessine donc l'enveloppe des sommets — mais la bulle
+// doit continuer à dire où le joueur en était VRAIMENT à cette date, sinon on
+// lui annoncerait un rang qu'il n'a plus.
+const montagne = [
+  { ts: maintenant - 6 * JOUR, value: 2000 },
+  { ts: maintenant - 5 * JOUR, value: 2100 },
+  { ts: maintenant - 5 * JOUR + 3_600_000, value: 2400 }, // sommet du jour
+  { ts: maintenant - 5 * JOUR + 7_200_000, value: 2150 }, // reperdu avant le soir
+  { ts: maintenant - 4 * JOUR, value: 2200 },
+  { ts: maintenant - 3 * JOUR, value: 2160 },
+];
+const avecPic = milestones(montagne, JOUR);
+const jourDuPic = avecPic.find(point => point.games === 3);
+assert.ok(jourDuPic, 'la journée à trois parties est bien agrégée en un point');
+assert.equal(jourDuPic.value, 2400, 'le point est TRACÉ sur le sommet de la période');
+assert.equal(jourDuPic.current, 2150, 'la bulle porte le rang réel à la fin de la période');
+assert.equal(jourDuPic.ts, maintenant - 5 * JOUR + 7_200_000, 'daté de la fin de période');
+assert.equal(jourDuPic.peakTs, maintenant - 5 * JOUR + 3_600_000, 'la date du sommet reste connue');
+
+// Les extrémités portent leur propre valeur des deux côtés : un rang de départ
+// ou un rang actuel remplacé par un sommet serait un mensonge pur et simple.
+assert.equal(avecPic[0].value, 2000);
+assert.equal(avecPic[0].current, 2000);
+const dernierPic = avecPic[avecPic.length - 1];
+assert.equal(dernierPic.value, 2160, 'le rang actuel n’est jamais remplacé par un sommet');
+assert.equal(dernierPic.current, 2160);
+
+console.log('rr-curve-utils: paliers par période, extrémités préservées');

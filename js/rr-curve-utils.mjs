@@ -120,6 +120,84 @@ export const TIME_RANGES = [
 ];
 
 /**
+ * Pas d'échantillonnage par plage.
+ *
+ * Une partie classée dure une demi-heure : sur trois mois, ça fait des
+ * centaines de points collés les uns aux autres. La courbe devient un
+ * hérissement illisible, et survoler un point précis relève du hasard.
+ *
+ * On agrège donc par période — un point par jour sur 7 jours, un tous les
+ * trois jours sur 30, etc. La courbe s'apaise, et chaque point devient un
+ * repère qu'on peut viser et lire.
+ */
+const MILESTONE_MS = {
+  '7d': DAY_MS,
+  '30d': 3 * DAY_MS,
+  '90d': 7 * DAY_MS,
+  all: 14 * DAY_MS,
+};
+
+export function milestoneStep(rangeId) {
+  return MILESTONE_MS[rangeId] ?? MILESTONE_MS.all;
+}
+
+/**
+ * Réduit une série à un point par période.
+ *
+ * Le point TRACÉ porte le MEILLEUR rang de la période, pas celui de sa fin.
+ * Un pic atteint puis reperdu dans la même quinzaine disparaissait
+ * complètement du graphique : sur la plage « Tout », une montée en Immortel
+ * suivie d'une redescente ne laissait aucune trace. La courbe dessine donc
+ * l'enveloppe des sommets.
+ *
+ * La bulle, elle, donne le rang RÉEL à ce moment-là — `current`. Les deux
+ * diffèrent dès que la période s'est mal terminée, et c'est voulu : la courbe
+ * dit ce qui a été atteint, la bulle où on en était.
+ *
+ * Les extrémités restent intactes : le rang de départ et le rang actuel ne
+ * doivent jamais être remplacés par un sommet, sous peine d'annoncer un rang
+ * qu'on n'a plus.
+ */
+export function milestones(points = [], stepMs = DAY_MS) {
+  if (points.length <= 2 || !(stepMs > 0)) return points;
+
+  const buckets = [];
+  let bucket = null;
+  points.forEach(point => {
+    const slot = Math.floor(point.ts / stepMs);
+    if (bucket && bucket.slot === slot) {
+      bucket.last = point;
+      if (point.value > bucket.peak.value) bucket.peak = point;
+      bucket.games += 1;
+      return;
+    }
+    if (bucket) buckets.push(bucket);
+    bucket = { slot, peak: point, last: point, games: 1 };
+  });
+  if (bucket) buckets.push(bucket);
+
+  const series = buckets.map(entry => ({
+    ...entry.last,
+    // Tracé au sommet, daté de la fin de période : c'est à cette date que la
+    // bulle rapporte le rang réel.
+    value: entry.peak.value,
+    peakTs: entry.peak.ts,
+    current: entry.last.value,
+    games: entry.games,
+  }));
+
+  const borne = point => ({ ...point, current: point.value, peakTs: point.ts, games: 1 });
+  const first = points[0];
+  const last = points[points.length - 1];
+  if (series[0].ts !== first.ts) series.unshift(borne(first));
+  const fin = series[series.length - 1];
+  // Le dernier point doit porter le rang ACTUEL, jamais un sommet : sinon on
+  // annoncerait un rang que le joueur n'a plus.
+  if (fin.ts !== last.ts || fin.value !== last.value) series[series.length - 1] = borne(last);
+  return series;
+}
+
+/**
  * Restreint les séries à une fenêtre de temps.
  *
  * Le point qui PRÉCÈDE la fenêtre est conservé s'il existe : sans lui la
@@ -128,7 +206,13 @@ export const TIME_RANGES = [
  */
 export function withinRange(series = [], rangeId = 'all', now = Date.now()) {
   const range = TIME_RANGES.find(entry => entry.id === rangeId);
-  if (!range?.days) return series;
+  // « Tout » ne coupe rien, mais s'échantillonne comme le reste : c'est la
+  // plage où les points sont les plus nombreux, donc la plus illisible sans.
+  if (!range?.days) {
+    return series
+      .map(entry => ({ ...entry, points: milestones(entry.points, milestoneStep(rangeId)) }))
+      .filter(entry => entry.points.length >= 2);
+  }
   const since = now - range.days * DAY_MS;
 
   return series
@@ -137,7 +221,7 @@ export function withinRange(series = [], rangeId = 'all', now = Date.now()) {
       if (inside.length === 0) return { ...entry, points: [] };
       const firstIndex = entry.points.indexOf(inside[0]);
       const withAnchor = firstIndex > 0 ? [entry.points[firstIndex - 1], ...inside] : inside;
-      return { ...entry, points: withAnchor };
+      return { ...entry, points: milestones(withAnchor, milestoneStep(rangeId)) };
     })
     .filter(entry => entry.points.length >= 2);
 }
@@ -529,7 +613,11 @@ export function seriesKey(series) {
  * qui permet de comparer deux joueurs d'un coup d'œil. Une marge de 5 % évite
  * qu'une courbe ne colle au bord.
  */
-export function plotLayout(visibleSeries = [], { width = 900, height = 320, padding = 36 } = {}) {
+export function plotLayout(visibleSeries = [], { width = 900, height = 320, padding = 36, paddingLeft = null } = {}) {
+  // Les étiquettes de rang (« Ascendant 1 ») sont bien plus larges que la
+  // marge symétrique : elles empiétaient sur le tracé. Elles ont désormais
+  // leur propre gouttière à gauche.
+  const left = paddingLeft ?? padding;
   const points = visibleSeries.flatMap(s => s.points);
   if (points.length < 2) return null;
 
@@ -543,14 +631,14 @@ export function plotLayout(visibleSeries = [], { width = 900, height = 320, padd
   const minValue = rawMin - span * 0.05;
   const maxValue = rawMax + span * 0.05;
 
-  const innerWidth = width - padding * 2;
+  const innerWidth = width - left - padding;
   const innerHeight = height - padding * 2;
   // Une seule date (tout joué le même jour) : on centre plutôt que de diviser
   // par zéro.
-  const x = ts => (maxTs === minTs ? width / 2 : padding + ((ts - minTs) / (maxTs - minTs)) * innerWidth);
+  const x = ts => (maxTs === minTs ? left + innerWidth / 2 : left + ((ts - minTs) / (maxTs - minTs)) * innerWidth);
   const y = value => padding + (1 - (value - minValue) / (maxValue - minValue)) * innerHeight;
 
-  return { x, y, minTs, maxTs, minValue, maxValue, width, height, padding };
+  return { x, y, minTs, maxTs, minValue, maxValue, width, height, padding, paddingLeft: left };
 }
 
 /**
