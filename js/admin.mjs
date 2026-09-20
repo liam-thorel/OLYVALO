@@ -369,6 +369,12 @@ function renderAttributionHTML() {
           <strong>${escapeHTML(row.riotId)}</strong>
           <span class="admin-status ${live.state}">${escapeHTML(live.label)}</span>
         </div>
+        ${row.duplicate ? `<div class="admin-attr-dup ${escapeHTML(row.duplicate.kind)}">
+          <span>⧉ ${escapeHTML(duplicateLabel(row.duplicate))}</span>
+          ${row.duplicate.kind === 'cross-member'
+            ? '<em>Corrige le propriétaire avant de supprimer quoi que ce soit.</em>'
+            : `<button type="button" class="admin-btn admin-btn-small" data-action="mark-duplicate">${row.pendingDeletion ? '↩ Annuler' : 'Marquer ce doublon'}</button>`}
+        </div>` : ''}
         <div class="admin-attr-owner">
           <label>Joueur
             <select data-action="reassign">
@@ -768,6 +774,20 @@ function wireEvents(root) {
       return;
     }
 
+    const dupBtn = event.target.closest('button[data-action="mark-duplicate"]');
+    if (dupBtn) {
+      const row = rowOf(dupBtn);
+      if (!row) return;
+      const base = await writablePath(row);
+      const marking = !row.pendingDeletion;
+      await fbPut(`${base}/pendingDeletion`, marking);
+      // On garde de QUI c'est le doublon : au moment de purger, la liste doit
+      // pouvoir se relire sans avoir à refaire le rapprochement de tête.
+      await fbPut(`${base}/duplicateOf`, marking ? (row.duplicate?.with || []).join(', ') || null : null);
+      await reloadAndRender(root);
+      return;
+    }
+
     const fetchBtn = event.target.closest('button[data-action="fetch-puuid"]');
     if (fetchBtn) {
       const row = rowOf(fetchBtn);
@@ -1067,6 +1087,13 @@ const ADMIN_CSS = `
 .admin-attr-field input,.admin-attr-owner select{padding:6px 8px;border-radius:7px;border:1px solid rgba(255,255,255,.14);background:rgba(0,0,0,.25);color:inherit;font:inherit;font-size:12px}
 .admin-attr-field input.invalid{border-color:rgba(255,70,86,.8)}
 .admin-attr-puuid{display:flex;gap:6px;align-items:center}
+.admin-attr-dup{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:8px;padding:7px 10px;border-radius:8px;font-size:11.5px;line-height:1.45}
+/* Un même compte chez deux personnes est une erreur d'attribution, pas un
+   doublon : la couleur doit le distinguer d'un simple renommage. */
+.admin-attr-dup.cross-member{border:1px solid rgba(255,70,86,.5);background:rgba(255,70,86,.08);color:#ff8f98}
+.admin-attr-dup.renamed{border:1px solid rgba(245,200,66,.4);background:rgba(245,200,66,.07);color:#f0cf7a}
+.admin-attr-dup.same-name{border:1px solid rgba(255,255,255,.14);background:rgba(255,255,255,.03);color:var(--muted,#8992aa)}
+.admin-attr-dup em{font-style:normal;opacity:.85}
 .admin-attr-puuid input{flex:1;min-width:0}
 .admin-attr-field input:disabled,.admin-attr-owner select:disabled{opacity:.5;cursor:not-allowed}
 .admin-attr-roles{display:flex;gap:4px}

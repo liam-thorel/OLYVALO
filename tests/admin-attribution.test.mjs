@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import {
   ROLES, attributionRows, attributionWarnings, deletionPlan,
   isValidPuuid, reassignPlan, riotIdOf, roleOf, overlayKeyFor,
+  annotateDuplicates, duplicateLabel,
 } from '../js/admin-attribution.mjs';
 
 const ROSTER = [
@@ -128,6 +129,66 @@ assert.equal(attributionRows({
   overlay: { accounts: { liam: { k1: { name: 'B', tag: '2' } } } },
 }).length, 2);
 
+// ─── Marquer les doublons ────────────────────────────────────────────────────
+// Regrouper par puuid paraissait plus malin — deux noms, une carte. Mais
+// c'est justement le doublon qu'on cherche à nettoyer : la fusion le faisait
+// disparaître de l'écran, une entrée l'emportant en silence tandis que
+// l'autre restait dans Firebase.
+const renomme = attributionRows({
+  overlay: {
+    members: { liam: { name: 'Liam' } },
+    accounts: { liam: { k1: { name: 'Ancien', tag: '0000', puuid: PUUID_A }, k2: { name: 'Nouveau', tag: 'OLY', puuid: PUUID_A } } },
+  },
+});
+assert.equal(renomme.length, 2, 'un renommage reste DEUX cartes, sinon on ne peut pas le nettoyer');
+renomme.forEach(row => assert.equal(row.duplicate.kind, 'renamed'));
+assert.deepEqual(renomme.find(r => r.riotId === 'Ancien#0000').duplicate.with, ['Nouveau#OLY']);
+assert.match(duplicateLabel(renomme[0].duplicate), /Même PUUID que .* — renommage probable/);
+
+// Le cas grave : un même Riot ID rattaché à deux personnes. Ce n'est pas un
+// doublon à supprimer, c'est une attribution à corriger.
+const partage = attributionRows({
+  roster: [{ name: 'Liam', riot: { name: 'Ancien', tag: '0000' } }],
+  overlay: { members: { nico: { name: 'Nico' } }, accounts: { nico: { k1: { name: 'Ancien', tag: '0000' } } } },
+});
+assert.equal(partage.length, 1, 'un seul Riot ID, une seule carte');
+assert.equal(partage[0].duplicate.kind, 'cross-member');
+assert.match(duplicateLabel(partage[0].duplicate), /Liam et Nico/);
+assert.match(duplicateLabel(partage[0].duplicate), /n’appartient qu’à une personne/);
+
+// Sans puuid, deux entrées de même pseudo ne prouvent RIEN : deux comptes
+// peuvent légitimement partager un pseudo à des tags différents.
+const memeNom = annotateDuplicates([
+  { riotId: 'Sam#EUW', member: 'Liam', puuid: '' },
+  { riotId: 'Sam#OLY', member: 'Liam', puuid: '' },
+]);
+assert.equal(memeNom[0].duplicate.kind, 'same-name');
+assert.match(duplicateLabel(memeNom[0].duplicate), /sans PUUID pour trancher/);
+
+// Deux comptes distincts, chacun son puuid : aucun doublon à signaler.
+assert.deepEqual(annotateDuplicates([
+  { riotId: 'A#1', member: 'Liam', puuid: PUUID_A },
+  { riotId: 'B#2', member: 'Liam', puuid: PUUID_B },
+]).map(r => r.duplicate), [null, null]);
+
+// Une carte dont l'identité est CONNUE ne doit pas être accusée sur une
+// simple ressemblance de pseudo : c'est l'entrée sans puuid qui est suspecte,
+// pas celle qui est renseignée.
+const mixte = annotateDuplicates([
+  { riotId: 'Sam#EUW', member: 'Liam', puuid: PUUID_A },
+  { riotId: 'Sam#OLY', member: 'Liam', puuid: '' },
+]);
+assert.equal(mixte[0].duplicate, null, 'le compte identifié n’est pas signalé');
+assert.equal(mixte[1].duplicate, null, 'et il ne sert pas non plus à accuser l’autre');
+
+// Deux puuids différents : deux comptes, quel que soit le pseudo.
+assert.deepEqual(annotateDuplicates([
+  { riotId: 'Sam#EUW', member: 'Liam', puuid: PUUID_A },
+  { riotId: 'Sam#OLY', member: 'Liam', puuid: PUUID_B },
+]).map(r => r.duplicate), [null, null]);
+
+assert.equal(duplicateLabel(null), '');
+
 // ─── Clé d'override ──────────────────────────────────────────────────────────
 // Déterministe : modifier deux fois le même compte réécrit la MÊME entrée.
 // Une clé aléatoire fabriquerait les doublons qu'on cherche à supprimer.
@@ -243,6 +304,20 @@ console.log('admin-attribution: le rôle choisi produit bien un effet');
 // La clé HenrikDev est déjà configurée dans l'admin : inutile d'envoyer
 // quelqu'un chercher un puuid sur un site tiers et le recopier à la main.
 assert.match(admin, /data-action="fetch-puuid"/, 'le bouton est rendu');
+
+// ─── Le doublon se voit ET se marque sur la carte ────────────────────────────
+assert.match(admin, /data-action="mark-duplicate"/);
+assert.match(admin, /duplicateLabel\(row\.duplicate\)/, 'la nature du doublon est affichée');
+// Un compte partagé entre deux personnes n'offre PAS le bouton : il faut
+// corriger le propriétaire, pas supprimer.
+assert.match(admin, /row\.duplicate\.kind === 'cross-member'\s*\?\s*'<em>Corrige le propriétaire/);
+// Le marquage retient de qui c'est le doublon, pour que la liste de purge se
+// relise sans refaire le rapprochement de tête.
+assert.match(admin, /duplicateOf`, marking \?/);
+// Les trois natures ont leur style : un compte partagé ne doit pas se
+// confondre avec un simple renommage.
+['cross-member', 'renamed', 'same-name'].forEach(kind =>
+  assert.ok(admin.includes(`.admin-attr-dup.${kind}`), `${kind} doit être stylé`));
 assert.match(admin, /fetchAccountIdentity\(name, tag\)/, 'et il interroge l’API');
 assert.match(admin, /from '\.\/henrik\.js/);
 
