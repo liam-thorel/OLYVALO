@@ -68,12 +68,25 @@ export function roleOf(row = {}) {
  * supprimer.
  */
 export function overlayKeyFor(riotId) {
-  return `oly-${String(riotId || '').replace(/[.#$[\]/]/g, '_').toLowerCase()}`;
+  // Firebase interdit . # $ [ ] / ; les espaces passent mais doivent être
+  // encodés dans l'URL à chaque lecture — un aller-retour de trop pour une
+  // clé qu'on construit nous-mêmes.
+  return `oly-${String(riotId || '').toLowerCase().replace(/[.#$[\]/\s]+/g, '_')}`;
 }
 
-/** Deux entrées décrivent-elles le même compte ? Le puuid tranche, sinon le Riot ID. */
+/**
+ * Clé de regroupement : le Riot ID, et lui seul.
+ *
+ * Regrouper aussi par puuid paraissait plus malin — deux noms pour un même
+ * compte, une seule carte. Mais c'est exactement le doublon qu'on cherche à
+ * NETTOYER : la fusion le faisait disparaître de l'écran, une des deux
+ * entrées l'emportant en silence tandis que l'autre restait dans Firebase.
+ *
+ * On ne regroupe donc que ce qui décrit la même DÉCLARATION — le même Riot ID
+ * vu dans roster.json et dans rosterOverlay. Le reste est signalé.
+ */
 function identityKey(row) {
-  return row.puuid ? `puuid:${lower(row.puuid)}` : `riot:${lower(row.riotId)}`;
+  return lower(row.riotId);
 }
 
 /**
@@ -89,17 +102,23 @@ function mergeRows(rows) {
   const order = [];
 
   rows.forEach(row => {
-    // L'override porte le puuid ; l'entrée du dépôt ne l'a pas encore. On
-    // rapproche donc aussi par Riot ID avant de conclure à deux comptes.
-    const viaRiotId = [...byIdentity.values()].find(existing => lower(existing.riotId) === lower(row.riotId));
-    const key = viaRiotId ? identityKey(viaRiotId) : identityKey(row);
+    const key = identityKey(row);
     if (!byIdentity.has(key)) {
-      byIdentity.set(key, { ...row, sources: [row.source] });
+      byIdentity.set(key, {
+        ...row, sources: [row.source], members: [row.member],
+        overlayKeys: row.key ? [row.key] : [],
+      });
       order.push(key);
       return;
     }
     const merged = byIdentity.get(key);
     merged.sources.push(row.source);
+    // Un même Riot ID rattaché à deux personnes est une erreur, pas une
+    // fusion : on garde la trace pour la signaler sur la carte.
+    if (!merged.members.includes(row.member)) merged.members.push(row.member);
+    // Deux entrées d'admin pour un même Riot ID : l'une est de trop, et sans
+    // cette trace la seconde disparaîtrait derrière la première.
+    if (row.key && !merged.overlayKeys.includes(row.key)) merged.overlayKeys.push(row.key);
     // L'override l'emporte sur le dépôt : c'est lui qu'un humain a réglé.
     if (row.source === 'rosterOverlay') {
       merged.key = row.key;
@@ -162,7 +181,7 @@ export function attributionRows({ roster = [], overlay = null } = {}) {
     });
   });
 
-  return mergeRows(rows).sort((left, right) =>
+  return annotateDuplicates(mergeRows(rows)).sort((left, right) =>
     left.member.localeCompare(right.member, 'fr')
     || ROLES.indexOf(roleOf(left)) - ROLES.indexOf(roleOf(right))
     || left.riotId.localeCompare(right.riotId, 'fr'));
@@ -194,6 +213,82 @@ export function knownPuuidFor(riotId, pools = {}) {
     }
   }
   return '';
+}
+
+/**
+ * Annote chaque carte du doublon dont elle fait partie.
+ *
+ * Trois natures, qui ne se règlent pas pareil — d'où la distinction plutôt
+ * qu'un « doublon » indifférencié :
+ *
+ *  - `cross-member` : un même Riot ID rattaché à deux personnes. C'est une
+ *    erreur d'attribution, pas un doublon : il faut corriger le propriétaire
+ *    avant de supprimer quoi que ce soit.
+ *  - `renamed` : deux Riot ID différents pour un même puuid. Le joueur s'est
+ *    renommé ; l'ancienne entrée peut partir, mais c'est un choix — son
+ *    historique reste lisible tant qu'elle existe.
+ *  - `same-name` : deux entrées de même pseudo sans puuid pour trancher. On
+ *    ne peut PAS conclure : ce sont peut-être deux comptes distincts.
+ */
+export function annotateDuplicates(rows = []) {
+  const byPuuid = new Map();
+  rows.forEach(row => {
+    if (!row.puuid) return;
+    const key = lower(row.puuid);
+    if (!byPuuid.has(key)) byPuuid.set(key, []);
+    byPuuid.get(key).push(row);
+  });
+
+  const byShortName = new Map();
+  rows.forEach(row => {
+    const short = lower(String(row.riotId).split('#')[0]);
+    if (!short) return;
+    if (!byShortName.has(short)) byShortName.set(short, []);
+    byShortName.get(short).push(row);
+  });
+
+  return rows.map(row => {
+    if (row.overlayKeys && row.overlayKeys.length > 1) {
+      return { ...row, duplicate: { kind: 'redundant', with: [], members: [], keys: row.overlayKeys } };
+    }
+    if (row.members && row.members.length > 1) {
+      return { ...row, duplicate: { kind: 'cross-member', with: [], members: row.members } };
+    }
+
+    const memePuuid = (byPuuid.get(lower(row.puuid)) || []).filter(other => other !== row);
+    if (memePuuid.length) {
+      return {
+        ...row,
+        duplicate: {
+          kind: 'renamed',
+          with: memePuuid.map(other => other.riotId),
+          members: [...new Set(memePuuid.map(other => other.member))],
+        },
+      };
+    }
+
+    // Sans puuid, on ne peut rien affirmer : deux comptes peuvent
+    // légitimement partager un pseudo à des tags différents.
+    if (row.puuid) return { ...row, duplicate: null };
+    const memeNom = (byShortName.get(lower(String(row.riotId).split('#')[0])) || [])
+      .filter(other => other !== row && !other.puuid);
+    if (!memeNom.length) return { ...row, duplicate: null };
+    return { ...row, duplicate: { kind: 'same-name', with: memeNom.map(other => other.riotId), members: [] } };
+  });
+}
+
+/** Phrase affichée sur la carte, selon la nature du doublon. */
+export function duplicateLabel(duplicate) {
+  if (!duplicate) return '';
+  const autres = duplicate.with.join(', ');
+  if (duplicate.kind === 'cross-member') {
+    return `Rattaché à ${duplicate.members.join(' et ')} — un compte n’appartient qu’à une personne.`;
+  }
+  if (duplicate.kind === 'redundant') {
+    return `${duplicate.keys.length} entrées dans l’admin pour ce même compte — une seule est utilisée.`;
+  }
+  if (duplicate.kind === 'renamed') return `Même PUUID que ${autres} — renommage probable.`;
+  return `Même pseudo que ${autres}, sans PUUID pour trancher.`;
 }
 
 /** Problèmes qu'un humain doit trancher avant tout nettoyage. */
@@ -236,6 +331,37 @@ export function attributionWarnings(rows = []) {
   });
 
   return warnings;
+}
+
+/**
+ * Comptes déclarés UNIQUEMENT dans data/roster.json.
+ *
+ * Ce sont eux qui empêchent de se passer du fichier : le seul identifiant
+ * commun aux deux sources est le Riot ID, donc un compte absent de l'admin
+ * disparaîtrait purement et simplement si on cessait de lire le dépôt.
+ *
+ * Les reprendre dans Firebase rend le fichier redondant — et cesser de le
+ * lire devient alors sans conséquence.
+ */
+export function adoptionPlan(rows = []) {
+  return rows
+    .filter(row => row.declaredInRepo && !row.key)
+    .map(row => {
+      const [name, tag = ''] = String(row.riotId).split('#');
+      const role = roleOf(row);
+      return {
+        member: row.member, memberId: row.memberId, riotId: row.riotId,
+        path: `rosterOverlay/accounts/${row.memberId}/${overlayKeyFor(row.riotId)}`,
+        value: {
+          name, tag, region: row.region || '', puuid: row.puuid || '',
+          // Le rôle était porté par la POSITION dans roster.json ; on le rend
+          // explicite au passage, sinon l'information se perdrait.
+          role: role === 'unknown' ? '' : role,
+          games: row.games || ['valorant'],
+          source: 'roster.json', addedAt: Date.now(),
+        },
+      };
+    });
 }
 
 /**
