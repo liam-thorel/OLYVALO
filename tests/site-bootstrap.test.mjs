@@ -216,7 +216,7 @@ test('mobile data pages keep readable spacing, controls and roster details', () 
   assert.match(responsive, /\.section-inner\s*\{\s*padding:\s*0/);
   assert.match(lolStyles, /\.lol-roster-champion strong\{font-size:10px\}/);
   assert.match(coopStyles, /\.coop-cover\{aspect-ratio:16\/7\}/);
-  assert.match(page, /lol-mode\.css\?v=20260920-roster-cards/);
+  assert.match(page, /lol-mode\.css\?v=20260920-puuid-accounts/);
   assert.match(page, /coop-games\.css\?v=20260824-mobile-data-cache/);
   assert.match(designSystem, /\.history-filter-group\s*\{\s*grid-template-columns:\s*55px minmax\(0,1fr\)/);
   assert.match(designSystem, /\.coop-filter-field:last-child\s*\{\s*flex-basis:\s*100%/);
@@ -426,15 +426,15 @@ test('roster cards surface the Riot ID, the smurfs and why a card is empty', () 
   assert.match(render, /rosterAccounts\(p, state\.ROSTER_OVERLAY\)/,
     'les comptes viennent du dépôt ET de l’admin, comme pour les courbes');
   assert.match(render, /class="player-riot-id"/);
-  assert.match(render, /class="player-smurf"/);
+  assert.match(render, /class="player-smurf\$\{active \? ' is-active' : ''\}"/);
   assert.match(render, /window\.OLYCITY\.copyRiotId\(this\)/);
   assert.match(main, /async copyRiotId\(button\)/, 'le handler doit exister, sinon le clic est muet');
 
   // `rosterOverlay` est une base Firebase ouverte en écriture : un Riot ID
   // n'y est pas une donnée de confiance, et il finit dans un innerHTML.
   assert.match(render, /const esc = value =>/, 'render.js doit avoir son échappement');
-  assert.match(render, /data-riot-id="\$\{esc\(main\.riotId\)\}"/, 'le Riot ID principal est échappé');
-  assert.match(render, /data-riot-id="\$\{esc\(account\.riotId\)\}"/, 'les smurfs aussi');
+  assert.match(render, /data-riot-id="\$\{esc\(liveRiotId\)\}"/, 'le Riot ID affiché est échappé');
+  assert.match(render, /\}">\$\{esc\(account\.riotId\)\}<\/button>/, 'les puces des smurfs aussi');
 
   // Sans rang ni stats, la carte n'affichait qu'un trou.
   assert.match(render, /cardStatus\(stats, \{ hasApiKey: Boolean\(storedKey\(\)\), hasRiot/);
@@ -462,4 +462,40 @@ test('LoL roster stat tiles fit their third of the card', () => {
   assert.match(lolRoster, /<div title="\$\{esc\(seasonRole \?/, 'le détail complet reste lisible au survol');
   // La ligne du bas s'enroule sur deux lignes au lieu d'être coupée net.
   assert.match(lolStyles, /\.lol-roster-stats span \{[^}]*-webkit-line-clamp:2/);
+});
+
+test('every roster sync and selection is keyed by PUUID, never by the declared name', () => {
+  const henrik = fs.readFileSync(new URL('../js/henrik.js', import.meta.url), 'utf8');
+
+  // Le premier appel partait du couple name/tag du dépôt : un compte renommé
+  // répondait 404 et sa carte restait vide pour toujours. Seule la pagination
+  // des parties passait déjà par le PUUID — autrement dit, le maillon fragile
+  // était justement celui qui ouvrait la chaîne.
+  assert.match(henrik, /const mmr = await fetchHenrik\(endpoints\.mmr\);/);
+  assert.doesNotMatch(henrik, /\/v3\/mmr\/\$\{region\}\/pc\/\$\{encodeURIComponent\(name\)\}/,
+    'plus aucun appel MMR construit sur le pseudo déclaré');
+  assert.doesNotMatch(henrik, /\/v4\/by-puuid\/matches\/\$\{region\}/,
+    'les chemins sont désormais choisis par syncEndpoints, pas recopiés');
+
+  // Le nom COURANT revient avec les stats : l'écran cessait sinon d'être
+  // synchrone avec Riot sans que rien ne le signale.
+  assert.match(henrik, /riotId,\n\s*renamed: wasRenamed\(declaredRiotId, riotId\)/);
+  assert.match(render, /const liveRiotId = stats\.riotId \|\| shown\?\.riotId \|\| '';/,
+    'la carte affiche le pseudo observé avant celui du dépôt');
+  assert.match(render, /tracker\.gg[\s\S]{0,120}encodeURIComponent\(liveName\)/,
+    'le lien Tracker suit le compte affiché, pas le principal du dépôt');
+
+  // Les stats sont rangées par compte : le smurf écrasait celles du main.
+  assert.match(render, /readStats\(state\.ACCOUNT_STATS, shown/);
+  assert.match(main, /state\.ACCOUNT_STATS = writeStats\(/);
+  assert.match(main, /storage\.setAccountStats\(state\.ACCOUNT_STATS\)/);
+  assert.match(main, /'olycity-account-stats'/, 'une synchro par compte ne doit pas mourir au déploiement');
+
+  // Cliquer une puce affiche ce compte ; recliquer ramène au principal.
+  assert.match(render, /window\.OLYCITY\.selectAccount\(this\)/);
+  assert.match(main, /async selectAccount\(button\)/);
+  assert.match(main, /toggleSelection\(state\.SELECTED_ACCOUNT\[playerName\] \|\| '', clicked\)/);
+  assert.match(main, /if \(needsSync\(readStats\(state\.ACCOUNT_STATS, shown\)\)\) await window\.OLYCITY\.syncAccount\(playerName\)/,
+    'un aller-retour entre deux comptes ne doit pas brûler le quota de la clé');
+  assert.match(components, /\.player-smurf\.is-active/, 'le compte affiché doit se voir');
 });

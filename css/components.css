@@ -314,6 +314,25 @@
   text-overflow:ellipsis; white-space:nowrap; transition:all .15s;
 }
 .player-smurf:hover{ color:var(--text); border-color:var(--red-mid); border-style:solid; }
+/* Compte affiché sur la carte. Recliquer la puce ramène au principal — sans
+   ce repère, on ne saurait pas de quel compte viennent les chiffres du bas. */
+.player-smurf.is-active{
+  color:var(--text); border-style:solid; border-color:var(--red-mid);
+  background:var(--red-low);
+}
+.player-smurf.is-active::before{ content:'◆ '; color:var(--red); }
+/* Un smurf à l'écran : la carte le dit, pour qu'on ne lise pas son rang comme
+   celui du compte principal. */
+.player-card.is-smurf-view{ border-color:var(--border2); }
+.player-card.is-smurf-view .player-riot-id{ border-color:var(--red-mid); }
+
+/* Le dépôt déclare encore l'ancien pseudo : on affiche le courant, et on dit
+   que les deux diffèrent plutôt que de laisser croire à une faute de frappe. */
+.player-riot-id-renamed{
+  flex:none; padding:1px 5px; background:var(--gold-low); color:var(--gold);
+  font-family:'Tomorrow',sans-serif; font-size:8px; font-weight:700;
+  letter-spacing:1px; text-transform:uppercase;
+}
 .player-smurf.is-copied{ color:var(--S); border-color:rgba(63,207,207,.45); border-style:solid; }
 .player-smurf.is-copy-failed{ color:var(--D); border-color:rgba(255,107,122,.45); }
 

@@ -13,6 +13,8 @@ import {
   shouldStopMatchPagination,
 } from './valorant-season.mjs?v=20260809-val-roster-season';
 
+import { syncEndpoints, currentRiotId, observedPuuid, wasRenamed } from './henrik-endpoints.mjs?v=20260920-puuid';
+
 const BASE = 'https://api.henrikdev.xyz/valorant';
 const MATCH_PAGE_SIZE = 10;
 const MAX_MATCH_PAGES = 20;
@@ -59,7 +61,7 @@ function latestSeasonFromMmr(mmr, seasonId = null) {
     || null;
 }
 
-async function fetchCompetitiveActMatches({ region, name, tag, puuid, expectedSeasonId = null }) {
+async function fetchCompetitiveActMatches({ matchesPath, expectedSeasonId = null }) {
   const matches = [];
   const seenMatchIds = new Set();
   let seasonId = expectedSeasonId;
@@ -68,11 +70,8 @@ async function fetchCompetitiveActMatches({ region, name, tag, puuid, expectedSe
 
   for (let pageIndex = 0; pageIndex < MAX_MATCH_PAGES; pageIndex += 1) {
     const start = pageIndex * MATCH_PAGE_SIZE;
-    const identityPath = puuid
-      ? `/v4/by-puuid/matches/${region}/pc/${encodeURIComponent(puuid)}`
-      : `/v4/matches/${region}/pc/${encodeURIComponent(name)}/${encodeURIComponent(tag)}`;
     const response = await fetchHenrik(
-      `${identityPath}?mode=competitive&size=${MATCH_PAGE_SIZE}&start=${start}`,
+      `${matchesPath}?mode=competitive&size=${MATCH_PAGE_SIZE}&start=${start}`,
     );
     const page = Array.isArray(response?.data) ? response.data : [];
     pages += 1;
@@ -117,32 +116,52 @@ export async function fetchAccountIdentity(name, tag) {
   };
 }
 
-export async function syncPlayer(player) {
-  if (!player.riot) throw new Error('NO_RIOT_ID');
-  const { name, tag, region } = player.riot;
+/**
+ * Synchronise UN COMPTE, désigné par son PUUID quand il en a un.
+ *
+ * Le point d'entrée partait du couple `name/tag` déclaré dans le dépôt : un
+ * compte renommé répondait 404 et sa carte restait vide pour toujours. Seule
+ * la pagination des parties passait déjà par le PUUID, une fois celui-ci
+ * obtenu — autrement dit, le premier appel restait le maillon fragile.
+ *
+ * Le Riot ID ne sert donc plus qu'à AMORCER un compte qui n'a pas encore de
+ * PUUID. La réponse porte le nom courant : il est renvoyé avec les stats, pour
+ * que l'écran cesse d'afficher un pseudo qui n'existe plus.
+ */
+export async function syncAccount(account) {
+  const endpoints = syncEndpoints({
+    puuid: account?.puuid,
+    name: account?.name,
+    tag: account?.tag,
+    region: account?.region || 'eu',
+  });
+  if (!endpoints) throw new Error('NO_RIOT_ID');
 
-  const mmr = await fetchHenrik(
-    `/v3/mmr/${region}/pc/${encodeURIComponent(name)}/${encodeURIComponent(tag)}`,
-  );
+  const mmr = await fetchHenrik(endpoints.mmr);
   const tier = mmr?.data?.current?.tier?.name || 'Unrated';
   const rr = mmr?.data?.current?.rr ?? null;
   const peak = mmr?.data?.peak?.tier?.name ?? null;
-  const playerPuuid = mmr?.data?.account?.puuid;
+  const declaredRiotId = account?.riotId || [account?.name, account?.tag].filter(Boolean).join('#');
+  const playerPuuid = observedPuuid({ mmr, fallback: account?.puuid });
+  const riotId = currentRiotId({ mmr, fallback: declaredRiotId });
   const latestMmrSeason = latestSeasonFromMmr(mmr);
+
+  // Le PUUID vient d'être découvert : les parties se paginent par PUUID, pas
+  // par le pseudo qui a servi à amorcer.
+  const matchesPath = endpoints.byPuuid || !playerPuuid
+    ? endpoints.matches
+    : syncEndpoints({ puuid: playerPuuid, region: account?.region || 'eu' }).matches;
 
   let matchResult = { matches: [], seasonId: latestMmrSeason?.season?.id || null, pages: 0, truncated: false };
   try {
     matchResult = await fetchCompetitiveActMatches({
-      region,
-      name,
-      tag,
-      puuid: playerPuuid,
+      matchesPath,
       // La première partie paginée est la source la plus fiable pour l'acte
       // courant. L'ordre du tableau MMR n'est pas garanti par Riot.
       expectedSeasonId: null,
     });
   } catch (error) {
-    console.warn('[HenrikDev] Match pagination failed for', player.name, error.message);
+    console.warn('[HenrikDev] Match pagination failed for', riotId || declaredRiotId, error.message);
     if (['AUTH_REQUIRED', 'RATE_LIMIT', 'COMPTE_PRIVE'].includes(error.message)) throw error;
   }
 
@@ -151,8 +170,8 @@ export async function syncPlayer(player) {
   const seasonWins = Number.isFinite(Number(season?.wins)) ? Number(season.wins) : null;
   const aggregate = aggregateCompetitiveMatches(matchResult.matches, {
     puuid: playerPuuid,
-    name,
-    tag,
+    name: account?.name,
+    tag: account?.tag,
   });
   const winRate = seasonGames > 0 && seasonWins != null
     ? Math.round((seasonWins / seasonGames) * 100)
@@ -177,7 +196,18 @@ export async function syncPlayer(player) {
     truncated: matchResult.truncated,
     statsSource: 'henrik-v4-act',
     syncedAt: Date.now(),
+    // L'identité telle que Riot la connaît AUJOURD'HUI. C'est elle que la
+    // carte affiche : le pseudo du dépôt peut dater de plusieurs renommages.
+    puuid: playerPuuid,
+    riotId,
+    renamed: wasRenamed(declaredRiotId, riotId),
   };
+}
+
+/** Compatibilité : synchronise le compte principal d'un joueur du roster. */
+export async function syncPlayer(player) {
+  if (!player?.riot) throw new Error('NO_RIOT_ID');
+  return syncAccount({ ...player.riot, riotId: [player.riot.name, player.riot.tag].filter(Boolean).join('#') });
 }
 
 export async function syncAllPlayers(players, {

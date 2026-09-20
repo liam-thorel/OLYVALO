@@ -7,7 +7,8 @@ import { valorantApi } from './api.js';
 import { state } from './state.mjs?v=20260806-lol-roster';
 import { formatRelTime } from './storage.js';
 import { avatarLayersHTML } from './avatars.mjs?v=20260720-avatars';
-import { rosterAccounts, cardStatus, isStale } from './roster-card-utils.mjs?v=20260920-roster';
+import { rosterAccounts, cardStatus, isStale } from './roster-card-utils.mjs?v=20260920-puuid';
+import { statsKey, readStats, selectedAccount } from './account-stats.mjs?v=20260920-puuid';
 import { storedKey } from './henrik-key.mjs';
 
 /**
@@ -337,7 +338,12 @@ export function mapSectionHTML(data, idx) {
 // ─── ROSTER ──────────────────────────────────────
 export function rosterHTML() {
   return state.ROSTER.map((p) => {
-    const stats = state.PLAYER_STATS[p.name] || {};
+    // La carte montre UN COMPTE à la fois, choisi dans la liste des puces.
+    // Fondre le main et ses smurfs donnait un rang pris au hasard — celui de la
+    // dernière synchro — et un winrate mêlant deux niveaux de jeu.
+    const accounts = rosterAccounts(p, state.ROSTER_OVERLAY);
+    const shown = selectedAccount(accounts, state.SELECTED_ACCOUNT?.[p.name] || '');
+    const stats = readStats(state.ACCOUNT_STATS, shown, { legacy: state.PLAYER_STATS, memberName: p.name }) || {};
     const syncedAgentStats = Array.isArray(stats.topAgentStats) && stats.topAgentStats.length
       ? stats.topAgentStats
       : (stats.topAgents || []).map(name => ({ name, games: null }));
@@ -397,16 +403,23 @@ export function rosterHTML() {
     const syncTime = stats.syncedAt
       ? `<span class="player-sync-time${stale ? ' is-stale' : ''}"${stale ? ' title="Ces chiffres datent — relance une synchro."' : ''}>${stale ? '⚠ ' : ''}Sync · ${formatRelTime(stats.syncedAt)}</span>` : '';
 
-    const trackerUrl = p.riot
-      ? `https://tracker.gg/valorant/profile/riot/${encodeURIComponent(p.riot.name)}%23${encodeURIComponent(p.riot.tag)}/overview`
+    // Le pseudo affiché est celui que Riot a renvoyé à la dernière synchro, et
+    // non celui du dépôt : « Wong Chi Ming#2046 » n'existe plus depuis que le
+    // compte s'appelle « FakePlasticTrees#1706 ». Le PUUID, lui, n'a pas bougé.
+    const liveRiotId = stats.riotId || shown?.riotId || '';
+    const [liveName, liveTag] = String(liveRiotId).split('#');
+    const trackerUrl = liveName && liveTag
+      ? `https://tracker.gg/valorant/profile/riot/${encodeURIComponent(liveName)}%23${encodeURIComponent(liveTag)}/overview`
       : null;
     const trackerBtn = trackerUrl
       ? `<a class="tracker-btn" href="${trackerUrl}" target="_blank" rel="noopener"><span>↗</span> Tracker</a>`
       : '';
 
-    const syncBtn = p.riot ? `
+    const shownKey = shown ? statsKey(shown) : '';
+    const syncBtn = shown ? `
       <div class="player-actions">
-        <button class="player-sync-btn" data-player="${p.name}" onclick="window.OLYCITY.syncPlayer('${p.name}')">
+        <button class="player-sync-btn" data-player="${esc(p.name)}" data-account-key="${esc(shownKey)}"
+                onclick="window.OLYCITY.syncAccount('${esc(p.name)}')">
           <span class="sync-spin">↻</span> Sync
         </button>
         ${trackerBtn}
@@ -417,30 +430,42 @@ export function rosterHTML() {
     // ID n'apparaissait nulle part alors que c'est la première chose qu'on
     // vient chercher ici ; les smurfs, eux, étaient purement et simplement
     // invisibles.
-    const accounts = rosterAccounts(p, state.ROSTER_OVERLAY);
-    const main = accounts.find(account => account.isMain);
     const smurfs = accounts.filter(account => !account.isMain);
-    const riotLine = main ? `
-        <button class="player-riot-id" type="button" data-riot-id="${esc(main.riotId)}"
-                onclick="window.OLYCITY.copyRiotId(this)" title="Copier ${esc(main.riotId)}">
-          <span class="player-riot-id-text">${esc(main.riotId)}</span><span class="player-riot-id-copy">⧉</span>
+    const renamed = stats.renamed && shown && stats.riotId && stats.riotId !== shown.riotId;
+    const riotLine = shown ? `
+        <button class="player-riot-id" type="button" data-riot-id="${esc(liveRiotId)}"
+                onclick="window.OLYCITY.copyRiotId(this)"
+                title="${renamed ? `Copier ${esc(liveRiotId)} — le dépôt déclare encore ${esc(shown.riotId)}` : `Copier ${esc(liveRiotId)}`}">
+          <span class="player-riot-id-text">${esc(liveRiotId)}</span>${renamed ? '<span class="player-riot-id-renamed" title="Renommé depuis ce que déclare le dépôt">renommé</span>' : ''}<span class="player-riot-id-copy">⧉</span>
         </button>` : '';
+
+    // Cliquer une puce affiche les stats de CE compte ; recliquer la puce
+    // active ramène au principal. La sélection passe par le PUUID, pas par le
+    // pseudo : celui-ci change, l'autre non.
     const smurfLine = smurfs.length ? `
-        <div class="player-smurfs" title="${esc(smurfs.map(account => account.riotId).join(' · '))}">
+        <div class="player-smurfs">
           <span class="player-smurfs-label">${smurfs.length} smurf${smurfs.length > 1 ? 's' : ''}</span>
-          ${smurfs.map(account => `<button class="player-smurf" type="button" data-riot-id="${esc(account.riotId)}"
-             onclick="window.OLYCITY.copyRiotId(this)" title="Copier ${esc(account.riotId)}">${esc(account.riotId)}</button>`).join('')}
+          ${smurfs.map(account => {
+            const key = statsKey(account);
+            const active = key === shownKey;
+            return `<button class="player-smurf${active ? ' is-active' : ''}" type="button"
+             data-player="${esc(p.name)}" data-account-key="${esc(key)}"
+             aria-pressed="${active ? 'true' : 'false'}"
+             onclick="window.OLYCITY.selectAccount(this)"
+             title="${active ? `Revenir sur ${esc(accounts[0]?.riotId || p.name)}` : `Voir les stats de ${esc(account.riotId)}`}">${esc(account.riotId)}</button>`;
+          }).join('')}
         </div>` : '';
 
     // Sans rang ni stats, la carte n'affichait qu'un trou : rien ne disait s'il
     // fallait synchroniser, renseigner une clé ou jouer une classée.
-    const status = cardStatus(stats, { hasApiKey: Boolean(storedKey()), hasRiot: Boolean(main) });
+    const status = cardStatus(stats, { hasApiKey: Boolean(storedKey()), hasRiot: Boolean(shown) });
     const statusBanner = status ? `
         <div class="player-status is-${status.kind}">
           <strong>${esc(status.label)}</strong><span>${esc(status.hint)}</span>
         </div>` : '';
 
-    return `<div class="player-card" data-player-name="${p.name}">
+    return `<div class="player-card${shown && !shown.isMain ? ' is-smurf-view' : ''}"
+      data-player-name="${esc(p.name)}" data-account-key="${esc(shownKey)}">
       <div class="player-banner">
         <div class="player-banner-avatar">${avatarLayersHTML(p.name, p.avatar, valorantApi.agentImg(p.mains?.[0]))}</div>
         <div class="player-banner-deco"></div>

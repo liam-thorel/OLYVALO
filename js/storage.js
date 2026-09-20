@@ -5,7 +5,14 @@
 
 const KEYS = {
   THEME: 'olycity-theme',
+  // Ancien format : une entrée par NOM DE MEMBRE. Conservé en lecture seule —
+  // les synchros déjà faites décrivent le compte principal, et les jeter
+  // obligerait tout le monde à recommencer.
   PLAYER_STATS: 'olycity-player-stats',
+  // Nouveau format : une entrée par COMPTE, indexée sur le PUUID. Un joueur et
+  // son smurf se disputaient la même case, et synchroniser l'un effaçait
+  // l'autre.
+  ACCOUNT_STATS: 'olycity-account-stats',
 };
 
 export const storage = {
@@ -25,6 +32,17 @@ export const storage = {
   },
   setPlayerStats(stats) {
     try { localStorage.setItem(KEYS.PLAYER_STATS, JSON.stringify(stats)); } catch {}
+  },
+
+  getAccountStats() {
+    try {
+      const raw = localStorage.getItem(KEYS.ACCOUNT_STATS);
+      const parsed = raw ? JSON.parse(raw) : {};
+      return parsed && typeof parsed === 'object' ? parsed : {};
+    } catch { return {}; }
+  },
+  setAccountStats(stats) {
+    try { localStorage.setItem(KEYS.ACCOUNT_STATS, JSON.stringify(stats)); } catch {}
   },
 };
 
