@@ -119,7 +119,10 @@ function rosterCard(player) {
   const wins = rankGames ? Number(rank.wins || 0) : Number(queue.wins || 0);
   const losses = rankGames ? Number(rank.losses || 0) : Number(queue.losses || 0);
   const winRate = rankGames ? Number(rank.winRate || 0) : Number(queue.winRate || 0);
-  const mainRole = ROLE_LABELS[queue.mainRole] || 'À déterminer';
+  // « À déterminer » ne tient pas dans un tiers de carte et s'affichait
+  // « À dét… ». Les deux autres colonnes disent déjà « — » quand elles ne
+  // savent pas : la troisième s'aligne, et l'infobulle porte le détail.
+  const mainRole = ROLE_LABELS[queue.mainRole] || '—';
   const roleGames = Number(queue.roles?.[queue.mainRole] || 0);
   const seasonRole = queue.mainRoleSource === 'season-champions';
   return `<article class="lol-roster-card ${rankClass(rank)}">
@@ -129,9 +132,9 @@ function rosterCard(player) {
       <div class="lol-roster-rank"><small>SoloQ</small><strong>${esc(rankLabel(rank))}</strong><span>${rank?.lp != null ? `${Number(rank.lp)} LP` : player.seasonVerified ? 'Aucune partie classée' : 'Non synchronisé'}</span></div>
     </header>
     <div class="lol-roster-stats">
-      <div><small>Parties saison</small><strong>${games || '—'}</strong><span>${games ? `${wins}V · ${losses}D` : player.seasonVerified ? '0V · 0D' : 'En attente'}</span></div>
+      <div><small>Parties</small><strong>${games || '—'}</strong><span>${games ? `${wins}V · ${losses}D` : player.seasonVerified ? '0V · 0D' : 'En attente'}</span></div>
       <div><small>Winrate</small><strong>${games ? `${winRate}%` : '—'}</strong><span>SoloQ</span></div>
-      <div><small>${seasonRole ? 'Rôle principal estimé' : 'Rôle observé'}</small><strong>${esc(mainRole)}</strong><span>${seasonRole ? 'D’après les champions de saison' : roleGames ? `${roleGames} parties vues par le script` : 'Données insuffisantes'}</span></div>
+      <div title="${esc(seasonRole ? 'Rôle principal estimé d’après les champions de la saison' : roleGames ? `Rôle observé sur ${roleGames} parties vues par le script` : 'Rôle observé — données insuffisantes')}"><small>Rôle</small><strong>${esc(mainRole)}</strong><span>${seasonRole ? 'Saison' : roleGames ? `${roleGames} vues` : 'Insuffisant'}</span></div>
     </div>
     <div class="lol-roster-mains"><div class="lol-roster-mains-title"><span>Top 3 champions SoloQ</span><small>Portraits Riot Data Dragon</small></div>
       ${player.topChampions?.length ? player.topChampions.map(championRow).join('') : `<div class="lol-roster-empty">${player.seasonVerified ? 'Aucune partie SoloQ cette saison.' : 'Le top champions apparaîtra après la synchronisation.'}</div>`}

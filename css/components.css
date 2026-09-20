@@ -217,6 +217,10 @@
   border:1px solid var(--border); overflow:hidden;
   transition:transform .3s cubic-bezier(.22,1,.36,1), box-shadow .3s;
   cursor:default;
+  /* La grille étire déjà les cartes à la hauteur de la plus haute ; sans cette
+     colonne, le contenu restait collé en haut et les boutons Sync flottaient
+     à cinq hauteurs différentes sur une même ligne. */
+  display:flex; flex-direction:column;
 }
 .player-card:hover{
   transform:translateY(-6px);
@@ -267,7 +271,7 @@
   color:var(--muted); margin-left:4px; line-height:1;
 }
 
-.player-body{ padding:16px 18px 18px; }
+.player-body{ padding:16px 18px 18px; display:flex; flex-direction:column; flex:1; }
 .player-name{
   font-family:'Tomorrow',sans-serif; font-size:20px; font-weight:600;
   color:var(--text); letter-spacing:1px; text-transform:uppercase;
@@ -278,6 +282,59 @@
   letter-spacing:2px; text-transform:uppercase; color:var(--muted);
   margin-bottom:14px;
 }
+/* ── Riot ID ─────────────────────────────────────────────────────────────
+   La première chose qu'on vient chercher sur un roster : le compte à add.
+   Il n'était nulle part, caché dans l'URL du bouton Tracker. */
+.player-riot-id{
+  display:flex; align-items:center; gap:6px; width:100%;
+  margin:-8px 0 12px; padding:5px 8px; cursor:pointer;
+  background:var(--surf3); border:1px solid var(--border);
+  color:var(--muted); font-family:'Tomorrow',sans-serif; font-size:11px;
+  letter-spacing:.5px; text-align:left; transition:all .15s;
+}
+.player-riot-id:hover{ color:var(--text); border-color:var(--red-mid); }
+.player-riot-id-text{ flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.player-riot-id-copy{ flex:none; font-size:11px; opacity:.55; }
+.player-riot-id.is-copied{ color:var(--S); border-color:rgba(63,207,207,.45); }
+.player-riot-id.is-copied .player-riot-id-copy::after{ content:' copié'; letter-spacing:1px; font-size:9px; }
+.player-riot-id.is-copy-failed{ color:var(--D); border-color:rgba(255,107,122,.45); }
+
+/* ── Smurfs ──────────────────────────────────────────────────────────────
+   Déclarés dans roster.json ou enregistrés depuis l'admin, ils n'étaient
+   affichés nulle part : un joueur à trois comptes n'en montrait qu'un. */
+.player-smurfs{ display:flex; flex-wrap:wrap; align-items:center; gap:5px; margin:-6px 0 12px; }
+.player-smurfs-label{
+  font-family:'Tomorrow',sans-serif; font-size:8px; font-weight:700;
+  letter-spacing:1.5px; text-transform:uppercase; color:var(--dim);
+}
+.player-smurf{
+  max-width:100%; overflow:hidden; padding:3px 7px; cursor:pointer;
+  background:transparent; border:1px dashed var(--border2); color:var(--dim);
+  font-family:'Tomorrow',sans-serif; font-size:9.5px; letter-spacing:.3px;
+  text-overflow:ellipsis; white-space:nowrap; transition:all .15s;
+}
+.player-smurf:hover{ color:var(--text); border-color:var(--red-mid); border-style:solid; }
+.player-smurf.is-copied{ color:var(--S); border-color:rgba(63,207,207,.45); border-style:solid; }
+.player-smurf.is-copy-failed{ color:var(--D); border-color:rgba(255,107,122,.45); }
+
+/* ── Pourquoi la carte est muette ────────────────────────────────────────
+   Quatre causes, quatre gestes différents ; le trou silencieux d'avant
+   envoyait chercher au mauvais endroit. */
+.player-status{
+  display:grid; gap:1px; margin-top:12px; padding:6px 9px;
+  border-left:2px solid var(--dim); background:rgba(255,255,255,.02);
+}
+.player-status strong{
+  font-family:'Tomorrow',sans-serif; font-size:9.5px; font-weight:700;
+  letter-spacing:1.4px; text-transform:uppercase; color:var(--muted);
+}
+.player-status span{ color:var(--dim); font-size:9.5px; line-height:1.4; }
+.player-status.is-no-key{ border-left-color:var(--gold); }
+.player-status.is-no-key strong{ color:var(--gold); }
+.player-status.is-unlinked{ border-left-color:var(--red-mid); }
+.player-status.is-unlinked strong{ color:var(--red); }
+.player-sync-time.is-stale{ color:var(--gold); }
+
 .player-mains{ display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:6px; }
 .player-main{
   aspect-ratio:1; background:var(--surf3); overflow:hidden;
@@ -382,7 +439,11 @@
 .player-actions {
   display: flex;
   gap: 6px;
-  margin-top: 12px;
+  /* `auto` et non `12px` : la grille étire les cartes à la hauteur de la plus
+     haute, et sans cela les boutons Sync flottaient à cinq hauteurs
+     différentes sur une même ligne, selon que le joueur a des smurfs ou non. */
+  margin-top: auto;
+  padding-top: 12px;
 }
 .player-actions .player-sync-btn {
   flex: 1;
@@ -545,16 +606,6 @@
   margin-top: 4px;
 }
 
-/* PLAYER ACTIONS */
-.player-actions {
-  display: flex;
-  gap: 6px;
-  margin-top: 12px;
-}
-.player-actions .player-sync-btn {
-  flex: 1;
-  margin-top: 0;
-}
 .tracker-btn {
   display: flex;
   align-items: center;
@@ -1152,7 +1203,9 @@ body.profile-picker-open { overflow: hidden; }
 .add-form-btn-cancel:hover { color: var(--text); }
 
 /* Add player card */
-.add-player-card { cursor: pointer; transition: all .2s; }
+/* Elle n'est pas un joueur : la laisser s'étirer à la hauteur d'une carte
+   pleine donnait un grand rectangle vide, seul sur sa ligne. */
+.add-player-card { cursor: pointer; transition: all .2s; align-self: start; }
 .add-player-card:hover { border-color: var(--red-mid) !important; }
 .add-player-banner {
   position: relative; overflow: hidden;

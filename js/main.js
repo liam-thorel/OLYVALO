@@ -11,7 +11,7 @@ const SITE_VERSION = '20260920-live-resilience-fix';
 const BOOT_RETRY_KEY = 'olycity-boot-retry';
 import { syncPlayer as henrikSyncPlayer, syncAllPlayers as henrikSyncAll, persistPlayerStats } from './henrik.js?v=20260809-val-roster-season';
 import { setStoredKey, storedKey, forgetCachedKey } from './henrik-key.mjs';
-import { rosterHTML, guestCardHTML, mapSectionHTML, agentPageHTML, navMapsHTML, compHTML } from './render.js?v=20260902-patch1305';
+import { rosterHTML, guestCardHTML, mapSectionHTML, agentPageHTML, navMapsHTML, compHTML } from './render.js?v=20260920-roster-cards';
 import { initTheme, initTilt, initParallax, initSearch, initKeyboard, initHeroParticles, initWheelLogos, initLivePage, initHistoryPage } from './interactions.js?v=20260920-live-resilience-fix';
 import { storage } from './storage.js';
 import { avatarLayersHTML } from './avatars.mjs';
@@ -83,6 +83,7 @@ async function loadData() {
 
   state.COMPS_DATA = comps;
   state.ROSTER = roster;
+  state.ROSTER_OVERLAY = memberOverlay || null;
   state.MEMBERS = mergeMemberProfiles({ roster, members, overlay: memberOverlay || {} });
   state.ROLES = roles.roles;
   state.ROLE_LABEL = { D: 'Duel', I: 'Init', S: 'Sent', C: 'Ctrl' };
@@ -648,6 +649,38 @@ window.OLYCITY = {
       : 'Aucune clé API HenrikDev — cliquer pour en renseigner une';
   },
 
+  /**
+   * Copie un Riot ID dans le presse-papier.
+   *
+   * C'est le geste pour lequel on vient sur le roster : retrouver le compte de
+   * quelqu'un pour l'add en jeu. Le retaper à la main depuis un écran, avec un
+   * tag de quatre caractères, rate une fois sur deux.
+   *
+   * `navigator.clipboard` n'existe qu'en HTTPS et demande parfois une
+   * permission : le repli par sélection marche partout, y compris sur les
+   * navigateurs qui refusent l'API.
+   */
+  async copyRiotId(button) {
+    const riotId = button?.dataset?.riotId || '';
+    if (!riotId) return;
+    let done = false;
+    try {
+      await navigator.clipboard.writeText(riotId);
+      done = true;
+    } catch {
+      const field = document.createElement('textarea');
+      field.value = riotId;
+      field.setAttribute('readonly', '');
+      field.style.cssText = 'position:fixed;top:-1000px;opacity:0';
+      document.body.appendChild(field);
+      field.select();
+      try { done = document.execCommand('copy'); } catch { done = false; }
+      field.remove();
+    }
+    button.classList.add(done ? 'is-copied' : 'is-copy-failed');
+    window.setTimeout(() => button.classList.remove('is-copied', 'is-copy-failed'), 1400);
+  },
+
   promptHenrikKey() {
     const value = prompt(
       'Colle ta clé API HenrikDev (gratuite sur api.henrikdev.xyz/dashboard).\n'
@@ -772,6 +805,34 @@ function renderAll() {
   if (gnGrid) gnGrid.innerHTML = globalNotesHTML();
 }
 
+/**
+ * Ce que la purge de version NE DOIT PAS effacer.
+ *
+ * Chaque déploiement vide le localStorage pour éviter qu'un ancien format de
+ * données ne fasse planter le nouveau code. Trois entrées n'y avaient rien à
+ * faire, et disparaissaient donc à chaque mise en ligne :
+ *
+ * - `henrik-key` : la clé API que le joueur a collée lui-même. Elle repartait
+ *   à chaque déploiement, et le roster se vidait sans que rien n'explique
+ *   pourquoi — la carte affichait juste un trou.
+ * - `custom-players` : les joueurs ajoutés depuis la carte « NOUVEAU ».
+ * - `theme` : un réglage d'affichage, qui ne dépend d'aucun format de données.
+ *
+ * La règle : tout ce que l'UTILISATEUR a saisi ou choisi survit ; les caches,
+ * eux, se reconstruisent.
+ */
+const KEEP_ACROSS_VERSIONS = new Set([
+  // Saisi ou choisi par l'utilisateur — jamais reconstructible.
+  'olycity-henrik-key', 'olycity-custom-players', 'olycity-theme',
+  'olycity-profile', 'olycity-member-id', 'olycity-game',
+  // Coûteux à refaire (une synchro Henrik complète par joueur).
+  'olycity-player-stats',
+  // Caches conservés parce qu'ils accélèrent le premier écran.
+  'olycity-static-data-cache', 'olycity-valorant-visuals', 'olycity-home-activity-seen',
+  'olycity-home-group-night-v2', 'olycity-home-coop-games', 'olycity-site-vitals-v1',
+  'olycity-lol-history-cache-v1', 'olycity-valorant-history-cache-v1', 'olycity-coop-games-cache-v1',
+]);
+
 // ─── BOOT ─────────────────────────────────────────
 async function boot() {
   const visualAssetsPromise = valorantApi.load().catch(error => {
@@ -782,10 +843,7 @@ async function boot() {
   // Auto-clear localStorage if version changed
   const storedVersion = localStorage.getItem('olycity-version');
   if (storedVersion !== SITE_VERSION) {
-    // Clear cache but KEEP player stats (expensive to re-sync, don't change with code updates)
-    const keys = Object.keys(localStorage).filter(k =>
-      k.startsWith('olycity-') && !['olycity-player-stats','olycity-profile','olycity-member-id','olycity-game','olycity-static-data-cache','olycity-valorant-visuals','olycity-home-activity-seen','olycity-home-group-night-v2','olycity-home-coop-games','olycity-site-vitals-v1','olycity-lol-history-cache-v1','olycity-valorant-history-cache-v1','olycity-coop-games-cache-v1'].includes(k)
-    );
+    const keys = Object.keys(localStorage).filter(k => k.startsWith('olycity-') && !KEEP_ACROSS_VERSIONS.has(k));
     keys.forEach(k => localStorage.removeItem(k));
     localStorage.setItem('olycity-version', SITE_VERSION);
     console.log('[OLYCITY] Cache cleared — new version', SITE_VERSION);
