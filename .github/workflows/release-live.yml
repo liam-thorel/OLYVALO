@@ -46,9 +46,22 @@ jobs:
           # que le panel admin affiche.
           script=$(sed -n "s/^const SCRIPT_VERSION = '\(.*\)';$/\1/p" live/index.js)
           echo "tag=$tag  package.json=$pkg  update-manifest.json=$manifest  SCRIPT_VERSION=$script"
-          [ "$pkg" = "$version" ] || { echo "::error::live/package.json est en $pkg, le tag annonce $version"; exit 1; }
-          [ "$manifest" = "$version" ] || { echo "::error::live/update-manifest.json est en $manifest, le tag annonce $version"; exit 1; }
-          [ "$script" = "$version" ] || { echo "::error::SCRIPT_VERSION est en $script, le tag annonce $version"; exit 1; }
+          # Faute récurrente : un « 1 » de trop après le v, qui a déjà produit
+          # v14.7.3, v14.7.4, v14.7.8 et v14.18.0. Le tag ne se corrige pas —
+          # il faut supprimer release ET tag puis republier — donc autant le
+          # dire explicitement plutôt que de laisser déduire d'un écart de
+          # numéros.
+          if [ "v$version" != "$tag" ] || [ "${version#1}" = "$pkg" ] && [ "$version" != "$pkg" ]; then
+            echo "::warning::Le tag $tag ressemble à une faute de frappe pour v$pkg (un « 1 » de trop ?)."
+          fi
+          mismatch() {
+            echo "::error::$1 est en $2, alors que le tag annonce $version."
+            echo "::error::Le tag ne peut pas être corrigé : supprime la release ET le tag $tag, puis republie en v$2."
+            exit 1
+          }
+          [ "$pkg" = "$version" ] || mismatch 'live/package.json' "$pkg"
+          [ "$manifest" = "$version" ] || mismatch 'live/update-manifest.json' "$manifest"
+          [ "$script" = "$version" ] || mismatch 'SCRIPT_VERSION (live/index.js)' "$script"
           echo "tag=$tag" >> "$GITHUB_OUTPUT"
           echo "version=$version" >> "$GITHUB_OUTPUT"
 
