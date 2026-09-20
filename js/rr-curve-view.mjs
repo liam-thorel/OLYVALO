@@ -113,12 +113,12 @@ export function renderChart(allSeries, visible, game) {
       const y = layout.y(point.value).toFixed(1);
       const parties = point.games > 1 ? ` · ${point.games} parties` : point.games === 1 ? ' · 1 partie' : '';
       // La bulle annonce le rang RÉEL à cette date ; le point, lui, est posé
-      // sur le sommet de la période. Quand les deux diffèrent — un pic atteint
-      // puis reperdu — on nomme le sommet, sinon la pastille paraîtrait mal
+      // sur le peak de la période. Quand les deux diffèrent — un pic atteint
+      // puis reperdu — on nomme le peak, sinon la pastille paraîtrait mal
       // placée.
       const reel = Number.isFinite(point.current) ? point.current : point.value;
-      const sommet = reel !== point.value ? ` · sommet ${ladderLabel(game, point.value)}` : '';
-      const titre = escapeHTML(`${nom} — ${ladderLabel(game, reel)} · ${dateLabel(point.ts)}${parties}${sommet}`);
+      const peak = reel !== point.value ? ` · peak ${ladderLabel(game, point.value)}` : '';
+      const titre = escapeHTML(`${nom} — ${ladderLabel(game, reel)} · ${dateLabel(point.ts)}${parties}${peak}`);
       // Cible de survol élargie et invisible : un disque de 3 px ne se vise
       // pas, et c'est pourtant lui qui porte la valeur qu'on vient lire.
       return `<circle class="curve-hit" cx="${x}" cy="${y}" r="10"><title>${titre}</title></circle>`

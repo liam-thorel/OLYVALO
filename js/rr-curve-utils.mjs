@@ -148,14 +148,14 @@ export function milestoneStep(rangeId) {
  * Un pic atteint puis reperdu dans la même quinzaine disparaissait
  * complètement du graphique : sur la plage « Tout », une montée en Immortel
  * suivie d'une redescente ne laissait aucune trace. La courbe dessine donc
- * l'enveloppe des sommets.
+ * l'enveloppe des peaks.
  *
  * La bulle, elle, donne le rang RÉEL à ce moment-là — `current`. Les deux
  * diffèrent dès que la période s'est mal terminée, et c'est voulu : la courbe
  * dit ce qui a été atteint, la bulle où on en était.
  *
  * Les extrémités restent intactes : le rang de départ et le rang actuel ne
- * doivent jamais être remplacés par un sommet, sous peine d'annoncer un rang
+ * doivent jamais être remplacés par un peak, sous peine d'annoncer un rang
  * qu'on n'a plus.
  */
 export function milestones(points = [], stepMs = DAY_MS) {
@@ -178,7 +178,7 @@ export function milestones(points = [], stepMs = DAY_MS) {
 
   const series = buckets.map(entry => ({
     ...entry.last,
-    // Tracé au sommet, daté de la fin de période : c'est à cette date que la
+    // Tracé au peak, daté de la fin de période : c'est à cette date que la
     // bulle rapporte le rang réel.
     value: entry.peak.value,
     peakTs: entry.peak.ts,
@@ -191,7 +191,7 @@ export function milestones(points = [], stepMs = DAY_MS) {
   const last = points[points.length - 1];
   if (series[0].ts !== first.ts) series.unshift(borne(first));
   const fin = series[series.length - 1];
-  // Le dernier point doit porter le rang ACTUEL, jamais un sommet : sinon on
+  // Le dernier point doit porter le rang ACTUEL, jamais un peak : sinon on
   // annoncerait un rang que le joueur n'a plus.
   if (fin.ts !== last.ts || fin.value !== last.value) series[series.length - 1] = borne(last);
   return series;
@@ -690,7 +690,7 @@ export function seriesPath(series, layout) {
 
   const tangents = [slopes[0]];
   for (let i = 1; i < slopes.length; i++) {
-    // Changement de sens (un sommet ou un creux) : tangente plate, sinon la
+    // Changement de sens (un peak ou un creux) : tangente plate, sinon la
     // courbe dépasserait le point d'inflexion.
     if (slopes[i - 1] * slopes[i] <= 0) { tangents.push(0); continue; }
     const average = (slopes[i - 1] + slopes[i]) / 2;

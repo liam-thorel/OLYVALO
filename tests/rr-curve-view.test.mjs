@@ -148,7 +148,7 @@ const large = plotLayout([{ points: [{ ts: 1, value: 600 }, { ts: 2, value: 2200
 const grilleLarge = gridLines(large, 'valorant');
 assert.ok(grilleLarge.length >= 4, 'assez de repères sur une plage large');
 assert.ok(grilleLarge.length <= 8, 'jamais plus de huit');
-// Le repère le plus haut doit approcher le sommet, pas s'arrêter au tiers.
+// Le repère le plus haut doit approcher le peak, pas s'arrêter au tiers.
 const plusHaut = Math.min(...grilleLarge.map(l => l.y));
 assert.ok(plusHaut < large.y(large.minValue + (large.maxValue - large.minValue) * 0.75),
   'la grille monte jusqu’en haut du cadre');
@@ -166,12 +166,12 @@ assert.ok(grilleLol.some(line => line.label === 'Master'), 'au-dessus, elle disp
 
 console.log('rr-curve-view: grille adaptée à l’amplitude affichée');
 
-// ─── La bulle dit le rang réel, la pastille le sommet ────────────────────────
+// ─── La bulle dit le rang réel, la pastille le peak ────────────────────────
 // Un pic atteint puis reperdu dans la même période est TRACÉ (sinon il
 // disparaîtrait du graphique), mais la bulle doit annoncer où le joueur en
-// était vraiment à cette date — et nommer le sommet, faute de quoi la pastille
+// était vraiment à cette date — et nommer le peak, faute de quoi la pastille
 // paraîtrait mal placée.
-const avecSommet = renderChart([{
+const avecPeak = renderChart([{
   member: 'Liam', account: 'Liam#EUW', smurfIndex: 0, isMain: true, color: '#3fcfcf',
   points: [
     { ts: 1, value: 2000, current: 2000, games: 1 },
@@ -180,11 +180,11 @@ const avecSommet = renderChart([{
   ],
 }], new Set(['liam#euw']), 'valorant');
 
-assert.match(avecSommet, /<title>Liam — Ascendant 1 · 50 RR[^<]*· 3 parties · sommet Immortel 1 · 0 RR<\/title>/,
-  'la bulle donne le rang réel, puis nomme le sommet de la période');
-assert.doesNotMatch(avecSommet, /<title>Liam — Immortel 1 · 0 RR[^<]*3 parties/,
-  'le sommet ne doit jamais être annoncé comme le rang du moment');
+assert.match(avecPeak, /<title>Liam — Ascendant 1 · 50 RR[^<]*· 3 parties · peak Immortel 1 · 0 RR<\/title>/,
+  'la bulle donne le rang réel, puis nomme le peak de la période');
+assert.doesNotMatch(avecPeak, /<title>Liam — Immortel 1 · 0 RR[^<]*3 parties/,
+  'le peak ne doit jamais être annoncé comme le rang du moment');
 // Quand les deux coïncident, pas de mention parasite.
-assert.match(avecSommet, /<title>Liam — Ascendant 1 · 60 RR · 01 janv\. · 1 partie<\/title>/);
+assert.match(avecPeak, /<title>Liam — Ascendant 1 · 60 RR · 01 janv\. · 1 partie<\/title>/);
 
-console.log('rr-curve-view: bulle au rang réel, pastille au sommet');
+console.log('rr-curve-view: bulle au rang réel, pastille au peak');

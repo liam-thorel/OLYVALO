@@ -281,7 +281,7 @@ assert.equal(Math.round(layout.x(layout.maxTs)), 960);
 // Une valeur haute doit être HAUT sur l'écran : y décroît quand la valeur monte.
 assert.ok(layout.y(layout.maxValue) < layout.y(layout.minValue));
 // Marge de 5 % : aucune courbe ne colle au bord.
-assert.ok(layout.y(2160) > layout.padding, 'le sommet garde de l’air');
+assert.ok(layout.y(2160) > layout.padding, 'le peak garde de l’air');
 
 // Deux points : un segment droit, il n'y a rien à lisser.
 const path = seriesPath(main, layout);
@@ -318,13 +318,13 @@ const piclay = plotLayout([{ points: pic }], { width: 500, height: 300, padding:
 const courbe = seriesPath({ points: pic }, piclay);
 assert.match(courbe, /^M[\d.]+,[\d.]+ C/, 'trois points et plus : des cubiques, plus des segments');
 
-// y décroît quand la valeur monte : le minimum d'y est le sommet à l'écran.
+// y décroît quand la valeur monte : le minimum d'y est le peak à l'écran.
 // Le chemin SVG arrondit ses coordonnées au dixième de pixel : la tolérance
 // couvre cet arrondi, et rien de plus. Un vrai dépassement de lissage se
 // compte en pixels, pas en centièmes.
 const ARRONDI = 0.06;
 const surPic = echantillonner(courbe);
-assert.ok(Math.min(...surPic) >= piclay.y(300) - ARRONDI, 'la courbe ne dépasse jamais le sommet réel');
+assert.ok(Math.min(...surPic) >= piclay.y(300) - ARRONDI, 'la courbe ne dépasse jamais le peak réel');
 assert.ok(Math.max(...surPic) <= piclay.y(100) + ARRONDI, 'ni ne plonge sous le creux réel');
 
 // Une suite strictement croissante doit le rester : aucun faux recul entre
@@ -435,7 +435,7 @@ assert.equal(parJour[0].value, quotidien[0].value);
 // MEILLEUR rang. Une moyenne lisserait les montées réelles.
 const premierJour = quotidien.filter(p => p.ts < maintenant - 28 * JOUR);
 assert.equal(parJour[1].value, Math.max(...premierJour.map(p => p.value)),
-  'le sommet de la période, pas le premier point ni la moyenne');
+  'le peak de la période, pas le premier point ni la moyenne');
 assert.equal(parJour[1].games, premierJour.length, 'le nombre de parties de la période est retenu');
 
 // Les extrémités sont intactes : le rang actuel arrondi à une quinzaine
@@ -460,16 +460,16 @@ assert.equal(milestones(quotidien, 0).length, quotidien.length, 'un pas nul ne s
 const toutes = withinRange([{ account: 'a#1', points: quotidien }], 'all', maintenant);
 assert.ok(toutes[0].points.length < 12, `« Tout » doit être agrégé, obtenu ${toutes[0].points.length}`);
 
-// ─── Sommet tracé, rang réel dans la bulle ───────────────────────────────────
+// ─── Peak tracé, rang réel dans la bulle ───────────────────────────────────
 // Un pic atteint puis reperdu dans la même période disparaissait entièrement :
 // sur « Tout », une montée en Immortel suivie d'une redescente ne laissait
-// aucune trace. La courbe dessine donc l'enveloppe des sommets — mais la bulle
+// aucune trace. La courbe dessine donc l'enveloppe des peaks — mais la bulle
 // doit continuer à dire où le joueur en était VRAIMENT à cette date, sinon on
 // lui annoncerait un rang qu'il n'a plus.
 const montagne = [
   { ts: maintenant - 6 * JOUR, value: 2000 },
   { ts: maintenant - 5 * JOUR, value: 2100 },
-  { ts: maintenant - 5 * JOUR + 3_600_000, value: 2400 }, // sommet du jour
+  { ts: maintenant - 5 * JOUR + 3_600_000, value: 2400 }, // peak du jour
   { ts: maintenant - 5 * JOUR + 7_200_000, value: 2150 }, // reperdu avant le soir
   { ts: maintenant - 4 * JOUR, value: 2200 },
   { ts: maintenant - 3 * JOUR, value: 2160 },
@@ -477,17 +477,17 @@ const montagne = [
 const avecPic = milestones(montagne, JOUR);
 const jourDuPic = avecPic.find(point => point.games === 3);
 assert.ok(jourDuPic, 'la journée à trois parties est bien agrégée en un point');
-assert.equal(jourDuPic.value, 2400, 'le point est TRACÉ sur le sommet de la période');
+assert.equal(jourDuPic.value, 2400, 'le point est TRACÉ sur le peak de la période');
 assert.equal(jourDuPic.current, 2150, 'la bulle porte le rang réel à la fin de la période');
 assert.equal(jourDuPic.ts, maintenant - 5 * JOUR + 7_200_000, 'daté de la fin de période');
-assert.equal(jourDuPic.peakTs, maintenant - 5 * JOUR + 3_600_000, 'la date du sommet reste connue');
+assert.equal(jourDuPic.peakTs, maintenant - 5 * JOUR + 3_600_000, 'la date du peak reste connue');
 
 // Les extrémités portent leur propre valeur des deux côtés : un rang de départ
-// ou un rang actuel remplacé par un sommet serait un mensonge pur et simple.
+// ou un rang actuel remplacé par un peak serait un mensonge pur et simple.
 assert.equal(avecPic[0].value, 2000);
 assert.equal(avecPic[0].current, 2000);
 const dernierPic = avecPic[avecPic.length - 1];
-assert.equal(dernierPic.value, 2160, 'le rang actuel n’est jamais remplacé par un sommet');
+assert.equal(dernierPic.value, 2160, 'le rang actuel n’est jamais remplacé par un peak');
 assert.equal(dernierPic.current, 2160);
 
 console.log('rr-curve-utils: paliers par période, extrémités préservées');
