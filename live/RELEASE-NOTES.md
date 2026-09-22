@@ -1,18 +1,18 @@
-Cette mise à jour prépare le suivi des comptes par identifiant Riot permanent, et apporte les nouveautés accumulées depuis la v4.17.11.
+<!-- version: 4.19.0 -->
+Cette mise à jour rétablit les paris d'avant-match et achève le passage des comptes LoL à l'identifiant Riot permanent.
 
-### Changements principaux
+### Corrections
 
-- Les parties League of Legends publient désormais l’identifiant Riot permanent du joueur. Un membre qui renomme son compte ne perd plus son historique, ses récaps ni ses courbes de progression.
-- Les parties LoL sont suivies dans **tous les modes** — ARAM, Arena, normales — et s’affichent en direct sur le site et dans l’overlay. Les notifications Discord, elles, restent réservées aux files classées.
-- Des points de participation sont crédités dans tous les modes : 100 en file non classée LoL, 75 en non classée Valorant, 50 en Deathmatch, ARAM et autres modes fun.
-- Les skins équipés des dix joueurs d’une partie Valorant — alliés et adversaires — sont publiés et visibles dans la Live Game.
-- Une égalité n’est plus comptée comme une défaite : elle crédite 100 points, et les paris ouverts sont remboursés en étant annoncés comme tels.
+- **Les paris d'avant-match sont de retour.** Ils avaient disparu le 2 septembre : la sélection d'agent et la partie ne forment qu'une seule session, et le bot n'examinait son départ qu'une fois — pendant le pick, où le mode publié est `agent-select` et non `competitive`. Il se taisait donc, sans erreur ni trace. Les paris de mi-temps et les cartes de fin de partie, eux, continuaient d'arriver, ce qui rendait la panne difficile à voir.
+- La carte de début de partie annonçait « Mode : agent-select ». Elle nomme désormais la file.
+- Une partie classée terminée sans résultat depuis le pick était traitée comme du non classé : ni carte, ni award, ni suivi de rang.
+- Si une annonce de départ est manquée pendant la sélection — redémarrage du bot, identité pas encore résolue — elle est rattrapée au lancement de la partie au lieu d'être perdue.
 
-### Côté site et bot
+### Comptes League of Legends
 
-- Nouvel onglet **Courbes** : la progression du rang dans le temps, une courbe par compte.
-- Nouvel écran d’**attribution des comptes** dans l’admin : propriétaire, rôle principal/smurf, PUUID et région, avec détection des doublons.
-- Nouvelles commandes **/synergies** et **/maps** : classement des duos par winrate, et statistiques par map.
-- Les récaps distinguent désormais chaque compte d’un même joueur, au lieu de les fondre en une seule ligne.
+- Les sessions, clients et profils LoL sont désormais enregistrés sous l'identifiant Riot permanent. Un renommage réécrit au même endroit, au lieu de laisser derrière lui une seconde entrée figée à son état d'avant.
+- Le site retenait parfois cette entrée périmée et affichait un rang vieux de plusieurs mois, sans rien qui le signale. Entre deux entrées d'un même compte, c'est désormais la plus récente qui est retenue.
+- Le roster LoL rapprochait les profils par le pseudo : un compte renommé perdait son rang, son winrate de saison et son top champions, et sa carte affichait simplement « Non synchronisé ».
+- L'historique déjà enregistré reste pris en compte : les parties d'avant ce changement n'ont pas d'identifiant permanent et n'en auront jamais, les exclure amputerait le winrate de la saison.
 
 La mise à jour du script se télécharge automatiquement en arrière-plan. Si une partie est en cours, OLYCITY Live attend sa fin avant de redémarrer.

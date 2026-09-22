@@ -62,6 +62,13 @@ jobs:
           [ "$pkg" = "$version" ] || mismatch 'live/package.json' "$pkg"
           [ "$manifest" = "$version" ] || mismatch 'live/update-manifest.json' "$manifest"
           [ "$script" = "$version" ] || mismatch 'SCRIPT_VERSION (live/index.js)' "$script"
+          # Quatrième emplacement : les notes de version. Elles sont parties
+          # deux fois en décrivant la version PRÉCÉDENTE — v4.18.0 publiée avec
+          # les notes de la v4.17.11. Personne ne s'en aperçoit avant de lire la
+          # release, et à ce moment-là elle est déjà publiée.
+          notes=$(sed -n 's/^<!-- version: \(.*\) -->$/\1/p' live/RELEASE-NOTES.md | head -1)
+          [ -n "$notes" ] || mismatch 'live/RELEASE-NOTES.md (marqueur `<!-- version: X -->` absent)' 'rien'
+          [ "$notes" = "$version" ] || mismatch 'live/RELEASE-NOTES.md' "$notes"
           echo "tag=$tag" >> "$GITHUB_OUTPUT"
           echo "version=$version" >> "$GITHUB_OUTPUT"
 
@@ -154,6 +161,18 @@ jobs:
               --repo '${{ github.repository }}' \
               --title "OLYCITY Live v${version}" \
               --notes-file live/RELEASE-NOTES.md
+          else
+            # La release existe déjà : créée à la main depuis l'interface, elle
+            # n'a ni titre ni notes, et le `create` ci-dessus était simplement
+            # sauté — la v4.19.0 est partie comme ça. On complète ce qui est
+            # vide, sans jamais écraser un texte écrit à la main.
+            corps=$(gh release view "$tag" --repo '${{ github.repository }}' --json body --jq '.body')
+            if [ -z "$corps" ]; then
+              echo "Release sans notes : on y met live/RELEASE-NOTES.md"
+              gh release edit "$tag" --repo '${{ github.repository }}' \
+                --title "OLYCITY Live v${version}" \
+                --notes-file live/RELEASE-NOTES.md
+            fi
           fi
           gh release upload '${{ steps.version.outputs.tag }}' \
             '${{ steps.archive.outputs.name }}' OLYCITY-Live.zip \

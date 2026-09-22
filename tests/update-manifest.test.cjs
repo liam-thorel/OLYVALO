@@ -45,4 +45,17 @@ const declaree = source.match(/const SCRIPT_VERSION = '([^']+)'/)?.[1];
 assert.equal(pkg.version, manifest.version, 'package.json et update-manifest.json divergent');
 assert.equal(declaree, manifest.version, 'SCRIPT_VERSION diverge du manifeste');
 
+// Les NOTES de version comptent comme un quatrième emplacement. Elles sont
+// parties deux fois en décrivant la version précédente — la v4.18.0 publiée
+// avec les notes de la v4.17.11, la v4.19.0 avec celles de la v4.18.0.
+// Personne ne s'en aperçoit avant de lire la release, et à ce moment-là elle
+// est déjà publiée. Le marqueur rend l'oubli impossible à commettre en
+// silence : bumper la version sans toucher aux notes casse ce test.
+const notes = fs.readFileSync(path.join(LIVE, 'RELEASE-NOTES.md'), 'utf8');
+const marque = notes.match(/^<!-- version: (.+) -->$/m)?.[1];
+assert.ok(marque, 'live/RELEASE-NOTES.md doit porter `<!-- version: X -->` en tête');
+assert.equal(marque, manifest.version,
+  `les notes décrivent la ${marque}, alors que le script est en ${manifest.version}`);
+assert.ok(notes.trim().length > 200, 'des notes vides valent une release sans notes');
+
 console.log(`update-manifest: ${manifest.files.length} fichiers, versions alignées sur ${manifest.version}`);
