@@ -28,6 +28,7 @@ const { historyGames, soloRankFromStats, summarizeSoloQueue } = require('./lol-p
 const { fetchOpggSoloProfile } = require('./opgg-profile');
 const { lolHistorySummary } = require('./history-index');
 const { safeFirebaseKey, lolAccountKey, legacyKeyToDrop } = require('./lol-keys.js');
+const { readyCheckPlan, autoAcceptEnabled } = require('./ready-check.js');
 
 const HEARTBEAT_MS = 20000;
 // Phases actives d'une game : GameStart = chargement, InProgress = en jeu, Reconnect = reco après un crash.
@@ -213,6 +214,31 @@ function lcuGet(lock, endpoint) {
     });
     r.on('error', () => resolve({ ok: false }));
     r.on('timeout', () => { r.destroy(); resolve({ ok: false }); });
+  });
+}
+
+/**
+ * Seule écriture de ce script vers le client Riot : accepter un ready check.
+ *
+ * Tout le reste est en lecture, et ça doit le rester. Un POST vers le LCU agit
+ * à la place du joueur, donc il est réservé à cet usage précis, déclenché par
+ * un réglage qu'il a lui-même activé.
+ */
+function lcuPost(lock, endpoint) {
+  return new Promise(resolve => {
+    const auth = Buffer.from(`riot:${lock.password}`).toString('base64');
+    const r = https.request({
+      hostname: '127.0.0.1', port: lock.port, path: endpoint, method: 'POST',
+      headers: { Authorization: `Basic ${auth}`, 'Content-Length': 0 },
+      agent: new https.Agent({ rejectUnauthorized: false }),
+      timeout: 2000,
+    }, res => {
+      res.resume();
+      res.on('end', () => resolve({ ok: res.statusCode >= 200 && res.statusCode < 300, status: res.statusCode }));
+    });
+    r.on('error', () => resolve({ ok: false }));
+    r.on('timeout', () => { r.destroy(); resolve({ ok: false }); });
+    r.end();
   });
 }
 
@@ -423,6 +449,69 @@ function createLolWatcher({
   let lastHeartbeat = 0;
   let cachedLock = null;
   let cachedRegion = null;
+  // ─── Acceptation automatique du ready check ───────────────────────────────
+  // Réglage publié par le site, relu périodiquement : le joueur peut l'activer
+  // depuis l'overlay sans relancer quoi que ce soit.
+  let autoAccept = false;
+  let autoAcceptLuAt = 0;
+  // Minuterie du ready check en cours. Une seule à la fois : le poll tourne
+  // toutes les 3 s et reverrait le même ready check quatre fois, ce qui
+  // programmerait quatre acceptations.
+  let readyCheckTimer = null;
+  let readyCheckArme = false;
+
+  const oublierReadyCheck = () => {
+    if (readyCheckTimer) { clearTimeout(readyCheckTimer); readyCheckTimer = null; }
+    readyCheckArme = false;
+  };
+
+  async function relireReglages() {
+    const puuid = identitySnapshot?.puuid;
+    if (!puuid || Date.now() - autoAcceptLuAt < 15_000) return;
+    autoAcceptLuAt = Date.now();
+    const reglages = await getFB(`live/lolSettings/${lolAccountKey({ puuid })}`).catch(() => null);
+    const avant = autoAccept;
+    autoAccept = autoAcceptEnabled(reglages);
+    if (avant !== autoAccept) log(`[${ts()}] 🔵 LoL — acceptation automatique ${autoAccept ? 'ACTIVÉE' : 'désactivée'}`);
+  }
+
+  /**
+   * Accepte le ready check à la fin du compte à rebours.
+   *
+   * L'état est RELU juste avant d'accepter : entre la programmation et le
+   * déclenchement il s'écoule une dizaine de secondes, pendant lesquelles le
+   * joueur a pu accepter, refuser, ou quitter la file. Accepter sur la foi de
+   * ce qu'on a vu dix secondes plus tôt le remettrait dans une partie qu'il
+   * vient de décliner.
+   */
+  async function surveillerReadyCheck() {
+    if (!autoAccept) { oublierReadyCheck(); return; }
+    const res = await lcuGet(cachedLock, '/lol-matchmaking/v1/ready-check');
+    const plan = readyCheckPlan(res.ok ? res.data : null, { enabled: true });
+
+    if (plan.act === 'ignore') { oublierReadyCheck(); return; }
+    if (readyCheckArme) return; // déjà programmé pour ce ready check
+    readyCheckArme = true;
+
+    const accepter = async () => {
+      readyCheckTimer = null;
+      const encore = await lcuGet(cachedLock, '/lol-matchmaking/v1/ready-check');
+      const verdict = readyCheckPlan(encore.ok ? encore.data : null, { enabled: true });
+      if (verdict.act !== 'accept') {
+        log(`[${ts()}] 🔵 LoL — ready check non accepté (${verdict.reason})`);
+        readyCheckArme = false;
+        return;
+      }
+      const post = await lcuPost(cachedLock, '/lol-matchmaking/v1/ready-check/accept');
+      log(`[${ts()}] 🔵 LoL — ready check ${post.ok ? 'accepté automatiquement' : `refusé par le client (${post.status || 'erreur'})`}`);
+      readyCheckArme = false;
+    };
+
+    if (plan.act === 'accept') { await accepter(); return; }
+    readyCheckTimer = setTimeout(() => { void accepter(); }, plan.delayMs);
+    readyCheckTimer.unref?.();
+  }
+
   // Clés héritées déjà nettoyées : sans ce garde-fou, le script réémettrait la
   // suppression à chaque heartbeat, pour un nœud qui n'existe plus depuis la
   // première fois.
@@ -714,6 +803,7 @@ function createLolWatcher({
       rosterSyncCheckAt = Date.now();
       void handleRosterSyncRequest();
     }
+    void relireReglages();
     if (!cachedLock) cachedLock = readLockfile();
     if (!cachedLock) {
       missedPolls++;
@@ -742,6 +832,13 @@ function createLolWatcher({
     currentQueueId = queue.id ?? currentQueueId;
     const summonerRes = await lcuGet(cachedLock, '/lol-summoner/v1/current-summoner');
     await publishIdentity(summonerRes.data, phase);
+
+    // Le ready check a sa propre phase de gameflow : on n'interroge l'endpoint
+    // que là, plutôt qu'à chaque passage. Sortir de cette phase annule une
+    // acceptation programmée — file quittée, partie déjà acceptée, ou refusée
+    // par quelqu'un d'autre.
+    if (phase === 'ReadyCheck') await surveillerReadyCheck();
+    else oublierReadyCheck();
 
     // Toutes les files sont suivies en direct : la partie en cours doit
     // s'afficher sur le site et dans l'overlay quel que soit le mode, comme

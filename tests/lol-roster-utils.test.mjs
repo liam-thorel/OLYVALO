@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { puuidByRiotId, matchEntry, historyOf, displayRiotId, mergePlayers, observedPuuids } from '../js/lol-roster-utils.mjs';
+import { puuidByRiotId, matchEntry, historyOf, displayRiotId, mergePlayers, observedPuuids, autoAcceptControl } from '../js/lol-roster-utils.mjs';
 
 const ROSTER = [
   { name: 'Liam', riot: { name: 'Wong Chi Ming', tag: '2046', puuid: 'puuid-liam' },
@@ -123,4 +123,32 @@ assert.equal(matchEntry({
 assert.equal(matchEntry({ seule: { playerName: 'X#1', puuid: 'Q', rank: { tier: 'IRON' } } }, { puuid: 'Q' }).rank.tier, 'IRON');
 
 console.log('lol-roster-utils: identité par PUUID, repli par nom, sans doublon ni disparition');
+// ─── Acceptation automatique : uniquement sur sa propre carte ───────────────
+// Le réglage fait accepter une partie à la place de quelqu'un. Le laisser
+// basculer depuis n'importe quelle carte permettrait de mettre un coéquipier
+// dans une game qu'il ne jouera pas — pénalité pour lui, AFK pour les autres.
+const moi = { name: 'Liam', puuid: 'puuid-liam' };
+assert.deepEqual(autoAcceptControl(moi, { profile: 'Liam' }), { puuid: 'puuid-liam', enabled: false });
+assert.equal(autoAcceptControl(moi, { profile: 'Nico' }), null, 'pas de bouton sur la carte d’un autre');
+assert.equal(autoAcceptControl(moi, { profile: '' }), null, 'un visiteur en invité ne règle rien');
+assert.equal(autoAcceptControl(moi, {}), null);
+assert.deepEqual(autoAcceptControl(moi, { profile: '  liam  ' }), { puuid: 'puuid-liam', enabled: false },
+  'la casse et les espaces du profil ne comptent pas');
+
+// Sans PUUID, pas de clé sous laquelle le script lirait le réglage : un compte
+// renommé le perdrait en silence, ce qui est le pire pour une option qui joue
+// à votre place.
+assert.equal(autoAcceptControl({ name: 'Liam' }, { profile: 'Liam' }), null);
+assert.equal(autoAcceptControl({ name: 'Liam', puuid: '   ' }, { profile: 'Liam' }), null);
+
+// L'état vient de Firebase, ouvert en écriture : seul un vrai booléen allume.
+assert.equal(autoAcceptControl(moi, { profile: 'Liam', settings: { 'puuid-liam': { autoAccept: true } } }).enabled, true);
+[false, 'true', 1, null, {}].forEach(valeur => {
+  assert.equal(autoAcceptControl(moi, { profile: 'Liam', settings: { 'puuid-liam': { autoAccept: valeur } } }).enabled, false,
+    `autoAccept=${JSON.stringify(valeur)} n’allume pas le bouton`);
+});
+assert.equal(autoAcceptControl(moi, { profile: 'Liam', settings: { autre: { autoAccept: true } } }).enabled, false,
+  'le réglage d’un autre compte ne s’applique pas');
+
 console.log('lol-roster-utils: entre deux entrées du même compte, la plus fraîche gagne');
+console.log('lol-roster-utils: l’acceptation automatique ne se règle que sur sa propre carte');

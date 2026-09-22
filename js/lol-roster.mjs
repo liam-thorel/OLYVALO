@@ -1,5 +1,5 @@
 import { mergeFirebaseEvent, normalizeLolHistory } from './lol-utils.mjs';
-import { matchEntry, historyOf, displayRiotId, mergePlayers, observedPuuids } from './lol-roster-utils.mjs?v=20260922-puuid';
+import { matchEntry, historyOf, displayRiotId, mergePlayers, observedPuuids, autoAcceptControl } from './lol-roster-utils.mjs?v=20260922-autoaccept';
 import { state } from './state.mjs?v=20260806-lol-roster';
 
 const FIREBASE_URL = 'https://realtime-database-5bb9f-default-rtdb.europe-west1.firebasedatabase.app';
@@ -24,6 +24,9 @@ const PLAYERS = [
   },
 ];
 const ROLE_LABELS = { top:'Top', jungle:'Jungle', mid:'Mid', adc:'ADC', support:'Support' };
+// Réglages par compte, indexés sur le PUUID. Lus depuis Firebase, écrits par
+// le bouton d'acceptation automatique, relus par le script Live.
+let lolSettings = {};
 const esc = value => String(value ?? '').replace(/[&<>'"]/g, char => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', "'":'&#39;', '"':'&quot;' }[char]));
 const normalizeId = value => String(value || '').trim().toLocaleLowerCase('fr');
 const wait = milliseconds => new Promise(resolve => setTimeout(resolve, milliseconds));
@@ -134,6 +137,25 @@ function homeCard(player) {
   </article>`;
 }
 
+/**
+ * Bouton d'acceptation automatique du ready check.
+ *
+ * Il n'apparaît que sur SA propre carte : l'option fait accepter une partie à
+ * la place de quelqu'un, et la laisser basculer depuis la carte d'un autre
+ * mettrait un coéquipier dans une game qu'il ne jouera pas.
+ */
+function autoAcceptRow(player, settings) {
+  const control = autoAcceptControl(player, { profile: localStorage.getItem('olycity-profile') || '', settings });
+  if (!control) return '';
+  return `<button class="lol-auto-accept${control.enabled ? ' is-on' : ''}" type="button"
+    data-auto-accept="${esc(control.puuid)}" aria-pressed="${control.enabled}"
+    title="${control.enabled
+      ? 'Le script acceptera la partie à la fin du compte à rebours — reste devant ton PC'
+      : 'Accepter automatiquement les files LoL et TFT, à la fin du compte à rebours'}">
+    <span>${control.enabled ? '◆' : '◇'}</span> Accept auto ${control.enabled ? 'activé' : 'désactivé'}
+  </button>`;
+}
+
 function rosterCard(player) {
   const rank = player.rank;
   const queue = player.soloQueue || {};
@@ -148,7 +170,7 @@ function rosterCard(player) {
   const mainRole = ROLE_LABELS[queue.mainRole] || '—';
   const roleGames = Number(queue.roles?.[queue.mainRole] || 0);
   const seasonRole = queue.mainRoleSource === 'season-champions';
-  return `<article class="lol-roster-card ${rankClass(rank)}">
+  return `<article class="lol-roster-card ${rankClass(rank)}" data-player-puuid="${esc(player.puuid || '')}">
     <header>
       <div class="lol-roster-avatar">${player.avatar ? `<img src="${esc(player.avatar)}" alt="">` : `<span>${esc(player.name[0])}</span>`}</div>
       <div><span>${esc(player.riotId)}</span><h3>${esc(player.name)}</h3></div>
@@ -159,6 +181,7 @@ function rosterCard(player) {
       <div><small>Winrate</small><strong>${games ? `${winRate}%` : '—'}</strong><span>SoloQ</span></div>
       <div title="${esc(seasonRole ? 'Rôle principal estimé d’après les champions de la saison' : roleGames ? `Rôle observé sur ${roleGames} parties vues par le script` : 'Rôle observé — données insuffisantes')}"><small>Rôle</small><strong>${esc(mainRole)}</strong><span>${seasonRole ? 'Saison' : roleGames ? `${roleGames} vues` : 'Insuffisant'}</span></div>
     </div>
+    ${autoAcceptRow(player, lolSettings)}
     <div class="lol-roster-mains"><div class="lol-roster-mains-title"><span>Top 3 champions SoloQ</span><small>Portraits Riot Data Dragon</small></div>
       ${player.topChampions?.length ? player.topChampions.map(championRow).join('') : `<div class="lol-roster-empty">${player.seasonVerified ? 'Aucune partie SoloQ cette saison.' : 'Le top champions apparaîtra après la synchronisation.'}</div>`}
     </div>
@@ -187,12 +210,48 @@ export function initLolRosterPages() {
     fetch(`${FIREBASE_URL}/live/lolProfiles.json`).then(response => response.ok ? response.json() : {}),
     fetch(`${FIREBASE_URL}/live/lolHistory.json`).then(response => response.ok ? response.json() : {}),
     fetch('./data/lol-roster-stats.json').then(response => response.ok ? response.json() : {}),
-  ]).then(([profileData, historyData, verifiedData]) => {
+    fetch(`${FIREBASE_URL}/live/lolSettings.json`).then(response => response.ok ? response.json() : {}).catch(() => ({})),
+  ]).then(([profileData, historyData, verifiedData, settingsData]) => {
     profiles = profileData || {};
     history = historyData || {};
     verifiedProfiles = verifiedData?.profiles || {};
+    lolSettings = settingsData || {};
     rerender();
   }).catch(rerender);
+
+  /**
+   * Bascule le réglage, puis rend la carte tout de suite.
+   *
+   * L'écriture part en arrière-plan : attendre l'aller-retour Firebase avant
+   * de changer l'état du bouton donne l'impression d'un clic perdu. En cas
+   * d'échec on revient en arrière, sinon le bouton mentirait sur ce que le
+   * script va réellement faire.
+   */
+  // Le roster LoL se rend au démarrage, souvent AVANT que le profil ne soit
+  // choisi : le bouton « accept auto » n'apparaissait alors sur aucune carte,
+  // puisque personne n'était encore identifié. Le site publie déjà l'événement,
+  // il suffisait de l'écouter.
+  window.addEventListener('olycity:profile-change', rerender);
+
+  document.getElementById('lol-roster-grid')?.addEventListener('click', async event => {
+    const bouton = event.target.closest('[data-auto-accept]');
+    if (!bouton) return;
+    const puuid = bouton.dataset.autoAccept;
+    const avant = lolSettings[puuid]?.autoAccept === true;
+    lolSettings = { ...lolSettings, [puuid]: { ...(lolSettings[puuid] || {}), autoAccept: !avant } };
+    rerender();
+    try {
+      const response = await fetch(`${FIREBASE_URL}/live/lolSettings/${encodeURIComponent(puuid)}.json?print=silent`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ autoAccept: !avant, updatedAt: Date.now() }),
+      });
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    } catch {
+      lolSettings = { ...lolSettings, [puuid]: { ...(lolSettings[puuid] || {}), autoAccept: avant } };
+      rerender();
+    }
+  });
   const profileSource = new EventSource(`${FIREBASE_URL}/live/lolProfiles.json`);
   const historySource = new EventSource(`${FIREBASE_URL}/live/lolHistory.json`);
   ['put','patch'].forEach(type => {
