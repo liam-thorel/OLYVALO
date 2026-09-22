@@ -458,7 +458,10 @@ export function rosterHTML() {
 
     // Sans rang ni stats, la carte n'affichait qu'un trou : rien ne disait s'il
     // fallait synchroniser, renseigner une clé ou jouer une classée.
-    const status = cardStatus(stats, { hasApiKey: Boolean(storedKey()), hasRiot: Boolean(shown) });
+    const status = cardStatus(stats, {
+      hasApiKey: Boolean(storedKey()), hasRiot: Boolean(shown),
+      syncing: state.SYNCING?.has(p.name),
+    });
     const statusBanner = status ? `
         <div class="player-status is-${status.kind}">
           <strong>${esc(status.label)}</strong><span>${esc(status.hint)}</span>

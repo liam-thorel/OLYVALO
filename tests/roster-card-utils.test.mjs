@@ -85,4 +85,20 @@ assert.equal(isStale(MAINTENANT - 9 * 86_400_000, MAINTENANT), true);
 assert.equal(isStale(0, MAINTENANT), false, 'jamais synchronisé n’est pas « périmé » : c’est un autre message');
 assert.equal(isStale(null, MAINTENANT), false);
 
+// ─── Pendant une synchro, on ne diagnostique pas ─────────────────────────────
+// Le bouton affiche déjà « Sync en cours… ». La carte, elle, annonçait « clé
+// API manquante » pour une synchro lancée AVEC une clé : elle n'avait pas été
+// redessinée depuis sa saisie, et gardait le bandeau d'avant.
+assert.equal(cardStatus({}, { hasApiKey: false, syncing: true }), null,
+  'un diagnostic sur le point d’être répondu est du bruit');
+assert.equal(cardStatus({}, { hasApiKey: true, syncing: true }), null);
+assert.equal(cardStatus({}, { hasRiot: false, syncing: true }), null);
+
+// Une synchro qui tourne ne masque pas un diagnostic sur des stats DÉJÀ là :
+// « rang introuvable » reste vrai pendant qu'on retente.
+assert.equal(cardStatus({ syncedAt: 42 }, { syncing: true }).kind, 'unranked');
+// Et hors synchro, rien ne change.
+assert.equal(cardStatus({}, { hasApiKey: false, syncing: false }).kind, 'no-key');
+
 console.log('roster-card-utils: causes distinctes d’une carte muette');
+console.log('roster-card-utils: aucun diagnostic pendant une synchro en cours');
