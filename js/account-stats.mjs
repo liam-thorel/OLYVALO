@@ -92,3 +92,66 @@ export function needsSync(stats, now = Date.now(), maxAgeMs = 10 * 60_000) {
   const ts = Number(stats?.syncedAt || 0);
   return !(ts > 0) || now - ts > maxAgeMs;
 }
+
+/**
+ * Chemin Firebase d'un compte. Les clés RTDB interdisent . # $ [ ] / — or une
+ * clé de repli contient un « # » (`riot:nom#tag`).
+ *
+ * La transformation n'est pas réversible, d'où la clé canonique recopiée DANS
+ * l'enregistrement : c'est elle qui sert à ranger les stats au retour, pas le
+ * nom du nœud.
+ */
+export function firebasePath(key) {
+  return String(key || '').replace(/[.#$[\]/]/g, '_');
+}
+
+/**
+ * Enregistrement à publier : les stats, plus la clé qui permet de les
+ * reclasser, plus le compte qu'elles décrivent — lisible à l'œil nu dans la
+ * console Firebase, ce qui n'est pas rien pour déboguer.
+ */
+export function publishable(account, stats) {
+  const key = statsKey(account);
+  if (!key || !stats?.syncedAt) return null;
+  return { ...stats, key, riotId: stats.riotId || account?.riotId || '' };
+}
+
+/**
+ * Stats venues de Firebase, indexées par leur clé canonique.
+ *
+ * La base est ouverte en écriture : tout ce qui en sort est suspect. Un
+ * enregistrement sans clé ou sans date de synchro est écarté — il ne pourrait
+ * ni se ranger, ni se comparer à ce qu'on a déjà.
+ */
+export function remoteStats(raw) {
+  const store = {};
+  Object.values(raw || {}).forEach(entry => {
+    if (!entry || typeof entry !== 'object') return;
+    const key = typeof entry.key === 'string' ? entry.key.trim() : '';
+    if (!key || !Number.isFinite(Number(entry.syncedAt))) return;
+    store[key] = entry;
+  });
+  return store;
+}
+
+/**
+ * Fusionne le magasin local et celui de Firebase — la plus FRAÎCHE gagne,
+ * compte par compte.
+ *
+ * Deux copies existaient sans jamais se parler : le navigateur et l'overlay,
+ * chacun avec son localStorage. L'overlay affichait des stats vieilles de
+ * cinq jours et un pseudo périmé, sans rien qui l'explique, et ne pouvait pas
+ * se rattraper faute de clé API.
+ *
+ * Comparer les dates plutôt que préférer une source par principe : le local
+ * peut être plus récent (on vient de synchroniser hors ligne), et le distant
+ * aussi (quelqu'un d'autre a synchronisé).
+ */
+export function mergeStores(local = {}, remote = {}) {
+  const merged = { ...local };
+  Object.entries(remote).forEach(([key, distant]) => {
+    const ici = merged[key];
+    if (!ici || Number(distant?.syncedAt || 0) > Number(ici?.syncedAt || 0)) merged[key] = distant;
+  });
+  return merged;
+}

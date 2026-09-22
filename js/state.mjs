@@ -19,6 +19,9 @@ export const state = {
   ACCOUNT_STATS: {},
   // Compte affiché sur la carte de chaque joueur. Vide = son principal.
   SELECTED_ACCOUNT: {},
+  // Joueurs dont une synchro est en cours. La carte cesse alors de poser un
+  // diagnostic : le bouton dit déjà « Sync en cours… ».
+  SYNCING: new Set(),
   currentPage: 'home',
   currentProfile: null,
   currentMapIdx: 0,

@@ -84,7 +84,12 @@ export function rosterAccounts(player, overlay = null) {
  * n'est renvoyé quand la carte a de quoi se remplir : un bandeau permanent
  * finirait par ne plus être lu.
  */
-export function cardStatus(stats = {}, { hasApiKey = true, hasRiot = true } = {}) {
+export function cardStatus(stats = {}, { hasApiKey = true, hasRiot = true, syncing = false } = {}) {
+  // Une synchro est en cours : le bouton le dit déjà. Poser un diagnostic sur
+  // le point d'être répondu est au mieux du bruit, au pire faux — c'est ce qui
+  // affichait « clé API manquante » pendant une synchro lancée AVEC une clé,
+  // la carte n'ayant pas été redessinée depuis sa saisie.
+  if (syncing && !stats?.syncedAt) return null;
   if (!hasRiot) {
     return { kind: 'unlinked', label: 'Aucun compte Riot', hint: 'À renseigner depuis Admin · Attribution des comptes.' };
   }

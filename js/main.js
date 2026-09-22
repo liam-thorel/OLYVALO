@@ -7,11 +7,13 @@ import { mergeLineups } from './lineup-utils.mjs?v=20260913-lineup-contrib';
 import { valorantApi } from './api.js';
 import { fetchJsonWithRetry, fetchJsonWithTimeout } from './request-utils.mjs?v=20260825-first-load-recovery';
 
-const SITE_VERSION = '20260920-live-resilience-fix';
+const SITE_VERSION = '20260922-shared-stats';
+const FIREBASE_URL = 'https://realtime-database-5bb9f-default-rtdb.europe-west1.firebasedatabase.app';
 const BOOT_RETRY_KEY = 'olycity-boot-retry';
 import { syncAccount as henrikSyncAccount, syncAllPlayers as henrikSyncAll, persistPlayerStats } from './henrik.js?v=20260920-puuid';
 import { rosterAccounts } from './roster-card-utils.mjs?v=20260920-puuid';
-import { statsKey, readStats, writeStats, selectedAccount, toggleSelection, needsSync } from './account-stats.mjs?v=20260920-puuid';
+import { statsKey, readStats, writeStats, selectedAccount, toggleSelection, needsSync,
+  firebasePath, publishable, remoteStats, mergeStores } from './account-stats.mjs?v=20260922-partage';
 import { setStoredKey, storedKey, forgetCachedKey } from './henrik-key.mjs';
 import { rosterHTML, guestCardHTML, mapSectionHTML, agentPageHTML, navMapsHTML, compHTML, globalNotesHTML } from './render.js?v=20260920-puuid-accounts';
 import { initTheme, initTilt, initParallax, initSearch, initKeyboard, initHeroParticles, initWheelLogos, initLivePage, initHistoryPage } from './interactions.js?v=20260920-live-resilience-fix';
@@ -78,10 +80,10 @@ async function loadData() {
     console.warn('[OLYCITY] Données statiques restaurées depuis le cache');
   }
   const [comps, roster, members, roles, agentsFr, lineups, meta] = bundle;
-  const memberOverlay = await fetchJsonWithTimeout('https://realtime-database-5bb9f-default-rtdb.europe-west1.firebasedatabase.app/rosterOverlay.json', { timeoutMs:2_500 }).catch(() => null);
+  const memberOverlay = await fetchJsonWithTimeout(`${FIREBASE_URL}/rosterOverlay.json`, { timeoutMs:2_500 }).catch(() => null);
   // Lineups ajoutés depuis le site, hors déploiement. Indisponibles = on
   // affiche ceux du dépôt, ce qui reste la situation d'avant.
-  const addedLineups = await fetchJsonWithTimeout('https://realtime-database-5bb9f-default-rtdb.europe-west1.firebasedatabase.app/lineups.json', { timeoutMs:2_500 }).catch(() => null);
+  const addedLineups = await fetchJsonWithTimeout(`${FIREBASE_URL}/lineups.json`, { timeoutMs:2_500 }).catch(() => null);
 
   state.COMPS_DATA = comps;
   state.ROSTER = roster;
@@ -101,7 +103,12 @@ async function loadData() {
     custom.forEach(p => { if (!state.ROSTER.find(r => r.name === p.name)) state.ROSTER.push(p); });
   } catch(e) {}
   state.PLAYER_STATS = storage.getPlayerStats();
-  state.ACCOUNT_STATS = storage.getAccountStats();
+  // Les stats vivaient dans le localStorage, propre à chaque navigateur : le
+  // site et l'overlay en avaient deux copies qui ne se parlaient jamais. Elles
+  // sont désormais publiées, et la plus fraîche gagne compte par compte.
+  const partagees = await fetchJsonWithTimeout(`${FIREBASE_URL}/rosterStats.json`, { timeoutMs: 2_500 }).catch(() => null);
+  state.ACCOUNT_STATS = mergeStores(storage.getAccountStats(), remoteStats(partagees));
+  storage.setAccountStats(state.ACCOUNT_STATS);
 
   // Static mains from roster.json — not overridden by unreliable API topAgents
   state.ROSTER.forEach(p => {
@@ -694,10 +701,36 @@ window.OLYCITY = {
     setStoredKey(value);
     forgetCachedKey();
     window.OLYCITY._refreshHenrikKeyBtn();
+    // Le verdict de chaque carte dépend de la présence de la clé : sans ce
+    // rendu, elles continuent toutes d'afficher « clé API manquante ».
+    window.OLYCITY._renderRoster();
     setSyncStatus(
       value.trim() ? 'Clé enregistrée — relance la synchronisation.' : 'Clé supprimée.',
       value.trim() ? 'success' : 'info',
     );
+  },
+
+  /**
+   * Publie le résultat d'une synchro pour que tout le monde en profite.
+   *
+   * Les stats d'un compte ne sont pas une donnée de navigateur : elles
+   * décrivent le roster. Les garder en local donnait deux copies muettes l'une
+   * pour l'autre — l'overlay affichait des chiffres vieux de cinq jours, sans
+   * pouvoir se rattraper faute de clé API.
+   *
+   * L'échec est silencieux et sans conséquence : le local a déjà été écrit,
+   * l'écran est juste, et la prochaine synchro republiera.
+   */
+  async _publishStats(account, stats) {
+    const record = publishable(account, stats);
+    if (!record) return;
+    try {
+      await fetch(`${FIREBASE_URL}/rosterStats/${encodeURIComponent(firebasePath(record.key))}.json?print=silent`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(record),
+      });
+    } catch { /* hors ligne : le local suffit jusqu'à la prochaine synchro */ }
   },
 
   /**
@@ -748,6 +781,11 @@ window.OLYCITY = {
   async syncAccount(playerName) {
     const { player, shown } = window.OLYCITY._accountsOf(playerName);
     if (!player || !shown) return;
+    state.SYNCING.add(playerName);
+    // Redessiner tout de suite : le bandeau « clé API manquante » avait été
+    // rendu AVANT que la clé ne soit saisie, et setBtnState ne touche que le
+    // bouton. Sans ce rendu, il restait affiché pendant toute la synchro.
+    window.OLYCITY._renderRoster();
     setBtnState(playerName, 'syncing', 'Sync en cours…');
     try {
       const [name, tag] = String(shown.riotId || '').split('#');
@@ -762,11 +800,15 @@ window.OLYCITY = {
       if (shown.isMain) state.PLAYER_STATS[playerName] = stats;
       storage.setAccountStats(state.ACCOUNT_STATS);
       if (shown.isMain) persistPlayerStats(playerName, stats);
+      void window.OLYCITY._publishStats(stored, stats);
       if (statsKey(stored) !== statsKey(shown)) state.SELECTED_ACCOUNT[playerName] = shown.isMain ? '' : statsKey(stored);
 
+      state.SYNCING.delete(playerName);
       window.OLYCITY._renderRoster();
       setBtnState(playerName, 'synced', 'Synced ✓');
     } catch (e) {
+      state.SYNCING.delete(playerName);
+      window.OLYCITY._renderRoster();
       const msgs = {
         NO_API_KEY: 'Pas de clé API',
         AUTH_REQUIRED: 'Clé invalide',
@@ -806,8 +848,10 @@ window.OLYCITY = {
         const { accounts } = window.OLYCITY._accountsOf(playerName);
         const main = accounts.find(account => account.isMain) || null;
         if (main) {
-          state.ACCOUNT_STATS = writeStats(state.ACCOUNT_STATS, { ...main, puuid: stats.puuid || main.puuid }, stats);
+          const compte = { ...main, puuid: stats.puuid || main.puuid };
+          state.ACCOUNT_STATS = writeStats(state.ACCOUNT_STATS, compte, stats);
           storage.setAccountStats(state.ACCOUNT_STATS);
+          void window.OLYCITY._publishStats(compte, stats);
         }
         window.OLYCITY._renderRoster();
       },

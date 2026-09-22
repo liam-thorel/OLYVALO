@@ -437,7 +437,18 @@ test('roster cards surface the Riot ID, the smurfs and why a card is empty', () 
   assert.match(render, /\}">\$\{esc\(account\.riotId\)\}<\/button>/, 'les puces des smurfs aussi');
 
   // Sans rang ni stats, la carte n'affichait qu'un trou.
-  assert.match(render, /cardStatus\(stats, \{ hasApiKey: Boolean\(storedKey\(\)\), hasRiot/);
+  assert.match(render, /cardStatus\(stats, \{[\s\S]{0,120}hasApiKey: Boolean\(storedKey\(\)\)/);
+
+  // Pendant une synchro, la carte cesse de diagnostiquer : elle annonçait
+  // « clé API manquante » pour une synchro lancée AVEC une clé, n'ayant pas
+  // été redessinée depuis sa saisie. Deux correctifs, complémentaires.
+  assert.match(render, /syncing: state\.SYNCING\?\.has\(p\.name\)/);
+  assert.match(main, /state\.SYNCING\.add\(playerName\);[\s\S]{0,300}_renderRoster\(\);/,
+    'le rendu part dès le début de la synchro');
+  assert.equal((main.match(/state\.SYNCING\.delete\(playerName\)/g) || []).length, 2,
+    'retiré au succès comme à l’échec, sinon la carte reste muette pour toujours');
+  assert.match(main, /_refreshHenrikKeyBtn\(\);[\s\S]{0,200}_renderRoster\(\);/,
+    'saisir la clé redessine, sinon chaque carte garde son ancien verdict');
   assert.match(components, /\.player-status\b/, 'le bandeau doit être stylé');
 
   // L'overlay doit être conservé au boot, sinon rosterAccounts ne voit jamais
@@ -522,4 +533,31 @@ test('LoL auto-accept toggle appears on your own card and survives late profile 
   assert.match(lolRosterSrc, /catch \{[\s\S]{0,200}autoAccept: avant[\s\S]{0,60}rerender\(\);/,
     'un échec d’écriture remet le bouton dans son état réel');
   assert.match(lolStyles, /\.lol-auto-accept\b/);
+});
+
+test('Valorant sync results are shared through Firebase, not trapped per browser', () => {
+  // Elles vivaient dans le localStorage, propre à chaque navigateur : le site
+  // et l'overlay en avaient DEUX copies qui ne se parlaient jamais. L'overlay
+  // affichait des chiffres vieux de cinq jours et un pseudo périmé, sans
+  // pouvoir se rattraper faute de clé API.
+  assert.match(main, /fetchJsonWithTimeout\(`\$\{FIREBASE_URL\}\/rosterStats\.json`/,
+    'les stats publiées sont lues au chargement');
+  assert.match(main, /mergeStores\(storage\.getAccountStats\(\), remoteStats\(partagees\)\)/,
+    'local et distant fusionnent — la plus fraîche gagne, compte par compte');
+
+  // Publié après CHAQUE synchro : celle d'un compte, et « Actualiser tout ».
+  assert.equal((main.match(/_publishStats\(/g) || []).length, 3, 'une définition, deux appels');
+  assert.match(main, /rosterStats\/\$\{encodeURIComponent\(firebasePath\(record\.key\)\)\}/,
+    'le chemin est assaini : les clés Firebase interdisent le « # » d’un Riot ID');
+
+  // Un échec de publication ne doit rien casser : le local est déjà écrit,
+  // l'écran est juste, la prochaine synchro republiera.
+  const publication = main.slice(main.indexOf('async _publishStats'), main.indexOf('Comptes d\'un joueur'));
+  assert.match(publication, /catch \{/, 'hors ligne, on continue sans bruit');
+  assert.ok(publication.indexOf('if (!record) return;') < publication.indexOf('fetch('),
+    'rien n’est publié sans clé ni date de synchro');
+
+  // L'URL n'est plus recopiée à chaque appel.
+  assert.ok((main.match(/realtime-database-5bb9f/g) || []).length === 1,
+    'une seule définition de l’URL Firebase');
 });
