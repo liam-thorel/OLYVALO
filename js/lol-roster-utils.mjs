@@ -56,12 +56,32 @@ export function matchEntry(entries, { puuid = '', riotId = '' } = {}) {
   const values = Object.values(entries || {}).filter(value => value && typeof value === 'object');
   const id = clean(puuid);
   if (id) {
-    const byPuuid = values.find(value => clean(value.puuid) === id);
-    if (byPuuid) return byPuuid;
+    const byPuuid = values.filter(value => clean(value.puuid) === id);
+    if (byPuuid.length) return freshest(byPuuid);
   }
   const name = norm(riotId);
   if (!name) return null;
-  return values.find(value => norm(value.playerName) === name) || null;
+  const byName = values.filter(value => norm(value.playerName) === name);
+  return byName.length ? freshest(byName) : null;
+}
+
+/**
+ * La plus récente de plusieurs entrées décrivant le même compte.
+ *
+ * Il y en a plusieurs pour deux raisons, et aucune ne disparaîtra :
+ *
+ * - un renommage d'avant le passage des clés au PUUID a laissé une entrée
+ *   figée sous l'ancien pseudo, qui porte le même PUUID que la bonne ;
+ * - `lolProfiles` a deux écrivains — le client du joueur, indexé sur le PUUID,
+ *   et le bouton « Actualiser tout » qui scrape op.gg et n'a que le Riot ID.
+ *
+ * Prendre la première venue affichait un rang vieux de plusieurs mois sans
+ * rien qui le signale. Une entrée sans date passe en dernier : elle ne peut
+ * pas prouver sa fraîcheur.
+ */
+function freshest(values) {
+  return values.reduce((meilleure, value) =>
+    (Number(value?.updatedAt || 0) > Number(meilleure?.updatedAt || 0) ? value : meilleure));
 }
 
 /**

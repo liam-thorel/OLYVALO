@@ -93,4 +93,34 @@ assert.equal(observedPuuids(null, undefined).size, 0, 'aucune source : aucun lie
 assert.ok(fusion.some(p => p.riotId === 'Anonyme#XXX'), 'il est quand même ajouté');
 assert.equal(fusion.find(p => p.riotId === 'Anonyme#XXX').puuid, '');
 
+// ─── Plusieurs entrées pour un même compte : la plus fraîche gagne ──────────
+// Il y en a plusieurs pour deux raisons, et aucune ne disparaîtra : un
+// renommage d'avant le passage des clés au PUUID a laissé une entrée figée
+// sous l'ancien pseudo, et `lolProfiles` a deux écrivains — le client du
+// joueur (clé PUUID) et le bouton « Actualiser tout » qui scrape op.gg et n'a
+// que le Riot ID.
+const doublons = {
+  fige: { playerName: 'Ancien#1111', puuid: 'P', rank: { tier: 'BRONZE' }, updatedAt: 1_000 },
+  vivant: { playerName: 'Nouveau#2222', puuid: 'P', rank: { tier: 'DIAMOND' }, updatedAt: 9_000 },
+};
+assert.equal(matchEntry(doublons, { puuid: 'P', riotId: 'Nouveau#2222' }).rank.tier, 'DIAMOND',
+  'prendre la première venue affichait un rang vieux de plusieurs mois');
+assert.equal(matchEntry({ b: doublons.vivant, a: doublons.fige }, { puuid: 'P' }).rank.tier, 'DIAMOND',
+  'et l’ordre des clés Firebase ne doit rien y changer');
+
+// Même arbitrage sur le repli par nom.
+assert.equal(matchEntry({
+  vieux: { playerName: 'RayBaz#OLY', rank: { tier: 'SILVER' }, updatedAt: 1 },
+  frais: { playerName: 'RayBaz#OLY', rank: { tier: 'GOLD' }, updatedAt: 2 },
+}, { riotId: 'RayBaz#OLY' }).rank.tier, 'GOLD');
+
+// Une entrée sans date ne peut pas prouver sa fraîcheur : elle passe derrière.
+assert.equal(matchEntry({
+  sansDate: { playerName: 'X#1', puuid: 'Q', rank: { tier: 'IRON' } },
+  datee: { playerName: 'X#1', puuid: 'Q', rank: { tier: 'GOLD' }, updatedAt: 5 },
+}, { puuid: 'Q' }).rank.tier, 'GOLD');
+// Mais si c'est tout ce qu'on a, elle vaut mieux que rien.
+assert.equal(matchEntry({ seule: { playerName: 'X#1', puuid: 'Q', rank: { tier: 'IRON' } } }, { puuid: 'Q' }).rank.tier, 'IRON');
+
 console.log('lol-roster-utils: identité par PUUID, repli par nom, sans doublon ni disparition');
+console.log('lol-roster-utils: entre deux entrées du même compte, la plus fraîche gagne');

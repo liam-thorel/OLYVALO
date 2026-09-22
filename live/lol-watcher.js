@@ -27,6 +27,7 @@ const { execFileSync } = require('child_process');
 const { historyGames, soloRankFromStats, summarizeSoloQueue } = require('./lol-profile-utils');
 const { fetchOpggSoloProfile } = require('./opgg-profile');
 const { lolHistorySummary } = require('./history-index');
+const { safeFirebaseKey, lolAccountKey, legacyKeyToDrop } = require('./lol-keys.js');
 
 const HEARTBEAT_MS = 20000;
 // Phases actives d'une game : GameStart = chargement, InProgress = en jeu, Reconnect = reco après un crash.
@@ -282,11 +283,6 @@ async function ensureItemData() {
   }
 }
 
-// Les clés Firebase RTDB interdisent . # $ [ ] / — putFB ne fait aucun
-// encodage d'URL, donc il faut substituer ces caractères directement.
-function safeFirebaseKey(str) {
-  return String(str).replace(/[.#$[\]/]/g, '_');
-}
 
 /**
  * Clé d'une entrée d'historique LoL. Le nom du joueur en fait partie, sinon
@@ -427,6 +423,15 @@ function createLolWatcher({
   let lastHeartbeat = 0;
   let cachedLock = null;
   let cachedRegion = null;
+  // Clés héritées déjà nettoyées : sans ce garde-fou, le script réémettrait la
+  // suppression à chaque heartbeat, pour un nœud qui n'existe plus depuis la
+  // première fois.
+  const nettoyees = new Set();
+  const dropLegacy = async (node, key) => {
+    if (!key || nettoyees.has(`${node}/${key}`)) return;
+    nettoyees.add(`${node}/${key}`);
+    await putFB(`live/${node}/${key}`, null).catch(() => {});
+  };
   let champSelectMatchupChampionId = null;
   let champSelectPosition = null;
   let currentChampion = null;
@@ -548,7 +553,10 @@ function createLolWatcher({
     // Release local state before external writes so a slow backend cannot keep
     // the previous match alive or block detection of the next one.
     resetMatchState();
-    await putFB(`live/lolSessions/${safeFirebaseKey(endedSession.playerName)}`, endedSession);
+    // La MÊME clé que la session active : écrire la fin ailleurs que le début
+    // laisserait une session éternellement « active » que le bot ne verrait
+    // jamais se terminer.
+    await putFB(`live/lolSessions/${lolAccountKey({ puuid: endedSession.puuid, playerName: endedSession.playerName })}`, endedSession);
     // Historique persistant (une entrée par game), classé uniquement : il
     // alimente les récaps, le moteur de cotes et la page Historique, qui ne
     // parlent que de classé. Les autres modes s'affichent en direct mais ne
@@ -572,7 +580,11 @@ function createLolWatcher({
     const puuid = summoner?.puuid || '';
     if (!gameName || !tagLine) return;
     const playerName = `${gameName}#${tagLine}`;
-    const key = safeFirebaseKey(playerName);
+    // Par PUUID : un renommage réécrit AU MÊME ENDROIT, là où la clé dérivée du
+    // pseudo laissait derrière elle une entrée figée que la lecture pouvait
+    // préférer à la bonne.
+    const key = lolAccountKey({ puuid, playerName });
+    if (!key) return;
     const now = Date.now();
     if (key === identityKey && phase === identityPhase && now - identityHeartbeat < 60_000) return;
     if (identityKey && key !== identityKey) await markIdentityOffline();
@@ -588,6 +600,16 @@ function createLolWatcher({
       memberId: member?.memberId, memberName: member?.memberName,
       playerName, puuid, game: 'lol',
     }).catch(() => {});
+    // L'entrée client indexée sur le pseudo, si elle existe encore : sans ce
+    // ménage elle resterait indéfiniment, en client « connecté » fantôme dans
+    // le tableau de bord admin.
+    //
+    // `lolProfiles` n'est PAS effacé, et c'est délibéré : syncRosterProfiles y
+    // écrit aussi, sous une clé dérivée du Riot ID puisqu'il scrape op.gg sans
+    // jamais voir de PUUID. Effacer ici reviendrait à supprimer à chaque
+    // heartbeat ce que le bouton « Actualiser tout » vient d'écrire. C'est la
+    // lecture qui départage, en retenant l'entrée la plus fraîche.
+    await dropLegacy('lolClients', legacyKeyToDrop({ puuid, playerName }));
     await putFB(`live/lolClients/${key}`, {
       ...identitySnapshot,
       game: 'lol',
@@ -784,7 +806,11 @@ function createLolWatcher({
     const region = await ensureRegion();
 
     const sessionMember = getIdentity();
-    await putFB(`live/lolSessions/${safeFirebaseKey(sessionKey)}`, {
+    // Même clé que le client : le PUUID. Le pseudo reste publié DANS l'entrée,
+    // c'est lui que lisent le bot et le site.
+    const sessionPath = lolAccountKey({ puuid: identitySnapshot?.puuid, playerName: sessionKey });
+    await dropLegacy('lolSessions', legacyKeyToDrop({ puuid: identitySnapshot?.puuid, playerName: sessionKey }));
+    await putFB(`live/lolSessions/${sessionPath}`, {
       active: true,
       ts: now,
       matchId: currentMatchId,
