@@ -1,7 +1,16 @@
 import { mergeFirebaseEvent, normalizeLolHistory } from './lol-utils.mjs';
+import { matchEntry, historyOf, displayRiotId, mergePlayers, observedPuuids } from './lol-roster-utils.mjs?v=20260922-puuid';
 import { state } from './state.mjs?v=20260806-lol-roster';
 
 const FIREBASE_URL = 'https://realtime-database-5bb9f-default-rtdb.europe-west1.firebasedatabase.app';
+/**
+ * Comptes LoL connus du code.
+ *
+ * Ils ne sont PAS les mêmes que ceux du roster Valorant : plusieurs joueurs ne
+ * jouent pas à LoL sur le compte qu'ils utilisent sur Valorant. La liste sert
+ * donc de base, et mergePlayers() y ajoute les joueurs du roster et de l'admin
+ * qui n'y figurent pas.
+ */
 const PLAYERS = [
   { name: 'Nico', riotId: 'phileas fogg#OLY' },
   { name: 'Liam', riotId: 'FakePlasticTrees#1706' },
@@ -34,9 +43,12 @@ function avatarFor(player) {
   return player.avatar || state.ROSTER.find(member => normalizeId(member.name) === normalizeId(player.name))?.avatar || '';
 }
 
-function historyFallback(matches, riotId) {
+function historyFallback(matches, riotId, puuid = '') {
   const currentYear = new Date().getFullYear();
-  const own = matches.filter(match => normalizeId(match.playerName) === normalizeId(riotId) && new Date(Number(match.ts || 0)).getFullYear() === currentYear);
+  // Par PUUID d'abord : un compte renommé perdait tout son historique, donc son
+  // top champions et son winrate de saison, sans la moindre erreur.
+  const own = historyOf(matches, { puuid, riotId })
+    .filter(match => new Date(Number(match.ts || 0)).getFullYear() === currentYear);
   const championMap = new Map();
   const roles = { top:0, jungle:0, mid:0, adc:0, support:0 };
   own.forEach(match => {
@@ -72,9 +84,13 @@ function historyFallback(matches, riotId) {
 }
 
 function viewFor(player, profiles, matches, verifiedProfiles = {}) {
-  const profile = Object.values(profiles || {}).find(value => normalizeId(value?.playerName) === normalizeId(player.riotId)) || {};
-  const verified = Object.values(verifiedProfiles || {}).find(value => normalizeId(value?.playerName) === normalizeId(player.riotId)) || {};
-  const fallback = historyFallback(matches, player.riotId);
+  // Le PUUID est l'identifiant Riot permanent ; le Riot ID change dès qu'on se
+  // renomme. Rapprocher par le nom faisait perdre au compte son profil, son
+  // rang et son top champions — la carte affichait « Non synchronisé », sans
+  // rien qui laisse deviner qu'il s'agissait d'un renommage.
+  const profile = matchEntry(profiles, player) || {};
+  const verified = matchEntry(verifiedProfiles, player) || {};
+  const fallback = historyFallback(matches, player.riotId, player.puuid);
   const observed = profile.soloQueue?.mainRole ? profile.soloQueue : fallback.soloQueue;
   const season = profile.seasonVerified ? profile : verified.seasonVerified ? verified : null;
   const rank = profile.rank || verified.rank || fallback.rank;
@@ -87,7 +103,14 @@ function viewFor(player, profiles, matches, verifiedProfiles = {}) {
       }
     : profile.soloQueue?.games ? profile.soloQueue : fallback.soloQueue;
   const topChampions = season ? season.topChampions : profile.topChampions?.length ? profile.topChampions : fallback.topChampions;
-  return { ...player, avatar:avatarFor(player), rank, soloQueue, topChampions, seasonVerified:Boolean(season), updatedAt:season?.updatedAt || profile.updatedAt || 0 };
+  return {
+    ...player,
+    // Le pseudo affiché est celui que le script a vu en dernier : celui du code
+    // peut dater de plusieurs renommages, et ne s'add plus en jeu.
+    riotId: displayRiotId(player, profile),
+    avatar: avatarFor(player), rank, soloQueue, topChampions,
+    seasonVerified: Boolean(season), updatedAt: season?.updatedAt || profile.updatedAt || 0,
+  };
 }
 
 function championRow(champion) {
@@ -144,7 +167,11 @@ function rosterCard(player) {
 
 function render(profiles, historyRaw, verifiedProfiles) {
   const matches = normalizeLolHistory(historyRaw || {});
-  const players = PLAYERS.map(player => viewFor(player, profiles, matches, verifiedProfiles));
+  // Le PUUID d'un compte LoL absent du dépôt s'apprend de ce que le script a
+  // publié : une fois le lien connu, le compte résiste aux renommages sans que
+  // personne ait eu à le saisir.
+  const listeJoueurs = mergePlayers(PLAYERS, state.ROSTER, state.ROSTER_OVERLAY, observedPuuids(profiles, verifiedProfiles));
+  const players = listeJoueurs.map(player => viewFor(player, profiles, matches, verifiedProfiles));
   const home = document.getElementById('lol-home-ranks');
   if (home) home.innerHTML = players.map(homeCard).join('');
   const roster = document.getElementById('lol-roster-grid');
