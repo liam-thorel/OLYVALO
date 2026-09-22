@@ -66,9 +66,24 @@ jobs:
           # deux fois en décrivant la version PRÉCÉDENTE — v4.18.0 publiée avec
           # les notes de la v4.17.11. Personne ne s'en aperçoit avant de lire la
           # release, et à ce moment-là elle est déjà publiée.
+          #
+          # Le checkout est fait AU TAG : pour un tag antérieur à l'introduction
+          # du marqueur, il est normalement absent. Bloquer dans ce cas rendrait
+          # impossible le repackaging manuel d'une vieille release — ce pour
+          # quoi le workflow_dispatch existe précisément. Un marqueur absent ne
+          # prouve rien : on prévient, on ne refuse pas.
+          #
+          # Le vrai garde-fou est tests/update-manifest.test.cjs, qui tourne sur
+          # chaque push : bumper la version sans toucher aux notes ne passe pas
+          # la CI, donc n'arrive jamais jusqu'au tag.
           notes=$(sed -n 's/^<!-- version: \(.*\) -->$/\1/p' live/RELEASE-NOTES.md | head -1)
-          [ -n "$notes" ] || mismatch 'live/RELEASE-NOTES.md (marqueur `<!-- version: X -->` absent)' 'rien'
-          [ "$notes" = "$version" ] || mismatch 'live/RELEASE-NOTES.md' "$notes"
+          if [ -z "$notes" ]; then
+            echo "::warning::live/RELEASE-NOTES.md n'a pas de marqueur \`<!-- version: X -->\` à ce tag — notes non vérifiables."
+          elif [ "$notes" != "$version" ]; then
+            echo "::error::live/RELEASE-NOTES.md décrit la $notes, alors que le tag annonce $version."
+            echo "::error::Corrige les notes sur main, puis relance ce workflow — le tag, lui, n'est pas en cause."
+            exit 1
+          fi
           echo "tag=$tag" >> "$GITHUB_OUTPUT"
           echo "version=$version" >> "$GITHUB_OUTPUT"
 
