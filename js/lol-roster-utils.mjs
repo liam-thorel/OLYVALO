@@ -171,3 +171,22 @@ export function mergePlayers(builtIn = [], roster = [], overlay = null, observed
   });
   return players;
 }
+
+/**
+ * Faut-il proposer l'acceptation automatique sur cette carte ?
+ *
+ * Seulement sur la SIENNE. Le réglage fait accepter une partie à la place de
+ * quelqu'un : le laisser basculer depuis n'importe quelle carte permettrait de
+ * mettre un coéquipier dans une game qu'il ne jouera pas.
+ *
+ * Il faut aussi un PUUID : c'est la clé sous laquelle le script lit le
+ * réglage. Sans lui, un compte qui se renomme perdrait son réglage en
+ * silence — et « en silence » est exactement ce qu'il ne faut pas pour une
+ * option qui joue à votre place.
+ */
+export function autoAcceptControl(player, { profile = '', settings = null } = {}) {
+  const puuid = clean(player?.puuid);
+  if (!puuid) return null;
+  if (!clean(profile) || norm(player?.name) !== norm(profile)) return null;
+  return { puuid, enabled: settings?.[puuid]?.autoAccept === true };
+}

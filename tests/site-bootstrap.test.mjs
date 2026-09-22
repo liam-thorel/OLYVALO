@@ -216,7 +216,7 @@ test('mobile data pages keep readable spacing, controls and roster details', () 
   assert.match(responsive, /\.section-inner\s*\{\s*padding:\s*0/);
   assert.match(lolStyles, /\.lol-roster-champion strong\{font-size:10px\}/);
   assert.match(coopStyles, /\.coop-cover\{aspect-ratio:16\/7\}/);
-  assert.match(page, /lol-mode\.css\?v=20260920-puuid-accounts/);
+  assert.match(page, /lol-mode\.css\?v=20260922-autoaccept/);
   assert.match(page, /coop-games\.css\?v=20260824-mobile-data-cache/);
   assert.match(designSystem, /\.history-filter-group\s*\{\s*grid-template-columns:\s*55px minmax\(0,1fr\)/);
   assert.match(designSystem, /\.coop-filter-field:last-child\s*\{\s*flex-basis:\s*100%/);
@@ -498,4 +498,28 @@ test('every roster sync and selection is keyed by PUUID, never by the declared n
   assert.match(main, /if \(needsSync\(readStats\(state\.ACCOUNT_STATS, shown\)\)\) await window\.OLYCITY\.syncAccount\(playerName\)/,
     'un aller-retour entre deux comptes ne doit pas brûler le quota de la clé');
   assert.match(components, /\.player-smurf\.is-active/, 'le compte affiché doit se voir');
+});
+
+test('LoL auto-accept toggle appears on your own card and survives late profile choice', () => {
+  const lolRosterSrc = fs.readFileSync(new URL('../js/lol-roster.mjs', import.meta.url), 'utf8');
+
+  // Le roster LoL se rend au démarrage, souvent AVANT que le profil ne soit
+  // choisi. Sans cette écoute, le bouton n'apparaissait sur AUCUNE carte :
+  // personne n'était encore identifié au moment du rendu. Trouvé en ouvrant
+  // la page, pas en relisant le code.
+  assert.match(lolRosterSrc, /window\.addEventListener\('olycity:profile-change', rerender\)/);
+  assert.match(main, /new CustomEvent\('olycity:profile-change'/, 'le site publie bien cet événement');
+
+  // Le bouton n'est rendu que sur sa propre carte : basculer celui d'un autre
+  // le mettrait dans une partie qu'il ne jouera pas.
+  assert.match(lolRosterSrc, /autoAcceptControl\(player, \{ profile: localStorage\.getItem\('olycity-profile'\)/);
+  assert.match(lolRosterSrc, /data-auto-accept="\$\{esc\(control\.puuid\)\}"/, 'le réglage est clé par PUUID');
+
+  // L'écriture est optimiste, avec retour en arrière : attendre l'aller-retour
+  // Firebase donne l'impression d'un clic perdu, mais un échec silencieux
+  // ferait mentir le bouton sur ce que le script va faire.
+  assert.match(lolRosterSrc, /method: 'PATCH'/);
+  assert.match(lolRosterSrc, /catch \{[\s\S]{0,200}autoAccept: avant[\s\S]{0,60}rerender\(\);/,
+    'un échec d’écriture remet le bouton dans son état réel');
+  assert.match(lolStyles, /\.lol-auto-accept\b/);
 });
