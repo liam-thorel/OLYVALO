@@ -1136,6 +1136,51 @@ body.agent-mode .footer{ display:none; }
 .curve-line:hover{ stroke-width:2.6; }
 
 .curve-legend{ display:flex; flex-wrap:wrap; gap:8px; margin-top:16px; }
+
+/* ── Synergies ──────────────────────────────────────────────────────────────
+   Sous la courbe, pas à côté : c'est une lecture d'ensemble, on y vient après
+   avoir regardé sa propre progression. */
+.curve-synergies{ margin-top:22px; padding-top:18px; border-top:1px solid var(--border); }
+.curve-synergies-title{
+  display:flex; align-items:baseline; gap:10px; margin:0 0 12px;
+  font-family:'Tomorrow',sans-serif; font-size:12px; font-weight:700;
+  letter-spacing:2px; text-transform:uppercase; color:var(--text);
+}
+.curve-synergies-title small{
+  font-size:9px; font-weight:500; letter-spacing:1px; color:var(--dim); text-transform:none;
+}
+.curve-synergy-list{ display:grid; gap:4px; margin:0; padding:0; list-style:none; }
+.curve-synergy{
+  position:relative; display:grid; align-items:center; gap:10px;
+  grid-template-columns:22px minmax(0,1fr) 46px 66px;
+  padding:8px 10px; overflow:hidden;
+  background:var(--surf2); border:1px solid var(--border);
+}
+.curve-synergy-rank{
+  font-family:'Tomorrow',sans-serif; font-size:12px; font-weight:700; color:var(--dim); text-align:center;
+}
+.curve-synergy-duo{
+  overflow:hidden; color:var(--text); font-family:'Tomorrow',sans-serif; font-size:12px;
+  font-weight:600; letter-spacing:.5px; text-overflow:ellipsis; white-space:nowrap;
+}
+.curve-synergy-wr{ font-family:'Tomorrow',sans-serif; font-size:14px; font-weight:700; text-align:right; }
+.curve-synergy-record{
+  color:var(--dim); font-family:'Tomorrow',sans-serif; font-size:10px;
+  letter-spacing:.5px; text-align:right;
+}
+/* Un duo sous 50 % perd plus qu'il ne gagne — c'est ce qu'on vient chercher. */
+.curve-synergy.is-up .curve-synergy-wr{ color:var(--S); }
+.curve-synergy.is-down .curve-synergy-wr{ color:var(--D); }
+/* La barre se lit d'un coup d'œil ; elle reste sous le texte, jamais devant. */
+.curve-synergy-bar{ position:absolute; inset:auto 0 0 0; height:2px; background:var(--border); }
+.curve-synergy-bar i{ display:block; height:100%; background:currentColor; }
+.curve-synergy.is-up .curve-synergy-bar i{ background:var(--S); }
+.curve-synergy.is-down .curve-synergy-bar i{ background:var(--D); }
+
+@media(max-width:620px){
+  .curve-synergy{ grid-template-columns:20px minmax(0,1fr) 42px; }
+  .curve-synergy-record{ grid-column:2/-1; text-align:left; }
+}
 .curve-legend-item{
   display:inline-flex; align-items:center; gap:8px;
   padding:6px 12px; border-radius:999px; cursor:pointer;

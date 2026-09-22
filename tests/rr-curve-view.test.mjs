@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { renderCurvePage, renderChart, renderLegend, renderRanges, renderUntracked, gridLines, escapeHTML } from '../js/rr-curve-view.mjs';
+import { renderCurvePage, renderChart, renderLegend, renderRanges, renderUntracked, renderSynergies, gridLines, escapeHTML } from '../js/rr-curve-view.mjs';
 import { valorantAccountSeries, defaultVisible, seriesKey, plotLayout, untrackedAccounts, curveDiagnostics, TIME_RANGES } from '../js/rr-curve-utils.mjs';
 
 const MEMBERS = [
@@ -188,3 +188,40 @@ assert.doesNotMatch(avecPeak, /<title>Liam — Immortel 1 · 0 RR[^<]*3 parties/
 assert.match(avecPeak, /<title>Liam — Ascendant 1 · 60 RR · 01 janv\. · 1 partie<\/title>/);
 
 console.log('rr-curve-view: bulle au rang réel, pastille au peak');
+
+// ─── Synergies ───────────────────────────────────────────────────────────────
+const duos = [
+  { duo: 'Liam + Nico', members: ['Liam', 'Nico'], games: 9, wins: 7, losses: 2, winrate: 78 },
+  { duo: 'Mathis + Rayhan', members: ['Mathis', 'Rayhan'], games: 8, wins: 3, losses: 5, winrate: 38 },
+];
+const synergies = renderSynergies(duos, 3);
+assert.match(synergies, /Liam &amp; Nico/, 'les deux noms se lisent, pas une clé interne');
+assert.match(synergies, /78%/);
+assert.match(synergies, /7V · 2D/, 'le bilan complet, pas seulement le pourcentage');
+// Un duo sous 50 % perd plus qu'il ne gagne : c'est ce qu'on vient chercher.
+assert.match(synergies, /curve-synergy is-up[\s\S]*?78%/);
+assert.match(synergies, /curve-synergy is-down[\s\S]*?38%/);
+assert.match(synergies, /3 parties minimum/, 'le seuil est annoncé, sinon une absence est inexplicable');
+
+// Les noms viennent du roster, mais passent quand même par l'échappement.
+const piegeux = renderSynergies([{ duo: 'a + b', members: ['<img src=x>', 'Nico'], games: 3, wins: 3, losses: 0, winrate: 100 }], 3);
+assert.doesNotMatch(piegeux, /<img src=x>/);
+assert.match(piegeux, /&lt;img src=x&gt;/);
+
+// La barre ne dépasse jamais, et reste visible à 0 %.
+assert.match(renderSynergies([{ duo: 'a + b', members: ['A', 'B'], games: 3, wins: 0, losses: 3, winrate: 0 }], 3),
+  /width:2%/, 'une barre à zéro reste perceptible');
+assert.match(renderSynergies([{ duo: 'a + b', members: ['A', 'B'], games: 3, wins: 3, losses: 0, winrate: 100 }], 3),
+  /width:100%/);
+
+// Aucun duo : on explique pourquoi, en nommant le seuil.
+const vide = renderSynergies([], 5);
+assert.match(vide, /5 parties classées ensemble/);
+assert.match(vide, /curve-synergies/, 'le bloc reste en place, avec son titre');
+
+// Le classement s'affiche même sans courbe traçable : il se lit sur
+// l'historique, qui existe indépendamment des rangs enregistrés.
+const sansCourbe = renderCurvePage({ allSeries: [], duos: { entries: duos, minGames: 3 } });
+assert.match(sansCourbe, /Liam &amp; Nico/);
+
+console.log('rr-curve-view: classement des duos lisible, échappé, et borné');

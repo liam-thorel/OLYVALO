@@ -180,13 +180,51 @@ export function renderUntracked(untracked = []) {
 }
 
 /** Contenu complet de l'onglet. C'est ce que la page injecte, et ce que l'aperçu affiche. */
-export function renderCurvePage({ allSeries = [], visible = new Set(), game = 'valorant', range = 'all', untracked = [] } = {}) {
+/**
+ * Classement des duos : qui gagne avec qui.
+ *
+ * Posé sous la courbe et non à côté : c'est une lecture d'ensemble, on y vient
+ * après avoir regardé sa propre progression, pas en même temps.
+ *
+ * Le winrate est coloré au-dessus et en dessous de 50 % — un duo à 48 % perd
+ * plus qu'il ne gagne, et c'est ce qu'on vient chercher.
+ */
+export function renderSynergies(duos = [], minGames = 3) {
+  if (!duos.length) {
+    return `<div class="curve-synergies">
+      <h3 class="curve-synergies-title">Synergies</h3>
+      ${emptyState(`Pas encore de duo avec ${minGames} parties classées ensemble sur cette plage.`)}
+    </div>`;
+  }
+  const lignes = duos.map((duo, index) => {
+    const medaille = ['①', '②', '③'][index] || '';
+    const ton = duo.winrate >= 50 ? 'is-up' : 'is-down';
+    return `<li class="curve-synergy ${ton}">
+      <span class="curve-synergy-rank">${medaille || index + 1}</span>
+      <span class="curve-synergy-duo">${escapeHTML(duo.members.join(' & '))}</span>
+      <span class="curve-synergy-wr">${duo.winrate}%</span>
+      <span class="curve-synergy-record">${duo.wins}V · ${duo.losses}D</span>
+      <span class="curve-synergy-bar" aria-hidden="true"><i style="width:${Math.max(2, Math.min(100, duo.winrate))}%"></i></span>
+    </li>`;
+  }).join('');
+  return `<div class="curve-synergies">
+    <h3 class="curve-synergies-title">Synergies<small>${duos.length} duo${duos.length > 1 ? 's' : ''} · ${minGames} parties minimum</small></h3>
+    <ol class="curve-synergy-list">${lignes}</ol>
+  </div>`;
+}
+
+export function renderCurvePage({ allSeries = [], visible = new Set(), game = 'valorant', range = 'all', untracked = [], duos = null } = {}) {
   if (allSeries.length === 0) {
-    return `${emptyState('Aucune progression à afficher pour le moment — il faut au moins deux parties classées sur un même compte.')}${renderUntracked(untracked)}`;
+    // Les synergies ne dépendent pas d'une courbe traçable : elles se lisent
+    // sur l'historique, qui peut exister sans qu'aucun compte n'ait deux
+    // parties classées avec son rang enregistré.
+    return `${emptyState('Aucune progression à afficher pour le moment — il faut au moins deux parties classées sur un même compte.')}`
+      + `${duos ? renderSynergies(duos.entries, duos.minGames) : ''}${renderUntracked(untracked)}`;
   }
   return `
     <div class="curve-ranges" role="group" aria-label="Plage de temps">${renderRanges(range)}</div>
     <div class="curve-chart-wrap">${renderChart(allSeries, visible, game)}</div>
     <div class="curve-legend" role="group" aria-label="Comptes affichés">${renderLegend(allSeries, visible)}</div>
+    ${duos ? renderSynergies(duos.entries, duos.minGames) : ''}
     ${renderUntracked(untracked)}`;
 }

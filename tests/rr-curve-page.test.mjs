@@ -45,7 +45,7 @@ assert.match(page, /valorantAccountSeries|lolAccountSeries/);
 // Le balisage vit dans un module de vue sans DOM : c'est lui que teste
 // rr-curve-view.test.mjs, et lui qu'affiche l'aperçu de conception.
 assert.match(page, /from '\.\/rr-curve-view\.mjs/);
-assert.match(page, /renderCurvePage\(\{ allSeries: shown, visible, game, range, untracked \}\)/);
+assert.match(page, /renderCurvePage\(\{ allSeries: shown, visible, game, range, untracked, duos \}\)/);
 
 // Le filtrage par plage se fait au RENDU : changer de plage ne doit pas
 // relire l'historique, ni perdre les comptes cochés.
@@ -91,3 +91,21 @@ assert.match(html, /data-mobile-page="courbes"/, 'entrée dans la feuille « Plu
 assert.match(main, /morePages = \['roster', 'courbes', 'games', 'betting'\]/);
 
 console.log('rr-curve-page: navigation mobile validée');
+
+// ─── Synergies : le classement suit la plage affichée ────────────────────────
+// Laisser les duos sur tout l'historique pendant que la courbe montre sept
+// jours ferait lire deux périodes différentes sur le même écran.
+assert.match(page, /const days = TIME_RANGES\.find\(entry => entry\.id === range\)\?\.days;/);
+assert.match(page, /duoRanking\(game, rawHistory, members, \{ since \}\)/);
+assert.match(page, /\.slice\(0, 8\)/, 'un classement se lit, il ne se déroule pas');
+
+// L'historique brut est conservé : changer de plage ne doit pas relire
+// Firebase, exactement comme pour la courbe.
+assert.match(page, /rawHistory = history;/);
+assert.ok(page.indexOf('let rawHistory') < page.indexOf('duoRanking('),
+  'il est déclaré au niveau du module, pas recalculé à chaque rendu');
+const corpsDuRendu = page.slice(page.indexOf('function render('), page.indexOf('\n}', page.indexOf('function render(')));
+assert.ok(corpsDuRendu.includes('duoRanking('), 'le corps du rendu est bien celui qu’on inspecte');
+assert.doesNotMatch(corpsDuRendu, /fbGet\(|fetch\(/, 'le rendu ne refait aucun appel réseau');
+
+console.log('rr-curve-page: le classement des duos suit la plage, sans relire l’historique');
