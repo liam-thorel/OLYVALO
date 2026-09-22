@@ -26,7 +26,7 @@ const { rewardForGamePlayed, getBalance } = require('./wallet.js');
 const { recordRankGain, lolRankPoints } = require('./rank-tracking.js');
 const { recordAward } = require('./valorant-awards.js');
 const { buildRankProgressLine } = require('./valorant-rank.js');
-const { isRankedValorantMode, isRankedValorantSession, isValorantDeathmatch, isNonRankedLolQueue } = require('./stats.js');
+const { isRankedValorantMode, isRankedValorantSession, sessionMode, isValorantDeathmatch, isNonRankedLolQueue } = require('./stats.js');
 const { accountMark, accountDetail } = require('./account-kind.js');
 const { playReward: playRewardFor } = require('./play-rewards.js');
 const { isHalfTime, ownScore, oddsFromScore } = require('./live-odds.js');
@@ -202,6 +202,17 @@ function formatValorantMode(mode) {
   return VALORANT_MODE_LABELS_FR[String(mode || '').toLowerCase()] || mode || '—';
 }
 
+/**
+ * Libellé du mode d'une session, phase traversée.
+ *
+ * Pendant la sélection d'agent, `mode` vaut 'agent-select' — une phase, pas une
+ * file — et la carte affichait « Mode : agent-select ». Ce n'est le nom
+ * d'aucun mode de jeu, et c'est précisément le moment où la carte part.
+ */
+function formatSessionMode(session) {
+  return formatValorantMode(sessionMode(session));
+}
+
 // Une seule carte pour tout le groupe : Map/Mode sont partagés (même match),
 // les répéter dans un embed par joueur n'apportait que du doublon — seul le
 // side (qui peut différer si les joueurs sont sur des équipes opposées) reste
@@ -220,7 +231,7 @@ function buildValorantGroupEmbed(rosterPlayers) {
     .setTimestamp(first?.ts ? new Date(first.ts) : new Date())
     .addFields(
       { name: 'Map', value: first?.mapClean || first?.map || '—', inline: true },
-      { name: 'Mode', value: formatValorantMode(first?.mode), inline: true },
+      { name: 'Mode', value: formatSessionMode(first), inline: true },
       { name: rosterPlayers.length > 1 ? 'Joueurs' : 'Joueur', value: lines.join('\n'), inline: false },
     );
 }
@@ -411,7 +422,10 @@ async function notifyValorantGameEnd(sessions) {
   // d'autre. Pas de carte dans Discord, pas d'award, pas de suivi de rang.
   // Un mode inconnu tombe ici aussi — on ne résume pas une partie qu'on ne
   // sait pas identifier — mais le remboursement, lui, a déjà eu lieu.
-  const valorantMode = primary.result?.mode || primary.mode;
+  // Le repli tombait sur `primary.mode`, qui vaut 'agent-select' si la partie
+  // se termine sans résultat depuis le pick : une classée était alors traitée
+  // comme du non classé, sans carte ni suivi de rang.
+  const valorantMode = primary.result?.mode || sessionMode(primary);
   if (!isRankedValorantMode(valorantMode)) {
     await creditCasualPlayRewards('valorant', sessions);
     return;
@@ -986,7 +1000,7 @@ async function creditCasualPlayRewards(game, sessions) {
     const result = session.result || {};
     const amount = playRewardFor({
       game,
-      mode: result.mode ?? session.mode,
+      mode: result.mode ?? sessionMode(session),
       queueId: result.queueId ?? session.queueId,
       // Hors classé le montant est fixe, mais on transmet l'issue réelle pour
       // que ce barème reste juste si ces modes venaient à en dépendre.

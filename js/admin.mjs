@@ -19,7 +19,8 @@ import { fetchJsonWithRetry, fetchJsonWithTimeout } from './request-utils.mjs?v=
 import { isLiveRecordExpired, liveDataStore, staleLiveRecords } from './live-data-store.mjs?v=20260920-live-resilience';
 import { mergeMemberProfiles } from './member-profiles.mjs?v=20260823-profile-picker';
 import { readSiteVitals } from './site-telemetry.mjs?v=20260825-site-health';
-import { attributionRows, attributionWarnings, deletionPlan, reassignPlan, roleOf, isValidPuuid, knownPuuidFor } from './admin-attribution.mjs?v=20260919b-attribution';
+import { attributionRows, attributionWarnings, deletionPlan, reassignPlan, roleOf, isValidPuuid, knownPuuidFor,
+  overlayKeyFor, duplicateLabel, adoptionPlan } from './admin-attribution.mjs?v=20260920-attribution';
 import { fetchAccountIdentity } from './henrik.js?v=20260919-account-puuid';
 
 const FIREBASE_URL = 'https://realtime-database-5bb9f-default-rtdb.europe-west1.firebasedatabase.app';

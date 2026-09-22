@@ -385,6 +385,13 @@ const endResult = mode => ({
   assert.equal(opened.length, 1, 'et ouvre le pari d’avant-match');
   assert.equal(opened[0].matchId, pick.matchId, 'sur le matchId de la partie, pour qu’il se résolve à la fin');
 
+  // Et la carte dit le MODE, pas la phase. « Mode : agent-select » n'est le nom
+  // d'aucun mode de jeu — or c'est exactement l'instant où la carte part.
+  const champs = sent[0].payload.embeds[0].fields;
+  const modeAffiche = champs.find(champ => champ.name === 'Mode');
+  assert.equal(modeAffiche.value, 'Compétitif', 'la carte annonce la file, pas la phase du pick');
+  assert.notEqual(modeAffiche.value, 'agent-select');
+
   // La phase ne doit pas non plus ouvrir la porte à du non classé.
   for (const file of ['unrated', 'swiftplay', 'deathmatch', 'spikerush']) {
     sent.length = 0; opened.length = 0;

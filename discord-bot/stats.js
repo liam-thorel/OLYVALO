@@ -209,7 +209,7 @@ function averageCs(entries) {
 // Les prédicats de mode vivent dans game-modes.js, sans dépendance, pour que
 // d'autres modules puissent les utiliser sans tirer Firebase avec eux.
 const {
-  RANKED_VALORANT_MODE, isRankedValorantMode, isValorantDeathmatch, isRankedValorantSession,
+  RANKED_VALORANT_MODE, isRankedValorantMode, isValorantDeathmatch, isRankedValorantSession, sessionMode,
   RANKED_LOL_QUEUES, isRankedLolQueue, isNonRankedLolQueue,
 } = require('./game-modes.js');
 
@@ -234,6 +234,6 @@ function rankedOnly(game, entries) {
 
 module.exports = {
   historyFor, winrateFor, mostPlayed, recentForm, killDeathRatio, aggregateKDA, averageHsPercent, averageAcs, averageCs, HISTORY_SAMPLE_SIZE,
-  rankedOnly, RANKED_VALORANT_MODE, isRankedValorantMode, isValorantDeathmatch, isRankedValorantSession,
+  rankedOnly, RANKED_VALORANT_MODE, isRankedValorantMode, isValorantDeathmatch, isRankedValorantSession, sessionMode,
   RANKED_LOL_QUEUES, isRankedLolQueue, isNonRankedLolQueue, winrateLabel,
 };
