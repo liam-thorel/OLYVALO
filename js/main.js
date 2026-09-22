@@ -21,7 +21,7 @@ import { storage } from './storage.js';
 import { avatarLayersHTML } from './avatars.mjs';
 import { initAdminPage } from './admin.mjs?v=20260826-cold-load-recovery';
 import { initBettingPage } from './betting-page.mjs?v=20260828-page-stream-lifecycle';
-import { initRrCurvePage } from './rr-curve-page.mjs?v=20260919c-courbes';
+import { initRrCurvePage } from './rr-curve-page.mjs?v=20260922-synergies';
 import { initCoopGamesPage } from './coop-games-page.mjs?v=20260828-page-stream-lifecycle';
 import { getGameMode, initGameMode, setGameMode } from './game-mode.mjs?v=20260824-home-title';
 import { initLolHistoryPage, initLolLivePage } from './lol-pages.mjs?v=20260828-first-visit-recovery';

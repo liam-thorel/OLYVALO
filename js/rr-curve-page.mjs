@@ -13,8 +13,9 @@
 
 import { fetchJsonWithRetry } from './request-utils.mjs?v=20260825-first-load-recovery';
 import { getGameMode } from './game-mode.mjs';
-import { valorantAccountSeries, lolAccountSeries, defaultVisible, withinRange, untrackedAccounts, curveDiagnostics, buildMembers } from './rr-curve-utils.mjs?v=20260919c-courbes';
-import { renderCurvePage, emptyState } from './rr-curve-view.mjs?v=20260919c-courbes';
+import { valorantAccountSeries, lolAccountSeries, defaultVisible, withinRange, untrackedAccounts, curveDiagnostics, buildMembers, TIME_RANGES } from './rr-curve-utils.mjs?v=20260922-synergies';
+import { renderCurvePage, emptyState } from './rr-curve-view.mjs?v=20260922-synergies';
+import { duoRanking, MIN_DUO_GAMES } from './synergy-utils.mjs?v=20260922-synergies';
 
 const FIREBASE_URL = 'https://realtime-database-5bb9f-default-rtdb.europe-west1.firebasedatabase.app';
 
@@ -25,6 +26,10 @@ let loaded = false;
 let listening = false;
 let range = 'all';
 let untracked = [];
+// Historique brut et roster, gardés pour recalculer les synergies quand la
+// plage change — sans relire Firebase.
+let rawHistory = null;
+let members = [];
 
 async function fbGet(path) {
   return fetchJsonWithRetry(`${FIREBASE_URL}/${path}.json`, { timeoutMs: 12_000, init: { cache: 'no-store' } });
@@ -34,7 +39,16 @@ function render(root, game) {
   // Le filtrage se fait au rendu et non au chargement : changer de plage ne
   // doit pas relire l'historique, et les comptes cochés restent les mêmes.
   const shown = withinRange(allSeries, range);
-  root.innerHTML = renderCurvePage({ allSeries: shown, visible, game, range, untracked });
+  // Le classement suit la plage affichée : laisser les synergies sur tout
+  // l'historique pendant que la courbe montre sept jours ferait lire deux
+  // périodes différentes sur le même écran.
+  const days = TIME_RANGES.find(entry => entry.id === range)?.days;
+  const since = days ? Date.now() - days * 86_400_000 : 0;
+  const duos = {
+    entries: duoRanking(game, rawHistory, members, { since }).slice(0, 8),
+    minGames: MIN_DUO_GAMES,
+  };
+  root.innerHTML = renderCurvePage({ allSeries: shown, visible, game, range, untracked, duos });
 }
 
 /**
@@ -92,7 +106,10 @@ export async function initRrCurvePage() {
     return;
   }
 
-  const members = buildMembers(roster, overlay);
+  members = buildMembers(roster, overlay);
+  // Conservés pour le classement des duos, recalculé à chaque changement de
+  // plage sans relire Firebase.
+  rawHistory = history;
 
   allSeries = game === 'lol' ? lolAccountSeries(history, members) : valorantAccountSeries(history, members);
   // Le diagnostic ne sert qu'à EXPLIQUER une absence, jamais à décider d'une
