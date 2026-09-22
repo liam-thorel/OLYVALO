@@ -15,6 +15,15 @@ on:
       tag:
         description: 'Tag à (re)packager, ex. v4.17.5'
         required: true
+      # Les notes sont de la prose : elles sont souvent finalisées APRÈS le tag,
+      # et le checkout est fait au tag. La v4.19.0 a ainsi été publiée avec les
+      # notes de la v4.18.0. Ce bouton permet de réparer une release déjà
+      # publiée, sans toucher au tag. Il est explicite parce qu'il ÉCRASE : le
+      # comportement par défaut ne remplace jamais un texte existant.
+      force_notes:
+        description: 'Réécrire les notes de la release depuis la branche par défaut'
+        type: boolean
+        default: false
 
 permissions:
   contents: write
@@ -165,28 +174,58 @@ jobs:
           version=$(unzip -p "$name" package.json | jq -r .version)
           [ "$version" = '${{ steps.version.outputs.version }}' ] || { echo "::error::package.json embarqué en $version"; exit 1; }
 
+      # Les notes du TAG font foi quand elles portent le bon marqueur — c'est le
+      # cas discipliné, et tests/update-manifest.test.cjs l'impose désormais à
+      # chaque push. Sinon on va chercher celles de la branche par défaut : le
+      # tag ne peut pas bouger, la prose si.
+      - name: Choisir les notes de version
+        id: notes
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          version='${{ steps.version.outputs.version }}'
+          marque() { sed -n 's/^<!-- version: \(.*\) -->$/\1/p' "$1" | head -1; }
+          fichier='live/RELEASE-NOTES.md'
+          if [ "$(marque "$fichier")" = "$version" ]; then
+            echo "Notes du tag : marqueur $version, elles font foi."
+          else
+            branche='${{ github.event.repository.default_branch }}'
+            gh api "repos/${{ github.repository }}/contents/live/RELEASE-NOTES.md?ref=$branche" \
+              --jq '.content' | base64 -d > /tmp/notes-defaut.md || true
+            if [ -s /tmp/notes-defaut.md ] && [ "$(marque /tmp/notes-defaut.md)" = "$version" ]; then
+              echo "::notice::Les notes du tag ne décrivent pas la $version — celles de $branche sont utilisées."
+              fichier=/tmp/notes-defaut.md
+            else
+              echo "::warning::Aucune version de RELEASE-NOTES.md ne porte le marqueur $version."
+            fi
+          fi
+          echo "file=$fichier" >> "$GITHUB_OUTPUT"
+
       - name: Téléverser sur la release
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           tag='${{ steps.version.outputs.tag }}'
           version='${{ steps.version.outputs.version }}'
+          notes='${{ steps.notes.outputs.file }}'
           if ! gh release view "$tag" --repo '${{ github.repository }}' > /dev/null 2>&1; then
             gh release create "$tag" \
               --repo '${{ github.repository }}' \
               --title "OLYCITY Live v${version}" \
-              --notes-file live/RELEASE-NOTES.md
+              --notes-file "$notes"
           else
             # La release existe déjà : créée à la main depuis l'interface, elle
             # n'a ni titre ni notes, et le `create` ci-dessus était simplement
             # sauté — la v4.19.0 est partie comme ça. On complète ce qui est
-            # vide, sans jamais écraser un texte écrit à la main.
+            # vide, sans jamais écraser un texte existant : c'est à ça que sert
+            # `force_notes`, qu'il faut cocher exprès.
             corps=$(gh release view "$tag" --repo '${{ github.repository }}' --json body --jq '.body')
-            if [ -z "$corps" ]; then
-              echo "Release sans notes : on y met live/RELEASE-NOTES.md"
+            if [ -z "$corps" ] || [ '${{ inputs.force_notes }}' = 'true' ]; then
+              echo "Notes de la release réécrites depuis $notes"
               gh release edit "$tag" --repo '${{ github.repository }}' \
                 --title "OLYCITY Live v${version}" \
-                --notes-file live/RELEASE-NOTES.md
+                --notes-file "$notes"
             fi
           fi
           gh release upload '${{ steps.version.outputs.tag }}' \
