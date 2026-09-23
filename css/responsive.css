@@ -185,6 +185,8 @@
     display:grid; grid-template-columns:minmax(0,1fr) auto; align-items:end;
     gap:10px; min-height:148px; padding:15px;
   }
+  .live-header.is-gauntlet{ min-height:112px; padding:13px 15px; }
+  .live-header.is-gauntlet .live-map-name{ font-size:22px; letter-spacing:2px; white-space:normal; }
   .live-match-art{ width:100%; }
   .live-match-art-shade{ background:linear-gradient(0deg,rgba(8,11,17,.98) 3%,rgba(8,11,17,.75) 55%,rgba(8,11,17,.22)); }
   .live-match-context{ display:grid; gap:6px; }
@@ -228,6 +230,8 @@
   .live-player-agent-name{ font-size:9px; }
   .live-rank-current,.live-rank-peak{ font-size:8.5px; }
   .live-player-details{ flex-wrap:wrap; margin:0 8px; padding:8px 0 9px 52px; }
+  .live-players.is-gauntlet .live-player-summary{ min-height:48px; padding:8px 10px; }
+  .live-players.is-gauntlet .live-player-details{ padding-left:10px; }
   .live-player-tracker{ min-height:24px; display:inline-flex; align-items:center; }
   .live-players.is-syncing { min-height:118px; }
   .live-roster-sync { gap:5px; padding:18px 14px; }

@@ -874,9 +874,10 @@ export function initLivePage() {
         || m.mapUrl?.toLowerCase().includes(mapName?.toLowerCase()));
       const imgEl = document.getElementById('live-map-img');
       if (imgEl) {
-        imgEl.alt = mapName ? `Carte ${mapName}` : '';
-        if (m?.splash) imgEl.src = m.splash;
-        else if (m?.displayIcon) imgEl.src = m.displayIcon;
+        const source = m?.splash || m?.displayIcon || '';
+        imgEl.hidden = !source;
+        imgEl.alt = source && mapName ? `Carte ${mapName}` : '';
+        if (source) imgEl.src = source;
         else imgEl.removeAttribute('src');
       }
     } catch { _mapsCache = null; }
@@ -910,9 +911,12 @@ export function initLivePage() {
     const isPregame = data?.phase === 'pregame' || data?.mode === 'agent-select';
     const liveMode = data?.queueId || (data?.mode === 'agent-select' ? '' : data?.mode) || '';
     const liveModeLabel = valorantLiveModeLabel(data);
+    const isGauntlet = String(liveMode).toLowerCase() === 'abilitydraftarena'
+      || String(liveModeLabel).toLowerCase() === 'gauntlet: glitched';
     const liveHeader = content?.querySelector('.live-header');
     const liveBody = content?.querySelector('.live-body');
     if (liveHeader) liveHeader.style.display = isPregame ? 'none' : '';
+    liveHeader?.classList.toggle('is-gauntlet', isGauntlet);
     if (liveBody) liveBody.style.display = isPregame ? 'none' : '';
 
     // Map — guard + internal name conversion
@@ -1212,8 +1216,6 @@ export function initLivePage() {
       || all.some(p => p.team === 'NEUTRAL')
       || allies.length === all.length
       || enemies.length === 0;
-    const isGauntlet = String(liveMode).toLowerCase() === 'abilitydraftarena'
-      || String(liveModeLabel).toLowerCase() === 'gauntlet: glitched';
     const usesSingleRoster = isDM || isGauntlet;
 
     curse?.setRoster([...new Set(allies.map(p => olycityMember(p.name)).filter(Boolean))]);
@@ -1233,6 +1235,7 @@ export function initLivePage() {
       playersEl.dataset.key = stableKey;
       playersEl.classList.toggle('is-syncing', all.length === 0);
       playersEl.classList.toggle('is-deathmatch', usesSingleRoster);
+      playersEl.classList.toggle('is-gauntlet', isGauntlet);
       playersEl.innerHTML = all.length === 0
         ? `<div class="live-roster-sync">
              <span class="live-roster-sync-dot" aria-hidden="true"></span>
@@ -1240,7 +1243,7 @@ export function initLivePage() {
              <small>La partie reste suivie pendant que Riot renvoie les joueurs.</small>
            </div>`
         : usesSingleRoster
-        ? `${isGauntlet ? teamTitle('Participants', all) : ''}${all.map(p => playerRow(p, myName)).join('')}`
+        ? `${isGauntlet ? teamTitle('Participants', all, false) : ''}${all.map(p => playerRow(p, myName)).join('')}`
         : `<div class="live-team-tabs" role="tablist" aria-label="Choisir une équipe">
              <button class="live-team-tab" type="button" role="tab" data-live-team="allies" aria-selected="${selectedMobileTeam !== 'enemies'}">Alliés · ${allies.length}</button>
              <button class="live-team-tab" type="button" role="tab" data-live-team="enemies" aria-selected="${selectedMobileTeam === 'enemies'}">Ennemis · ${enemies.length}</button>
@@ -1333,13 +1336,13 @@ export function initLivePage() {
     'Gold':'#f5c842','Platinum':'#40c9c9','Diamond':'#9b59b6',
     'Ascendant':'#2ecc71','Immortal':'#e74c3c','Radiant':'#ffd700','Unranked':'#555'
   };
-  function teamTitle(label, teamPlayers) {
+  function teamTitle(label, teamPlayers, showAverage = true) {
     const ranked = teamPlayers.filter(player => player.rank?.tier > 2);
     const averageTier = ranked.length
       ? Math.round(ranked.reduce((sum, player) => sum + player.rank.tier, 0) / ranked.length)
       : 0;
     const average = averageTier ? RANK_NAMES[averageTier] : '';
-    return `<div class="live-team-title"><strong>${label}</strong><small>${average ? `Rang moyen · ${average}` : `${teamPlayers.length} joueurs`}</small></div>`;
+    return `<div class="live-team-title"><strong>${label}</strong><small>${showAverage && average ? `Rang moyen · ${average}` : `${teamPlayers.length} joueurs`}</small></div>`;
   }
   function rankDisplay(rank) {
     if (!rank) return '';

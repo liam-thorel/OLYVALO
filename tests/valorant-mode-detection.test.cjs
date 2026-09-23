@@ -62,7 +62,9 @@ test('the script publishes mode metadata and the Live page consumes it', () => {
   assert.match(page, /hurm:'Team Deathmatch'/);
   assert.match(page, /abilitydraftarena:'Gauntlet: Glitched'/);
   assert.match(page, /AbilityDraft' \? 'Arènes Gauntlet'/);
-  assert.match(page, /teamTitle\('Participants', all\)/);
+  assert.match(page, /teamTitle\('Participants', all, false\)/);
+  assert.match(page, /imgEl\.hidden = !source/);
+  assert.match(page, /classList\.toggle\('is-gauntlet', isGauntlet\)/);
   assert.match(page, /data\.modeFamily === 'free-for-all'/);
   assert.match(page, /data\.supportsComps === false/);
 });

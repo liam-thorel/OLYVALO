@@ -568,6 +568,13 @@ body.agent-mode .footer{ display:none; }
   justify-content:space-between; gap:24px; min-height:150px; box-sizing:border-box;
   margin-bottom:12px; padding:22px 24px; border:1px solid var(--border); background:var(--surf);
 }
+.live-header.is-gauntlet{
+  min-height:116px; padding-block:18px;
+  background:linear-gradient(115deg,rgba(157,92,255,.09),transparent 42%),var(--surf);
+}
+.live-header.is-gauntlet .live-match-art,
+.live-header.is-gauntlet .live-match-art-shade{ display:none; }
+.live-header.is-gauntlet .live-map-name{ font-size:clamp(25px,2.5vw,34px); letter-spacing:4px; }
 .live-match-art{
   position:absolute; z-index:-3; inset:0 0 0 auto; width:62%; height:100%; object-fit:cover;
   object-position:center; filter:saturate(.92) contrast(1.08) brightness(.72);
@@ -742,6 +749,11 @@ body.agent-mode .footer{ display:none; }
 .live-comp-team-meta strong{ overflow:hidden; color:var(--text); font:700 9px 'Tomorrow',sans-serif; text-overflow:ellipsis; white-space:nowrap; }
 .live-comp-team-meta small{ overflow:hidden; color:var(--dim); font-size:8px; text-overflow:ellipsis; white-space:nowrap; }
 .live-players { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:12px; min-width:0; }
+.live-players.is-deathmatch > .live-team-title{ grid-column:1 / -1; }
+.live-players.is-gauntlet{ gap:10px 12px; }
+.live-players.is-gauntlet .live-player-portrait{ display:none; }
+.live-players.is-gauntlet .live-player-summary{ min-height:50px; padding:8px 14px; }
+.live-players.is-gauntlet .live-player-details{ padding-left:14px; }
 .live-team-tabs{ display:none; }
 .live-team {
   --team-accent:125,135,153; display:flex; flex-direction:column; gap:5px; min-width:0;
