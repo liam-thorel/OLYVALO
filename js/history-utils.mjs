@@ -85,7 +85,9 @@ export function historyTrackerUrl(game = {}) {
 
 export function historyOwnerKey(game) {
   const report = historyReports(game)[0] || game;
-  return String(report?.player || 'Inconnu').split('#')[0].trim().toLowerCase();
+  const puuid = String(report?.playerPuuid || '').trim().toLowerCase();
+  if (puuid) return `puuid:${puuid}`;
+  return `riot:${String(report?.player || 'Inconnu').split('#')[0].trim().toLowerCase()}`;
 }
 
 export function historyOwnerKeys(game) {
@@ -94,10 +96,40 @@ export function historyOwnerKeys(game) {
 
 export function historyOwnerLabel(game, roster = []) {
   return historyReports(game).map(report => {
-    const account = historyOwnerKey(report);
-    const member = roster.find(player => [player.riot, ...(player.smurfs || [])]
-      .some(riot => String(riot?.name || '').trim().toLowerCase() === account));
+    const playerName = String(report?.player || '').split('#')[0].trim().toLowerCase();
+    const playerPuuid = String(report?.playerPuuid || '').trim().toLowerCase();
+    const member = roster.find(player => [player.riot, ...(player.smurfs || [])].some(riot => {
+      const accountPuuid = String(riot?.puuid || '').trim().toLowerCase();
+      if (playerPuuid && accountPuuid) return playerPuuid === accountPuuid;
+      return String(riot?.name || '').trim().toLowerCase() === playerName;
+    }));
     return member?.name || String(report?.player || 'Inconnu').split('#')[0];
+  }).filter((label, index, labels) => labels.indexOf(label) === index).join(' & ') || 'Inconnu';
+}
+
+export function historyOwnerAccountLabel(game, roster = []) {
+  return historyReports(game).map(report => {
+    const playerName = String(report?.player || '').split('#')[0].trim().toLowerCase();
+    const playerPuuid = String(report?.playerPuuid || '').trim().toLowerCase();
+    let match = null;
+
+    roster.some(member => {
+      const accounts = [member.riot, ...(member.smurfs || [])];
+      const accountIndex = accounts.findIndex(account => {
+        const accountPuuid = String(account?.puuid || '').trim().toLowerCase();
+        if (playerPuuid && accountPuuid) return playerPuuid === accountPuuid;
+        return String(account?.name || '').trim().toLowerCase() === playerName;
+      });
+      if (accountIndex < 0) return false;
+      match = { member, account:accounts[accountIndex], isSmurf:accountIndex > 0 };
+      return true;
+    });
+
+    const reportedRiotId = String(report?.player || '').trim();
+    if (!match) return reportedRiotId || 'Inconnu';
+    const declaredRiotId = [match.account?.name, match.account?.tag].filter(Boolean).join('#');
+    const riotId = reportedRiotId || declaredRiotId;
+    return `${match.member.name}${riotId ? ` · ${riotId}` : ''}${match.isSmurf ? ' · Smurf' : ''}`;
   }).filter((label, index, labels) => labels.indexOf(label) === index).join(' & ') || 'Inconnu';
 }
 

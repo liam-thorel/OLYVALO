@@ -12,7 +12,7 @@ import { readFileSync } from 'node:fs';
  * on va chercher celles de la branche par défaut. Le tag ne peut pas bouger,
  * la prose si.
  */
-const yaml = readFileSync(new URL('../.github/workflows/release-live.yml', import.meta.url), 'utf8');
+const yaml = readFileSync(new URL('../.github/workflows/release-live.yml', import.meta.url), 'utf8').replace(/\r\n?/g, '\n');
 
 // Le marqueur du tag décide : il n'est plus question de prendre aveuglément
 // `live/RELEASE-NOTES.md` du checkout.

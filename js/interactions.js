@@ -19,7 +19,7 @@ import { updateScriptDownload } from './downloads.mjs?v=20260912-separate-downlo
 import { PLAYERS as LOL_ROSTER_PLAYERS } from './lol-roster.mjs?v=20260809-lol-sync';
 import { serverVisual } from './server-visuals.mjs?v=20260809-live-server-local';
 import { avatarLayersHTML } from './avatars.mjs?v=20260720-avatars';
-import { filterHistoryGames, historyDailyPerformances, historyGameForOwner, historyMode, historyOwnerKey, historyOwnerLabel, historyPlayerName, historyPlayerPerformance, historyPlayerPerformances, historyRankedPlayers, historyReports, historyTrackerUrl, isHistorySelf, normalizeHistoryEntries } from './history-utils.mjs?v=20260827-riot-ids-tracker';
+import { filterHistoryGames, historyDailyPerformances, historyGameForOwner, historyMode, historyOwnerAccountLabel, historyOwnerKey, historyOwnerLabel, historyPlayerName, historyPlayerPerformance, historyPlayerPerformances, historyRankedPlayers, historyReports, historyTrackerUrl, isHistorySelf, normalizeHistoryEntries } from './history-utils.mjs?v=20260923-puuid-history';
 import { initCurse } from './curse.mjs?v=20260828-page-stream-lifecycle';
 import { fetchJsonWithTimeout } from './request-utils.mjs?v=20260809-route-load-stable';
 import { liveDataStore, liveTimestamp } from './live-data-store.mjs?v=20260920-live-resilience';
@@ -48,13 +48,17 @@ const VALORANT_LIVE_MODE_LABELS = Object.freeze({
   snowball:'Bataille de boules de neige', newmap:'Nouvelle carte', premier:'Premier',
   custom:'Partie personnalisée', aros:'All Random One Site', dodgeball:'K.-O.',
   fortcollins:'Retake', skirmish:'Escarmouche', skirmishascension:'Escarmouche : Ascension',
+  abilitydraftarena:'Gauntlet: Glitched', gauntlet:'Gauntlet: Glitched',
 });
 
 function valorantLiveModeLabel(data = {}) {
-  if (data.modeLabel) return String(data.modeLabel);
   const raw = data.queueId || (data.mode === 'agent-select' ? '' : data.mode) || '';
   const token = String(raw).trim().replace(/^social_mode_/i, '').split('/').pop().split('.')[0].toLowerCase();
-  return VALORANT_LIVE_MODE_LABELS[token] || raw || 'Mode Riot';
+  return VALORANT_LIVE_MODE_LABELS[token] || data.modeLabel || raw || 'Mode Riot';
+}
+
+function valorantLiveMapLabel(value) {
+  return String(value || '').trim() === 'AbilityDraft' ? 'Arènes Gauntlet' : value;
 }
 
 function readValorantHistoryCache() {
@@ -634,7 +638,7 @@ export function initLivePage() {
     list.innerHTML = groupLiveClients(clients).map(group => {
       if (group.clients.length === 1) return renderClient(group.clients[0]);
       const reference = group.clients.find(client => client.map || client.server || client.side) || group.clients[0];
-      const context = [reference.map, reference.server, reference.side].filter(Boolean).join(' · ');
+      const context = [valorantLiveMapLabel(reference.map), reference.server, reference.side].filter(Boolean).join(' · ');
       return `<div class="live-client-group" data-state="${escapeDiagnosticText(reference.state || 'online')}">
         <div class="live-client-group-heading">
           <strong>Même partie</strong>
@@ -804,8 +808,8 @@ export function initLivePage() {
         const first = sessions[0];
         const isSelected = sessions.some(p => p.puuid === renderSelected);
         const recovering = sessions.every(session => liveSessionSignal(session, _now) === 'recovering');
-        const map = first.mapClean || first.map || '?';
-        const mode = first.mode || '';
+        const map = valorantLiveMapLabel(first.mapClean || first.map || '?');
+        const mode = valorantLiveModeLabel(first);
         const server = first.server || '';
 
         // Find roster avatars for players in this game
@@ -917,6 +921,7 @@ export function initLivePage() {
       'Ascent':'Ascent','Bonsai':'Split','Duality':'Bind','Triad':'Haven','Port':'Icebox',
       'Foxtrot':'Breeze','Canyon':'Fracture','Pitt':'Pearl','Jam':'Lotus','Juliett':'Sunset',
       'Infinity':'Abyss','Rook':'Corrode','Plummet':'Summit','Poveglia':'Range','Range':'Range',
+      'AbilityDraft':'Arènes Gauntlet',
       'HURM_Alley':'District','HURM_Yard':'Piazza','HURM_Bowl':'Kasbah','HURM_Helix':'Drift','HURM_HighTide':'Glitch',
     };
     // Prefer the raw internal map code (most reliable), fall back to mapClean
@@ -1207,6 +1212,9 @@ export function initLivePage() {
       || all.some(p => p.team === 'NEUTRAL')
       || allies.length === all.length
       || enemies.length === 0;
+    const isGauntlet = String(liveMode).toLowerCase() === 'abilitydraftarena'
+      || String(liveModeLabel).toLowerCase() === 'gauntlet: glitched';
+    const usesSingleRoster = isDM || isGauntlet;
 
     curse?.setRoster([...new Set(allies.map(p => olycityMember(p.name)).filter(Boolean))]);
     curse?.setMatch(data.matchId || '');
@@ -1224,15 +1232,15 @@ export function initLivePage() {
       const selectedMobileTeam = playersEl.dataset.mobileTeam || 'allies';
       playersEl.dataset.key = stableKey;
       playersEl.classList.toggle('is-syncing', all.length === 0);
-      playersEl.classList.toggle('is-deathmatch', isDM);
+      playersEl.classList.toggle('is-deathmatch', usesSingleRoster);
       playersEl.innerHTML = all.length === 0
         ? `<div class="live-roster-sync">
              <span class="live-roster-sync-dot" aria-hidden="true"></span>
              <strong>Roster en resynchronisation</strong>
              <small>La partie reste suivie pendant que Riot renvoie les joueurs.</small>
            </div>`
-        : isDM
-        ? all.map(p => playerRow(p, myName)).join('')
+        : usesSingleRoster
+        ? `${isGauntlet ? teamTitle('Participants', all) : ''}${all.map(p => playerRow(p, myName)).join('')}`
         : `<div class="live-team-tabs" role="tablist" aria-label="Choisir une équipe">
              <button class="live-team-tab" type="button" role="tab" data-live-team="allies" aria-selected="${selectedMobileTeam !== 'enemies'}">Alliés · ${allies.length}</button>
              <button class="live-team-tab" type="button" role="tab" data-live-team="enemies" aria-selected="${selectedMobileTeam === 'enemies'}">Ennemis · ${enemies.length}</button>
@@ -1509,7 +1517,7 @@ export async function initHistoryPage() {
   const updateOwnerOptions = () => {
     ownerOptions = [...new Map(allGames.flatMap(game => historyReports(game).map(report => {
       const key = historyOwnerKey(report);
-      return [key, { key, label: historyOwnerLabel(report, state.ROSTER) }];
+      return [key, { key, label: historyOwnerAccountLabel(report, state.ROSTER) }];
     }))).values()].sort((a,b) => a.label.localeCompare(b.label, 'fr'));
   };
   updateOwnerOptions();
@@ -1734,7 +1742,7 @@ export async function initHistoryPage() {
       <div class="history-game-list">${sectionGames.map(gameCard).join('')}</div>
     </section>` : '';
   const filterButton = (group, value, label, active) => `
-    <button type="button" class="history-filter-button ${active ? 'active' : ''}" data-history-${group}="${value}">${label}</button>`;
+    <button type="button" class="history-filter-button ${active ? 'active' : ''}" data-history-${group}="${historyEscape(value)}">${historyEscape(label)}</button>`;
 
   el.innerHTML = `${historySyncMarkup(syncState)}${groupRecap}
     <div class="history-view-tabs" role="tablist" aria-label="Vue de l'historique">

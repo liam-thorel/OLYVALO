@@ -15,6 +15,8 @@ test('normalizes Riot queue identifiers used by current live modes', () => {
     spikerush: 'spikerush', deathmatch: 'deathmatch', hurm: 'hurm',
     ggteam: 'ggteam', onefa: 'onefa', snowball: 'snowball', newmap: 'newmap',
     premier: 'premier', custom: 'custom',
+    gauntlet: 'gauntlet', gauntletglitched: 'gauntlet', glitched: 'gauntlet',
+    abilitydraftarena: 'gauntlet',
   };
   for (const [raw, canonical] of Object.entries(expected)) {
     assert.equal(normalizeValorantMode(raw), canonical, raw);
@@ -28,6 +30,8 @@ test('recognizes internal game-mode assets when QueueID is absent', () => {
   assert.equal(normalizeValorantMode('/Game/GameModes/OneForAll/OneForAll_GameMode_DataAsset_Desktop'), 'onefa');
   assert.equal(normalizeValorantMode('/Game/GameModes/QuickBomb/QuickBombGameMode_PrimaryAsset'), 'spikerush');
   assert.equal(normalizeValorantMode('/Game/GameModes/FortCollins/FortCollins_PrimaryAsset'), 'fortcollins');
+  assert.equal(normalizeValorantMode('/Game/GameModes/Gauntlet/GauntletGlitched_PrimaryAsset'), 'gauntlet');
+  assert.equal(normalizeValorantMode('/Game/GameModes/AbilityDraftArena/AbilityDraftArena_PrimaryAsset'), 'gauntlet');
   assert.equal(normalizeValorantMode('/Game/GameModes/Bomb/BombGameMode_PrimaryAsset', 'competitive'), 'competitive');
   assert.equal(normalizeValorantMode('/Game/GameModes/HURM/HURM_PrimaryAsset', 'competitive'), 'hurm');
 });
@@ -39,6 +43,9 @@ test('keeps Team Deathmatch distinct from free-for-all Deathmatch', () => {
   assert.equal(normalizeValorantMode('Team Deathmatch'), 'hurm');
   assert.equal(supportsStandardComps('hurm'), false);
   assert.equal(supportsStandardComps('competitive'), true);
+  assert.equal(valorantModeLabel('gauntlet'), 'Gauntlet: Glitched');
+  assert.equal(valorantModeFamily('gauntlet'), 'arcade');
+  assert.equal(supportsStandardComps('gauntlet'), false);
 });
 
 test('the script publishes mode metadata and the Live page consumes it', () => {
@@ -53,6 +60,9 @@ test('the script publishes mode metadata and the Live page consumes it', () => {
   assert.match(script, /persistentMatchId !== stableMatchId \|\| pregameState/);
   assert.match(script, /modeFamily:\s*valorantModeFamily\(stableMode\)/);
   assert.match(page, /hurm:'Team Deathmatch'/);
+  assert.match(page, /abilitydraftarena:'Gauntlet: Glitched'/);
+  assert.match(page, /AbilityDraft' \? 'Arènes Gauntlet'/);
+  assert.match(page, /teamTitle\('Participants', all\)/);
   assert.match(page, /data\.modeFamily === 'free-for-all'/);
   assert.match(page, /data\.supportsComps === false/);
 });

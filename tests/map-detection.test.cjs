@@ -22,4 +22,4 @@ for (const [internalName, displayName] of Object.entries(competitiveMaps)) {
   assert.ok(livePage.includes(compactNode), `la page Live doit afficher ${displayName} (${internalName})`);
 }
 
-console.log('map-detection: les 7 cartes compétitives du patch 13.05 sont reconnues partout');
+console.log('map-detection: les 7 cartes compétitives du patch 13.06 sont reconnues partout');

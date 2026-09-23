@@ -1,17 +1,16 @@
-<!-- version: 4.20.0 -->
-Cette mise à jour ajoute l'acceptation automatique des files League of Legends et TFT.
+<!-- version: 4.20.1 -->
+Cette mise à jour adapte OLYCITY Live au patch VALORANT 13.06.
 
-### Accept auto
+### Nouveau mode Riot
 
-- Le script peut accepter la partie à votre place quand la file trouve une game — en LoL comme en TFT, qui partagent le même client.
-- **L'acceptation part à la FIN du compte à rebours**, environ trois secondes avant l'expiration, et non dès l'apparition de la fenêtre. Vous gardez donc tout le temps d'accepter, de refuser ou de dodge vous-même : l'automatisme n'est qu'un filet.
-- Si vous avez déjà répondu, le script ne repasse jamais derrière vous — en particulier jamais par-dessus un refus.
-- **L'option est désactivée par défaut**, et s'active depuis votre propre carte sur le roster LoL du site, accessible dans l'overlay. Elle n'apparaît que sur votre carte.
+- **Gauntlet: Glitched** est maintenant reconnu grâce au véritable identifiant envoyé par Riot : `abilitydraftarena`.
+- La carte technique `AbilityDraft` est affichée sous le nom public du mode.
+- Les joueurs présents dans la même partie restent regroupés, comme Liam et Rayhan lors de la vérification en conditions réelles.
+- Ce mode est correctement classé comme arcade : aucune composition standard ou statistique classée n'est affichée par erreur.
 
-> Attention : si personne n'est devant le PC, la partie est acceptée quand même. C'est une pénalité pour vous et quatre coéquipiers avec un AFK. Attendre la fin du compte à rebours limite le risque, ça ne le supprime pas.
+### Compatibilité
 
-### Corrections
+- Les anciens modes temporaires restent reconnus dans l'historique.
+- L'acceptation automatique LoL/TFT et les autres fonctions de la 4.20.0 restent inchangées.
 
-- Le pseudo affiché sur le roster LoL suit désormais les renommages : un compte renommé ne perd plus son rang ni son top champions.
-
-La mise à jour du script se télécharge automatiquement en arrière-plan. Si une partie est en cours, OLYCITY Live attend sa fin avant de redémarrer.
+La mise à jour se télécharge automatiquement en arrière-plan. Si une partie est en cours, OLYCITY Live attend sa fin avant de redémarrer.

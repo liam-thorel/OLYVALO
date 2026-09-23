@@ -91,7 +91,7 @@ jobs:
 
       - name: Installer les dépendances
         if: steps.guard.outputs.present == 'true'
-        run: npm install --no-audit --no-fund
+        run: npm ci --no-audit --no-fund
         working-directory: overlay
 
       - name: Construire l'exécutable

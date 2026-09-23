@@ -18,7 +18,7 @@
         "tier": "S",
         "tierLabel": "S-TIER",
         "updatedAt": "Septembre 2026",
-        "patch": "13.05",
+        "patch": "13.06",
         "agents": [
           "Neon",
           "Phoenix",
@@ -42,7 +42,7 @@
         "tier": "PRO",
         "tierLabel": "PRO",
         "updatedAt": "Septembre 2026",
-        "patch": "13.05",
+        "patch": "13.06",
         "agents": [
           "Omen",
           "Sova",
@@ -119,7 +119,7 @@
             "url": "https://www.vlr.gg/221296/point-of-authority-blossom-vs-team-smg-gc-game-changers-2023-asia-pacific-open-2-playoffs-ubqf/?game=155775&tab=overview"
           }
         ],
-        "patch": "13.05",
+        "patch": "13.06",
         "key": "Harbor"
       }
     ],
@@ -150,7 +150,7 @@
         "tier": "S",
         "tierLabel": "S-TIER",
         "updatedAt": "Septembre 2026",
-        "patch": "13.05",
+        "patch": "13.06",
         "agents": [
           "Neon",
           "Jett",
@@ -174,7 +174,7 @@
         "tier": "PRO",
         "tierLabel": "PRO",
         "updatedAt": "Septembre 2026",
-        "patch": "13.05",
+        "patch": "13.06",
         "agents": [
           "Astra",
           "Omen",
@@ -236,7 +236,7 @@
         "tier": "FUN",
         "tierLabel": "FUN",
         "updatedAt": "Septembre 2026",
-        "patch": "13.05",
+        "patch": "13.06",
         "agents": [
           "Jett",
           "Raze",
@@ -277,7 +277,7 @@
         "tier": "S",
         "tierLabel": "S-TIER",
         "updatedAt": "Septembre 2026",
-        "patch": "13.05",
+        "patch": "13.06",
         "agents": [
           "Waylay",
           "Neon",
@@ -301,7 +301,7 @@
         "tier": "PRO",
         "tierLabel": "PRO",
         "updatedAt": "Septembre 2026",
-        "patch": "13.05",
+        "patch": "13.06",
         "agents": [
           "Omen",
           "Viper",
@@ -363,7 +363,7 @@
         "tier": "FUN",
         "tierLabel": "FUN",
         "updatedAt": "Septembre 2026",
-        "patch": "13.05",
+        "patch": "13.06",
         "agents": [
           "Skye",
           "Fade",
@@ -404,7 +404,7 @@
         "tier": "S",
         "tierLabel": "S-TIER",
         "updatedAt": "Septembre 2026",
-        "patch": "13.05",
+        "patch": "13.06",
         "agents": [
           "Neon",
           "Fade",
@@ -428,7 +428,7 @@
         "tier": "PRO",
         "tierLabel": "PRO",
         "updatedAt": "Septembre 2026",
-        "patch": "13.05",
+        "patch": "13.06",
         "agents": [
           "Omen",
           "Viper",
@@ -500,7 +500,7 @@
         "source": "Communauté Valorant · rush coordonné",
         "tip": "<strong>Rush B, mais avec un vrai plan</strong> : Breach neutralise Heaven, Neon et Raze entrent ensemble, Clove ferme les rotations et Sage pose son mur dès que le site est pris. Interdiction de ralentir avant le plant.",
         "vods": [],
-        "patch": "13.05",
+        "patch": "13.06",
         "key": "Breach"
       }
     ],
@@ -536,7 +536,7 @@
         "tier": "S",
         "tierLabel": "S-TIER",
         "updatedAt": "Septembre 2026",
-        "patch": "13.05",
+        "patch": "13.06",
         "agents": [
           "Jett",
           "Sova",
@@ -560,7 +560,7 @@
         "tier": "PRO",
         "tierLabel": "PRO",
         "updatedAt": "Septembre 2026",
-        "patch": "13.05",
+        "patch": "13.06",
         "agents": [
           "Omen",
           "Sova",
@@ -622,7 +622,7 @@
         "tier": "FUN",
         "tierLabel": "FUN",
         "updatedAt": "Septembre 2026",
-        "patch": "13.05",
+        "patch": "13.06",
         "agents": [
           "Sova",
           "Fade",
@@ -653,7 +653,7 @@
         ],
         "key": "Fade",
         "tip": "<strong>Neon exploite les informations combinées de Fade et Sova</strong> pour gagner Mid ou B Main. Clove couvre les lignes de Market et Cypher sécurise les flancs ou verrouille B.",
-        "patch": "13.05",
+        "patch": "13.06",
         "updatedAt": "Septembre 2026",
         "source": "MetaBot · 6 739 parties classées",
         "vods": [
@@ -675,7 +675,7 @@
           "Chamber",
           "Neon"
         ],
-        "patch": "13.05",
+        "patch": "13.06",
         "updatedAt": "Septembre 2026",
         "source": "Karmine Corp · VCT EMEA Stage 2 · Finale",
         "vods": [
@@ -739,7 +739,7 @@
         ],
         "key": "Breach",
         "tip": "<strong>Chaque joueur peut aveugler l'adversaire</strong>. Enchaînez Paranoia, flash KAY/O, stun Breach puis Phoenix et Yoru dans les angles serrés de Market. Pensez simplement à prévenir vos propres coéquipiers.",
-        "patch": "13.05",
+        "patch": "13.06",
         "updatedAt": "Septembre 2026",
         "source": "Communauté Valorant · composition full flash"
       }
@@ -778,7 +778,7 @@
         ],
         "key": "Fade",
         "tip": "<strong>Neon ouvre les passages après l'information de Fade et Sova</strong>. Clove couvre les lignes libérées par les murs activés, tandis que Sage ralentit les reprises et sécurise le plant sur cette map encore récente.",
-        "patch": "13.05",
+        "patch": "13.06",
         "updatedAt": "Septembre 2026",
         "source": "MetaBot · 7 051 parties classées",
         "vods": [
@@ -800,7 +800,7 @@
           "Chamber",
           "Neon"
         ],
-        "patch": "13.05",
+        "patch": "13.06",
         "updatedAt": "Septembre 2026",
         "source": "Karmine Corp · VCT EMEA Stage 2 · Finale",
         "vods": [
@@ -864,7 +864,7 @@
         ],
         "key": "Sage",
         "tip": "<strong>Ajoutez cinq couches de murs aux trois murs de la map</strong>. Harbor et Viper redessinent les lignes de vue, Sage et Deadlock ferment les passages et Vyse piège la seule sortie encore ouverte.",
-        "patch": "13.05",
+        "patch": "13.06",
         "updatedAt": "Septembre 2026",
         "source": "Communauté Valorant · défi murs et sentinelles"
       }

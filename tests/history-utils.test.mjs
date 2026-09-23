@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { filterHistoryGames, historyDailyPerformances, historyGameForOwner, historyMatchId, historyMode, historyOwnerKey, historyOwnerKeys, historyOwnerLabel, historyPlayerName, historyPlayerPerformance, historyPlayerPerformances, historyRankedPlayers, historyTrackerUrl, isHistorySelf, isOpaquePlayerName, normalizeHistoryEntries } from '../js/history-utils.mjs';
+import { filterHistoryGames, historyDailyPerformances, historyGameForOwner, historyMatchId, historyMode, historyOwnerAccountLabel, historyOwnerKey, historyOwnerKeys, historyOwnerLabel, historyPlayerName, historyPlayerPerformance, historyPlayerPerformances, historyRankedPlayers, historyTrackerUrl, isHistorySelf, isOpaquePlayerName, normalizeHistoryEntries } from '../js/history-utils.mjs';
 
 assert.equal(historyMode({ mode: 'competitive' }), 'competitive');
 assert.equal(historyMode({ mode: 'deathmatch' }), 'deathmatch');
@@ -27,10 +27,10 @@ const history = [
   { player:'Wong Chi Ming#2046', mode:'competitive', ts:now - 10 * 86400000 },
 ];
 const roster = [{ name:'Nico', riot:{name:'Drew A Picasso'} }, { name:'Liam', riot:{name:'Wong Chi Ming'} }];
-assert.equal(historyOwnerKey(history[0]), 'drew a picasso');
+assert.equal(historyOwnerKey(history[0]), 'riot:drew a picasso');
 assert.equal(historyOwnerLabel(history[0], roster), 'Nico');
 assert.equal(filterHistoryGames(history, {owner:'all',period:'7d',view:'summary',mode:'all'}, now).length, 2);
-assert.equal(filterHistoryGames(history, {owner:'wong chi ming',period:'all',view:'matches',mode:'competitive'}, now).length, 2);
+assert.equal(filterHistoryGames(history, {owner:'riot:wong chi ming',period:'all',view:'matches',mode:'competitive'}, now).length, 2);
 assert.equal(filterHistoryGames(history, {owner:'all',period:'all',view:'matches',mode:'deathmatch'}, now).length, 1);
 
 const detailedDeathmatch = {
@@ -84,10 +84,10 @@ const shared = normalized.find(game => game.historyId === 'same-match');
 assert.equal(normalized.length, 3);
 assert.equal(shared.reports.length, 2);
 assert.equal(normalized.find(game => game.historyId === 'hybrid').reports.length, 2);
-assert.deepEqual(historyOwnerKeys(shared), ['drew a picasso','wong chi ming']);
+assert.deepEqual(historyOwnerKeys(shared), ['puuid:nico-id','puuid:liam-id']);
 assert.equal(historyOwnerLabel(shared, roster), 'Nico & Liam');
-assert.equal(filterHistoryGames(normalized, {owner:'wong chi ming',period:'all',view:'matches',mode:'all'}, now).length, 2);
-assert.equal(historyGameForOwner(shared, 'wong chi ming').playerPuuid, 'liam-id');
+assert.equal(filterHistoryGames(normalized, {owner:'puuid:liam-id',period:'all',view:'matches',mode:'all'}, now).length, 2);
+assert.equal(historyGameForOwner(shared, 'puuid:liam-id').playerPuuid, 'liam-id');
 assert.equal(historyPlayerPerformances(shared).length, 2);
 assert.equal(historyPlayerPerformances(shared)[0].self.puuid, 'nico-id');
 assert.equal(historyPlayerPerformances(shared)[1].self.puuid, 'liam-id');
@@ -96,5 +96,17 @@ assert.equal(isHistorySelf(shared, shared.players[1]), true);
 const sharedDaily = historyDailyPerformances([shared], roster);
 assert.deepEqual(sharedDaily.map(player => player.name).sort(), ['Liam','Nico']);
 assert.deepEqual(sharedDaily.map(player => player.games), [1,1]);
+
+const renamedRoster = [{
+  name:'Rayhan',
+  riot:{name:'RayBaz',tag:'OLY',puuid:'ray-main'},
+  smurfs:[{name:'rbz',tag:'3030',puuid:'ray-smurf'}],
+}];
+const renamedMain = {player:'NouveauNom#OLY',playerPuuid:'ray-main',map:'Lotus'};
+const renamedSmurf = {player:'rbz#3030',playerPuuid:'ray-smurf',map:'Lotus'};
+assert.equal(historyOwnerKey(renamedMain), 'puuid:ray-main');
+assert.equal(historyOwnerLabel(renamedMain, renamedRoster), 'Rayhan');
+assert.equal(historyOwnerAccountLabel(renamedMain, renamedRoster), 'Rayhan · NouveauNom#OLY');
+assert.equal(historyOwnerAccountLabel(renamedSmurf, renamedRoster), 'Rayhan · rbz#3030 · Smurf');
 
 console.log('history-utils: modes, multi-player reports, filters, labels and performance validated');

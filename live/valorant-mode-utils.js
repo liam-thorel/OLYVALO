@@ -14,6 +14,10 @@ const MODE_LABELS = Object.freeze({
   aros: 'All Random One Site',
   dodgeball: 'K.-O.',
   fortcollins: 'Retake',
+  gauntlet: 'Gauntlet: Glitched',
+  abilitydraftarena: 'Gauntlet: Glitched',
+  gauntletglitched: 'Gauntlet: Glitched',
+  glitched: 'Gauntlet: Glitched',
   skirmish: 'Escarmouche',
   skirmishascension: 'Escarmouche : Ascension',
   bottraining: 'Partie contre des bots',
@@ -44,6 +48,10 @@ const DIRECT_ALIASES = Object.freeze({
   escalation: 'ggteam',
   replication: 'onefa',
   retake: 'fortcollins',
+  gauntlet: 'gauntlet',
+  abilitydraftarena: 'gauntlet',
+  gauntletglitched: 'gauntlet',
+  glitched: 'gauntlet',
   knockout: 'dodgeball',
   allrandomonesite: 'aros',
 });
@@ -71,6 +79,7 @@ function canonicalFromToken(token) {
   if (token.includes('skirmishascension')) return 'skirmishascension';
   if (token.includes('skirmish')) return 'skirmish';
   if (token.includes('fortcollins')) return 'fortcollins';
+  if (token.includes('gauntlet') || token.includes('glitched') || token.includes('abilitydraftarena')) return 'gauntlet';
   if (token.includes('dodgeball')) return 'dodgeball';
   if (token.includes('bottraining')) return 'bottraining';
   if (token.includes('npev2') || token.includes('newplayerexperience')) return 'npe';

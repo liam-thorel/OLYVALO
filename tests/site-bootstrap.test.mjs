@@ -476,7 +476,7 @@ test('LoL roster stat tiles fit their third of the card', () => {
 });
 
 test('every roster sync and selection is keyed by PUUID, never by the declared name', () => {
-  const henrik = fs.readFileSync(new URL('../js/henrik.js', import.meta.url), 'utf8');
+  const henrik = fs.readFileSync(new URL('../js/henrik.js', import.meta.url), 'utf8').replace(/\r\n?/g, '\n');
 
   // Le premier appel partait du couple name/tag du dépôt : un compte renommé
   // répondait 404 et sa carte restait vide pour toujours. Seule la pagination

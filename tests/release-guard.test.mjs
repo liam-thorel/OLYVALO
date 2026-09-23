@@ -16,7 +16,8 @@ import { join } from 'node:path';
  * Le test EXTRAIT le script du YAML plutôt que d'en réécrire une copie : une
  * copie diverge, et c'est alors le test qui rassure à tort.
  */
-const yaml = readFileSync(new URL('../.github/workflows/release-live.yml', import.meta.url), 'utf8');
+const yaml = readFileSync(new URL('../.github/workflows/release-live.yml', import.meta.url), 'utf8').replace(/\r\n?/g, '\n');
+const bash = process.platform === 'win32' ? 'C:\\Program Files\\Git\\bin\\bash.exe' : 'bash';
 
 const bloc = yaml.match(/notes=\$\(sed[\s\S]*?\n          fi\n/);
 assert.ok(bloc, 'le garde-fou doit rester repérable dans le workflow');
@@ -25,9 +26,10 @@ const script = bloc[0].replace(/^ {10}/gm, '');
 const dossier = mkdtempSync(join(tmpdir(), 'olycity-notes-'));
 const joue = (contenu, version) => {
   const fichier = join(dossier, 'RELEASE-NOTES.md');
+  const fichierShell = fichier.replaceAll('\\', '/');
   writeFileSync(fichier, contenu);
   try {
-    const sortie = execFileSync('bash', ['-c', `set -uo pipefail\nversion=${version}\n${script.replace('live/RELEASE-NOTES.md', fichier)}`],
+    const sortie = execFileSync(bash, ['-c', `set -uo pipefail\nversion=${version}\n${script.replace('live/RELEASE-NOTES.md', fichierShell)}`],
       { encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] });
     return { bloque: false, sortie };
   } catch (error) {

@@ -4,12 +4,12 @@ import test from 'node:test';
 
 const readJson = path => JSON.parse(readFileSync(new URL(path, import.meta.url), 'utf8'));
 
-test('patch 13.05 preserves the official competitive map rotation', () => {
+test('patch 13.06 preserves the official competitive map rotation', () => {
   const meta = readJson('../data/meta.json');
   const comps = readJson('../data/comps.json');
   const mapNames = comps.map(entry => entry.map);
 
-  assert.equal(meta.currentPatch, '13.05');
+  assert.equal(meta.currentPatch, '13.06');
   assert.deepEqual(mapNames, meta.mapsInRotation);
   assert.ok(mapNames.includes('Abyss'));
   assert.ok(!mapNames.includes('Breeze'));
@@ -67,7 +67,7 @@ test('every map separates a sourced ranked recommendation from an observed pro c
     }
 
     for (const comp of [ranked, pro]) {
-      assert.equal(comp.patch, '13.05', `${map.map} / ${comp.label} doit être à jour`);
+      assert.equal(comp.patch, '13.06', `${map.map} / ${comp.label} doit être à jour`);
       assert.ok(comp.source, `${map.map} / ${comp.label} doit afficher sa source`);
       if (comp.key) assert.ok(comp.agents.includes(comp.key), `${map.map} / ${comp.label} doit avoir un key pick présent`);
     }
@@ -109,7 +109,7 @@ test('every map has one current and displayable fun challenge', () => {
   for (const map of comps) {
     const fun = map.comps.find(comp => comp.tier === 'FUN');
     assert.ok(fun, `${map.map} doit proposer une composition fun`);
-    assert.equal(fun.patch, '13.05', `${map.map} / fun doit être à jour`);
+    assert.equal(fun.patch, '13.06', `${map.map} / fun doit être à jour`);
     assert.equal(fun.agents.length, 5, `${map.map} / fun doit contenir cinq agents`);
     assert.equal(new Set(fun.agents).size, 5, `${map.map} / fun ne doit pas contenir de doublon`);
     assert.ok(fun.source, `${map.map} / fun doit expliquer son origine`);
