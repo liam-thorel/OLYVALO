@@ -367,46 +367,76 @@ export function buildMembers(roster = [], overlay = null) {
   const accounts = overlay?.accounts || {};
   const overlayMembers = overlay?.members || {};
 
-  const fromRoster = (Array.isArray(roster) ? roster : []).map(player => {
-    const declared = [player?.riot, ...(player?.smurfs || [])].filter(account => account?.name);
-    return {
-      id: slugify(player?.name),
-      name: player?.name || '',
-      riotIds: declared.map(account => (account.tag ? `${account.name}#${account.tag}` : String(account.name))),
-      // roster.json ne portait que des pseudos : l'identité dépendait d'un nom,
-      // qui change. Le PUUID y est désormais lu au même titre que ceux de
-      // l'admin.
-      puuids: declared.map(account => String(account.puuid || '').trim()).filter(Boolean),
-    };
-  });
+  const fromRoster = (Array.isArray(roster) ? roster : []).map(player => ({
+    id: slugify(player?.name),
+    name: player?.name || '',
+    // Riot ID et PUUID appariés, jamais deux listes parallèles. `puuids` était
+    // filtré des valeurs vides tandis que `riotIds` gardait tout : un seul
+    // compte sans PUUID décalait les deux listes, et puuidIndex attribuait
+    // alors les parties d'un joueur à son smurf.
+    accounts: [player?.riot, ...(player?.smurfs || [])]
+      .filter(account => account?.name)
+      .map(account => ({
+        riotId: account.tag ? `${account.name}#${account.tag}` : String(account.name),
+        puuid: String(account.puuid || '').trim(),
+      })),
+  }));
 
   const known = new Set(fromRoster.map(member => member.id));
   const extras = Object.entries(overlayMembers)
     .filter(([id]) => !known.has(id))
-    .map(([id, member]) => ({ id, name: member?.name || id, riotIds: [], puuids: [] }));
+    .map(([id, member]) => ({ id, name: member?.name || id, accounts: [] }));
 
   const members = [...fromRoster, ...extras];
   members.forEach(member => {
-    let explicitMain = '';
+    let explicitMain = null;
     const hidden = new Set();
+    const hiddenPuuids = new Set();
+
     Object.values(accounts[member.id] || {}).forEach(account => {
       if (!account?.name) return;
       const riotId = account.tag ? `${account.name}#${account.tag}` : String(account.name);
+      const puuid = String(account.puuid || '').trim();
       // Masqué depuis l'admin : un compte de roster.json ne peut pas être
       // effacé du dépôt, mais il peut être retiré du roster vivant.
-      if (account.hidden === true) { hidden.add(lower(riotId)); return; }
-      if (!member.riotIds.some(known2 => lower(known2) === lower(riotId))) member.riotIds.push(riotId);
-      const puuid = String(account.puuid || '');
-      if (puuid && !member.puuids.includes(puuid)) member.puuids.push(puuid);
-      if (lower(account.role) === 'main') explicitMain = riotId;
+      if (account.hidden === true) {
+        hidden.add(lower(riotId));
+        if (puuid) hiddenPuuids.add(puuid);
+        return;
+      }
+      if (lower(account.role) === 'main') explicitMain = { riotId: lower(riotId), puuid };
+
+      // Le PUUID d'abord : un compte RENOMMÉ porte un autre pseudo mais le même
+      // identifiant Riot. Rapprocher par le nom seul en faisait un compte de
+      // plus, donc une SECONDE COURBE pour le même compte — tracée en smurf,
+      // couleur et pointillés compris.
+      const existant = member.accounts.find(entry =>
+        (puuid && entry.puuid === puuid) || lower(entry.riotId) === lower(riotId));
+      if (existant) {
+        if (!existant.puuid && puuid) existant.puuid = puuid;
+        // Même compte, autre pseudo : on adopte celui de l'admin, saisi plus
+        // récemment que le dépôt.
+        if (puuid && existant.puuid === puuid && lower(existant.riotId) !== lower(riotId)) existant.riotId = riotId;
+        return;
+      }
+      member.accounts.push({ riotId, puuid });
     });
+
+    if (hidden.size || hiddenPuuids.size) {
+      member.accounts = member.accounts.filter(account =>
+        !hidden.has(lower(account.riotId)) && !(account.puuid && hiddenPuuids.has(account.puuid)));
+    }
     // La position dans la liste porte le rôle (0 = principal) : un compte
     // désigné principal dans l'admin doit donc passer en tête, sinon le
     // réglage resterait sans effet sur les couleurs et les libellés.
-    if (hidden.size) member.riotIds = member.riotIds.filter(riotId => !hidden.has(lower(riotId)));
-    if (!explicitMain) return;
-    const index = member.riotIds.findIndex(riotId => lower(riotId) === lower(explicitMain));
-    if (index > 0) member.riotIds.unshift(...member.riotIds.splice(index, 1));
+    if (explicitMain) {
+      const index = member.accounts.findIndex(account =>
+        (explicitMain.puuid && account.puuid === explicitMain.puuid) || lower(account.riotId) === explicitMain.riotId);
+      if (index > 0) member.accounts.unshift(...member.accounts.splice(index, 1));
+    }
+    // Dérivés, pour tout ce qui lit encore ces deux listes.
+    member.riotIds = member.accounts.map(account => account.riotId);
+    member.puuids = member.accounts.map(account => account.puuid).filter(Boolean);
   });
   return members;
 }
@@ -438,14 +468,37 @@ export function accountIndex(members = []) {
  * pas sur lequel de ses comptes — et `rosterOverlay` ne conserve qu'un puuid
  * par compte enregistré, ce qui suffit à retrouver le bon.
  */
+/**
+ * Comptes d'un membre, appariés.
+ *
+ * `buildMembers` les produit déjà sous cette forme, alignés par construction.
+ * Les appelants qui construisent un membre à la main ne fournissent que
+ * `riotIds` et `puuids` : on les apparie alors, mais SEULEMENT si les deux
+ * listes ont la même longueur.
+ *
+ * Sinon — un seul compte sans PUUID suffit à les décaler — on n'indexe RIEN.
+ * Deviner attribuerait les parties d'un joueur au mauvais compte : soit à un
+ * smurf pris au hasard, soit toutes au principal, ce qui fondrait deux courbes
+ * en une. Le repli par nom, lui, reste disponible et ne ment pas.
+ */
+function accountsOf(member) {
+  if (Array.isArray(member?.accounts)) return member.accounts;
+  const riotIds = member?.riotIds || [];
+  const puuids = member?.puuids || [];
+  if (riotIds.length !== puuids.length) return [];
+  return riotIds.map((riotId, i) => ({ riotId, puuid: puuids[i] }));
+}
+
 export function puuidIndex(members = []) {
   const index = new Map();
   members.forEach(member => {
-    (member?.puuids || []).forEach((puuid, position) => {
-      const key = String(puuid || '').trim();
+    // Les comptes portent leur PUUID, appariés. Parcourir deux listes
+    // parallèles attribuait les parties au mauvais compte dès qu'un seul
+    // d'entre eux n'avait pas de PUUID.
+    accountsOf(member).forEach((account, position) => {
+      const key = String(account?.puuid || '').trim();
       if (!key || index.has(key)) return;
-      const riotId = member.riotIds?.[position] ?? member.riotIds?.[0] ?? member.name;
-      index.set(key, { member: member.name, account: riotId, smurfIndex: member.riotIds?.[position] ? position : 0 });
+      index.set(key, { member: member.name, account: account.riotId || member.name, smurfIndex: position });
     });
   });
   return index;

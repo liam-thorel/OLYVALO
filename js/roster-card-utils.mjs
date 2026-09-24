@@ -51,26 +51,49 @@ export function rosterAccounts(player, overlay = null) {
 
   const stored = Object.values(overlay?.accounts?.[memberKey(player?.name)] || {});
   const hidden = new Set();
-  let explicitMain = '';
+  const hiddenPuuids = new Set();
+  let explicitMain = null;
 
   stored.forEach(account => {
     if (!account?.name) return;
     const riotId = riotIdOf(account);
-    if (account.hidden === true) { hidden.add(lower(riotId)); return; }
-    if (lower(account.role) === 'main') explicitMain = lower(riotId);
-    const known = declared.find(entry => lower(entry.riotId) === lower(riotId));
+    const puuid = String(account.puuid || '').trim();
+    if (account.hidden === true) {
+      hidden.add(lower(riotId));
+      if (puuid) hiddenPuuids.add(puuid);
+      return;
+    }
+    if (lower(account.role) === 'main') explicitMain = { riotId: lower(riotId), puuid };
+
+    // Le PUUID d'abord : un compte RENOMMÉ porte un autre pseudo mais le même
+    // identifiant Riot. Rapprocher par le nom seul en faisait un second compte,
+    // qui atterrissait dans les smurfs — le main de Liam s'y retrouvait, sous
+    // son nom courant, pendant que la carte affichait encore l'ancien.
+    const known = declared.find(entry =>
+      (puuid && entry.puuid === puuid) || lower(entry.riotId) === lower(riotId));
     if (known) {
       // Le puuid renseigné depuis l'admin complète une ligne du dépôt qui n'en
       // avait pas : c'est le cas de tous les comptes d'avant la migration.
-      if (!known.puuid && account.puuid) known.puuid = String(account.puuid).trim();
+      if (!known.puuid && puuid) known.puuid = puuid;
+      // Même compte, autre pseudo : on adopte celui de l'admin. Il a été saisi
+      // sur l'écran d'attribution, donc plus récemment que le dépôt, qui peut
+      // dater de plusieurs renommages.
+      if (puuid && known.puuid === puuid && lower(known.riotId) !== lower(riotId)) {
+        known.renamedFrom = known.riotId;
+        known.riotId = riotId;
+      }
       return;
     }
-    declared.push({ riotId, puuid: String(account.puuid || '').trim(), source: 'admin' });
+    declared.push({ riotId, puuid, source: 'admin' });
   });
 
-  const visible = declared.filter(account => !hidden.has(lower(account.riotId)));
+  const visible = declared.filter(account =>
+    !hidden.has(lower(account.riotId)) && !(account.puuid && hiddenPuuids.has(account.puuid)));
   if (explicitMain) {
-    const index = visible.findIndex(account => lower(account.riotId) === explicitMain);
+    // Par PUUID aussi : le compte désigné principal a pu être enregistré sous
+    // un pseudo qui vient d'être fondu dans une autre ligne.
+    const index = visible.findIndex(account =>
+      (explicitMain.puuid && account.puuid === explicitMain.puuid) || lower(account.riotId) === explicitMain.riotId);
     if (index > 0) visible.unshift(...visible.splice(index, 1));
   }
   return visible.map((account, position) => ({ ...account, isMain: position === 0 }));
