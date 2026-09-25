@@ -1,0 +1,51 @@
+name: Synchronisation des stats Valorant
+
+# La clé HenrikDev NE DOIT PAS sortir d'ici. Le site est public et statique, le
+# dépôt aussi : une clé livrée avec le bundle est lisible dans les DevTools par
+# n'importe quel visiteur, et une clé ramassée épuise le quota du roster.
+#
+# La synchro tourne donc ici, et publie dans `rosterStats/`, d'où le site lit
+# déjà les statistiques. Personne n'a besoin de clé sur le site — pas même
+# celui qui regarde ses stats.
+on:
+  schedule:
+    # Quatre fois par jour, décalé de l'heure pile : les runners planifiés y
+    # sont saturés, et un retard de plusieurs dizaines de minutes est courant.
+    - cron: '17 5,11,17,23 * * *'
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: 'Afficher sans rien publier'
+        type: boolean
+        default: false
+
+# Deux passages simultanés interrogeraient l'API deux fois pour rien, et
+# écriraient les mêmes nœuds en même temps.
+concurrency:
+  group: sync-roster-stats
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Synchroniser et publier
+        env:
+          HENRIK_API_KEY: ${{ secrets.HENRIK_API_KEY }}
+        run: |
+          set -euo pipefail
+          if [ -z "${HENRIK_API_KEY}" ]; then
+            echo "::error::Secret HENRIK_API_KEY absent — à poser dans Settings › Secrets and variables › Actions."
+            exit 1
+          fi
+          node tools/sync-roster-stats.mjs ${{ inputs.dry_run && '--dry-run' || '' }}

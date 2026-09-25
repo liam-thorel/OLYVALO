@@ -55,21 +55,28 @@ jobs:
           ! grep -q '__OLYCITY_BUILD_ID__' _site/sw.js
           du -sh _site
 
+      # La clé HenrikDev n'est PLUS injectée ici, et ne doit jamais y revenir.
+      # Le site est public et statique : tout ce qui entre dans `_site` est
+      # servi à qui le demande, et une clé y est lisible dans les DevTools.
+      # Elle reste désormais dans le secret d'Actions, et c'est
+      # .github/workflows/sync-stats.yml qui s'en sert pour publier les stats
+      # dans `rosterStats/` — d'où le site les lit, sans clé.
+      #
+      # `config.js` subsiste pour les réglages RÉELLEMENT publics : ce sont des
+      # URL de points d'entrée, pas des secrets.
       - name: Injecter la configuration publique
         env:
-          HENRIK_API_KEY: ${{ secrets.HENRIK_API_KEY }}
           GAME_CATALOG_ENDPOINT: ${{ vars.GAME_CATALOG_ENDPOINT }}
           NOTIFICATION_ENDPOINT: ${{ vars.NOTIFICATION_ENDPOINT }}
         run: |
           # Encodage via JSON.stringify : aucune valeur de configuration ne
           # peut casser le module si elle contient un caractère spécial.
-          printf 'export const CONFIG = {\n  HENRIK_API_KEY: %s,\n  GAME_CATALOG_ENDPOINT: %s,\n  NOTIFICATION_ENDPOINT: %s,\n};\n' \
-            "$(node -p 'JSON.stringify(process.env.HENRIK_API_KEY || "")')" \
+          printf 'export const CONFIG = {\n  GAME_CATALOG_ENDPOINT: %s,\n  NOTIFICATION_ENDPOINT: %s,\n};\n' \
             "$(node -p 'JSON.stringify(process.env.GAME_CATALOG_ENDPOINT || "")')" \
             "$(node -p 'JSON.stringify(process.env.NOTIFICATION_ENDPOINT || "")')" > _site/config.js
-          if [ -z "$HENRIK_API_KEY" ]; then
-            echo "::notice::Aucun secret HENRIK_API_KEY — chaque visiteur renseignera sa clé depuis la page Roster."
-          fi
+          # Un secret qui repasserait par ici doit faire échouer le déploiement,
+          # pas être publié en silence.
+          ! grep -qi 'HENRIK' _site/config.js
           if [ -z "$GAME_CATALOG_ENDPOINT" ]; then
             echo "::notice::Aucune variable GAME_CATALOG_ENDPOINT — la saisie manuelle des jeux restera disponible."
           fi

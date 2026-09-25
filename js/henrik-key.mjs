@@ -39,7 +39,26 @@ let cached = null;
  * déploiement en fournit un. L'import est dynamique et tolérant à l'absence du
  * fichier — un import statique ferait échouer le chargement de tout le site.
  */
+/**
+ * Clé fournie par l'appelant, hors navigateur.
+ *
+ * La synchronisation planifiée tourne dans GitHub Actions, où la clé vient
+ * d'un secret : il n'y a ni localStorage ni config.js. Elle passe par ici
+ * plutôt que par un second client HTTP, pour que les stats publiées soient
+ * produites par EXACTEMENT le même code que celles d'une synchro manuelle.
+ * Deux implémentations divergeraient, et la divergence ne se verrait pas.
+ *
+ * Elle ne peut pas venir du navigateur : rien sur le site n'appelle ceci.
+ */
+export function useApiKey(key) {
+  injected = String(key || '').trim();
+  cached = null;
+}
+
+let injected = '';
+
 export async function resolveApiKey() {
+  if (injected) return injected;
   if (cached) return cached;
 
   const local = storedKey();
@@ -57,4 +76,5 @@ export async function resolveApiKey() {
 
 export function forgetCachedKey() {
   cached = null;
+  injected = '';
 }
