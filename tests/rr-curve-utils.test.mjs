@@ -402,7 +402,78 @@ const parRosterPuuid = valorantAccountSeries({
 assert.equal(parRosterPuuid.length, 1);
 assert.equal(parRosterPuuid[0].member, 'Liam');
 
+// ─── Un renommage ne crée pas une seconde courbe ────────────────────────────
+// Le rapprochement se faisait par PSEUDO : un compte renommé ne correspondait
+// à aucune ligne du dépôt, était ajouté à la suite, et donnait une SECONDE
+// courbe pour le même compte — tracée en smurf, couleur et pointillés compris.
+const avecRenommage = buildMembers(
+  [{ name: 'Liam', riot: { name: 'Ancien Pseudo', tag: '2046', puuid: 'puuid-main' },
+     smurfs: [{ name: 'Son Smurf', tag: '5378', puuid: 'puuid-smurf' }] }],
+  { accounts: { liam: { a: { name: 'Nouveau Pseudo', tag: '1706', puuid: 'puuid-main' } } } },
+)[0];
+assert.deepEqual(avecRenommage.riotIds, ['Nouveau Pseudo#1706', 'Son Smurf#5378'],
+  'le compte renommé reste UN compte, et garde sa place de principal');
+assert.equal(avecRenommage.puuids.length, 2, 'aucun PUUID en double');
+
+// Un PUUID différent reste un vrai second compte.
+const vraiSecond = buildMembers(
+  [{ name: 'Liam', riot: { name: 'Ancien Pseudo', tag: '2046', puuid: 'puuid-main' } }],
+  { accounts: { liam: { a: { name: 'Autre', tag: '9999', puuid: 'puuid-autre' } } } },
+)[0];
+assert.deepEqual(vraiSecond.riotIds, ['Ancien Pseudo#2046', 'Autre#9999']);
+
+// ─── Les PUUID ne se décalent plus ───────────────────────────────────────────
+// `puuids` était filtré des valeurs vides tandis que `riotIds` gardait tout :
+// un seul compte sans PUUID décalait les deux listes, et les parties d'un
+// joueur étaient attribuées à son smurf.
+const troue = buildMembers([{
+  name: 'Nico',
+  riot: { name: 'Principal', tag: 'AAAA' },                       // sans PUUID
+  smurfs: [{ name: 'Le Smurf', tag: 'BBBB', puuid: 'puuid-du-smurf' }],
+}])[0];
+const idx = puuidIndex([troue]);
+assert.equal(idx.get('puuid-du-smurf').account, 'Le Smurf#BBBB',
+  'le PUUID du smurf ne doit pas désigner le compte principal');
+assert.equal(idx.get('puuid-du-smurf').smurfIndex, 1);
+
+// Les appelants qui construisent un membre à la main ne fournissent que les
+// deux listes : elles restent acceptées.
+const aLaMain = puuidIndex([{ name: 'Rayhan', riotIds: ['RayBaz#OLY'], puuids: ['p-ray'] }]);
+assert.equal(aLaMain.get('p-ray').account, 'RayBaz#OLY');
+// Et quand elles ne s'apparient pas, on n'indexe RIEN. Deviner attribuerait
+// les parties au mauvais compte — à un smurf pris au hasard, ou toutes au
+// principal, ce qui fondrait deux courbes en une. Le repli par nom ne ment pas.
+const desaligne = puuidIndex([{ name: 'X', riotIds: ['Main#1', 'Smurf#2', 'Autre#3'], puuids: ['p-x', 'p-y'] }]);
+assert.equal(desaligne.size, 0, 'des listes décalées ne permettent aucune attribution sûre');
+assert.equal(puuidIndex([{ name: 'X', riotIds: ['Main#1', 'Smurf#2'], puuids: ['p-x'] }]).size, 0);
+
+// ─── Masquer et désigner le principal marchent aussi par PUUID ──────────────
+const masque = buildMembers(
+  [{ name: 'Liam', riot: { name: 'A', tag: '1', puuid: 'p-a' }, smurfs: [{ name: 'B', tag: '2', puuid: 'p-b' }] }],
+  { accounts: { liam: { x: { name: 'Peu Importe', tag: '0', puuid: 'p-b', hidden: true } } } },
+)[0];
+assert.deepEqual(masque.riotIds, ['A#1'], 'masqué par son PUUID, quel que soit le pseudo employé');
+
+// Désigner le principal passe par le PUUID : le pseudo employé dans l'admin
+// n'a pas à correspondre à celui du dépôt.
+const promu = buildMembers(
+  [{ name: 'Liam', riot: { name: 'A', tag: '1', puuid: 'p-a' }, smurfs: [{ name: 'B', tag: '2', puuid: 'p-b' }] }],
+  { accounts: { liam: { x: { name: 'B', tag: '2', puuid: 'p-b', role: 'main' } } } },
+)[0];
+assert.deepEqual(promu.riotIds, ['B#2', 'A#1'], 'le compte désigné passe en tête');
+
+// Et si l'admin le désigne sous un AUTRE pseudo, les deux règles s'appliquent :
+// c'est le même compte, renommé, et il devient principal.
+const promuEtRenomme = buildMembers(
+  [{ name: 'Liam', riot: { name: 'A', tag: '1', puuid: 'p-a' }, smurfs: [{ name: 'B', tag: '2', puuid: 'p-b' }] }],
+  { accounts: { liam: { x: { name: 'Nouveau', tag: '9', puuid: 'p-b', role: 'main' } } } },
+)[0];
+assert.deepEqual(promuEtRenomme.riotIds, ['Nouveau#9', 'A#1']);
+assert.deepEqual(promuEtRenomme.accounts.map(a => a.puuid), ['p-b', 'p-a'],
+  'toujours deux comptes, pas trois');
+
 console.log('rr-curve-utils: le PUUID de roster.json est lu et résout l’historique');
+console.log('rr-curve-utils: un renommage ne dédouble pas la courbe, les PUUID ne se décalent plus');
 
 // ─── Paliers : un point par période, pas un par partie ───────────────────────
 // Une classée dure une demi-heure : sur trois mois ça fait des centaines de

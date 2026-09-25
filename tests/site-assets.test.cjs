@@ -48,12 +48,22 @@ assert.ok(!published.has('live'), 'tout live/ ne doit pas être publié (ZIP de 
 ['discord-bot', 'tests', 'scripts', 'workers'].forEach(dir =>
   assert.ok(!published.has(dir), `${dir}/ n'a rien à faire sur le site public`));
 
-// ─── La clé partagée est injectée, jamais commitée ──────────────────────────
-assert.match(workflow, /secrets\.HENRIK_API_KEY/);
+// ─── Plus aucun secret sur le site public ───────────────────────────────────
+// La clé HenrikDev était injectée dans _site/config.js au déploiement. Mais
+// GitHub Pages sert tout ce qui entre dans _site, et le dépôt est public :
+// elle était donc lisible dans les DevTools par n'importe quel visiteur. Une
+// clé ramassée, c'est le quota du roster qui saute.
+//
+// Elle reste désormais dans le secret d'Actions, et c'est sync-stats.yml qui
+// s'en sert pour publier dans `rosterStats/` — d'où le site lit sans clé.
+assert.doesNotMatch(workflow, /secrets\.HENRIK_API_KEY/,
+  'le déploiement du site ne doit plus recevoir la clé');
+assert.match(workflow, /! grep -qi 'HENRIK' _site\/config\.js/,
+  'et doit échouer si elle y repasse, plutôt que la publier en silence');
+// config.js subsiste pour les réglages réellement publics — des URL, pas des
+// secrets — et reste généré, jamais commité.
 assert.match(workflow, /> _site\/config\.js/, 'config.js doit être généré dans _site, pas dans le dépôt');
-assert.match(workflow, /JSON\.stringify/, 'la clé doit être encodée pour ne pas casser le module');
-// Sans secret, le déploiement doit continuer : chacun saisit alors sa clé.
-assert.match(workflow, /::notice::Aucun secret HENRIK_API_KEY/);
+assert.match(workflow, /JSON\.stringify/, 'les valeurs doivent être encodées pour ne pas casser le module');
 
 // ─── Le site doit rester déployable même sans clé ───────────────────────────
 assert.doesNotMatch(workflow, /exit 1/, 'une clé absente ne doit pas faire échouer le déploiement');

@@ -59,7 +59,51 @@ assert.deepEqual(promu.map(a => a.isMain), [true, false], 'un seul principal à 
 
 assert.deepEqual(rosterAccounts({ name: 'Vide' }, null), [], 'aucun compte déclaré : rien');
 
+// ─── Un renommage n'est pas un second compte ────────────────────────────────
+// Le rapprochement se faisait par PSEUDO. Un compte renommé ne correspondait
+// donc à aucune ligne du dépôt, était ajouté à la suite, et atterrissait dans
+// les SMURFS — le main de Liam s'y retrouvait sous son nom courant, pendant
+// que la carte affichait encore l'ancien.
+const renomme = rosterAccounts(nico, {
+  accounts: { nico: { a: { name: 'Nouveau Pseudo', tag: '9999', puuid: 'puuid-main' } } },
+});
+assert.equal(renomme.length, 2, 'un renommage ne crée pas de compte supplémentaire');
+assert.equal(renomme[0].riotId, 'Nouveau Pseudo#9999', 'le nom de l’admin, saisi plus récemment, l’emporte');
+assert.equal(renomme[0].isMain, true, 'et il reste le compte PRINCIPAL');
+assert.equal(renomme[0].renamedFrom, 'Drew A Picasso#XOOO', 'l’ancien nom reste connu');
+assert.deepEqual(renomme.map(a => a.riotId).slice(1), ['OG ANUNOBY#OLY'], 'les vrais smurfs ne bougent pas');
+
+// Un PUUID différent, c'est un vrai second compte.
+const vraiSmurf = rosterAccounts(nico, {
+  accounts: { nico: { a: { name: 'Nouveau Pseudo', tag: '9999', puuid: 'puuid-different' } } },
+});
+assert.equal(vraiSmurf.length, 3);
+assert.equal(vraiSmurf.find(a => a.riotId === 'Nouveau Pseudo#9999').isMain, false);
+
+// Sans PUUID des deux côtés, on ne peut rien rapprocher : le compte reste
+// distinct, ce qui est le comportement d'avant et le seul possible.
+const sansLien = rosterAccounts(
+  { name: 'Nico', riot: { name: 'Ancien', tag: 'AAAA' } },
+  { accounts: { nico: { a: { name: 'Nouveau', tag: 'BBBB' } } } },
+);
+assert.equal(sansLien.length, 2, 'rien ne prouve que ce soit le même compte');
+
+// Masquer par PUUID : le compte masqué peut l'avoir été sous son ancien nom.
+const masqueParPuuid = rosterAccounts(nico, {
+  accounts: { nico: { a: { name: 'Peu Importe', tag: '0000', puuid: 'puuid-smurf', hidden: true } } },
+});
+assert.deepEqual(masqueParPuuid.map(a => a.riotId), ['Drew A Picasso#XOOO'],
+  'le smurf est masqué par son PUUID, quel que soit le pseudo employé');
+
+// Désigner le principal par PUUID : le pseudo a pu être fondu dans une autre
+// ligne entre-temps.
+const promuParPuuid = rosterAccounts(nico, {
+  accounts: { nico: { a: { name: 'Peu Importe', tag: '0000', puuid: 'puuid-smurf', role: 'main' } } },
+});
+assert.equal(promuParPuuid[0].puuid, 'puuid-smurf', 'le compte désigné passe en tête');
+
 console.log('roster-card-utils: comptes fusionnés depuis le dépôt et l’admin');
+console.log('roster-card-utils: un renommage reste le même compte, pas un smurf');
 
 // ─── Pourquoi la carte est muette ────────────────────────────────────────────
 // Quatre causes, quatre gestes différents. Les confondre sous un trou
