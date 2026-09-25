@@ -3,7 +3,7 @@ const fs    = require('fs');
 const path  = require('path');
 const { execFileSync, spawn } = require('child_process');
 const WebSocket = require('ws');
-const { buildRankSnapshot } = require('./rank-utils.js');
+const { buildRankSnapshot, seasonIdOf } = require('./rank-utils.js');
 const { riotServer } = require('./server-utils.js');
 const { autoUpdate, restartDecision } = require('./updater.js');
 const { pregameTransition } = require('./pregame-utils.js');
@@ -29,7 +29,7 @@ const {
 } = require('./valorant-mode-utils.js');
 
 const FIREBASE_URL = 'https://realtime-database-5bb9f-default-rtdb.europe-west1.firebasedatabase.app';
-const SCRIPT_VERSION = '4.20.1';
+const SCRIPT_VERSION = '4.21.0';
 const INSTANCE_LOCK_PATH = path.join(__dirname, '.olycity-live.lock');
 const LOG_PATH = path.join(__dirname, 'olycity.log');
 const MAX_LOG_BYTES = 5 * 1024 * 1024;
@@ -1465,7 +1465,17 @@ async function poll() {
             (async () => {
               await new Promise(r => setTimeout(r, 2000));
               let count = 0;
-              for (const puuid of puuidsCopy) {
+              // Le joueur LOCAL d'abord : c'est lui qui donne l'acte réellement
+              // en cours, puisqu'il est en train d'y jouer. Sans cette
+              // référence, chaque joueur était jugé sur SON dernier acte classé,
+              // et celui qui n'a pas joué en classé cet acte-ci voyait les
+              // chiffres du précédent présentés comme actuels.
+              const ordonnes = [...puuidsCopy].sort((a, b) =>
+                (b === tokensCopy.puuid ? 1 : 0) - (a === tokensCopy.puuid ? 1 : 0));
+              // Seule une partie classée prouve l'acte : en Deathmatch, la
+              // dernière classée du joueur local peut dater d'un acte passé.
+              let acteEnCours = null;
+              for (const puuid of ordonnes) {
                 await new Promise(r => setTimeout(r, 500));
                 const cachedHistory = rankHistoryCache.get(puuid);
                 const hasFreshHistory = cachedHistory?.expiresAt > Date.now();
@@ -1492,7 +1502,10 @@ async function poll() {
                 // Recent matches remain useful for the current RR and its evolution.
                 // If Riot withholds season history (notably for some anonymous players),
                 // buildRankSnapshot transparently falls back to the best recent tier.
-                const rank = buildRankSnapshot(mmr, updates, xp?.Progress?.Level);
+                if (puuid === tokensCopy.puuid && String(stableMode || '').toLowerCase() === 'competitive') {
+                  acteEnCours = seasonIdOf(updates);
+                }
+                const rank = buildRankSnapshot(mmr, updates, xp?.Progress?.Level, acteEnCours);
                 if (rank) {
                   rankMap[puuid] = rank;
                   count++;
