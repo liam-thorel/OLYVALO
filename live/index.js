@@ -8,6 +8,7 @@ const { riotServer } = require('./server-utils.js');
 const { autoUpdate, restartDecision } = require('./updater.js');
 const { pregameTransition } = require('./pregame-utils.js');
 const { isRemakeMatch, cancelledResult } = require('./remake.js');
+const { teamOutcome } = require('./match-outcome.js');
 const { buildWeaponIndex, buildSkinLevelIndex, curateLoadouts } = require('./loadouts.js');
 const { ensureStartupLauncher } = require('./startup.js');
 const { acquireInstanceLock, releaseInstanceLock } = require('./instance-lock.js');
@@ -971,7 +972,6 @@ function buildDetailedHistory(snapshot, details, tokens, resolvedNames = {}) {
     .map(player => [player.puuid, player]));
   const self = rawPlayers.find(player => player.subject === tokens?.puuid);
   const selfTeamId = self?.teamId || (snapshot.selfTeam === 'ORDER' ? 'Blue' : snapshot.selfTeam === 'CHAOS' ? 'Red' : null);
-  const selfTeam = rawTeams.find(team => team.teamId === selfTeamId);
   const blueTeam = rawTeams.find(team => team.teamId === 'Blue');
   const redTeam = rawTeams.find(team => team.teamId === 'Red');
   const mapId = details.matchInfo?.mapId?.split('/')?.pop() || snapshot.map;
@@ -1012,7 +1012,9 @@ function buildDetailedHistory(snapshot, details, tokens, resolvedNames = {}) {
       ? details.matchInfo.gameStartMillis + details.matchInfo.gameLengthMillis
       : snapshot.endTs,
     durationMs: details.matchInfo?.gameLengthMillis || Math.max(0, (snapshot.endTs || 0) - (snapshot.ts || 0)),
-    result: isDeathmatch ? 'completed' : selfTeam ? (selfTeam.won ? 'win' : 'loss') : snapshot.result,
+    // Une égalité n'a pas de vainqueur : `selfTeam.won` faux en faisait une
+    // défaite, paris compris. Voir match-outcome.js.
+    result: isDeathmatch ? 'completed' : teamOutcome(selfTeamId, rawTeams) || snapshot.result,
     score: blueTeam || redTeam ? {
       blue: blueTeam?.roundsWon || 0,
       red: redTeam?.roundsWon || 0,

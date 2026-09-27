@@ -1,10 +1,11 @@
 <!-- version: 4.21.0 -->
-Cette mise à jour corrige les statistiques affichées dans la Live Game, et les dodges/remakes signalés à Discord.
+Cette mise à jour corrige les statistiques affichées dans la Live Game, et les dodges, remakes et égalités signalés à Discord.
 
 ### Dodges et remakes
 
 - Un **dodge** en sélection d'agents était publié sans sa file : le bot ne pouvait pas savoir que la partie annulée était une classée, et se taisait — alors que la pénalité de RR, elle, était bien appliquée par Riot. Le script publie désormais la vraie file, le RR perdu (lu sous l'identifiant de la sélection d'agents, le seul endroit où il figure) et un marqueur « partie annulée ».
 - Un **remake** (un joueur qui ne se connecte pas, partie annulée au premier round) était publié comme une **défaite** : Riot renvoie un rapport complet où personne n'a gagné. Il est maintenant reconnu à son nombre de manches et signalé comme partie annulée.
+- Une **égalité** était publiée comme une **défaite** : le rapport Riot ne marque aucune équipe gagnante, et « pas gagné » devenait « perdu ». Les paris étaient donc tranchés comme une défaite. Une partie sans vainqueur est désormais publiée comme une égalité, et les mises sont remboursées. Une reddition à score égal, elle, a bien un vainqueur et reste tranchée normalement.
 
 ### Statistiques de l'acte
 

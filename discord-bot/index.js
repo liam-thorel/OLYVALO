@@ -621,7 +621,7 @@ async function notifyValorantGameEnd(sessions) {
 
     const playerEmbeds = channelPlayers.map(({ member, result, playReward, outcome: localOutcome, awardLines }) => {
       const resultLabel = resultLabels[result.result] || 'Terminée';
-      const resultIcon = result.result === 'win' ? '🏆' : result.result === 'loss' ? '💀' : '🎮';
+      const resultIcon = result.result === 'win' ? '🏆' : result.result === 'loss' ? '💀' : result.result === 'draw' ? '🤝' : '🎮';
       const rrLine = result.rr?.delta != null ? `${result.rr.delta >= 0 ? '+' : ''}${result.rr.delta} RR` : null;
 
       // Ex. « 📊 Ascendant 2 33 RR → **Ascendant 2 59 RR** ». Riot renvoie le

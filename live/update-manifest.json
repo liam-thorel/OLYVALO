@@ -12,6 +12,7 @@
     "server-utils.js",
     "pregame-utils.js",
     "remake.js",
+    "match-outcome.js",
     "startup.js",
     "instance-lock.js",
     "legacy-cleanup.js",
