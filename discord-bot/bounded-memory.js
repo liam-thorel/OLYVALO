@@ -52,8 +52,44 @@ function createExpiringMap(maxAgeMs) {
       entries.set(key, now);
       return false;
     },
+    /**
+     * Rouvre la fenêtre pour cette clé.
+     *
+     * La fenêtre anti-doublon suppose qu'un même groupe de joueurs ne relance
+     * pas une VRAIE nouvelle partie dans les 20 minutes. Un dodge casse cette
+     * hypothèse : la partie annulée a déjà consommé la fenêtre, et la partie
+     * relancée trente secondes plus tard — bien réelle, avec son propre
+     * matchId — n'était plus annoncée ni ouverte aux paris.
+     */
+    forget(key) {
+      return entries.delete(key);
+    },
     get size() { return entries.size; },
   };
 }
 
-module.exports = { createBoundedSet, createExpiringMap };
+/**
+ * Map clé -> valeur qui ne garde que les N dernières écritures.
+ *
+ * Même rôle que createBoundedSet, mais quand il faut retrouver une valeur :
+ * relier un matchId à la clé anti-doublon utilisée pour l'annonce de départ,
+ * par exemple, afin de pouvoir la rouvrir si la partie est annulée.
+ */
+function createBoundedMap(limit = 500) {
+  const entries = new Map();
+  return {
+    get: key => entries.get(key),
+    has: key => entries.has(key),
+    set(key, value) {
+      // Réécrire remet l'entrée en fin de file, comme createBoundedSet.
+      entries.delete(key);
+      entries.set(key, value);
+      while (entries.size > limit) entries.delete(entries.keys().next().value);
+      return this;
+    },
+    delete: key => entries.delete(key),
+    get size() { return entries.size; },
+  };
+}
+
+module.exports = { createBoundedSet, createExpiringMap, createBoundedMap };

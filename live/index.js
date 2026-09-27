@@ -7,6 +7,7 @@ const { buildRankSnapshot, seasonIdOf } = require('./rank-utils.js');
 const { riotServer } = require('./server-utils.js');
 const { autoUpdate, restartDecision } = require('./updater.js');
 const { pregameTransition } = require('./pregame-utils.js');
+const { isRemakeMatch, cancelledResult } = require('./remake.js');
 const { buildWeaponIndex, buildSkinLevelIndex, curateLoadouts } = require('./loadouts.js');
 const { ensureStartupLauncher } = require('./startup.js');
 const { acquireInstanceLock, releaseInstanceLock } = require('./instance-lock.js');
@@ -1171,6 +1172,11 @@ async function poll() {
           // pour toujours côté Firebase — pas de notif de fin, pas de
           // remboursement des paris.
           const sKey = stableSessionKey || 'unknown';
+          // Riot inscrit la pénalité de dodge dans competitiveupdates sous
+          // l'ID de la SÉLECTION D'AGENTS — c'est le seul endroit où le RR
+          // perdu sur une partie qui n'a pas eu lieu est lisible. Sans ça, le
+          // joueur voit son RR baisser et le bot n'en dit pas un mot.
+          const dodgeRR = await fetchPostMatchRR(authTokens, pregameState.matchId).catch(() => null);
           if (sKey !== 'unknown') {
             await putFB(`live/sessions/${sKey}`, {
               active: false, ts: Date.now(),
@@ -1178,9 +1184,25 @@ async function poll() {
               memberId: identity?.memberId || '',
               member: identity?.memberName || '',
               matchId: pregameState.matchId,
+              // La VRAIE file, pas 'agent-select' : sans elle, le bot ne sait
+              // pas que la partie annulée était une classée.
+              mode: pregameState.mode || 'competitive',
+              queueId: pregameState.mode || 'competitive',
+              map: pregameState.map || '',
+              mapClean: pregameState.mapClean || '',
+              // Publié en même temps que active:false, donc le bot annonce
+              // l'annulation sans attendre ses 25 s de grâce.
+              result: cancelledResult({
+                kind: 'dodge',
+                matchId: pregameState.matchId,
+                mode: pregameState.mode || 'competitive',
+                map: pregameState.mapClean || '',
+                rr: dodgeRR,
+              }),
             });
           }
-          console.log(`[${ts()}] 🚫 Dodge détecté — partie annulée avant le lancement`);
+          const rrNote = dodgeRR?.delta != null ? ` (${dodgeRR.delta > 0 ? '+' : ''}${dodgeRR.delta} RR)` : '';
+          console.log(`[${ts()}] 🚫 Dodge détecté — partie annulée avant le lancement${rrNote}`);
         }
         pregameState = null;
       } else {
@@ -1350,19 +1372,26 @@ async function poll() {
         const rr = await fetchPostMatchRR(postMatchTokens, lastGameInfo.matchId);
         if (rr) lastGameInfo.rr = rr;
 
+        // Remake : la partie a bien démarré, mais personne n'a `won: true`
+        // dans le rapport Riot — buildDetailedHistory en faisait donc une
+        // DÉFAITE, avec sa carte dans Discord, ses points de participation et
+        // sa ligne dans le récap RR, pour une partie de deux rounds.
+        const remake = isRemakeMatch(lastGameInfo);
+        if (remake) lastGameInfo.remake = true;
+
         const histKey = lastGameInfo.matchId.replace(/[.#$\[\]\/]/g, '-');
         const reporterKey = String(lastGameInfo.playerPuuid || stableSessionKey || 'unknown').replace(/[.#$\[\]\/]/g, '-');
         const historySummary = valorantHistorySummary(lastGameInfo);
         await putFB(`live/history/${histKey}/reports/${reporterKey}`, lastGameInfo);
         await putFB(`historyIndex/valorant/${histKey}/reports/${reporterKey}`, historySummary);
         await putFB(`historyIndex/valorant/${histKey}/ts`, historySummary.ts);
-        console.log(`[${ts()}] 📜 Game enregistrée — ${lastGameInfo.map} (${lastGameInfo.result})${details ? ' · détails OK' : ' · résumé local'}`);
+        console.log(`[${ts()}] 📜 Game enregistrée — ${lastGameInfo.map} (${remake ? 'remake' : lastGameInfo.result})${details ? ' · détails OK' : ' · résumé local'}`);
 
         // Résumé de fin de game pour le bot Discord (paris + notif de résultat)
         if (sKey !== 'unknown') {
           const selfPuuid = lastGameInfo.playerPuuid || postMatchTokens?.puuid || stableSessionKey;
           const self = (lastGameInfo.players || []).find(player => player.puuid === selfPuuid);
-          await putFB(`live/sessions/${sKey}/result`, {
+          const resultPayload = {
             result: lastGameInfo.result,
             matchId: lastGameInfo.matchId,
             kills: self?.stats.kills ?? null,
@@ -1377,7 +1406,16 @@ async function poll() {
             mode: lastGameInfo.mode,
             durationSeconds: Math.round((lastGameInfo.durationMs || 0) / 1000),
             score: lastGameInfo.score || null,
-          });
+          };
+          // Écrase `result` : le bot doit lire « annulée », pas « défaite ».
+          if (remake) Object.assign(resultPayload, cancelledResult({
+            kind: 'remake',
+            matchId: lastGameInfo.matchId,
+            mode: lastGameInfo.mode,
+            map: lastGameInfo.map,
+            rr: lastGameInfo.rr ?? null,
+          }));
+          await putFB(`live/sessions/${sKey}/result`, resultPayload);
         }
 
         lastGameInfo = null;
