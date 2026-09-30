@@ -633,6 +633,24 @@ body.agent-mode .footer{ display:none; }
 .live-data-notice strong {
   color: #f5c842; font-weight: 650;
 }
+/* Score en direct : même gabarit que la phase et le serveur, posé sur la
+   même bande sombre de l'en-tête (celui-ci reste sombre dans les deux thèmes). */
+.live-score {
+  display:inline-flex; align-items:center; gap:10px; min-height:40px; box-sizing:border-box;
+  padding:4px 12px; border:1px solid rgba(255,255,255,.18); background:rgba(7,10,15,.72);
+  font-family:'Tomorrow',sans-serif; color:#fff; font-variant-numeric:tabular-nums;
+}
+.live-score[hidden] { display:none; }
+.live-score-side { display:inline-flex; align-items:center; gap:7px; }
+.live-score-side small {
+  font-size:8px; font-weight:600; letter-spacing:1.6px; text-transform:uppercase; color:rgba(255,255,255,.52);
+}
+.live-score-side strong { min-width:1.2em; font-size:22px; font-weight:700; line-height:1; text-align:center; }
+.live-score-sep { color:rgba(255,255,255,.35); font-size:16px; }
+.live-score[data-state="ahead"] { border-color:rgba(63,207,111,.45); }
+.live-score[data-state="ahead"] .live-score-side:not(.is-theirs) strong { color:#3fcf6f; }
+.live-score[data-state="behind"] { border-color:rgba(255,70,86,.45); }
+.live-score[data-state="behind"] .live-score-side:not(.is-theirs) strong { color:#ff4656; }
 .live-phase {
   display:inline-flex; align-items:center; min-height:40px; box-sizing:border-box; padding:6px 10px;
   border:1px solid rgba(255,255,255,.18); background:rgba(7,10,15,.56); color:rgba(255,255,255,.78);

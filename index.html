@@ -17,11 +17,11 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Tomorrow:wght@400;500;600;700&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="./css/tokens.css?v=20260824-page-shell">
-  <link rel="stylesheet" href="./css/layout.css?v=20260923-gauntlet-layout">
+  <link rel="stylesheet" href="./css/layout.css?v=20260930-live-score">
   <link rel="stylesheet" href="./css/components.css?v=20260920-puuid-accounts">
   <link rel="stylesheet" href="./css/home.css?v=20260825-human-banner">
   <link rel="stylesheet" href="./css/agent-page.css?v=20260720-avatars">
-  <link rel="stylesheet" href="./css/responsive.css?v=20260923-gauntlet-layout">
+  <link rel="stylesheet" href="./css/responsive.css?v=20260930-live-score">
   <link rel="stylesheet" href="./css/lol-mode.css?v=20260922-autoaccept">
   <link rel="stylesheet" href="./css/curse.css?v=20260818-curse-lifecycle">
   <link rel="stylesheet" href="./css/coop-games.css?v=20260824-mobile-data-cache">
@@ -541,6 +541,11 @@
             <span class="live-match-kicker">PARTIE EN COURS</span>
             <div class="live-map-name" id="live-map-name">—</div>
             <div class="live-match-meta">
+              <div class="live-score" id="live-score" data-state="level" role="status" aria-live="polite" hidden>
+                <span class="live-score-side"><small id="live-score-mine-label">Nous</small><strong id="live-score-mine">0</strong></span>
+                <span class="live-score-sep" aria-hidden="true">–</span>
+                <span class="live-score-side is-theirs"><strong id="live-score-theirs">0</strong><small id="live-score-theirs-label">Eux</small></span>
+              </div>
               <div class="live-phase" id="live-phase">—</div>
               <div class="live-server" id="live-server" style="display:none">—</div>
             </div>
@@ -596,6 +601,6 @@
   <!-- Firebase SDK -->
   <!-- Présence Firebase -->
   <script src="./js/presence.js?v=20260720-avatars"></script>
-  <script type="module" src="./js/main.js?v=20260929-champions-comps"></script>
+  <script type="module" src="./js/main.js?v=20260930-live-score"></script>
 </body>
 </html>

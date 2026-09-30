@@ -1,5 +1,11 @@
 <!-- version: 4.21.0 -->
-Cette mise à jour corrige les statistiques affichées dans la Live Game, et les dodges, remakes et égalités signalés à Discord.
+Cette mise à jour affiche le score en direct, corrige les statistiques de la Live Game, et les dodges, remakes et égalités signalés à Discord.
+
+### Score en direct
+
+- Le score de la partie s'affiche désormais en direct sur la page Live (« Nous 8 – 5 Eux »), vu depuis l'équipe du joueur suivi.
+- Il était figé à 0-0 : le script le lisait dans une réponse Riot qui ne contient pas d'équipes, et remettait le score à zéro à chaque rafraîchissement. Il vient maintenant de la présence Riot, mise à jour à chaque manche.
+- Effet de bord attendu : le pari de mi-temps du bot, qui attend 12 manches jouées, ne pouvait jamais s'ouvrir. Il s'ouvrira désormais.
 
 ### Dodges et remakes
 

@@ -9,6 +9,7 @@ const { autoUpdate, restartDecision } = require('./updater.js');
 const { pregameTransition } = require('./pregame-utils.js');
 const { isRemakeMatch, cancelledResult } = require('./remake.js');
 const { teamOutcome } = require('./match-outcome.js');
+const { presenceScore, blueRedScore } = require('./live-score.js');
 const { buildWeaponIndex, buildSkinLevelIndex, curateLoadouts } = require('./loadouts.js');
 const { ensureStartupLauncher } = require('./startup.js');
 const { acquireInstanceLock, releaseInstanceLock } = require('./instance-lock.js');
@@ -721,7 +722,10 @@ function connectWebSocket(port, password) {
         if (JSON.stringify(score) !== lastScore) {
           lastScore = JSON.stringify(score);
           console.log(`[${ts()}] 📊 Score: ${score.blue} - ${score.red}`);
-          putFB(`live/sessions/${authTokens?.puuid || selfPuuid || 'unknown'}/score`, score).catch(()=>{});
+          // Même clé que la session : une autre clé créait un nœud fantôme ne
+          // contenant qu'un score.
+          const sKey = stableSessionKey || 'unknown';
+          if (sKey !== 'unknown') putFB(`live/sessions/${sKey}/score`, score).catch(()=>{});
         }
       }
 
@@ -1236,6 +1240,8 @@ async function poll() {
     await putFB('live/rosterGames', rosterGames).catch(() => {});
   }
 
+  // Score de la partie, du point de vue de l'équipe du joueur local.
+  let ownPresenceScore = null;
   for (const p of myPresences) {
     let presenceHasGameData = false;
 
@@ -1253,6 +1259,7 @@ async function poll() {
         matchData = d.matchPresenceData;
         presenceHasGameData = true;
       }
+      ownPresenceScore = presenceScore(d) || ownPresenceScore;
     }
 
     // Only set playerName from the presence that has game data
@@ -1441,6 +1448,9 @@ async function poll() {
     inGame   = true;
     lastMap  = mapRaw;
     gameStartedAt = Date.now();
+    // Le score de la partie précédente ne doit pas s'afficher sur la nouvelle
+    // le temps que la présence publie le sien.
+    lastScore = '';
     matchDataLogged = false;
     gameDataLogged = false;
     authTokens = null;
@@ -1582,12 +1592,6 @@ async function poll() {
             })();
           }
 
-          // Extract score
-          const teams = match.Teams || [];
-          const blueScore = teams.find(t => t.TeamID === 'Blue')?.Score || 0;
-          const redScore  = teams.find(t => t.TeamID === 'Red')?.Score || 0;
-          lastScore = JSON.stringify({ blue: blueScore, red: redScore });
-
           const skinsByPuuid = await fetchMatchLoadouts(authTokens, matchData.MatchID, match.Players);
 
           players = match.Players.map(p => {
@@ -1611,6 +1615,17 @@ async function poll() {
               ...(skinsByPuuid[p.Subject]?.length ? { skins: skinsByPuuid[p.Subject] } : {}),
             };
           });
+          // Score en direct — voir live-score.js. core-game n'a pas d'équipes :
+          // on n'y lit plus rien, sinon le score retombait à 0-0 à chaque poll.
+          // Un score absent de la présence garde le dernier connu, jamais zéro.
+          const liveSelfTeam = players.find(p => p.puuid === authTokens.puuid)?.team || null;
+          const liveScore = blueRedScore(ownPresenceScore, liveSelfTeam);
+          if (liveScore) {
+            const serialized = JSON.stringify(liveScore);
+            if (serialized !== lastScore) console.log(`[${ts()}] 📊 Score: ${liveScore.blue} - ${liveScore.red}`);
+            lastScore = serialized;
+          }
+
           if (!gameDataLogged) {
             gameDataLogged = true;
             console.log(`[${ts()}] 🎯 Match data: ${players.length} joueurs trouvés`);
@@ -1708,6 +1723,10 @@ async function poll() {
     activePlayer,
     rank:         rankMap[authTokens?.puuid || selfPuuid] || null,
     score:        JSON.parse(lastScore || '{}'),
+    // Le camp du joueur local : sans lui, le score Bleu/Rouge ne dit pas qui
+    // mène. Le site l'affiche « nous – eux », et le pari de mi-temps du bot en
+    // tire ses cotes.
+    selfTeam:    players.find(p => p.puuid === (authTokens?.puuid || stableSessionKey))?.team || '',
     phase:       pregameState ? 'pregame' : '',
     scriptVersion: SCRIPT_VERSION,
     server:       currentServer?.name || '',
