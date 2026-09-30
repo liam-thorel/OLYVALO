@@ -1,4 +1,4 @@
-import { liveTimestamp } from './live-data-store.mjs?v=20260920-live-resilience';
+import { liveTimestamp } from './live-data-store.mjs?v=20260930-consistent-live';
 
 // Deux ou trois requêtes Riot locales peuvent ponctuellement prendre plus de
 // 30 s. Le site garde donc le dernier état fiable une minute ; le script reste

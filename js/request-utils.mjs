@@ -8,6 +8,10 @@ export async function fetchJsonWithTimeout(url, options = {}) {
 
   const controller = new AbortController();
   let timedOut = false;
+  let rejectAbort;
+  const aborted = new Promise((_, reject) => { rejectAbort = reject; });
+  const abortRequest = () => rejectAbort(controller.signal.reason || new DOMException('Aborted', 'AbortError'));
+  controller.signal.addEventListener('abort', abortRequest, { once:true });
   const abortFromExternalSignal = () => controller.abort(externalSignal.reason);
   if (externalSignal?.aborted) abortFromExternalSignal();
   else externalSignal?.addEventListener('abort', abortFromExternalSignal, { once: true });
@@ -18,18 +22,22 @@ export async function fetchJsonWithTimeout(url, options = {}) {
   }, timeoutMs);
 
   try {
-    const response = await fetchImpl(url, { ...init, signal: controller.signal });
-    if (!response.ok) {
-      const error = new Error(`HTTP ${response.status}`);
-      error.status = response.status;
-      throw error;
-    }
-    return await response.json();
+    if (controller.signal.aborted) return await aborted;
+    return await Promise.race([aborted, (async () => {
+      const response = await fetchImpl(url, { ...init, signal: controller.signal });
+      if (!response.ok) {
+        const error = new Error(`HTTP ${response.status}`);
+        error.status = response.status;
+        throw error;
+      }
+      return response.json();
+    })()]);
   } catch (error) {
     if (timedOut) throw new Error(`Délai de chargement dépassé (${timeoutMs} ms)`);
     throw error;
   } finally {
     clearTimeout(timer);
+    controller.signal.removeEventListener('abort', abortRequest);
     externalSignal?.removeEventListener('abort', abortFromExternalSignal);
   }
 }

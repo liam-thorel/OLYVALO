@@ -1,4 +1,4 @@
-import { liveTimestamp } from './live-data-store.mjs?v=20260920-live-resilience';
+import { liveTimestamp } from './live-data-store.mjs?v=20260930-consistent-live';
 
 export const HEALTH_FRESH_MS = 45_000;
 export const HEALTH_RECENT_MS = 120_000;

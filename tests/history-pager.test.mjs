@@ -7,6 +7,24 @@ test('history index timestamps support Valorant reports and flat LoL records', (
   assert.equal(historyIndexTimestamp({ reports:{ a:{ ts:20 }, b:{ endTs:30 } } }), 30);
 });
 
+test('an empty history is cached rather than fully downloaded on every visit', async () => {
+  let calls = 0;
+  const pager = createHistoryPager({ firebaseUrl:'https://firebase', indexPath:'index', dataPath:'history', fetchJson:async () => { calls++; return null; } });
+  await pager.loadNext();
+  await pager.loadNext();
+  assert.equal(calls, 2, 'one index and one legacy fallback, not two of each');
+});
+
+test('concurrent detail requests share one request and a failure can be retried', async () => {
+  let calls = 0;
+  const pager = createHistoryPager({ firebaseUrl:'https://firebase', dataPath:'history', fetchJson:async () => { calls++; if (calls === 1) throw new Error('offline'); return { ts:1 }; } });
+  const first = await Promise.allSettled([pager.loadDetail('same'), pager.loadDetail('same')]);
+  assert.equal(calls, 1);
+  assert.equal(first[0].status, 'rejected');
+  assert.deepEqual(await pager.loadDetail('same'), { ts:1 });
+  assert.equal(calls, 2);
+});
+
 test('history pager loads newest summaries first and details on demand', async () => {
   const calls = [];
   const responses = {

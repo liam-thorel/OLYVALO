@@ -2,6 +2,14 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { activeLolSessions, groupLolSessions, lolKda, mergeFirebaseEvent, normalizeLolHistory, summarizeLolDays } from '../js/lol-utils.mjs';
 
+test('root PATCH preserves unrelated games and votes, PUT replaces them', () => {
+  const current = { a:{ title:'Peak', votes:{ nico:true } }, b:{ title:'Big Walk' } };
+  const patched = mergeFirebaseEvent(current, {path:'/',eventType:'patch',data:{'a/votes/liam':true}});
+  assert.deepEqual(patched, { a:{title:'Peak',votes:{nico:true,liam:true}}, b:{title:'Big Walk'} });
+  assert.deepEqual(current.a.votes, {nico:true});
+  assert.deepEqual(mergeFirebaseEvent(patched, {path:'/',eventType:'put',data:{b:current.b}}), {b:current.b});
+});
+
 test('activeLolSessions rejects stopped and stale sessions', () => {
   const now = 1_000_000;
   const sessions = {

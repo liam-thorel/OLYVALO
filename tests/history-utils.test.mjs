@@ -1,5 +1,14 @@
 import assert from 'node:assert/strict';
-import { filterHistoryGames, historyDailyPerformances, historyGameForOwner, historyMatchId, historyMode, historyOwnerAccountLabel, historyOwnerKey, historyOwnerKeys, historyOwnerLabel, historyPlayerName, historyPlayerPerformance, historyPlayerPerformances, historyRankedPlayers, historyTrackerUrl, isHistorySelf, isOpaquePlayerName, normalizeHistoryEntries } from '../js/history-utils.mjs';
+import { filterHistoryGames, historyDailyPerformances, historyGameForOwner, historyMatchId, historyMode, historyOwnerAccountLabel, historyOwnerKey, historyOwnerKeys, historyOwnerLabel, historyPlayerName, historyPlayerPerformance, historyPlayerPerformances, historyRankedPlayers, historyScoreText, historyTrackerUrl, isHistorySelf, isOpaquePlayerName, normalizeHistoryEntries } from '../js/history-utils.mjs';
+
+assert.equal(historyScoreText({ mode:'competitive', selfTeam:'CHAOS', score:{ blue:4, red:13 } }), '13–4');
+assert.equal(historyScoreText({ mode:'competitive', selfTeam:'ORDER', score:{ blue:13, red:1 } }), '13–1');
+assert.equal(historyScoreText({ mode:'competitive', selfTeam:'CHAOS', score:{ blue:13, red:13 } }), '13–13');
+assert.equal(historyScoreText({ mode:'competitive', score:{ blue:13, red:4 }, playerPuuid:'self', players:[{puuid:'self',team:'CHAOS'}] }), '4–13');
+assert.equal(historyScoreText({ mode:'competitive', score:{ blue:13, red:4 } }), 'Bleu 13 · Rouge 4');
+assert.equal(historyScoreText({ mode:'abilitydraftarena', selfTeam:'ORDER', score:{ blue:0, red:0 } }), '');
+assert.equal(historyScoreText({ mode:'deathmatch', score:{ blue:0, red:0 } }), '');
+assert.equal(historyScoreText({ mode:'competitive', score:{ blue:null, red:13 } }), '');
 
 assert.equal(historyMode({ mode: 'competitive' }), 'competitive');
 assert.equal(historyMode({ mode: 'deathmatch' }), 'deathmatch');

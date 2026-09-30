@@ -130,3 +130,54 @@ test('keep-alive events prevent unnecessary stream recovery', async () => {
   assert.equal(instances.length, 1);
   store.destroy();
 });
+
+test('a deletion during a delayed GET is not resurrected by its old response', async () => {
+  let release;
+  const store = createLiveDataStore({ EventSourceImpl:null, fetchJson:() => new Promise(resolve => { release = resolve; }) });
+  const pending = store.refresh();
+  store.apply('valorantClients', { path:'/gone', data:null });
+  release({ clients:{ gone:{ state:'in-game' }, remaining:{ state:'idle' } } });
+  assert.deepEqual((await pending).valorantClients, { remaining:{ state:'idle' } });
+  store.destroy();
+});
+
+test('a complete realtime snapshot replaces a delayed GET atomically across channels', async () => {
+  let release;
+  let source;
+  class FakeSource {
+    constructor() { source = this; this.handlers = {}; }
+    addEventListener(type, handler) { this.handlers[type] = handler; }
+    close() {}
+  }
+  const store = createLiveDataStore({ EventSourceImpl:FakeSource, fetchJson:() => new Promise(resolve => { release = resolve; }) });
+  const seen = [];
+  store.subscribe(value => seen.push(value), { refreshOnStart:false });
+  const pending = store.refresh();
+  seen.length = 0;
+  source.handlers.put({ type:'put', data:JSON.stringify({ path:'/', data:{ clients:{ fresh:{ state:'in-game' } }, sessions:{ fresh:{ active:true } } } }) });
+  assert.equal(seen.length, 1);
+  assert.equal(seen[0].valorantClients.fresh.state, 'in-game');
+  assert.equal(seen[0].valorantSessions.fresh.active, true);
+  release({ clients:{ old:{ state:'idle' } }, sessions:{ old:{ active:true } } });
+  assert.deepEqual(Object.keys((await pending).valorantClients), ['fresh']);
+  store.destroy();
+});
+
+test('callbacks from a replaced stream and a destroyed request are ignored', async () => {
+  const instances = [];
+  let release;
+  class FakeSource {
+    constructor() { this.handlers = {}; instances.push(this); }
+    addEventListener(type, handler) { this.handlers[type] = handler; }
+    close() {}
+  }
+  const store = createLiveDataStore({ EventSourceImpl:FakeSource, fetchJson:() => new Promise(resolve => { release = resolve; }) });
+  store.start();
+  const recovery = store.recoverIfSilent(Date.now() + 80_000);
+  instances[0].handlers.put({ type:'put', data:JSON.stringify({ path:'/clients/old', data:{ state:'in-game' } }) });
+  assert.deepEqual(store.snapshot().valorantClients, {});
+  store.destroy();
+  release({ clients:{ old:{ state:'in-game' } } });
+  await recovery;
+  assert.deepEqual(store.snapshot().valorantClients, {});
+});

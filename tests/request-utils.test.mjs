@@ -3,6 +3,21 @@ import assert from 'node:assert/strict';
 
 import { fetchJsonWithRetry, fetchJsonWithTimeout } from '../js/request-utils.mjs';
 
+test('timeouts also bound fetch implementations and JSON bodies that ignore abort', async () => {
+  for (const fetchImpl of [
+    () => new Promise(() => {}),
+    async () => ({ ok:true, json:() => new Promise(() => {}) }),
+  ]) {
+    await assert.rejects(fetchJsonWithTimeout('/hung', { timeoutMs:15, fetchImpl }), /Délai de chargement dépassé/);
+  }
+});
+
+test('an already aborted request never starts a fetch', async () => {
+  const controller = new AbortController();
+  controller.abort();
+  await assert.rejects(fetchJsonWithTimeout('/cancelled', { signal:controller.signal, fetchImpl:() => { throw new Error('should not fetch'); } }), { name:'AbortError' });
+});
+
 test('fetchJsonWithTimeout returns parsed JSON', async () => {
   const data = await fetchJsonWithTimeout('/ok', {
     fetchImpl: async () => ({ ok: true, json: async () => ({ ready: true }) }),

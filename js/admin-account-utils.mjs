@@ -1,4 +1,4 @@
-import { liveTimestamp } from './live-data-store.mjs?v=20260920-live-resilience';
+import { liveTimestamp } from './live-data-store.mjs?v=20260930-consistent-live';
 
 const VALID_GAMES = new Set(['valorant', 'lol']);
 

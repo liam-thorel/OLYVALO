@@ -40,6 +40,20 @@ export function historyMode(game) {
   return 'other';
 }
 
+export function historyScoreText(game = {}) {
+  const mode = String(game.queueId || game.mode || '').toLowerCase();
+  if (historyMode(game) === 'deathmatch' || game.modeFamily === 'free-for-all'
+      || /abilitydraft|gauntlet/.test(mode)) return '';
+  const { blue, red } = game.score || {};
+  if (![blue, red].every(value => Number.isInteger(value) && value >= 0)) return '';
+  const self = (game.players || []).find(player => isHistorySelf(game, player));
+  const team = String(game.selfTeam || self?.team || self?.teamId || '').toUpperCase();
+  if (team === 'CHAOS' || team === 'RED') return `${red}–${blue}`;
+  if (team === 'ORDER' || team === 'BLUE') return `${blue}–${red}`;
+  // Ne pas inventer une perspective quand l'ancien enregistrement n'en a pas.
+  return `Bleu ${blue} · Rouge ${red}`;
+}
+
 export function isOpaquePlayerName(name) {
   const value = String(name || '').trim();
   return /^[0-9a-f]{8}$/i.test(value)

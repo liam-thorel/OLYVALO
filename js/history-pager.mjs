@@ -1,4 +1,4 @@
-import { fetchJsonWithRetry } from './request-utils.mjs?v=20260825-first-load-recovery';
+import { fetchJsonWithRetry } from './request-utils.mjs?v=20260930-consistent-live';
 
 export function historyIndexTimestamp(value = {}) {
   const reports = value?.reports && typeof value.reports === 'object' ? Object.values(value.reports) : [];
@@ -29,6 +29,7 @@ export function createHistoryPager({
   let indexPromise = null;
   const loaded = new Map();
   const detailCache = new Map();
+  const detailPromises = new Map();
 
   const url = path => `${firebaseUrl}/${path}.json`;
   const rebuildIndex = raw => {
@@ -41,7 +42,7 @@ export function createHistoryPager({
   };
 
   async function loadIndex({ force = false } = {}) {
-    if (!force && index.length && Date.now() - indexedAt < cacheMs) return index;
+    if (!force && indexedAt && Date.now() - indexedAt < cacheMs) return index;
     if (indexPromise) return indexPromise;
     indexPromise = (async () => {
       const rawIndex = await fetchJson(url(indexPath), { timeoutMs:6_000, attempts:2, retryDelays:[500] });
@@ -78,9 +79,14 @@ export function createHistoryPager({
 
   async function loadDetail(id) {
     if (detailCache.has(id)) return detailCache.get(id);
-    const detail = await fetchJson(url(`${dataPath}/${encodeURIComponent(id)}`), { timeoutMs:6_000, attempts:2, retryDelays:[500] });
-    if (detail) detailCache.set(id, detail);
-    return detail;
+    if (detailPromises.has(id)) return detailPromises.get(id);
+    const pending = fetchJson(url(`${dataPath}/${encodeURIComponent(id)}`), { timeoutMs:6_000, attempts:2, retryDelays:[500] })
+      .then(detail => {
+        if (detail) detailCache.set(id, detail);
+        return detail;
+      }).finally(() => detailPromises.delete(id));
+    detailPromises.set(id, pending);
+    return pending;
   }
 
   function snapshot() {

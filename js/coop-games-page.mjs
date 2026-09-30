@@ -10,8 +10,8 @@ import {
   steamCover,
 } from './coop-games-utils.mjs?v=20260823-coop-steam-reviews';
 import { fetchSteamReviewSummaries, searchGameCatalog } from './coop-game-catalog.mjs?v=20260823-coop-steam-reviews';
-import { mergeFirebaseEvent } from './lol-utils.mjs?v=20260810-firebase-connection-fix';
-import { fetchJsonWithRetry } from './request-utils.mjs?v=20260825-first-load-recovery';
+import { mergeFirebaseEvent } from './lol-utils.mjs?v=20260930-consistent-live';
+import { fetchJsonWithRetry } from './request-utils.mjs?v=20260930-consistent-live';
 
 const FIREBASE_ROOT = 'https://realtime-database-5bb9f-default-rtdb.europe-west1.firebasedatabase.app';
 const COOP_GAMES_CACHE_KEY = 'olycity-coop-games-cache-v1';
@@ -316,6 +316,7 @@ async function loadGames({ quiet = false } = {}) {
     render();
     void loadSteamReviews();
   } catch (error) {
+    if (sequence !== loadSequence || revision !== realtimeRevision) return;
     if (games.length) {
       syncNotice = { state:'offline' };
       render();
@@ -371,7 +372,7 @@ function applyRealtimeGames(event) {
     const update = JSON.parse(event.data);
     realtimeRevision += 1;
     loadSequence += 1;
-    rawGames = mergeFirebaseEvent(rawGames, update);
+    rawGames = mergeFirebaseEvent(rawGames, { ...update, eventType:event.type });
     games = Object.entries(rawGames || {}).map(([id, value]) => normalizeCoopGame(id, value));
     syncNotice = null;
     writeGamesCache();

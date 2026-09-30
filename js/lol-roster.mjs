@@ -255,8 +255,8 @@ export function initLolRosterPages() {
   const profileSource = new EventSource(`${FIREBASE_URL}/live/lolProfiles.json`);
   const historySource = new EventSource(`${FIREBASE_URL}/live/lolHistory.json`);
   ['put','patch'].forEach(type => {
-    profileSource.addEventListener(type, event => { try { profiles = mergeFirebaseEvent(profiles, JSON.parse(event.data)); rerender(); } catch {} });
-    historySource.addEventListener(type, event => { try { history = mergeFirebaseEvent(history, JSON.parse(event.data)); rerender(); } catch {} });
+    profileSource.addEventListener(type, event => { try { profiles = mergeFirebaseEvent(profiles, { ...JSON.parse(event.data), eventType:event.type }); rerender(); } catch {} });
+    historySource.addEventListener(type, event => { try { history = mergeFirebaseEvent(history, { ...JSON.parse(event.data), eventType:event.type }); rerender(); } catch {} });
   });
   const syncButton = document.getElementById('lol-sync-all-btn');
   const syncStatus = document.getElementById('lol-sync-status');

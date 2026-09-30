@@ -1478,6 +1478,18 @@ async function poll() {
 
       if (matchData?.MatchID) {
         realMatchId = matchData.MatchID;
+        if (persistentMatchId && persistentMatchId !== realMatchId) {
+          // Deux parties successives sur la même carte ne sont pas la même
+          // session, même si Riot n'a pas exposé de passage par le menu.
+          lastScore = '';
+          rankMap = {};
+          ranksLoaded = false;
+          lastKnownRoster = [];
+          lastKnownRosterMatchId = '';
+          gameStartedAt = Date.now();
+          matchDataLogged = false;
+          gameDataLogged = false;
+        }
         persistentMatchId = realMatchId; // persist across polls
         const match = coreMatch?.MatchID === matchData.MatchID
           ? coreMatch
@@ -1506,12 +1518,8 @@ async function poll() {
             ranksLoaded = true;
             const puuidsCopy = [...puuids];
             const tokensCopy = {...authTokens};
-            const stableMapRaw = mapRaw;
-            const stableMapDisplay = mapDisplay;
             const stableMode = queueId;
             const stableMatchId = realMatchId;
-            const stablePlayerName = playerName;
-            const stableServer = currentServer ? { ...currentServer } : null;
             (async () => {
               await new Promise(r => setTimeout(r, 2000));
               let count = 0;
@@ -1563,29 +1571,10 @@ async function poll() {
               }
               if (count > 0) {
                 console.log(`[${ts()}] 🏅 Rangs chargés: ${count}/${puuidsCopy.length}`);
-                const updatedPlayers = puuidsCopy.map((puuid, i) => ({
-                  ...(players[i] || {}),
-                  rank: rankMap[puuid] || null,
-                }));
-                const sKey = tokensCopy.puuid || 'unknown';
-                if (sKey !== 'unknown') {
-                  // Push full session to guarantee SSE detects the change
-                  await putFB(`live/sessions/${sKey}`, {
-                    active: true,
-                    ts: Date.now(),
-                    map: stableMapRaw, mapClean: stableMapDisplay, mapInternal: stableMapRaw,
-                    mode: stableMode, queueId: stableMode, matchId: stableMatchId,
-                    modeLabel: valorantModeLabel(stableMode),
-                    modeFamily: valorantModeFamily(stableMode),
-                    supportsComps: supportsStandardComps(stableMode),
-                    playerName: stablePlayerName,
-                    players: updatedPlayers,
-                    activePlayer: { name: stablePlayerName },
-                    scriptVersion: SCRIPT_VERSION,
-                    server: stableServer?.name || '',
-                    gamePodId: stableServer?.gamePodId || '',
-                  });
-                }
+                // Un seul producteur publie la session complète : le prochain
+                // poll utilisera rankMap avec le score, le serveur et les skins.
+                // Une écriture parallèle ici pouvait effacer ces champs ou
+                // rétablir une ancienne partie après un changement de match.
               } else {
                 console.log(`[${ts()}] ⚠️  Rangs indisponibles`);
               }

@@ -1,7 +1,7 @@
 import { avatarLayersHTML } from './avatars.mjs';
-import { freshLiveClients } from './live-clients.mjs?v=20260920-live-resilience';
-import { liveDataStore, liveTimestamp } from './live-data-store.mjs?v=20260920-live-resilience';
-import { activeLolSessions } from './lol-utils.mjs?v=20260806-lol-live';
+import { freshLiveClients } from './live-clients.mjs?v=20260930-consistent-live';
+import { liveDataStore, liveTimestamp } from './live-data-store.mjs?v=20260930-consistent-live';
+import { activeLolSessions } from './lol-utils.mjs?v=20260930-consistent-live';
 
 const VAL_FRESH_MS = 30_000;
 

@@ -21,20 +21,32 @@ self.addEventListener('message', event => {
 
 async function networkFirst(request, event) {
   const cache = await caches.open(CACHE_NAME);
-  try {
-    const response = await fetch(request);
-    // Never delay the page while CacheStorage writes a copy. Waiting here made
-    // a cold start serialize dozens of disk writes; F5 then looked magically
-    // faster only because the cache had finally been populated.
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 8_000);
+  let fallbackTimer;
+  const cachedResponse = () => cache.match(request, { ignoreSearch:false })
+    .then(cached => cached || (request.mode === 'navigate' ? cache.match('./index.html') : null));
+  const network = fetch(request, { signal:controller.signal }).then(response => {
     if (response.ok && response.type === 'basic') {
       event.waitUntil(cache.put(request, response.clone()).catch(() => {}));
     }
     return response;
+  }).finally(() => clearTimeout(timeout));
+  // Une copie déjà chargée reste utilisable si le réseau est lent. Le réseau
+  // continue en arrière-plan, mais aucune requête ne peut attendre indéfiniment.
+  event.waitUntil(network.then(() => {}, () => {}));
+  try {
+    return await Promise.race([network, new Promise(resolve => {
+      fallbackTimer = setTimeout(() => {
+        cachedResponse().then(cached => { if (cached) resolve(cached); }).catch(() => {});
+      }, 1_500);
+    })]);
   } catch (error) {
-    const cached = await cache.match(request, { ignoreSearch:false })
-      || (request.mode === 'navigate' ? await cache.match('./index.html') : null);
+    const cached = await cachedResponse();
     if (cached) return cached;
     throw error;
+  } finally {
+    clearTimeout(fallbackTimer);
   }
 }
 

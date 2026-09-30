@@ -13,21 +13,35 @@ import {
   stableServerForSession,
   stableSessionForRender,
 } from './live-sessions.mjs?v=20260809-live-server-local';
-import { chooseLiveSession, freshLiveClients, groupLiveClients, isVersionAtLeast, liveClientSummary, liveSessionSignal, recoveringLiveClients, retainRecentLiveClients } from './live-clients.mjs?v=20260920-live-resilience';
+import { chooseLiveSession, freshLiveClients, groupLiveClients, isVersionAtLeast, liveClientSummary, liveSessionSignal, recoveringLiveClients, retainRecentLiveClients } from './live-clients.mjs?v=20260930-consistent-live';
 import { buildLiveIdentityIndex, resolveLiveIdentity } from './live-identities.mjs?v=20260809-live-groups';
 import { updateScriptDownload } from './downloads.mjs?v=20260912-separate-downloads';
-import { PLAYERS as LOL_ROSTER_PLAYERS } from './lol-roster.mjs?v=20260809-lol-sync';
+import { PLAYERS as LOL_ROSTER_PLAYERS } from './lol-roster.mjs?v=20260930-consistent-live';
 import { serverVisual } from './server-visuals.mjs?v=20260809-live-server-local';
 import { avatarLayersHTML } from './avatars.mjs?v=20260720-avatars';
-import { filterHistoryGames, historyDailyPerformances, historyGameForOwner, historyMode, historyOwnerAccountLabel, historyOwnerKey, historyOwnerLabel, historyPlayerName, historyPlayerPerformance, historyPlayerPerformances, historyRankedPlayers, historyReports, historyTrackerUrl, isHistorySelf, normalizeHistoryEntries } from './history-utils.mjs?v=20260923-puuid-history';
+import { filterHistoryGames, historyDailyPerformances, historyGameForOwner, historyMode, historyOwnerAccountLabel, historyOwnerKey, historyOwnerLabel, historyPlayerName, historyPlayerPerformance, historyPlayerPerformances, historyRankedPlayers, historyReports, historyScoreText, historyTrackerUrl, isHistorySelf, normalizeHistoryEntries } from './history-utils.mjs?v=20260930-consistent-live';
 import { initCurse } from './curse.mjs?v=20260828-page-stream-lifecycle';
-import { fetchJsonWithTimeout } from './request-utils.mjs?v=20260809-route-load-stable';
-import { liveDataStore, liveTimestamp } from './live-data-store.mjs?v=20260920-live-resilience';
-import { createHistoryPager } from './history-pager.mjs?v=20260826-cold-load-recovery';
+import { fetchJsonWithTimeout } from './request-utils.mjs?v=20260930-consistent-live';
+import { liveDataStore, liveTimestamp } from './live-data-store.mjs?v=20260930-consistent-live';
+import { createHistoryPager } from './history-pager.mjs?v=20260930-consistent-live';
 import { createHistoryDisclosureState } from './history-disclosure-state.mjs';
-import { liveScoreKey, liveScoreView } from './live-score.mjs?v=20260930-live-score';
+import { liveScoreKey, liveScoreView } from './live-score.mjs?v=20260930-consistent-live';
 
 const historyDisclosures = createHistoryDisclosureState('data-history-id');
+
+// Le store peut appeler son abonné immédiatement avec une partie déjà chargée.
+const RANK_NAMES = [
+  'Unranked','Unranked','Unranked','Iron 1','Iron 2','Iron 3',
+  'Bronze 1','Bronze 2','Bronze 3','Silver 1','Silver 2','Silver 3',
+  'Gold 1','Gold 2','Gold 3','Platinum 1','Platinum 2','Platinum 3',
+  'Diamond 1','Diamond 2','Diamond 3','Ascendant 1','Ascendant 2','Ascendant 3',
+  'Immortal 1','Immortal 2','Immortal 3','Radiant',
+];
+const RANK_COLORS = {
+  Iron:'#8b9bb4', Bronze:'#cd7f32', Silver:'#c0c0c0', Gold:'#f5c842',
+  Platinum:'#40c9c9', Diamond:'#9b59b6', Ascendant:'#2ecc71',
+  Immortal:'#e74c3c', Radiant:'#ffd700', Unranked:'#555',
+};
 
 const VALORANT_HISTORY_CACHE_KEY = 'olycity-valorant-history-cache-v1';
 let historyLoadSequence = 0;
@@ -1342,23 +1356,6 @@ export function initLivePage() {
     return '';
   }
 
-  const RANK_NAMES = [
-    'Unranked','Unranked','Unranked',
-    'Iron 1','Iron 2','Iron 3',
-    'Bronze 1','Bronze 2','Bronze 3',
-    'Silver 1','Silver 2','Silver 3',
-    'Gold 1','Gold 2','Gold 3',
-    'Platinum 1','Platinum 2','Platinum 3',
-    'Diamond 1','Diamond 2','Diamond 3',
-    'Ascendant 1','Ascendant 2','Ascendant 3',
-    'Immortal 1','Immortal 2','Immortal 3',
-    'Radiant'
-  ];
-  const RANK_COLORS = {
-    'Iron':'#8b9bb4','Bronze':'#cd7f32','Silver':'#c0c0c0',
-    'Gold':'#f5c842','Platinum':'#40c9c9','Diamond':'#9b59b6',
-    'Ascendant':'#2ecc71','Immortal':'#e74c3c','Radiant':'#ffd700','Unranked':'#555'
-  };
   function teamTitle(label, teamPlayers, showAverage = true) {
     const ranked = teamPlayers.filter(player => player.rank?.tier > 2);
     const averageTier = ranked.length
@@ -1642,12 +1639,10 @@ export async function initHistoryPage() {
     const heroStyle = splash ? ` style="--history-map-image:url('${splash}')"` : '';
     let playersHTML = '<div class="history-legacy-note">Cette ancienne game ne contient pas encore les statistiques détaillées.</div>';
 
-    const ownScore = game.score && game.selfTeam === 'CHAOS' ? game.score.red : game.score?.blue;
-    const enemyScore = game.score && game.selfTeam === 'CHAOS' ? game.score.blue : game.score?.red;
-    const scoreText = Number.isFinite(ownScore) && Number.isFinite(enemyScore) ? `${ownScore}–${enemyScore}` : '—';
+    const scoreText = historyScoreText(game) || '—';
     const resultText = kind === 'deathmatch'
       ? performance.placement ? `${performance.placement}${performance.placement === 1 ? 'er' : 'e'} sur ${performance.playerCount}` : 'Terminée'
-      : game.result === 'win' ? 'Victoire' : game.result === 'loss' ? 'Défaite' : 'Résultat indisponible';
+      : game.result === 'win' ? 'Victoire' : game.result === 'loss' ? 'Défaite' : game.result === 'draw' ? 'Égalité' : 'Résultat indisponible';
     const resultClass = kind === 'deathmatch' ? 'deathmatch' : game.result === 'win' ? 'win' : game.result === 'loss' ? 'loss' : 'unknown';
     const rrDelta = kind === 'competitive' ? game.rr?.delta : null;
     const selfName = historyOwnerLabel(game, state.ROSTER);
@@ -1710,7 +1705,7 @@ export async function initHistoryPage() {
       <aside class="history-map-visual"${heroStyle}>
         <div class="history-match-result ${resultClass}"><span>${resultText}</span><strong>${kind === 'competitive' ? scoreText : performance.placement ? `#${performance.placement}` : 'DM'}</strong></div>
         <span>${modeLabel(game)}</span>
-        <strong>${(game.map||'?').toUpperCase()}</strong>
+        <strong>${historyEscape(valorantLiveMapLabel(game.map || '?')).toUpperCase()}</strong>
         <small>${dateLabel(game.ts)} · ${durationLabel(game.durationMs || ((game.endTs||0)-(game.ts||0)))}</small>
         <div class="history-match-facts">
           <span>Joueur${historyReports(game).length > 1 ? 's' : ''} <strong>${selfName}</strong></span>
@@ -1731,7 +1726,7 @@ export async function initHistoryPage() {
     const self = (game.players||[]).find(player => isHistorySelf(game, player));
     const score = kind === 'deathmatch'
       ? self?.stats ? `${self.stats.kills||0}/${self.stats.deaths||0}` : ''
-      : game.score ? `${game.score.blue}–${game.score.red}` : '';
+      : historyScoreText(game);
     const detail = game.__summary
       ? '<div class="history-detail-loading">Ouvrez la partie pour charger les détails</div>'
       : gameDetail(game);
@@ -1739,7 +1734,7 @@ export async function initHistoryPage() {
       <summary class="history-game-summary">
         <span class="history-result">${resultLabel}</span>
         <span class="history-game-main">
-          <strong>${(game.map||'?').toUpperCase()}</strong>
+          <strong>${historyEscape(valorantLiveMapLabel(game.map || '?')).toUpperCase()}</strong>
           <small>${modeLabel(game)} · ${historyOwnerLabel(game, state.ROSTER)} · ${dateLabel(game.ts)}</small>
         </span>
         ${score ? `<strong class="history-score">${score}</strong>` : '<span class="history-score muted">—</span>'}

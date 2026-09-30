@@ -1,4 +1,4 @@
-import { fetchJsonWithTimeout } from './request-utils.mjs?v=20260809-route-load-stable';
+import { fetchJsonWithTimeout } from './request-utils.mjs?v=20260930-consistent-live';
 
 export const FIREBASE_URL = 'https://realtime-database-5bb9f-default-rtdb.europe-west1.firebasedatabase.app';
 export const LIVE_CHANNELS = Object.freeze({
@@ -99,7 +99,8 @@ export function createLiveDataStore({
   }]));
   const listeners = new Set();
   const sources = new Map();
-  const revisions = Object.fromEntries(Object.keys(LIVE_CHANNELS).map(channel => [channel, 0]));
+  let refreshEvents = null;
+  let generation = 0;
   let started = false;
   let refreshPromise = null;
   let lastStreamActivityAt = 0;
@@ -117,33 +118,41 @@ export function createLiveDataStore({
     });
   };
 
-  function apply(channel, message) {
+  function apply(channel, message, notify = true) {
     if (!(channel in data)) return;
     data[channel] = mergeRealtimeEvent(data[channel], message);
-    revisions[channel] += 1;
+    refreshEvents?.[channel].push(message);
     channelState[channel] = {
       loaded: true,
       connected: true,
       error: '',
       updatedAt: Date.now(),
     };
-    emit();
+    if (notify) emit();
   }
 
   function openStream() {
     const source = new EventSourceImpl(`${firebaseUrl}/live.json`);
+    sources.set('live', source);
     lastStreamActivityAt = Date.now();
     const handle = event => {
+      if (sources.get('live') !== source) return;
       try {
         lastStreamActivityAt = Date.now();
         routeLiveRootEvent({ ...JSON.parse(event.data), eventType:event.type })
-          .forEach(({ channel, message }) => apply(channel, message));
+          .forEach(({ channel, message }) => apply(channel, message, false));
+        // Un snapshot racine est indivisible : les membres et leurs parties
+        // doivent devenir visibles ensemble, sans états intermédiaires.
+        emit();
       } catch (error) { console.error('[OLYCITY] Live data', error); }
     };
     source.addEventListener('put', handle);
     source.addEventListener('patch', handle);
-    source.addEventListener('keep-alive', () => { lastStreamActivityAt = Date.now(); });
+    source.addEventListener('keep-alive', () => {
+      if (sources.get('live') === source) lastStreamActivityAt = Date.now();
+    });
     const terminalError = event => {
+      if (sources.get('live') !== source) return;
       const reason = event.type === 'auth_revoked' ? 'auth_revoked' : 'stream_cancelled';
       Object.keys(channelState).forEach(channel => {
         channelState[channel].connected = false;
@@ -156,6 +165,7 @@ export function createLiveDataStore({
     source.addEventListener('cancel', terminalError);
     source.addEventListener('auth_revoked', terminalError);
     source.onopen = () => {
+      if (sources.get('live') !== source) return;
       lastStreamActivityAt = Date.now();
       Object.keys(channelState).forEach(channel => {
         channelState[channel].connected = true;
@@ -164,13 +174,13 @@ export function createLiveDataStore({
       emit();
     };
     source.onerror = () => {
+      if (sources.get('live') !== source) return;
       Object.keys(channelState).forEach(channel => {
         channelState[channel].connected = false;
         channelState[channel].error = 'reconnecting';
       });
       emit();
     };
-    sources.set('live', source);
   }
 
   function start() {
@@ -201,14 +211,17 @@ export function createLiveDataStore({
   async function refresh({ timeoutMs = 4_000 } = {}) {
     start();
     if (refreshPromise) return refreshPromise;
-    const revisionsAtStart = { ...revisions };
+    const requestGeneration = generation;
+    const events = Object.fromEntries(Object.keys(LIVE_CHANNELS).map(channel => [channel, []]));
+    refreshEvents = events;
     refreshPromise = fetchJson(`${firebaseUrl}/live.json`, { timeoutMs }).then(incomingRoot => {
+      if (requestGeneration !== generation) return;
       Object.entries(LIVE_CHANNELS).forEach(([channel, path]) => {
         const incoming = incomingRoot?.[path.split('/').at(-1)] || {};
         // Une mise à jour SSE reçue pendant le GET reste prioritaire.
-        data[channel] = revisions[channel] === revisionsAtStart[channel]
-          ? { ...(incoming || {}) }
-          : { ...(incoming || {}), ...data[channel] };
+        // Rejouer les événements reçus pendant le GET, y compris les
+        // suppressions. Fusionner deux objets ressuscitait les anciennes clés.
+        data[channel] = events[channel].reduce(mergeRealtimeEvent, { ...incoming });
         channelState[channel] = {
           loaded: true,
           connected: channelState[channel].connected,
@@ -217,13 +230,19 @@ export function createLiveDataStore({
         };
       });
     }).catch(error => {
+      if (requestGeneration !== generation) return;
       Object.keys(channelState).forEach(channel => {
         channelState[channel].error = error?.message || 'unavailable';
       });
     }).then(() => {
-      emit();
+      if (requestGeneration === generation) emit();
       return snapshot();
-    }).finally(() => { refreshPromise = null; });
+    }).finally(() => {
+      if (requestGeneration === generation) {
+        refreshPromise = null;
+        refreshEvents = null;
+      }
+    });
     return refreshPromise;
   }
 
@@ -236,6 +255,9 @@ export function createLiveDataStore({
   }
 
   function destroy() {
+    generation += 1;
+    refreshPromise = null;
+    refreshEvents = null;
     if (watchdogTimer) clearInterval(watchdogTimer);
     watchdogTimer = null;
     sources.forEach(source => source.close());

@@ -1,4 +1,4 @@
-import { liveTimestamp } from './live-data-store.mjs?v=20260920-live-resilience';
+import { liveTimestamp, mergeRealtimeEvent } from './live-data-store.mjs?v=20260930-consistent-live';
 
 export const LOL_FRESH_MS = 55_000;
 
@@ -92,17 +92,5 @@ export function summarizeLolDays(matches) {
 }
 
 export function mergeFirebaseEvent(current, event) {
-  if (!event || event.path === '/') return event?.data || {};
-  const next = { ...(current || {}) };
-  const parts = String(event.path).split('/').filter(Boolean);
-  if (!parts.length) return event.data || {};
-  let target = next;
-  for (let i = 0; i < parts.length - 1; i += 1) {
-    target[parts[i]] = { ...(target[parts[i]] || {}) };
-    target = target[parts[i]];
-  }
-  const leaf = parts.at(-1);
-  if (event.data === null) delete target[leaf];
-  else target[leaf] = event.data;
-  return next;
+  return mergeRealtimeEvent(current, event || {path:'/',data:null});
 }

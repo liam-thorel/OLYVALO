@@ -58,7 +58,8 @@ test('the script publishes mode metadata and the Live page consumes it', () => {
   assert.match(script, /modeFamily:\s*valorantModeFamily\(queueId\)/);
   assert.match(script, /supportsComps:\s*supportsStandardComps\(queueId\)/);
   assert.match(script, /persistentMatchId !== stableMatchId \|\| pregameState/);
-  assert.match(script, /modeFamily:\s*valorantModeFamily\(stableMode\)/);
+  // Les rangs enrichissent rankMap ; seul le poll publie une session complète.
+  assert.doesNotMatch(script, /Push full session to guarantee SSE/);
   assert.match(page, /hurm:'Team Deathmatch'/);
   assert.match(page, /abilitydraftarena:'Gauntlet: Glitched'/);
   assert.match(page, /AbilityDraft' \? 'Arènes Gauntlet'/);

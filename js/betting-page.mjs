@@ -4,8 +4,8 @@
  * (voir discord-bot/). Lecture seule — les paris se placent depuis Discord.
  */
 
-import { mergeFirebaseEvent } from './lol-utils.mjs?v=20260810-firebase-connection-fix';
-import { fetchJsonWithRetry } from './request-utils.mjs?v=20260825-first-load-recovery';
+import { mergeFirebaseEvent } from './lol-utils.mjs?v=20260930-consistent-live';
+import { fetchJsonWithRetry } from './request-utils.mjs?v=20260930-consistent-live';
 
 const FIREBASE_URL = 'https://realtime-database-5bb9f-default-rtdb.europe-west1.firebasedatabase.app';
 const BETTING_CACHE_KEY = 'olycity-betting-wallets-cache-v1';
@@ -128,7 +128,7 @@ function applyRealtimeWallets(event) {
   try {
     realtimeRevision += 1;
     loadSequence += 1;
-    walletsState = mergeFirebaseEvent(walletsState, JSON.parse(event.data));
+    walletsState = mergeFirebaseEvent(walletsState, { ...JSON.parse(event.data), eventType:event.type });
     writeCache();
     renderWallets();
   } catch (error) {

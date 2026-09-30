@@ -1,4 +1,4 @@
-import { isVersionAtLeast } from './live-clients.mjs?v=20260920-live-resilience';
+import { isVersionAtLeast } from './live-clients.mjs?v=20260930-consistent-live';
 
 /**
  * Score en direct affiché sur la page Live, du point de vue du joueur suivi.

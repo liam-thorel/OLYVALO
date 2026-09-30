@@ -11,9 +11,9 @@
  * charger les données et écouter les clics.
  */
 
-import { fetchJsonWithRetry } from './request-utils.mjs?v=20260825-first-load-recovery';
+import { fetchJsonWithRetry } from './request-utils.mjs?v=20260930-consistent-live';
 import { getGameMode } from './game-mode.mjs';
-import { valorantAccountSeries, lolAccountSeries, defaultVisible, withinRange, untrackedAccounts, curveDiagnostics, buildMembers, TIME_RANGES } from './rr-curve-utils.mjs?v=20260922-synergies';
+import { valorantAccountSeries, lolAccountSeries, defaultVisible, withinRange, untrackedAccounts, curveDiagnostics, buildMembers, TIME_RANGES } from './rr-curve-utils.mjs?v=20260930-consistent-live';
 import { renderCurvePage, emptyState } from './rr-curve-view.mjs?v=20260922-synergies';
 import { duoRanking, MIN_DUO_GAMES } from './synergy-utils.mjs?v=20260922-synergies';
 

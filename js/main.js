@@ -5,7 +5,7 @@
 
 import { mergeLineups } from './lineup-utils.mjs?v=20260913-lineup-contrib';
 import { valorantApi } from './api.js';
-import { fetchJsonWithRetry, fetchJsonWithTimeout } from './request-utils.mjs?v=20260825-first-load-recovery';
+import { fetchJsonWithRetry, fetchJsonWithTimeout } from './request-utils.mjs?v=20260930-consistent-live';
 
 const SITE_VERSION = '20260929-champions-comps';
 const FIREBASE_URL = 'https://realtime-database-5bb9f-default-rtdb.europe-west1.firebasedatabase.app';
@@ -16,23 +16,23 @@ import { statsKey, readStats, writeStats, selectedAccount, toggleSelection, need
   firebasePath, publishable, remoteStats, mergeStores } from './account-stats.mjs?v=20260922-partage';
 import { setStoredKey, storedKey, forgetCachedKey } from './henrik-key.mjs';
 import { rosterHTML, guestCardHTML, mapSectionHTML, agentPageHTML, navMapsHTML, compHTML, globalNotesHTML } from './render.js?v=20260920-puuid-accounts';
-import { initTheme, initTilt, initParallax, initSearch, initKeyboard, initHeroParticles, initWheelLogos, initLivePage, initHistoryPage } from './interactions.js?v=20260930-live-score';
+import { initTheme, initTilt, initParallax, initSearch, initKeyboard, initHeroParticles, initWheelLogos, initLivePage, initHistoryPage } from './interactions.js?v=20260930-consistent-live';
 import { storage } from './storage.js';
 import { avatarLayersHTML } from './avatars.mjs';
-import { initAdminPage } from './admin.mjs?v=20260826-cold-load-recovery';
-import { initBettingPage } from './betting-page.mjs?v=20260828-page-stream-lifecycle';
-import { initRrCurvePage } from './rr-curve-page.mjs?v=20260922-synergies';
-import { initCoopGamesPage } from './coop-games-page.mjs?v=20260828-page-stream-lifecycle';
+import { initAdminPage } from './admin.mjs?v=20260930-consistent-live';
+import { initBettingPage } from './betting-page.mjs?v=20260930-consistent-live';
+import { initRrCurvePage } from './rr-curve-page.mjs?v=20260930-consistent-live';
+import { initCoopGamesPage } from './coop-games-page.mjs?v=20260930-consistent-live';
 import { getGameMode, initGameMode, setGameMode } from './game-mode.mjs?v=20260824-home-title';
-import { initLolHistoryPage, initLolLivePage } from './lol-pages.mjs?v=20260828-first-visit-recovery';
-import { initLolRosterPages } from './lol-roster.mjs?v=20260922-autoaccept';
+import { initLolHistoryPage, initLolLivePage } from './lol-pages.mjs?v=20260930-consistent-live';
+import { initLolRosterPages } from './lol-roster.mjs?v=20260930-consistent-live';
 import { state } from './state.mjs?v=20260806-lol-roster';
 import { memberId, mergeMemberProfiles, resolveMemberProfile } from './member-profiles.mjs?v=20260823-profile-picker';
-import { initHomeDashboard } from './home-dashboard.mjs?v=20260825-human-banner';
-import { initHomeGroup } from './home-group.mjs?v=20260828-page-stream-lifecycle';
+import { initHomeDashboard } from './home-dashboard.mjs?v=20260930-consistent-live';
+import { initHomeGroup } from './home-group.mjs?v=20260930-consistent-live';
 import { initPwaInstall } from './pwa-install.mjs?v=20260901-deploy-updates';
 import { initSiteTelemetry } from './site-telemetry.mjs?v=20260825-site-health';
-import { liveDataStore, liveTimestamp } from './live-data-store.mjs?v=20260920-live-resilience';
+import { liveDataStore, liveTimestamp } from './live-data-store.mjs?v=20260930-consistent-live';
 export { state };
 
 initSiteTelemetry();
