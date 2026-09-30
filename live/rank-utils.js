@@ -41,15 +41,37 @@ function historicalPeakTier(mmr) {
 // façon certaine, sans supposer un ordre particulier des clés du dict (une
 // première version faisait cette hypothèse — jamais vérifiable sans données
 // réelles à l'époque — et donnait de mauvais chiffres pour certains comptes).
-function currentSeasonStats(mmr, updates) {
+/** Acte de la partie classée la plus récente d'un joueur, s'il y en a une. */
+function seasonIdOf(updates) {
+  const matches = Array.isArray(updates?.Matches) ? updates.Matches : [];
+  return matches[0]?.SeasonID || null;
+}
+
+/**
+ * Statistiques de l'acte EN COURS — et d'aucun autre.
+ *
+ * Une version précédente retombait sur `entries[entries.length - 1]` quand
+ * l'acte ne pouvait pas être identifié : le dernier du dictionnaire, dont les
+ * clés sont des UUID sans ordre garanti. L'écran affichait donc les parties et
+ * le winrate d'un acte pris au hasard, sous le libellé « Acte compétitif en
+ * cours ». Un chiffre faux présenté comme juste : personne ne va le vérifier.
+ *
+ * `referenceSeasonId` est l'acte réellement en cours, connu du joueur local qui
+ * est en train d'y jouer. Sans lui on se rabat sur le dernier acte classé du
+ * joueur examiné — correct pour quelqu'un qui joue, approximatif sinon.
+ *
+ * Aucune entrée pour cet acte signifie « pas de classée cet acte-ci » : on ne
+ * renvoie RIEN, plutôt que les chiffres d'un acte précédent.
+ */
+function currentSeasonStats(mmr, updates, referenceSeasonId = null) {
   const seasons = mmr?.QueueSkills?.competitive?.SeasonalInfoBySeasonID;
   if (!seasons || typeof seasons !== 'object') return null;
-  const entries = Object.values(seasons);
-  if (!entries.length) return null;
+  if (!Object.keys(seasons).length) return null;
 
-  const matches = Array.isArray(updates?.Matches) ? updates.Matches : [];
-  const currentSeasonId = matches[0]?.SeasonID || null;
-  const current = (currentSeasonId && seasons[currentSeasonId]) || entries[entries.length - 1];
+  const seasonId = referenceSeasonId || seasonIdOf(updates);
+  if (!seasonId) return null;
+  const current = seasons[seasonId];
+  if (!current) return null;
 
   const games = Number(current?.NumberOfGames);
   const wins = Number(current?.NumberOfWins);
@@ -62,7 +84,7 @@ function currentSeasonStats(mmr, updates) {
   };
 }
 
-function buildRankSnapshot(mmr, updates, level = null) {
+function buildRankSnapshot(mmr, updates, level = null, referenceSeasonId = null) {
   const matches = Array.isArray(updates?.Matches) ? updates.Matches : [];
   const latest = matches[0] || mmr?.LatestCompetitiveUpdate || null;
   const currentTier = tierNumber(latest?.TierAfterUpdate);
@@ -89,9 +111,10 @@ function buildRankSnapshot(mmr, updates, level = null) {
     peakTier,
     peakHistorical: historyAvailable,
     peakSource: historyAvailable ? 'season-history' : (recentPeak > 0 ? 'recent-matches' : 'unavailable'),
-    season: currentSeasonStats(mmr, updates),
+    season: currentSeasonStats(mmr, updates, referenceSeasonId),
     ...(level == null ? {} : { level: Number(level) || 0 }),
   };
 }
 
-module.exports = { buildRankSnapshot, historicalPeakTier, currentSeasonStats, rrDelta, tierNumber };
+module.exports = { buildRankSnapshot, historicalPeakTier, currentSeasonStats,
+  seasonIdOf, rrDelta, tierNumber };

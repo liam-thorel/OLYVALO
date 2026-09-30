@@ -25,6 +25,7 @@ import { fetchJsonWithTimeout } from './request-utils.mjs?v=20260809-route-load-
 import { liveDataStore, liveTimestamp } from './live-data-store.mjs?v=20260920-live-resilience';
 import { createHistoryPager } from './history-pager.mjs?v=20260826-cold-load-recovery';
 import { createHistoryDisclosureState } from './history-disclosure-state.mjs';
+import { liveScoreKey, liveScoreView } from './live-score.mjs?v=20260930-live-score';
 
 const historyDisclosures = createHistoryDisclosureState('data-history-id');
 
@@ -727,6 +728,9 @@ export function initLivePage() {
         phase: liveData?.phase, roundPhase: liveData?.roundPhase,
         matchId: liveData?.matchId, side: liveData?.side,
         server: liveData?.server, scriptVersion: liveData?.scriptVersion,
+        // Sans le score dans la clé, une manche gagnée ne redessine rien :
+        // c'est souvent le seul champ qui change entre deux polls.
+        score: liveScoreKey(liveData),
         activeCount: active.length,
         allPlayers: active.map(([,s]) => (s.players||[]).length).join(','),
         players: (liveData?.players||[]).map(p=>`${p.name}|${p.agentId||p.agent}|${p.team}|${p.rank?.tier??''}|${p.rank?.peakTier??''}|${p.rank?.peakHistorical??''}|${p.rank?.level??''}|${(p.rank?.rrHistory||[]).join('.')}|${p.rank?.rrEarned??''}|${p.rank?.season?.games??''}|${p.rank?.season?.winRatePct??''}`)
@@ -883,6 +887,24 @@ export function initLivePage() {
     } catch { _mapsCache = null; }
   }
 
+  function renderLiveScore(data) {
+    const scoreEl = document.getElementById('live-score');
+    if (!scoreEl) return;
+    const view = liveScoreView(data);
+    scoreEl.hidden = !view;
+    if (!view) return;
+    scoreEl.dataset.state = view.state;
+    const set = (id, value) => {
+      const el = document.getElementById(id);
+      if (el && el.textContent !== String(value)) el.textContent = String(value);
+    };
+    set('live-score-mine', view.mine);
+    set('live-score-theirs', view.theirs);
+    set('live-score-mine-label', view.labels[0]);
+    set('live-score-theirs-label', view.labels[1]);
+    scoreEl.setAttribute('aria-label', `Score : ${view.labels[0]} ${view.mine}, ${view.labels[1]} ${view.theirs}`);
+  }
+
   function updateUI(data, signalState = liveSessionSignal(data)) {
     const waiting = document.getElementById('live-waiting');
     const content = document.getElementById('live-content');
@@ -937,6 +959,7 @@ export function initLivePage() {
       mapEl.textContent = mapName;
       loadMapImg(mapName);
     }
+    renderLiveScore(data);
     const serverEl = document.getElementById('live-server');
     if (serverEl) {
       const serverName = stableServerForSession(

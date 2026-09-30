@@ -30,7 +30,8 @@ const { isRankedValorantMode, isRankedValorantSession, sessionMode, isValorantDe
 const { accountMark, accountDetail } = require('./account-kind.js');
 const { playReward: playRewardFor } = require('./play-rewards.js');
 const { isHalfTime, ownScore, oddsFromScore } = require('./live-odds.js');
-const { createBoundedSet, createExpiringMap } = require('./bounded-memory.js');
+const { createBoundedSet, createExpiringMap, createBoundedMap } = require('./bounded-memory.js');
+const { cancelledGame, cancelledTitle, cancelledExplanation, rrPenaltyLine } = require('./cancelled-game.js');
 const { outcomeHeader } = require('./outcome-header.js');
 const { formatLolRank, POSITION_ICONS } = require('./lol-rank.js');
 
@@ -257,6 +258,37 @@ function alreadyNotifiedRecently(recentStarts, key) {
   return recentStarts.seenRecently(key);
 }
 
+// matchId -> clé anti-doublon utilisée pour SA notification de départ.
+//
+// Sans ce lien, une partie annulée laissait la fenêtre de 20 minutes fermée
+// sur le groupe qui venait de dodger : la partie relancée trente secondes plus
+// tard — vraie partie, nouveau matchId, mais exactement le même groupe de
+// comptes — n'était plus annoncée, et aucun pari ne s'ouvrait dessus. C'est
+// le symptôme signalé : « plus de notification pour la game d'après ».
+const valorantStartKeys = createBoundedMap();
+const lolStartKeys = createBoundedMap();
+
+function rememberStartKey(game, matchId, namesKey) {
+  if (!matchId) return;
+  (game === 'lol' ? lolStartKeys : valorantStartKeys).set(matchId, namesKey);
+}
+
+/**
+ * Rend son droit à la notification au groupe qui vient de jouer cette partie.
+ *
+ * Appelé quand la partie n'a PAS eu lieu (dodge, remake, ou résultat jamais
+ * capturé) : la fenêtre anti-doublon ne protège plus rien, elle ne fait que
+ * faire taire la suivante.
+ */
+function reopenStartWindow(game, matchId) {
+  const keys = game === 'lol' ? lolStartKeys : valorantStartKeys;
+  const recent = game === 'lol' ? recentLolStarts : recentValorantStarts;
+  const namesKey = matchId ? keys.get(matchId) : null;
+  if (!namesKey) return false;
+  keys.delete(matchId);
+  return recent.forget(namesKey);
+}
+
 // Une partie, un seul pari de mi-temps — le score est republié à chaque
 // manche et la session reste active tout du long.
 const halfTimeRounds = createBoundedSet(200);
@@ -340,6 +372,7 @@ async function notifyValorantGameStart(session, snapshot) {
   const namesKey = rosterPlayers.map(({ member, session: s }) => `${member.name}:${String(s.playerName || '').toLowerCase()}`).sort().join(',');
   if (alreadyNotifiedRecently(recentValorantStarts, namesKey)) return;
 
+  rememberStartKey('valorant', matchId, namesKey);
   if (matchId) notifiedValorantMatches.add(matchId);
 
   const channelIds = new Set();
@@ -379,6 +412,8 @@ function formatDuration(totalSeconds) {
 }
 
 const RESULT_COLORS = { win: 0x3fcf6f, loss: 0xff5f6d };
+// Ni vert ni rouge : une partie annulée n'est ni gagnée ni perdue.
+const CANCELLED_COLOR = 0xf2c14e;
 
 // Regroupe les boutons-liens en rangées de 5 (limite Discord par ActionRow).
 function chunkButtonRows(buttons, size = 5) {
@@ -387,6 +422,56 @@ function chunkButtonRows(buttons, size = 5) {
     rows.push(new ActionRowBuilder().addComponents(buttons.slice(i, i + size)));
   }
   return rows;
+}
+
+/**
+ * Annonce une partie annulée : dodge en sélection d'agents, ou remake.
+ *
+ * Pourquoi une annonce dédiée plutôt que le silence : le joueur qui dodge perd
+ * bel et bien du RR, et le salon voyait la notification de départ, les paris
+ * s'ouvrir… puis plus rien. Le bot avait l'air en panne alors qu'il avait bien
+ * remboursé les mises.
+ *
+ * Ce qu'on ne fait PAS ici, volontairement : pas de carte victoire/défaite,
+ * pas de points de participation, pas d'award, et surtout pas de ligne dans le
+ * suivi de RR — la pénalité est dite, pas comptée dans le récap du jour.
+ */
+async function announceCancelledGame(game, sessions, betting, cancelled) {
+  const players = sessions
+    .map(session => ({ session, member: memberByIdentity(session) }))
+    .filter(({ member }) => member && trackersForPlayerGame(member.name, game).length > 0);
+  if (players.length === 0) return;
+
+  const channelIds = new Set();
+  players.forEach(({ member }) => trackersForPlayerGame(member.name, game).forEach(t => channelIds.add(t.channelId)));
+
+  const names = players.map(({ member, session }) => `**${member.name}**${accountMark(member, session.playerName)}`).join(', ');
+  const description = [
+    names,
+    cancelledExplanation(cancelled.kind),
+    rrPenaltyLine(cancelled.rr),
+  ].filter(Boolean).join('\n');
+
+  await Promise.all([...channelIds].map(async channelId => {
+    const embed = new EmbedBuilder()
+      .setColor(CANCELLED_COLOR)
+      .setAuthor({ name: cancelledTitle(cancelled.kind) })
+      .setDescription(description)
+      .setTimestamp();
+    if (cancelled.map) embed.addFields({ name: 'Map', value: cancelled.map, inline: true });
+
+    const embeds = [embed];
+    const bettingSection = formatBettingSection(betting?.[channelId]);
+    if (bettingSection) {
+      embeds.push(new EmbedBuilder().setColor(CANCELLED_COLOR).setDescription(bettingSection));
+    }
+    try {
+      const channel = await client.channels.fetch(channelId);
+      await channel.send({ embeds });
+    } catch (error) {
+      console.error(`[notify:${game}-cancelled] échec envoi salon ${channelId} —`, error.message);
+    }
+  }));
 }
 
 // sessions : tableau de sessions terminées (1 par joueur OLYCITY). Quand
@@ -412,11 +497,29 @@ async function notifyValorantGameEnd(sessions) {
   // Une égalité n'a ni gagnant ni perdant : aucun pari ne peut être tranché,
   // on rembourse — mais en le disant, plutôt qu'en le faisant passer pour une
   // partie dont le résultat a été perdu.
-  const drawReason = primary.result?.result === 'draw' ? 'draw' : '';
-  const betting = await resolveBetting('valorant', matchId, outcome, drawReason).catch(error => {
+  //
+  // Dodge et remake sont marqués par le script local (`result.cancelled`) : lui
+  // seul peut distinguer « la partie n'a pas eu lieu » d'un rapport de fin de
+  // partie jamais arrivé. Les deux remboursent, une seule s'annonce.
+  const cancelled = cancelledGame(sessions);
+  const drawReason = cancelled ? 'cancelled' : primary.result?.result === 'draw' ? 'draw' : '';
+  const betting = await resolveBetting('valorant', matchId, cancelled ? null : outcome, drawReason).catch(error => {
     console.error('[betting:resolve]', error.message);
     return null;
   });
+
+  // Une partie qui n'a pas eu lieu n'a pas à consommer la fenêtre anti-doublon
+  // de 20 minutes : celle d'après part souvent dans la minute qui suit.
+  if (cancelled || withResult.length === 0) reopenStartWindow('valorant', matchId);
+
+  if (cancelled) {
+    // Comme pour les départs, seules les classées s'annoncent : une normale
+    // dodgée n'a jamais été annoncée, son annulation n'a rien à dire.
+    if (isRankedValorantMode(cancelled.mode || sessionMode(primary))) {
+      await announceCancelledGame('valorant', sessions, betting, cancelled);
+    }
+    return;
+  }
 
   // Hors file classée : on crédite les points de participation, et RIEN
   // d'autre. Pas de carte dans Discord, pas d'award, pas de suivi de rang.
@@ -518,7 +621,7 @@ async function notifyValorantGameEnd(sessions) {
 
     const playerEmbeds = channelPlayers.map(({ member, result, playReward, outcome: localOutcome, awardLines }) => {
       const resultLabel = resultLabels[result.result] || 'Terminée';
-      const resultIcon = result.result === 'win' ? '🏆' : result.result === 'loss' ? '💀' : '🎮';
+      const resultIcon = result.result === 'win' ? '🏆' : result.result === 'loss' ? '💀' : result.result === 'draw' ? '🤝' : '🎮';
       const rrLine = result.rr?.delta != null ? `${result.rr.delta >= 0 ? '+' : ''}${result.rr.delta} RR` : null;
 
       // Ex. « 📊 Ascendant 2 33 RR → **Ascendant 2 59 RR** ». Riot renvoie le
@@ -583,10 +686,22 @@ async function notifyLolGameEnd(sessions) {
   // l'ordre n'était pas fautif ici — mais deux fonctions jumelles qui ne
   // nettoient pas au même moment, c'est exactement ainsi que le défaut est
   // revenu côté Valorant.
-  const betting = await resolveBetting('lol', matchId, outcome).catch(error => {
+  const cancelled = cancelledGame(sessions);
+  const betting = await resolveBetting('lol', matchId, cancelled ? null : outcome, cancelled ? 'cancelled' : '').catch(error => {
     console.error('[betting:resolve]', error.message);
     return null;
   });
+
+  // Idem Valorant : un remake LoL (un joueur qui ne se connecte pas) ne doit
+  // pas faire taire la notification de la partie relancée derrière.
+  if (cancelled || withResult.length === 0) reopenStartWindow('lol', matchId);
+
+  if (cancelled) {
+    if (!isNonRankedLolQueue(primary.result?.queueId ?? primary.queueId)) {
+      await announceCancelledGame('lol', sessions, betting, cancelled);
+    }
+    return;
+  }
 
   // Hors file classée : points de participation seulement. Le script publie
   // désormais ces parties pour qu'elles s'affichent en direct sur le site et
@@ -814,6 +929,7 @@ async function notifyLolGameStart(session, snapshot) {
   const namesKey = rosterPlayers.map(({ member, session: s }) => `${member.name}:${String(s.playerName || '').toLowerCase()}`).sort().join(',');
   if (alreadyNotifiedRecently(recentLolStarts, namesKey)) return;
 
+  rememberStartKey('lol', matchId, namesKey);
   if (matchId) notifiedLolMatches.add(matchId);
 
   const channelIds = new Set();
@@ -1028,9 +1144,11 @@ function formatBettingSection(betting) {
     // Une égalité et une partie sans résultat remboursaient toutes deux, mais
     // le message annonçait « résultat indisponible » dans les deux cas : une
     // égalité passait ainsi pour un raté du bot.
-    return betting.reason === 'draw'
-      ? '🤝 **Paris** — égalité, mises remboursées intégralement.'
-      : '↩️ **Paris** — résultat indisponible, remboursés intégralement.';
+    if (betting.reason === 'draw') return '🤝 **Paris** — égalité, mises remboursées intégralement.';
+    // Une partie annulée n'est pas un raté du bot : le dire évite de faire
+    // passer un dodge pour une panne de récupération du résultat.
+    if (betting.reason === 'cancelled') return '🚫 **Paris** — partie annulée, mises remboursées intégralement.';
+    return '↩️ **Paris** — résultat indisponible, remboursés intégralement.';
   }
   if (betting.results.length === 0) return null;
   const lines = betting.results.map(r => {

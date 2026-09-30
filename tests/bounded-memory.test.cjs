@@ -1,5 +1,5 @@
 const assert = require('node:assert/strict');
-const { createBoundedSet, createExpiringMap } = require('../discord-bot/bounded-memory.js');
+const { createBoundedSet, createExpiringMap, createBoundedMap } = require('../discord-bot/bounded-memory.js');
 
 // ─── Set borné ───────────────────────────────────────────────────────────────
 const seen = createBoundedSet(3);
@@ -49,4 +49,33 @@ assert.equal(groups.seenRecently('Liam', t0), false);
 assert.equal(groups.seenRecently('Nico', t0), false);
 assert.equal(groups.seenRecently('Liam', t0 + 10), true);
 
-console.log('bounded-memory: éviction, rafraîchissement et expiration validés');
+// Un dodge doit pouvoir rouvrir la fenêtre : la partie relancée juste après
+// est une vraie nouvelle game, pas un doublon.
+const dodged = createExpiringMap(WINDOW);
+assert.equal(dodged.seenRecently('Liam,Nico', t0), false);
+assert.equal(dodged.seenRecently('Liam,Nico', t0 + 1000), true);
+assert.equal(dodged.forget('Liam,Nico'), true, 'la clé existait');
+assert.equal(dodged.seenRecently('Liam,Nico', t0 + 2000), false,
+  'après annulation, la game suivante doit être notifiée sans attendre 20 min');
+assert.equal(dodged.forget('jamais-vue'), false, 'oublier une clé inconnue ne casse rien');
+
+// ─── Map bornée ──────────────────────────────────────────────────────────────
+const links = createBoundedMap(2);
+links.set('match-1', 'Liam,Nico');
+links.set('match-2', 'Liam');
+assert.equal(links.get('match-1'), 'Liam,Nico');
+links.set('match-3', 'Nico');
+assert.equal(links.size, 2, 'la taille ne dépasse jamais la limite');
+assert.equal(links.get('match-1'), undefined, 'la plus ancienne entrée est évincée');
+assert.equal(links.get('match-3'), 'Nico');
+links.set('match-2', 'Liam,Rayhan');
+assert.equal(links.get('match-2'), 'Liam,Rayhan', 'réécrire remplace la valeur');
+assert.equal(links.size, 2);
+assert.equal(links.delete('match-2'), true);
+assert.equal(links.has('match-2'), false);
+
+const bigMap = createBoundedMap(500);
+for (let i = 0; i < 50_000; i += 1) bigMap.set(`match-${i}`, `groupe-${i}`);
+assert.equal(bigMap.size, 500, '50 000 games ne doivent pas faire grossir la mémoire');
+
+console.log('bounded-memory: éviction, rafraîchissement, expiration et réouverture validés');

@@ -3,10 +3,13 @@ const fs    = require('fs');
 const path  = require('path');
 const { execFileSync, spawn } = require('child_process');
 const WebSocket = require('ws');
-const { buildRankSnapshot } = require('./rank-utils.js');
+const { buildRankSnapshot, seasonIdOf } = require('./rank-utils.js');
 const { riotServer } = require('./server-utils.js');
 const { autoUpdate, restartDecision } = require('./updater.js');
 const { pregameTransition } = require('./pregame-utils.js');
+const { isRemakeMatch, cancelledResult } = require('./remake.js');
+const { teamOutcome } = require('./match-outcome.js');
+const { presenceScore, blueRedScore } = require('./live-score.js');
 const { buildWeaponIndex, buildSkinLevelIndex, curateLoadouts } = require('./loadouts.js');
 const { ensureStartupLauncher } = require('./startup.js');
 const { acquireInstanceLock, releaseInstanceLock } = require('./instance-lock.js');
@@ -29,7 +32,7 @@ const {
 } = require('./valorant-mode-utils.js');
 
 const FIREBASE_URL = 'https://realtime-database-5bb9f-default-rtdb.europe-west1.firebasedatabase.app';
-const SCRIPT_VERSION = '4.20.1';
+const SCRIPT_VERSION = '4.21.0';
 const INSTANCE_LOCK_PATH = path.join(__dirname, '.olycity-live.lock');
 const LOG_PATH = path.join(__dirname, 'olycity.log');
 const MAX_LOG_BYTES = 5 * 1024 * 1024;
@@ -719,7 +722,10 @@ function connectWebSocket(port, password) {
         if (JSON.stringify(score) !== lastScore) {
           lastScore = JSON.stringify(score);
           console.log(`[${ts()}] 📊 Score: ${score.blue} - ${score.red}`);
-          putFB(`live/sessions/${authTokens?.puuid || selfPuuid || 'unknown'}/score`, score).catch(()=>{});
+          // Même clé que la session : une autre clé créait un nœud fantôme ne
+          // contenant qu'un score.
+          const sKey = stableSessionKey || 'unknown';
+          if (sKey !== 'unknown') putFB(`live/sessions/${sKey}/score`, score).catch(()=>{});
         }
       }
 
@@ -970,7 +976,6 @@ function buildDetailedHistory(snapshot, details, tokens, resolvedNames = {}) {
     .map(player => [player.puuid, player]));
   const self = rawPlayers.find(player => player.subject === tokens?.puuid);
   const selfTeamId = self?.teamId || (snapshot.selfTeam === 'ORDER' ? 'Blue' : snapshot.selfTeam === 'CHAOS' ? 'Red' : null);
-  const selfTeam = rawTeams.find(team => team.teamId === selfTeamId);
   const blueTeam = rawTeams.find(team => team.teamId === 'Blue');
   const redTeam = rawTeams.find(team => team.teamId === 'Red');
   const mapId = details.matchInfo?.mapId?.split('/')?.pop() || snapshot.map;
@@ -1011,7 +1016,9 @@ function buildDetailedHistory(snapshot, details, tokens, resolvedNames = {}) {
       ? details.matchInfo.gameStartMillis + details.matchInfo.gameLengthMillis
       : snapshot.endTs,
     durationMs: details.matchInfo?.gameLengthMillis || Math.max(0, (snapshot.endTs || 0) - (snapshot.ts || 0)),
-    result: isDeathmatch ? 'completed' : selfTeam ? (selfTeam.won ? 'win' : 'loss') : snapshot.result,
+    // Une égalité n'a pas de vainqueur : `selfTeam.won` faux en faisait une
+    // défaite, paris compris. Voir match-outcome.js.
+    result: isDeathmatch ? 'completed' : teamOutcome(selfTeamId, rawTeams) || snapshot.result,
     score: blueTeam || redTeam ? {
       blue: blueTeam?.roundsWon || 0,
       red: redTeam?.roundsWon || 0,
@@ -1171,6 +1178,11 @@ async function poll() {
           // pour toujours côté Firebase — pas de notif de fin, pas de
           // remboursement des paris.
           const sKey = stableSessionKey || 'unknown';
+          // Riot inscrit la pénalité de dodge dans competitiveupdates sous
+          // l'ID de la SÉLECTION D'AGENTS — c'est le seul endroit où le RR
+          // perdu sur une partie qui n'a pas eu lieu est lisible. Sans ça, le
+          // joueur voit son RR baisser et le bot n'en dit pas un mot.
+          const dodgeRR = await fetchPostMatchRR(authTokens, pregameState.matchId).catch(() => null);
           if (sKey !== 'unknown') {
             await putFB(`live/sessions/${sKey}`, {
               active: false, ts: Date.now(),
@@ -1178,9 +1190,25 @@ async function poll() {
               memberId: identity?.memberId || '',
               member: identity?.memberName || '',
               matchId: pregameState.matchId,
+              // La VRAIE file, pas 'agent-select' : sans elle, le bot ne sait
+              // pas que la partie annulée était une classée.
+              mode: pregameState.mode || 'competitive',
+              queueId: pregameState.mode || 'competitive',
+              map: pregameState.map || '',
+              mapClean: pregameState.mapClean || '',
+              // Publié en même temps que active:false, donc le bot annonce
+              // l'annulation sans attendre ses 25 s de grâce.
+              result: cancelledResult({
+                kind: 'dodge',
+                matchId: pregameState.matchId,
+                mode: pregameState.mode || 'competitive',
+                map: pregameState.mapClean || '',
+                rr: dodgeRR,
+              }),
             });
           }
-          console.log(`[${ts()}] 🚫 Dodge détecté — partie annulée avant le lancement`);
+          const rrNote = dodgeRR?.delta != null ? ` (${dodgeRR.delta > 0 ? '+' : ''}${dodgeRR.delta} RR)` : '';
+          console.log(`[${ts()}] 🚫 Dodge détecté — partie annulée avant le lancement${rrNote}`);
         }
         pregameState = null;
       } else {
@@ -1212,6 +1240,8 @@ async function poll() {
     await putFB('live/rosterGames', rosterGames).catch(() => {});
   }
 
+  // Score de la partie, du point de vue de l'équipe du joueur local.
+  let ownPresenceScore = null;
   for (const p of myPresences) {
     let presenceHasGameData = false;
 
@@ -1229,6 +1259,7 @@ async function poll() {
         matchData = d.matchPresenceData;
         presenceHasGameData = true;
       }
+      ownPresenceScore = presenceScore(d) || ownPresenceScore;
     }
 
     // Only set playerName from the presence that has game data
@@ -1350,19 +1381,26 @@ async function poll() {
         const rr = await fetchPostMatchRR(postMatchTokens, lastGameInfo.matchId);
         if (rr) lastGameInfo.rr = rr;
 
+        // Remake : la partie a bien démarré, mais personne n'a `won: true`
+        // dans le rapport Riot — buildDetailedHistory en faisait donc une
+        // DÉFAITE, avec sa carte dans Discord, ses points de participation et
+        // sa ligne dans le récap RR, pour une partie de deux rounds.
+        const remake = isRemakeMatch(lastGameInfo);
+        if (remake) lastGameInfo.remake = true;
+
         const histKey = lastGameInfo.matchId.replace(/[.#$\[\]\/]/g, '-');
         const reporterKey = String(lastGameInfo.playerPuuid || stableSessionKey || 'unknown').replace(/[.#$\[\]\/]/g, '-');
         const historySummary = valorantHistorySummary(lastGameInfo);
         await putFB(`live/history/${histKey}/reports/${reporterKey}`, lastGameInfo);
         await putFB(`historyIndex/valorant/${histKey}/reports/${reporterKey}`, historySummary);
         await putFB(`historyIndex/valorant/${histKey}/ts`, historySummary.ts);
-        console.log(`[${ts()}] 📜 Game enregistrée — ${lastGameInfo.map} (${lastGameInfo.result})${details ? ' · détails OK' : ' · résumé local'}`);
+        console.log(`[${ts()}] 📜 Game enregistrée — ${lastGameInfo.map} (${remake ? 'remake' : lastGameInfo.result})${details ? ' · détails OK' : ' · résumé local'}`);
 
         // Résumé de fin de game pour le bot Discord (paris + notif de résultat)
         if (sKey !== 'unknown') {
           const selfPuuid = lastGameInfo.playerPuuid || postMatchTokens?.puuid || stableSessionKey;
           const self = (lastGameInfo.players || []).find(player => player.puuid === selfPuuid);
-          await putFB(`live/sessions/${sKey}/result`, {
+          const resultPayload = {
             result: lastGameInfo.result,
             matchId: lastGameInfo.matchId,
             kills: self?.stats.kills ?? null,
@@ -1377,7 +1415,16 @@ async function poll() {
             mode: lastGameInfo.mode,
             durationSeconds: Math.round((lastGameInfo.durationMs || 0) / 1000),
             score: lastGameInfo.score || null,
-          });
+          };
+          // Écrase `result` : le bot doit lire « annulée », pas « défaite ».
+          if (remake) Object.assign(resultPayload, cancelledResult({
+            kind: 'remake',
+            matchId: lastGameInfo.matchId,
+            mode: lastGameInfo.mode,
+            map: lastGameInfo.map,
+            rr: lastGameInfo.rr ?? null,
+          }));
+          await putFB(`live/sessions/${sKey}/result`, resultPayload);
         }
 
         lastGameInfo = null;
@@ -1401,6 +1448,9 @@ async function poll() {
     inGame   = true;
     lastMap  = mapRaw;
     gameStartedAt = Date.now();
+    // Le score de la partie précédente ne doit pas s'afficher sur la nouvelle
+    // le temps que la présence publie le sien.
+    lastScore = '';
     matchDataLogged = false;
     gameDataLogged = false;
     authTokens = null;
@@ -1465,7 +1515,17 @@ async function poll() {
             (async () => {
               await new Promise(r => setTimeout(r, 2000));
               let count = 0;
-              for (const puuid of puuidsCopy) {
+              // Le joueur LOCAL d'abord : c'est lui qui donne l'acte réellement
+              // en cours, puisqu'il est en train d'y jouer. Sans cette
+              // référence, chaque joueur était jugé sur SON dernier acte classé,
+              // et celui qui n'a pas joué en classé cet acte-ci voyait les
+              // chiffres du précédent présentés comme actuels.
+              const ordonnes = [...puuidsCopy].sort((a, b) =>
+                (b === tokensCopy.puuid ? 1 : 0) - (a === tokensCopy.puuid ? 1 : 0));
+              // Seule une partie classée prouve l'acte : en Deathmatch, la
+              // dernière classée du joueur local peut dater d'un acte passé.
+              let acteEnCours = null;
+              for (const puuid of ordonnes) {
                 await new Promise(r => setTimeout(r, 500));
                 const cachedHistory = rankHistoryCache.get(puuid);
                 const hasFreshHistory = cachedHistory?.expiresAt > Date.now();
@@ -1492,7 +1552,10 @@ async function poll() {
                 // Recent matches remain useful for the current RR and its evolution.
                 // If Riot withholds season history (notably for some anonymous players),
                 // buildRankSnapshot transparently falls back to the best recent tier.
-                const rank = buildRankSnapshot(mmr, updates, xp?.Progress?.Level);
+                if (puuid === tokensCopy.puuid && String(stableMode || '').toLowerCase() === 'competitive') {
+                  acteEnCours = seasonIdOf(updates);
+                }
+                const rank = buildRankSnapshot(mmr, updates, xp?.Progress?.Level, acteEnCours);
                 if (rank) {
                   rankMap[puuid] = rank;
                   count++;
@@ -1529,12 +1592,6 @@ async function poll() {
             })();
           }
 
-          // Extract score
-          const teams = match.Teams || [];
-          const blueScore = teams.find(t => t.TeamID === 'Blue')?.Score || 0;
-          const redScore  = teams.find(t => t.TeamID === 'Red')?.Score || 0;
-          lastScore = JSON.stringify({ blue: blueScore, red: redScore });
-
           const skinsByPuuid = await fetchMatchLoadouts(authTokens, matchData.MatchID, match.Players);
 
           players = match.Players.map(p => {
@@ -1558,6 +1615,17 @@ async function poll() {
               ...(skinsByPuuid[p.Subject]?.length ? { skins: skinsByPuuid[p.Subject] } : {}),
             };
           });
+          // Score en direct — voir live-score.js. core-game n'a pas d'équipes :
+          // on n'y lit plus rien, sinon le score retombait à 0-0 à chaque poll.
+          // Un score absent de la présence garde le dernier connu, jamais zéro.
+          const liveSelfTeam = players.find(p => p.puuid === authTokens.puuid)?.team || null;
+          const liveScore = blueRedScore(ownPresenceScore, liveSelfTeam);
+          if (liveScore) {
+            const serialized = JSON.stringify(liveScore);
+            if (serialized !== lastScore) console.log(`[${ts()}] 📊 Score: ${liveScore.blue} - ${liveScore.red}`);
+            lastScore = serialized;
+          }
+
           if (!gameDataLogged) {
             gameDataLogged = true;
             console.log(`[${ts()}] 🎯 Match data: ${players.length} joueurs trouvés`);
@@ -1655,6 +1723,10 @@ async function poll() {
     activePlayer,
     rank:         rankMap[authTokens?.puuid || selfPuuid] || null,
     score:        JSON.parse(lastScore || '{}'),
+    // Le camp du joueur local : sans lui, le score Bleu/Rouge ne dit pas qui
+    // mène. Le site l'affiche « nous – eux », et le pari de mi-temps du bot en
+    // tire ses cotes.
+    selfTeam:    players.find(p => p.puuid === (authTokens?.puuid || stableSessionKey))?.team || '',
     phase:       pregameState ? 'pregame' : '',
     scriptVersion: SCRIPT_VERSION,
     server:       currentServer?.name || '',

@@ -3,6 +3,7 @@ const {
   buildRankSnapshot,
   historicalPeakTier,
   currentSeasonStats,
+  seasonIdOf,
   rrDelta,
 } = require('../live/rank-utils.js');
 
@@ -79,12 +80,35 @@ assert.deepEqual(buildRankSnapshot(mmr, updates, 231), {
 // games) — malgré son ordre dans le dict, jamais oldAct (40 games).
 assert.deepEqual(currentSeasonStats(mmr, updates), { games: 30, wins: 18, winRatePct: 60 });
 
-// Sans SeasonID exploitable (pas d'updates, ou SeasonID absent/inconnu), on
-// retombe sur le dernier acte du dict — comportement de secours, pas la
-// méthode principale.
-assert.deepEqual(currentSeasonStats(mmr), { games: 40, wins: 22, winRatePct: 55 });
-assert.deepEqual(currentSeasonStats(mmr, { Matches: [{ TierAfterUpdate: 15 }] }), { games: 40, wins: 22, winRatePct: 55 });
-assert.deepEqual(currentSeasonStats(mmr, { Matches: [{ SeasonID: 'unknown-act' }] }), { games: 40, wins: 22, winRatePct: 55 });
+// Sans SeasonID exploitable, on ne renvoie RIEN.
+//
+// Le repli précédent prenait le dernier acte du dictionnaire — dont les clés
+// sont des UUID sans ordre garanti. L'écran affichait donc les parties et le
+// winrate d'un acte pris au hasard, sous le libellé « Acte compétitif en
+// cours » : un chiffre faux présenté comme juste, que personne ne va vérifier.
+// Ne rien afficher est la seule réponse honnête.
+assert.equal(currentSeasonStats(mmr), null, 'sans updates, l’acte est indéterminable');
+assert.equal(currentSeasonStats(mmr, { Matches: [{ TierAfterUpdate: 15 }] }), null, 'une partie sans SeasonID non plus');
+assert.equal(currentSeasonStats(mmr, { Matches: [{ SeasonID: 'unknown-act' }] }), null,
+  'un acte absent du dictionnaire : ce joueur n’y a pas joué en classé');
+
+// L'acte de RÉFÉRENCE prime sur le dernier acte du joueur : c'est celui du
+// joueur local, qui est en train d'y jouer.
+assert.deepEqual(currentSeasonStats(mmr, { Matches: [{ SeasonID: 'oldAct' }] }, 'currentAct'),
+  { games: 30, wins: 18, winRatePct: 60 }, 'la référence décide, pas l’historique du joueur');
+
+// Et un joueur qui n'a PAS joué en classé cet acte-ci n'affiche rien, au lieu
+// des chiffres de l'acte précédent présentés comme actuels.
+const inactif = { QueueSkills: { competitive: { SeasonalInfoBySeasonID: {
+  oldAct: { NumberOfGames: 40, NumberOfWins: 22 },
+} } } };
+assert.equal(currentSeasonStats(inactif, { Matches: [{ SeasonID: 'oldAct' }] }, 'currentAct'), null);
+
+// seasonIdOf : l'acte de la classée la plus récente, ou rien.
+assert.equal(seasonIdOf({ Matches: [{ SeasonID: 'a' }, { SeasonID: 'b' }] }), 'a');
+assert.equal(seasonIdOf({ Matches: [] }), null);
+assert.equal(seasonIdOf(null), null);
+assert.equal(seasonIdOf({ Matches: [{ TierAfterUpdate: 3 }] }), null);
 
 assert.equal(currentSeasonStats(null), null);
 assert.equal(currentSeasonStats({ QueueSkills: { competitive: { SeasonalInfoBySeasonID: {} } } }), null);
@@ -106,3 +130,22 @@ assert.equal(anonymousFallback.season, null);
 assert.equal(buildRankSnapshot(null, null), null);
 
 console.log('rank-utils: historical peak, season stats (by SeasonID) and anonymous fallback validated');
+
+// ─── Le script fournit bien l'acte de référence ─────────────────────────────
+// La correction ne vaut que si index.js transmet l'acte : sans lui, chaque
+// joueur reste jugé sur SON dernier acte classé.
+const fs = require('node:fs');
+const path = require('node:path');
+const script = fs.readFileSync(path.join(__dirname, '..', 'live', 'index.js'), 'utf8');
+
+assert.match(script, /buildRankSnapshot\(mmr, updates, xp\?\.Progress\?\.Level, acteEnCours\)/,
+  'l’acte en cours est transmis à chaque instantané');
+// Le joueur local d'abord : c'est lui qui donne l'acte, puisqu'il y joue.
+assert.match(script, /const ordonnes = \[\.\.\.puuidsCopy\]\.sort\(/);
+assert.match(script, /for \(const puuid of ordonnes\)/, 'la boucle suit cet ordre, sinon le tri ne sert à rien');
+// Seule une partie CLASSÉE prouve l'acte : en Deathmatch, la dernière classée
+// du joueur local peut dater d'un acte passé.
+assert.match(script, /String\(stableMode \|\| ''\)\.toLowerCase\(\) === 'competitive'/);
+assert.match(script, /acteEnCours = seasonIdOf\(updates\)/);
+
+console.log('rank-utils: l’acte en cours vient du joueur local, jamais d’un acte tiré au hasard');

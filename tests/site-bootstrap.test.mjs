@@ -74,10 +74,18 @@ test('League roster panels are mounted without duplicating detailed ranks on hom
 });
 
 test('le bandeau live ne prétend pas afficher un score indisponible en direct', () => {
+  // Le score avait été retiré du bandeau parce qu'il était faux : le script le
+  // lisait dans une réponse Riot qui n'en contient pas, et publiait 0-0 toute
+  // la partie. Depuis 4.21.0 il vient de la présence Riot. La règle reste la
+  // même — ne jamais montrer un score qu'on n'a pas — mais elle passe par
+  // liveScoreView, qui refuse les scripts plus anciens.
   assert.match(page, /id="live-header"/);
-  assert.doesNotMatch(page, /id="live-score/);
-  assert.doesNotMatch(interactions, /getElementById\('live-score/);
-  assert.doesNotMatch(layout, /\.live-score/);
+  assert.match(page, /id="live-score"[^>]*\shidden>/, 'caché tant qu’aucun score fiable n’est connu');
+  assert.match(interactions, /const view = liveScoreView\(data\);\s*\n\s*scoreEl\.hidden = !view;/,
+    'le bandeau n’affiche que ce que liveScoreView accepte');
+  assert.doesNotMatch(interactions, /liveData\?\.score\?\.blue|data\.score\.blue/,
+    'aucun accès direct au score brut depuis le rendu');
+  assert.match(layout, /\.live-score\[hidden\] \{ display:none; \}/);
 });
 
 test('OLYCITY is the product brand while games remain contextual modes', () => {
