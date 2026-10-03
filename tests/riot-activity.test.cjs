@@ -26,6 +26,43 @@ test('legacy presence and absent/missing fields remain safe', () => {
   assert.equal(valorantActivity(null).activity, 'unknown');
   assert.equal(valorantActivity({sessionLoopState:'MENUS',partySize:-2}).partySize, 0);
 });
+
+// Sanitized structure read from the real local Riot API on 2026-10-03.
+const nestedLobby = {
+  isIdle:false, isValid:true, partySize:1, maxPartySize:5,
+  matchPresenceData:{ sessionLoopState:'MENUS', queueId:'competitive' },
+  playerPresenceData:{},
+  partyPresenceData:{ partyState:'DEFAULT', partySize:1, maxPartySize:5, partyOwnerSessionLoopState:'INGAME' },
+};
+test('real nested Riot lobby is recognized even when alone in a party', () => {
+  assert.equal(valorantActivity(nestedLobby).activity,'menu');
+  assert.equal(valorantActivity(nestedLobby).partySize,1);
+  assert.equal(valorantActivity(nestedLobby).partyCapacity,5);
+});
+test('nested local states win over stale legacy fields and the party owner', () => {
+  for (const [loop,activity] of [['MENUS','menu'],['PREGAME','agent-select'],['INGAME','in-game'],['UNKNOWN','unknown']]) {
+    assert.equal(valorantActivity({...nestedLobby,sessionLoopState:'INGAME',matchPresenceData:{sessionLoopState:loop}}).activity,activity);
+  }
+  const queued={...nestedLobby,isIdle:true,partyPresenceData:{...nestedLobby.partyPresenceData,partyState:'MATCHMAKING',queueEntryTime:1700000000}};
+  assert.equal(valorantActivity(queued).activity,'queue');
+  assert.equal(valorantActivity(queued).queueStartedAt,1700000000000);
+  assert.equal(valorantActivity({...nestedLobby,isIdle:true}).activity,'away');
+  assert.equal(valorantActivity({...nestedLobby,isValid:false}).activity,'unknown');
+  assert.equal(valorantActivity({partyPresenceData:{partyOwnerSessionLoopState:'INGAME',partyState:'MATCHMAKING'}}).activity,'unknown');
+});
+test('own Riot Client and League records cannot hide the Valorant activity', () => {
+  const records=[
+    {...presence('self',{}),product:'riot_client',time:30},
+    {...presence('self',{sessionLoopState:'INGAME'}),product:'league_of_legends',time:25},
+    {...presence('friend',{sessionLoopState:'INGAME'}),product:'valorant',time:40},
+    {...presence('self',{sessionLoopState:'INGAME'}),product:'valorant',time:10},
+    {...presence('self',nestedLobby),product:'valorant',time:20},
+  ];
+  const own=ownPresence(records,'self');
+  assert.equal(own.length,2);
+  assert.equal(valorantActivity(decodedPresence(own)).activity,'menu');
+  assert.equal(decodedPresence([presence('self',{}),presence('self',nestedLobby)]).matchPresenceData.sessionLoopState,'MENUS');
+});
 test('League activity uses its own LCU phases', () => {
   assert.equal(lolActivity('ChampSelect'), 'agent-select');
   assert.equal(lolActivity('Matchmaking'), 'queue');

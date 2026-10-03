@@ -1,7 +1,8 @@
 // Presence is a hint, never proof of a match. Only inspect the local PUUID.
 function ownPresence(presences, puuid) {
   return puuid && Array.isArray(presences)
-    ? presences.filter(record => record?.puuid === puuid) : [];
+    ? presences.filter(record => record?.puuid === puuid && (!record.product || record.product === 'valorant'))
+      .sort((left, right) => Number(right.time || 0) - Number(left.time || 0)) : [];
 }
 
 function decodedPresence(records) {
@@ -10,19 +11,22 @@ function decodedPresence(records) {
     if (typeof raw !== 'string') continue;
     try {
       const data = JSON.parse(Buffer.from(raw, 'base64').toString('utf8'));
-      if (data && typeof data === 'object' && !Array.isArray(data)) return data;
+      if (data && typeof data === 'object' && !Array.isArray(data) && Object.keys(data).length) return data;
     } catch { /* chat can publish incomplete payloads during transitions */ }
   }
   return null;
 }
 
 function valorantActivity(data) {
-  if (!data) return { activity: 'unknown', partyId: '', partySize: 0, partyCapacity: 0, queueId: '', queueStartedAt: 0, partyOpen: false };
+  if (!data || data.isValid === false) return { activity: 'unknown', partyId: '', partySize: 0, partyCapacity: 0, queueId: '', queueStartedAt: 0, partyOpen: false };
   const party = data.partyPresenceData || data;
-  const loop = String(data.sessionLoopState || '').toUpperCase();
+  // Current Riot payload nests the LOCAL loop in matchPresenceData. Never use
+  // partyOwnerSessionLoopState: the party owner may be in a different state.
+  const loop = String(data.matchPresenceData?.sessionLoopState
+    || data.playerPresenceData?.sessionLoopState || data.sessionLoopState || '').toUpperCase();
   const partyState = String(party.partyState || '').toUpperCase();
   const activity = loop === 'INGAME' ? 'in-game' : loop === 'PREGAME' ? 'agent-select'
-    : data.isIdle === true ? 'away' : partyState === 'MATCHMAKING' ? 'queue'
+    : loop === 'MENUS' && partyState === 'MATCHMAKING' ? 'queue' : data.isIdle === true ? 'away'
       : loop === 'MENUS' ? 'menu' : 'unknown';
   const rawTime = party.queueEntryTime;
   const number = Number(rawTime);

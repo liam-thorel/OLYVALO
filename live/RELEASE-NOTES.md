@@ -1,6 +1,9 @@
 <!-- version: 4.21.1 -->
 ### Présence et identité fiables — Valorant et League of Legends
 
+- Correction du format Riot actuel : l'état local est lu dans `matchPresenceData.sessionLoopState`. Un joueur seul dans son groupe est désormais reconnu dans le menu, au lieu de rester « Client Riot ouvert ».
+- Les présences du lanceur Riot ou de League ne masquent plus celle de Valorant ; si plusieurs présences Valorant sont disponibles, la plus récente est utilisée.
+- Tests ajoutés à partir de la structure réellement observée : lobby solo, recherche, sélection, partie et présence invalide, avec compatibilité de l'ancien format.
 - Le script ne remplace plus l'identité locale inconnue par celle d'un ami : seule la présence du PUUID local est utilisée.
 - Une erreur temporaire de la présence Riot n'interrompt plus la vérification Agent Select et de la partie via les autres sources existantes.
 - Le Live distingue le menu, la recherche de partie et l'absence lorsque Riot fournit ces informations. Le groupe Riot reste distinct du match confirmé.
