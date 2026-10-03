@@ -1,7 +1,7 @@
 import { groupLolSessions, lolKda, lolMapLabel, normalizeLolHistory, summarizeLolDays } from './lol-utils.mjs?v=20260930-consistent-live';
 import { liveDataStore, liveTimestamp } from './live-data-store.mjs?v=20260930-consistent-live';
 import { liveClientSummary } from './live-clients.mjs?v=20261003-live-states';
-import { liveClientSummaryText, liveWaitingState, normalizeLolClientState } from './live-status.mjs?v=20261003-live-states';
+import { liveClientSummaryText, liveWaitingState, normalizeLolClientState } from './live-status.mjs?v=20261003-party-count';
 import { createHistoryPager } from './history-pager.mjs?v=20260930-consistent-live';
 import { createHistoryDisclosureState } from './history-disclosure-state.mjs';
 

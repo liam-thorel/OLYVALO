@@ -15,6 +15,17 @@ try {
   const parsed = new DOMParser().parseFromString(html, 'text/html');
   parsed.querySelectorAll('script').forEach(script => script.remove());
   document.body.innerHTML = parsed.body.innerHTML;
+  if (new URLSearchParams(location.search).has('visual')) {
+    document.documentElement.dataset.theme = 'dark';
+    parsed.querySelectorAll('link[rel="stylesheet"]').forEach(source => {
+      const link = source.cloneNode();
+      link.href = new URL(source.getAttribute('href'), new URL('../index.html', location.href)).href;
+      document.head.append(link);
+    });
+    const style = document.createElement('style');
+    style.textContent = 'body>*:not(#fixture-result):not(#page-live){display:none!important}#page-live{display:block!important;padding:20px}#fixture-result{white-space:pre-wrap;font-size:11px;padding:16px}';
+    document.head.append(style);
+  }
   const report = document.createElement('pre');
   report.id = 'fixture-result';
   document.body.prepend(report);
@@ -45,6 +56,17 @@ try {
   dispose();
   dispose = initLivePage();
   check(document.getElementById('live-score-mine').textContent === '0', 'retour de page sans F5');
+  liveDataStore.apply('valorantClients', {path:'/', data:{
+    self:{...clients.self, online:true, map:'Ascent', memberId:'liam'},
+    mathis:{online:true, ts:Date.now(), state:'idle', activity:'queue', partySize:3, partyCapacity:5, memberId:'mathis', playerName:'Mathis#OLY'},
+    nico:{online:true, ts:Date.now(), state:'idle', activity:'menu', partySize:1, partyCapacity:5, memberId:'nico', playerName:'Nico#OLY'},
+    noe:{online:true, ts:Date.now(), state:'idle', activity:'away', memberId:'noe', playerName:'Noé#OLY'},
+  }});
+  check(document.querySelectorAll('.live-client-chip').length === 4, 'quatre cartes de membres rendues');
+  check(document.querySelector('[data-state="away"] .live-client-info small')?.textContent === 'Absent', 'absent identifié en orange avec libellé');
+  check(document.getElementById('live-client-list').textContent.includes('Dans le lobby · 1/5'), 'compteur du lobby affiché');
+  check(document.getElementById('live-client-list').textContent.includes('En recherche · 3/5'), 'compteur de recherche affiché');
+  check(document.querySelector('.live-player-row')?.textContent.includes('Ascendant 3'), 'ranks préservés après actualisation des cartes');
   check(errors.length === 0, `console sans erreur (${errors.join('; ')})`);
   dispose();
   liveDataStore.destroy();

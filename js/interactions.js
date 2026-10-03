@@ -14,7 +14,7 @@ import {
   stableSessionForRender,
 } from './live-sessions.mjs?v=20260809-live-server-local';
 import { chooseLiveSession, freshLiveClients, groupLiveClients, isVersionAtLeast, liveClientSummary, liveSessionSignal, recoveringLiveClients, retainRecentLiveClients } from './live-clients.mjs?v=20261003-live-states';
-import { liveClientStatus, liveClientSummaryText, liveWaitingState } from './live-status.mjs?v=20261003-live-states';
+import { liveClientStatus, liveClientSummaryText, liveWaitingState } from './live-status.mjs?v=20261003-party-count';
 import { buildLiveIdentityIndex, resolveLiveIdentity } from './live-identities.mjs?v=20260809-live-groups';
 import { updateScriptDownload } from './downloads.mjs?v=20260912-separate-downloads';
 import { PLAYERS as LOL_ROSTER_PLAYERS } from './lol-roster.mjs?v=20260930-consistent-live';
@@ -625,11 +625,13 @@ export function initLivePage() {
         : `<span class="live-client-initial">${safeName.slice(0, 1).toUpperCase()}</span>`;
       const recovering = client.age >= 60000;
       const status = liveClientStatus(client, { recovering });
-      const stateLabel = status.label;
+      const stateLabel = status.key === 'inGame' && client.activity !== 'reconnect'
+        ? 'En partie' : status.label;
       const safeState = status.tone;
-      const context = compactContext ? client.error || '' : [client.map, client.server, client.side, client.error].filter(Boolean).join(' · ');
-      const riotId = escapeDiagnosticText(client.playerName || '');
-      return `<div class="live-client-chip${client.puuid === selectedSession ? ' selected' : ''}" data-state="${safeState}"${riotId ? ` title="${riotId}"` : ''}>
+      const context = compactContext ? '' : ['inGame', 'agentSelect'].includes(status.key)
+        ? valorantLiveMapLabel(client.map) : '';
+      const details = escapeDiagnosticText([client.playerName, status.label, client.map, client.server, client.side, client.error].filter(Boolean).join(' · '));
+      return `<div class="live-client-chip${client.puuid === selectedSession ? ' selected' : ''}" data-state="${safeState}" title="${details}">
         <span class="live-client-avatar">${avatar}</span>
         <span class="live-client-info">
           <strong>${safeName}</strong>

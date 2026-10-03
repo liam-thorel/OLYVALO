@@ -1,6 +1,6 @@
 import { avatarLayersHTML } from './avatars.mjs';
 import { freshLiveClients, liveClientSummary, liveSessionSignal } from './live-clients.mjs?v=20261003-live-states';
-import { liveClientSummaryText, normalizeLolClientState } from './live-status.mjs?v=20261003-live-states';
+import { liveClientSummaryText, normalizeLolClientState } from './live-status.mjs?v=20261003-party-count';
 import { liveDataStore, liveTimestamp } from './live-data-store.mjs?v=20260930-consistent-live';
 import { activeLolSessions } from './lol-utils.mjs?v=20260930-consistent-live';
 

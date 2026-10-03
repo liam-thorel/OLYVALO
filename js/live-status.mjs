@@ -25,10 +25,15 @@ export function liveClientStatus(client = {}, { recovering = false } = {}) {
   if (client.state === 'riot-offline' || client.riotClient === false) return { key:'clientClosed', label:'Client Riot non détecté', tone:'online' };
   if (client.state === 'game-ended') return { key:'ended', label:'Partie terminée', tone:'idle' };
   if (['idle', 'online'].includes(client.state)) {
+    const count = value => typeof value === 'number' ? value
+      : typeof value === 'string' && /^\d+$/.test(value) ? Number(value) : NaN;
+    const size = count(client.partySize), capacity = count(client.partyCapacity);
+    const party = Number.isInteger(size) && Number.isInteger(capacity)
+      && size > 0 && capacity >= size && capacity <= 100 ? `${size}/${capacity}` : '';
     const activities = {
-      menu:{ key:'menu', label:'Dans le menu', tone:'idle' },
-      queue:{ key:'queue', label:'En recherche de partie', tone:'agent-select' },
-      away:{ key:'away', label:'Absent', tone:'idle' },
+      menu:{ key:'menu', label:party ? `Dans le lobby · ${party}` : 'Dans le menu', tone:'idle' },
+      queue:{ key:'queue', label:party ? `En recherche · ${party}` : 'En recherche de partie', tone:'agent-select' },
+      away:{ key:'away', label:'Absent', tone:'away' },
       'ready-check':{ key:'loading', label:'Partie trouvée', tone:'agent-select' },
       loading:{ key:'loading', label:'Chargement de la partie', tone:'agent-select' },
     };

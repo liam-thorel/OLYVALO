@@ -22,6 +22,19 @@ test('confirmed match states outrank standby and old incidental activity', () =>
   assert.equal(liveClientStatus({state:'stopped',online:false}, {recovering:true}).key, 'offline');
   assert.equal(liveClientStatus({state:'error',riotClient:true,error:'Presence: HTTP 404'}).key, 'clientOpen');
 });
+
+test('party counts are shown only for valid lobby and queue observations', () => {
+  const party={state:'idle',partySize:1,partyCapacity:5};
+  assert.equal(liveClientStatus({...party,activity:'menu'}).label,'Dans le lobby · 1/5');
+  assert.equal(liveClientStatus({...party,activity:'queue',partySize:3}).label,'En recherche · 3/5');
+  for (const counts of [{partySize:0},{partySize:6},{partySize:1.5},{partySize:true},{partyCapacity:[5]},{partyCapacity:0},{partyCapacity:null},{partyCapacity:Infinity},{partySize:'<script>'}]) {
+    assert.equal(liveClientStatus({...party,...counts,activity:'menu'}).label,'Dans le menu');
+  }
+  assert.equal(liveClientStatus({...party,state:'agent-select'}).label,'Sélection en cours');
+  assert.equal(liveClientStatus({...party,state:'in-game'}).label,'Partie en cours');
+  assert.equal(liveClientStatus({...party,activity:'unknown'}).label,'Script connecté');
+  assert.equal(liveClientStatus({...party,activity:'away'}).tone,'away');
+});
 test('each individual contributes to the same truthful summary', () => {
   const clients=[{state:'idle',standby:true,riotClient:true},{state:'idle'},{state:'riot-offline'},{state:'idle',activity:'queue'},{state:'agent-select'}];
   const summary=liveClientSummary(clients);

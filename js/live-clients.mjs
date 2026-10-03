@@ -1,5 +1,5 @@
 import { liveTimestamp } from './live-data-store.mjs?v=20260930-consistent-live';
-import { liveClientStatus } from './live-status.mjs?v=20261003-live-states';
+import { liveClientStatus } from './live-status.mjs?v=20261003-party-count';
 
 // Deux ou trois requêtes Riot locales peuvent ponctuellement prendre plus de
 // 30 s. Le site garde donc le dernier état fiable une minute ; le script reste

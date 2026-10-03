@@ -253,8 +253,11 @@
   .live-diagnostic-copy strong { font-size: 11px; }
   .live-diagnostic-copy span { font-size: 10px; line-height: 1.35; white-space: normal; }
   .live-diagnostic-version, .live-client-chip-version { display: none; }
-  .live-client-list{ grid-column:1 / -1; margin:0 -9px -9px; padding:7px 9px 9px; border-top:1px solid var(--border); }
-  .live-client-group-heading{ display:none; }
+  .live-client-list{ display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); grid-column:1 / -1; gap:8px; margin:0; padding:0; }
+  .live-client-group{ grid-column:1 / -1; display:grid; padding:8px; }
+  .live-client-group-heading{ display:grid; min-width:0; }
+  .live-client-group-heading small{ max-width:none; white-space:normal; }
+  .live-client-group-members{ display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:8px; }
   .live-download-link { display:none; }
   .live-session-picker{
     grid-template-columns:1fr; gap:7px; margin-bottom:8px; padding:9px;
@@ -265,10 +268,10 @@
   .live-session-picker-list{ margin:0 -9px -9px; padding:0 9px 9px; }
   .live-session-card{ min-width:205px; min-height:50px; padding:6px 8px; }
   .live-session-state{ display:none; }
-  .live-client-chip { min-height:44px; max-width:205px; box-sizing:border-box; padding:6px 9px 6px 11px; }
+  .live-client-chip { gap:9px; min-height:72px; max-width:none; box-sizing:border-box; padding:10px; }
   .live-client-avatar { flex-basis: 30px; width: 30px; height: 30px; }
-  .live-client-info strong { font-size: 10px; }
-  .live-client-info small { font-size: 9.5px; white-space: normal; }
+  .live-client-info strong { font-size: 12px; }
+  .live-client-info small { font-size: 11px; white-space: normal; }
   .live-client-group-heading strong { font-size: 8px; }
   .live-client-group-heading small { font-size: 8.5px; }
   .live-pregame-header { flex-direction: column; min-height: 0; padding: 16px; }
