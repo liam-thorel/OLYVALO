@@ -13,7 +13,7 @@
  */
 
 import { accountLiveState, accountRiotId, discoveryRows, normalizeGames } from './admin-account-utils.mjs?v=20260930-consistent-live';
-import { buildScriptHealth, scriptDiagnosticText, scriptHealthSummary } from './admin-health-utils.mjs?v=20260930-consistent-live';
+import { buildScriptHealth, scriptDiagnosticText, scriptHealthSummary } from './admin-health-utils.mjs?v=20261003-live-states';
 import { validateLineup, lineupCoverage, mergeLineups } from './lineup-utils.mjs?v=20260913-lineup-contrib';
 import { fetchJsonWithRetry, fetchJsonWithTimeout } from './request-utils.mjs?v=20260930-consistent-live';
 import { isLiveRecordExpired, liveDataStore, staleLiveRecords } from './live-data-store.mjs?v=20260930-consistent-live';

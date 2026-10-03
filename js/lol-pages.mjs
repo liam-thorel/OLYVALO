@@ -1,5 +1,7 @@
 import { groupLolSessions, lolKda, lolMapLabel, normalizeLolHistory, summarizeLolDays } from './lol-utils.mjs?v=20260930-consistent-live';
-import { liveDataStore } from './live-data-store.mjs?v=20260930-consistent-live';
+import { liveDataStore, liveTimestamp } from './live-data-store.mjs?v=20260930-consistent-live';
+import { liveClientSummary } from './live-clients.mjs?v=20261003-live-states';
+import { liveClientSummaryText, liveWaitingState, normalizeLolClientState } from './live-status.mjs?v=20261003-live-states';
 import { createHistoryPager } from './history-pager.mjs?v=20260930-consistent-live';
 import { createHistoryDisclosureState } from './history-disclosure-state.mjs';
 
@@ -89,7 +91,7 @@ function sessionCard(group) {
   </article>`;
 }
 
-function renderLolLive(raw) {
+function renderLolLive(raw, clients = {}, statuses = {}) {
   const el = document.getElementById('lol-live-content');
   if (!el) return;
   const groups = groupLolSessions(raw);
@@ -98,7 +100,18 @@ function renderLolLive(raw) {
     if (dot) dot.style.display = groups.length ? 'block' : 'none';
   }
   if (!groups.length) {
-    el.innerHTML = '<div class="lol-empty-state"><span class="lol-empty-rune">L</span><strong>Aucune partie LoL en cours</strong><small>Le match apparaîtra ici dès qu’un script connecté entrera en partie.</small></div>';
+    const now = Date.now();
+    const fresh = Object.values(clients).filter(client => client?.connected === true
+      && liveTimestamp(client, now) > 0 && now - liveTimestamp(client, now) < 55_000).map(normalizeLolClientState);
+    const summary = liveClientSummary(fresh);
+    const channels = [statuses.lolSessions, statuses.lolClients].filter(Boolean);
+    const reconnecting = channels.some(status => status.error);
+    const loading = channels.some(status => !status.loaded);
+    const waiting = reconnecting ? { title:'Reconnexion au Live LoL', detail:'Le suivi reprendra automatiquement quand la connexion sera rétablie.' }
+      : summary.total ? liveWaitingState(summary)
+      : loading ? { title:'Connexion au Live LoL', detail:'Vérification des scripts connectés.' }
+      : { title:'Aucun script LoL connecté', detail:'Lance OLYCITY Live avec le client League pour activer le suivi.' };
+    el.innerHTML = `<div class="lol-empty-state"><span class="lol-empty-rune">L</span><strong>${esc(waiting.title)}</strong><small>${esc(liveClientSummaryText(summary))}</small><small>${esc(waiting.detail)}</small></div>`;
     return;
   }
   el.innerHTML = groups.map(sessionCard).join('');
@@ -106,12 +119,15 @@ function renderLolLive(raw) {
 
 export function initLolLivePage() {
   let sessions = {};
+  let clients = {};
+  let statuses = {};
   let timer = null;
-  const render = () => renderLolLive(sessions);
+  const render = () => renderLolLive(sessions, clients, statuses);
   const unsubscribeLiveData = liveDataStore.subscribe(snapshot => {
     const nextSessions = snapshot.lolSessions || {};
-    if (nextSessions === sessions) return;
     sessions = nextSessions;
+    clients = snapshot.lolClients || {};
+    statuses = snapshot.status || {};
     render();
   });
   timer = setInterval(render, 10_000);

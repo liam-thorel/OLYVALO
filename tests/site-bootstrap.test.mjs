@@ -355,7 +355,9 @@ test('PWA exposes opt-in notifications and admin test controls without touching 
 test('Live and Coop explain loading, empty and recovery states', () => {
   assert.match(page, /id="live-waiting-title"/);
   assert.match(page, /id="live-waiting-detail"/);
-  assert.match(interactions, /waitingTitle\.textContent = summary\.ready/);
+  assert.match(interactions, /const waiting = liveWaitingState\(summary\)/);
+  assert.match(interactions, /waitingTitle\.textContent = waiting\.title/);
+  assert.doesNotMatch(interactions, /summary\.ready &&/);
   assert.match(coopPage, /coopStateMarkup\(/);
   assert.match(coopPage, /data-coop-retry/);
   assert.match(coopPage, /data-coop-reset/);

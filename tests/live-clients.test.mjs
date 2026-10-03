@@ -23,7 +23,10 @@ assert.deepEqual(
   ['liam','nico'],
   'heartbeat timing must never reorder the script chips',
 );
-assert.deepEqual(liveClientSummary(fresh), {total:2,inGame:1,agentSelect:0,ready:1,issues:0});
+assert.equal(liveClientSummary(fresh).total, 2);
+assert.equal(liveClientSummary(fresh).inGame, 1);
+assert.equal(liveClientSummary(fresh).ready, 0, 'a generic idle heartbeat is not proof of readiness');
+assert.equal(liveClientSummary(fresh).scriptOnly, 1);
 assert.equal(
   freshLiveClients({ slow:{online:true,ts:55000,state:'in-game'} }, {}, now).length,
   1,

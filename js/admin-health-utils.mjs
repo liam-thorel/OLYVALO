@@ -1,6 +1,7 @@
 import { liveTimestamp } from './live-data-store.mjs?v=20260930-consistent-live';
+import { liveClientStatus, normalizeLolClientState } from './live-status.mjs?v=20261003-live-states';
 
-export const HEALTH_FRESH_MS = 45_000;
+export const HEALTH_FRESH_MS = 60_000;
 export const HEALTH_RECENT_MS = 120_000;
 
 function normalize(value) {
@@ -61,7 +62,7 @@ function stateLabel(state) {
   return ({
     'in-game': 'En partie',
     'agent-select': 'Agent Select',
-    ready: 'Script prêt',
+    ready: 'Script connecté',
     error: 'À vérifier',
     offline: 'Hors ligne',
   })[state] || 'Hors ligne';
@@ -77,14 +78,22 @@ function completeRow(row, latestVersion, now) {
   const connected = valorantFresh || lolFresh;
   const valorantSessionFresh = Boolean(row.valorantSession?.active && now - timestamp(row.valorantSession, now) < HEALTH_RECENT_MS);
   const lolSessionFresh = Boolean(row.lolSession?.active && now - timestamp(row.lolSession, now) < HEALTH_RECENT_MS);
-  const rawState = row.valorantClient?.state || '';
-  const lolPhase = newestClient.phase || '';
-  const error = String(row.valorantClient?.error || '').trim();
+  const freshStatuses = [
+    ...(valorantFresh ? [liveClientStatus(row.valorantClient)] : []),
+    ...row.lolClients.filter(client => client.connected && now - timestamp(client, now) < HEALTH_FRESH_MS)
+      .map(client => liveClientStatus(normalizeLolClientState(client))),
+  ];
+  const priority = ['inGame', 'agentSelect', 'issues', 'loading', 'queue', 'menu', 'away', 'clientOpen', 'clientClosed', 'ended', 'scriptOnly'];
+  const currentStatus = freshStatuses.sort((a, b) => priority.indexOf(a.key) - priority.indexOf(b.key))[0];
+  const error = currentStatus?.key === 'issues' ? String(row.valorantClient?.error || '').trim() : '';
 
   let state = 'offline';
-  if (valorantSessionFresh || lolSessionFresh || rawState === 'in-game') state = 'in-game';
-  else if (rawState === 'agent-select' || lolPhase === 'ChampSelect') state = 'agent-select';
-  else if (rawState === 'error' || rawState === 'riot-offline' || error) state = 'error';
+  const pregameSession = row.valorantSession?.phase === 'pregame' || row.valorantSession?.mode === 'agent-select';
+  if (connected && currentStatus?.key === 'inGame') state = 'in-game';
+  else if (connected && currentStatus?.key === 'agentSelect') state = 'agent-select';
+  else if (connected && currentStatus?.key !== 'ended' && (lolSessionFresh || (valorantSessionFresh && !pregameSession))) state = 'in-game';
+  else if (connected && currentStatus?.key !== 'ended' && valorantSessionFresh && pregameSession) state = 'agent-select';
+  else if (currentStatus?.key === 'issues') state = 'error';
   else if (connected) state = 'ready';
 
   const version = String(newestClient.version || newestClient.scriptVersion || '');
@@ -95,7 +104,7 @@ function completeRow(row, latestVersion, now) {
   if (connected && !row.memberId) issues.push('Identité OLYCITY non associée');
   if (outdated) issues.push(`Mise à jour ${latestVersion} disponible`);
   if (error) issues.push(error);
-  if (rawState === 'riot-offline') issues.push('Client Riot non détecté');
+  if (currentStatus?.key === 'clientClosed') issues.push('Client Riot non détecté');
   if (newestClient.online && age >= HEALTH_FRESH_MS) issues.push('Signal interrompu');
 
   return {
@@ -106,7 +115,10 @@ function completeRow(row, latestVersion, now) {
     heartbeatAt,
     connected,
     state,
-    stateLabel: stateLabel(state),
+    stateLabel: state === 'offline' && age < HEALTH_RECENT_MS && newestClient.online
+      ? 'Signal interrompu'
+      : ['in-game', 'agent-select'].includes(state) ? stateLabel(state)
+      : currentStatus?.label || stateLabel(state),
     version,
     latestVersion,
     outdated,

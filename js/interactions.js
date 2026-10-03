@@ -13,7 +13,8 @@ import {
   stableServerForSession,
   stableSessionForRender,
 } from './live-sessions.mjs?v=20260809-live-server-local';
-import { chooseLiveSession, freshLiveClients, groupLiveClients, isVersionAtLeast, liveActivityLabel, liveClientSummary, liveSessionSignal, recoveringLiveClients, retainRecentLiveClients } from './live-clients.mjs?v=20261003-presence';
+import { chooseLiveSession, freshLiveClients, groupLiveClients, isVersionAtLeast, liveClientSummary, liveSessionSignal, recoveringLiveClients, retainRecentLiveClients } from './live-clients.mjs?v=20261003-live-states';
+import { liveClientStatus, liveClientSummaryText, liveWaitingState } from './live-status.mjs?v=20261003-live-states';
 import { buildLiveIdentityIndex, resolveLiveIdentity } from './live-identities.mjs?v=20260809-live-groups';
 import { updateScriptDownload } from './downloads.mjs?v=20260912-separate-downloads';
 import { PLAYERS as LOL_ROSTER_PLAYERS } from './lol-roster.mjs?v=20260930-consistent-live';
@@ -544,15 +545,6 @@ export function initLivePage() {
   }
 
   let lastDataKey = '';
-  const DIAGNOSTIC_LABELS = {
-    'idle': 'Script prêt',
-    'agent-select': 'Agent Select détecté',
-    'in-game': 'Partie en cours',
-    'game-ended': 'Partie terminée',
-    'riot-offline': 'Client Riot introuvable',
-    'error': 'Erreur de synchronisation',
-    'stopped': 'Script arrêté',
-  };
   const escapeDiagnosticText = value => String(value || '').replace(/[&<>"']/g, character => ({
     '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;',
   })[character]);
@@ -608,10 +600,7 @@ export function initLivePage() {
     detail.textContent = !summary.total
       ? `${recoveringClients.length} dernier${recoveringClients.length > 1 ? 's' : ''} état${recoveringClients.length > 1 ? 's' : ''} conservé${recoveringClients.length > 1 ? 's' : ''} · reconnexion en cours`
       : [
-      summary.inGame && `${summary.inGame} en partie`,
-      summary.agentSelect && `${summary.agentSelect} en Agent Select`,
-      summary.ready && `${summary.ready} prêt${summary.ready > 1 ? 's' : ''}`,
-      summary.issues && `${summary.issues} en erreur`,
+      liveClientSummaryText(summary),
       recoveringClients.length && `${recoveringClients.length} signal${recoveringClients.length > 1 ? 's' : ''} perdu${recoveringClients.length > 1 ? 's' : ''}`,
       transportIssue && 'Flux Live en reconnexion',
     ].filter(Boolean).join(' · ');
@@ -623,10 +612,9 @@ export function initLivePage() {
       ? `${versions.length} versions`
       : versions.length === 1 ? `v${versions[0]}` : 'Version inconnue';
     updateScriptDownload(download, updateNeeded, latestLiveVersion);
-    if (waitingTitle) waitingTitle.textContent = summary.ready
-      ? `${summary.ready} membre${summary.ready > 1 ? 's' : ''} prêt${summary.ready > 1 ? 's' : ''}`
-      : 'Aucune game en cours';
-    if (waitingDetail) waitingDetail.textContent = 'Le Live apparaîtra automatiquement dès qu’une partie commencera.';
+    const waiting = liveWaitingState(summary);
+    if (waitingTitle) waitingTitle.textContent = waiting.title;
+    if (waitingDetail) waitingDetail.textContent = waiting.detail;
 
     const renderClient = (client, compactContext = false) => {
       const profile = profileForEntry(client);
@@ -636,8 +624,9 @@ export function initLivePage() {
         ? avatarLayersHTML(profile.member, profile.avatar)
         : `<span class="live-client-initial">${safeName.slice(0, 1).toUpperCase()}</span>`;
       const recovering = client.age >= 60000;
-      const stateLabel = recovering ? 'Signal interrompu' : client.standby ? 'Riot Client en attente' : (liveActivityLabel(client) || DIAGNOSTIC_LABELS[client.state] || 'Script connecté');
-      const safeState = recovering ? 'error' : DIAGNOSTIC_LABELS[client.state] ? client.state : 'online';
+      const status = liveClientStatus(client, { recovering });
+      const stateLabel = status.label;
+      const safeState = status.tone;
       const context = compactContext ? client.error || '' : [client.map, client.server, client.side, client.error].filter(Boolean).join(' · ');
       const riotId = escapeDiagnosticText(client.playerName || '');
       return `<div class="live-client-chip${client.puuid === selectedSession ? ' selected' : ''}" data-state="${safeState}"${riotId ? ` title="${riotId}"` : ''}>

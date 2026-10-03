@@ -1,23 +1,28 @@
 import { avatarLayersHTML } from './avatars.mjs';
-import { freshLiveClients } from './live-clients.mjs?v=20260930-consistent-live';
+import { freshLiveClients, liveClientSummary, liveSessionSignal } from './live-clients.mjs?v=20261003-live-states';
+import { liveClientSummaryText, normalizeLolClientState } from './live-status.mjs?v=20261003-live-states';
 import { liveDataStore, liveTimestamp } from './live-data-store.mjs?v=20260930-consistent-live';
 import { activeLolSessions } from './lol-utils.mjs?v=20260930-consistent-live';
-
-const VAL_FRESH_MS = 30_000;
 
 function activeValorantSessions(raw = {}, now = Date.now()) {
   return Object.entries(raw)
     .map(([id, session]) => ({ id, ...(session || {}) }))
-    .filter(session => session.active && liveTimestamp(session, now) > 0 && now - liveTimestamp(session, now) < VAL_FRESH_MS)
-    .sort((left, right) => Number(right.ts || 0) - Number(left.ts || 0));
+    .filter(session => liveSessionSignal(session, now) === 'live')
+    .sort((left, right) => Number(isPregame(left)) - Number(isPregame(right)) || Number(right.ts || 0) - Number(left.ts || 0));
+}
+
+function isPregame(session) { return session.phase === 'pregame' || session.mode === 'agent-select'; }
+
+function freshLeagueClients(snapshot, now) {
+  return Object.values(snapshot.lolClients || {}).filter(client => {
+    const timestamp = liveTimestamp(client, now);
+    return client?.connected === true && timestamp > 0 && now - timestamp < 55_000;
+  }).map(normalizeLolClientState);
 }
 
 function onlineMemberIds(snapshot, now = Date.now()) {
   const valorant = freshLiveClients(snapshot.valorantClients, snapshot.valorantSessions, now);
-  const league = Object.values(snapshot.lolClients || {}).filter(client => {
-    const timestamp = liveTimestamp(client, now);
-    return client?.connected !== false && timestamp > 0 && now - timestamp < 55_000;
-  });
+  const league = freshLeagueClients(snapshot, now);
   return new Set([...valorant, ...league].map(client => String(client.memberId || '').toLowerCase()).filter(Boolean));
 }
 
@@ -29,9 +34,10 @@ export function homeDashboardState(snapshot = {}, now = Date.now(), context = {}
   if (valorantSessions.length) {
     const session = valorantSessions[0];
     const players = new Set(valorantSessions.map(item => item.memberId).filter(Boolean)).size || valorantSessions.length;
+    const selecting = isPregame(session);
     return {
-      state:'valorant', kicker:'Live · Valorant', title:session.mapClean || session.map || 'Partie en cours',
-      detail:`${players} membre${players > 1 ? 's' : ''} en partie`, action:'Voir le Live', page:'live', onlineIds,
+      state:'valorant', kicker:selecting ? 'Sélection · Valorant' : 'Live · Valorant', title:session.mapClean || session.map || 'Partie en cours',
+      detail:`${players} membre${players > 1 ? 's' : ''} suivi${players > 1 ? 's' : ''} · ${selecting ? 'Sélection des agents' : 'Partie en cours'}`, action:'Voir le Live', page:'live', onlineIds,
     };
   }
   if (leagueSessions.length) {
@@ -51,11 +57,21 @@ export function homeDashboardState(snapshot = {}, now = Date.now(), context = {}
       action:context.needsResponse ? 'Donner mon avis' : 'Voir la soirée', page:'home', actionType:'group-night', onlineIds,
     };
   }
-  if (onlineIds.size) return {
-    state:'idle', kicker:'En ce moment',
-    title:`${onlineIds.size} membre${onlineIds.size > 1 ? 's' : ''} connecté${onlineIds.size > 1 ? 's' : ''}`,
-    detail:'Le groupe se prépare', action:'Voir le Live', page:'live', onlineIds,
-  };
+  if (onlineIds.size) {
+    const valorantClients = freshLiveClients(snapshot.valorantClients, snapshot.valorantSessions, now);
+    const leagueClients = freshLeagueClients(snapshot, now);
+    const clients = [...valorantClients, ...leagueClients];
+    const summary = liveClientSummary(clients);
+    const detail = [
+      valorantClients.length && `Valorant : ${liveClientSummaryText(liveClientSummary(valorantClients))}`,
+      leagueClients.length && `LoL : ${liveClientSummaryText(liveClientSummary(leagueClients))}`,
+    ].filter(Boolean).join(' · ');
+    return {
+      state:'idle', kicker:'En ce moment',
+      title:summary.inGame ? 'Partie détectée' : summary.agentSelect ? 'Sélection en cours' : summary.queue ? 'Recherche de partie' : `${onlineIds.size} membre${onlineIds.size > 1 ? 's' : ''} connecté${onlineIds.size > 1 ? 's' : ''}`,
+      detail:detail || 'Scripts connectés · état de jeu inconnu', action:'Voir le Live', page:'live', onlineIds,
+    };
+  }
   return {
     state:'idle', kicker:'Prochaine soirée', title:'On joue à quoi ?',
     detail:'Découvrir les propositions coop', action:'Voir les jeux', page:'games', onlineIds,

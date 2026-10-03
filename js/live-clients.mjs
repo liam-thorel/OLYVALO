@@ -1,4 +1,5 @@
 import { liveTimestamp } from './live-data-store.mjs?v=20260930-consistent-live';
+import { liveClientStatus } from './live-status.mjs?v=20261003-live-states';
 
 // Deux ou trois requêtes Riot locales peuvent ponctuellement prendre plus de
 // 30 s. Le site garde donc le dernier état fiable une minute ; le script reste
@@ -126,16 +127,13 @@ export function groupLiveClients(clients = []) {
 }
 
 export function liveClientSummary(clients = []) {
-  const counts = clients.reduce((result, client) => {
-    const state = client.state || 'online';
-    result[state] = (result[state] || 0) + 1;
-    return result;
-  }, {});
-  return {
-    total: clients.length,
-    inGame: counts['in-game'] || 0,
-    agentSelect: counts['agent-select'] || 0,
-    ready: (counts.idle || 0) + (counts.online || 0),
-    issues: (counts.error || 0) + (counts['riot-offline'] || 0),
-  };
+  const counts = { total:clients.length, inGame:0, agentSelect:0, ready:0, issues:0,
+    menu:0, queue:0, loading:0, away:0, clientOpen:0, clientClosed:0, scriptOnly:0, ended:0 };
+  clients.forEach(client => {
+    const key = liveClientStatus(client).key;
+    if (Object.hasOwn(counts, key)) counts[key] += 1;
+  });
+  // Legacy field: only a confirmed menu, never a generic idle heartbeat.
+  counts.ready = counts.menu;
+  return counts;
 }
