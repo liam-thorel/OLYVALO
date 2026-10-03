@@ -22,6 +22,7 @@ const { readIdentity, writeIdentity } = require('./identity.js');
 const { createAccountBinder } = require('./account-binding.js');
 const { cleanupStalePresence, PRESENCE_CLEANUP_INTERVAL_MS } = require('./maintenance.js');
 const { presenceRecordForPath } = require('./presence-schema.js');
+const { ownPresence, decodedPresence, valorantActivity } = require('./riot-activity.js');
 const { resolveRiotIdentity } = require('./riot-identity.js');
 const { valorantHistorySummary } = require('./history-index.js');
 const {
@@ -32,7 +33,7 @@ const {
 } = require('./valorant-mode-utils.js');
 
 const FIREBASE_URL = 'https://realtime-database-5bb9f-default-rtdb.europe-west1.firebasedatabase.app';
-const SCRIPT_VERSION = '4.21.0';
+const SCRIPT_VERSION = '4.21.1';
 const INSTANCE_LOCK_PATH = path.join(__dirname, '.olycity-live.lock');
 const LOG_PATH = path.join(__dirname, 'olycity.log');
 const MAX_LOG_BYTES = 5 * 1024 * 1024;
@@ -624,6 +625,7 @@ let diagnosticPlayerName = '';
 let currentServer = null;
 let postGameUpdateTimer = null;
 let pendingUpdateVersion = '';
+let currentActivity = valorantActivity(null);
 
 function schedulePostGameUpdate() {
   if (postGameUpdateTimer) clearTimeout(postGameUpdateTimer);
@@ -638,7 +640,7 @@ async function publishDiagnostic(state, details = {}, force = false) {
   if (!sessionKey) return;
 
   const playerName = details.playerName || diagnosticPlayerName || '';
-  const signature = JSON.stringify({ state, playerName, ...details });
+  const signature = JSON.stringify({ state, playerName, ...currentActivity, ...details });
   const now = Date.now();
   if (!force && signature === lastDiagnosticSignature && now - lastDiagnosticPush < 10000) return;
 
@@ -651,6 +653,10 @@ async function publishDiagnostic(state, details = {}, force = false) {
     playerName,
     memberId: identity?.memberId || '',
     member: identity?.memberName || '',
+    ...currentActivity,
+    puuid: selfPuuid || authTokens?.puuid || sessionKey,
+    activity: state === 'idle' ? currentActivity.activity
+      : state === 'agent-select' || state === 'in-game' ? state : 'unknown',
     state,
     riotClient: !!lockPort,
     ...details,
@@ -1064,8 +1070,6 @@ async function poll() {
     tries++;
     if (tries % 10 === 1) console.log(`[${ts()}] ⚠️  Presence: ${res.err}`);
     await refreshSelfIdentity(lock, !selfPuuid);
-    await publishDiagnostic('error', { error: `Presence: ${res.err || 'indisponible'}` });
-    return;
   }
   tries = 0;
 
@@ -1075,10 +1079,9 @@ async function poll() {
 
   const presences = res.data?.presences || [];
 
-  // Filter: only self presence, or first one if PUUID unknown
-  const myPresences = selfPuuid
-    ? presences.filter(p => p.puuid === selfPuuid)
-    : presences.slice(0, 1);
+  // Never substitute a friend's presence when local identity is unavailable.
+  const myPresences = ownPresence(presences, selfPuuid);
+  currentActivity = valorantActivity(decodedPresence(myPresences));
 
   const ownIdentity = myPresences.find(p => p.game_name);
   if (ownIdentity) {
@@ -1218,27 +1221,8 @@ async function poll() {
   } catch {}
 
 
-  // Also scan all presences for OLYCITY roster games
-  const OLYCITY_ROSTER = ['Drew A Picasso', 'Wong Chi Ming', 'RayBaz', 'M A I R', 'baby hayabusa', 'VENOM X RAMEEZ'];
-  const rosterGames = [];
-  for (const p of presences) {
-    if (!p.game_name) continue;
-    const isRoster = OLYCITY_ROSTER.some(name => p.game_name?.includes(name.split(' ')[0]) || p.game_name?.includes(name));
-    if (!isRoster || p.puuid === selfPuuid) continue;
-    for (const [, val] of Object.entries(p)) {
-      if (typeof val !== 'string' || val.length < 10) continue;
-      const d = tryDecodeBase64(val);
-      if (d?.location?.includes('/Game/Maps/')) {
-        const mapRaw = d.location.replace('social_location_', '').split('/').pop();
-        const mode = (d.mode || '').replace('social_mode_', '');
-        rosterGames.push({ name: `${p.game_name}#${p.game_tag}`, map: MAP_NAMES[mapRaw] || mapRaw, mode });
-        break;
-      }
-    }
-  }
-  if (rosterGames.length > 0) {
-    await putFB('live/rosterGames', rosterGames).catch(() => {});
-  }
+  // Friend-name matching was unused by the site and unsafe after renames.
+  // Published member/account bindings remain keyed by the stable PUUID.
 
   // Score de la partie, du point de vue de l'équipe du joueur local.
   let ownPresenceScore = null;

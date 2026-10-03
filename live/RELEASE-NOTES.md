@@ -1,4 +1,15 @@
-<!-- version: 4.21.0 -->
+<!-- version: 4.21.1 -->
+### Présence et identité fiables — Valorant et League of Legends
+
+- Le script ne remplace plus l'identité locale inconnue par celle d'un ami : seule la présence du PUUID local est utilisée.
+- Une erreur temporaire de la présence Riot n'interrompt plus la vérification Agent Select et de la partie via les autres sources existantes.
+- Le Live distingue le menu, la recherche de partie et l'absence lorsque Riot fournit ces informations. Le groupe Riot reste distinct du match confirmé.
+- League of Legends publie également son activité depuis les phases du client LCU, sans modifier le fonctionnement du bot.
+- Suppression de l'ancien scan inutilisé des amis par fragments de pseudonymes. Les comptes restent rattachés aux profils par PUUID.
+
+La mise à jour automatique inclut le nouveau module. Le redémarrage conserve les protections existantes pendant une partie.
+
+### Fonctionnalités conservées de la version précédente
 Cette mise à jour affiche le score en direct, corrige les statistiques de la Live Game, et les dodges, remakes et égalités signalés à Discord.
 
 ### Score en direct

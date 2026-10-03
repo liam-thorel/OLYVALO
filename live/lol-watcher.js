@@ -707,6 +707,7 @@ function createLolWatcher({
       member: member?.memberName || '',
       connected: true,
       phase: phase || 'Unknown',
+      activity: require('./riot-activity.js').lolActivity(phase),
       lastSeen: now,
       scriptVersion,
     });

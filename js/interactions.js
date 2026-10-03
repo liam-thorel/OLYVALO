@@ -13,7 +13,7 @@ import {
   stableServerForSession,
   stableSessionForRender,
 } from './live-sessions.mjs?v=20260809-live-server-local';
-import { chooseLiveSession, freshLiveClients, groupLiveClients, isVersionAtLeast, liveClientSummary, liveSessionSignal, recoveringLiveClients, retainRecentLiveClients } from './live-clients.mjs?v=20260930-consistent-live';
+import { chooseLiveSession, freshLiveClients, groupLiveClients, isVersionAtLeast, liveActivityLabel, liveClientSummary, liveSessionSignal, recoveringLiveClients, retainRecentLiveClients } from './live-clients.mjs?v=20261003-presence';
 import { buildLiveIdentityIndex, resolveLiveIdentity } from './live-identities.mjs?v=20260809-live-groups';
 import { updateScriptDownload } from './downloads.mjs?v=20260912-separate-downloads';
 import { PLAYERS as LOL_ROSTER_PLAYERS } from './lol-roster.mjs?v=20260930-consistent-live';
@@ -636,7 +636,7 @@ export function initLivePage() {
         ? avatarLayersHTML(profile.member, profile.avatar)
         : `<span class="live-client-initial">${safeName.slice(0, 1).toUpperCase()}</span>`;
       const recovering = client.age >= 60000;
-      const stateLabel = recovering ? 'Signal interrompu' : client.standby ? 'Riot Client en attente' : (DIAGNOSTIC_LABELS[client.state] || 'Script connecté');
+      const stateLabel = recovering ? 'Signal interrompu' : client.standby ? 'Riot Client en attente' : (liveActivityLabel(client) || DIAGNOSTIC_LABELS[client.state] || 'Script connecté');
       const safeState = recovering ? 'error' : DIAGNOSTIC_LABELS[client.state] ? client.state : 'online';
       const context = compactContext ? client.error || '' : [client.map, client.server, client.side, client.error].filter(Boolean).join(' · ');
       const riotId = escapeDiagnosticText(client.playerName || '');
@@ -653,10 +653,12 @@ export function initLivePage() {
     list.innerHTML = groupLiveClients(clients).map(group => {
       if (group.clients.length === 1) return renderClient(group.clients[0]);
       const reference = group.clients.find(client => client.map || client.server || client.side) || group.clients[0];
-      const context = [valorantLiveMapLabel(reference.map), reference.server, reference.side].filter(Boolean).join(' · ');
+      const context = group.matchId
+        ? [valorantLiveMapLabel(reference.map), reference.server, reference.side].filter(Boolean).join(' · ')
+        : `${reference.partySize || group.clients.length}${reference.partyCapacity ? '/' + reference.partyCapacity : ''} dans le groupe`;
       return `<div class="live-client-group" data-state="${escapeDiagnosticText(reference.state || 'online')}">
         <div class="live-client-group-heading">
-          <strong>Même partie</strong>
+          <strong>${group.matchId ? 'Même partie' : 'Même groupe Riot'}</strong>
           <small>${escapeDiagnosticText(context || 'Match partagé')}</small>
         </div>
         <div class="live-client-group-members">${group.clients.map(client => renderClient(client, true)).join('')}</div>

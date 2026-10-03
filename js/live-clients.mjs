@@ -102,11 +102,19 @@ export function retainRecentLiveClients(previous = {}, incoming = {}, now = Date
 
 const STATE_PRIORITY = { 'in-game': 0, 'agent-select': 1, idle: 2, online: 2, error: 3, 'riot-offline': 3 };
 
+export function liveActivityLabel(client = {}) {
+  if (!['idle', 'online'].includes(client.state)) return '';
+  return ({ menu:'Dans le menu', queue:'En recherche de partie', away:'Absent',
+    'ready-check':'Partie trouvée', loading:'Chargement de la partie' })[client.activity] || '';
+}
+
 export function groupLiveClients(clients = []) {
   const groups = new Map();
   clients.forEach(client => {
     const sharedMatch = client.matchId && ['in-game', 'agent-select'].includes(client.state);
-    const key = sharedMatch ? `match:${client.matchId}` : `client:${client.puuid}`;
+    const sharedParty = !sharedMatch && client.partyId && ['idle', 'online'].includes(client.state)
+      && ['menu', 'queue'].includes(client.activity);
+    const key = sharedMatch ? `match:${client.matchId}` : sharedParty ? `party:${client.partyId}` : `client:${client.puuid}`;
     if (!groups.has(key)) groups.set(key, { key, matchId: sharedMatch ? client.matchId : '', clients: [] });
     groups.get(key).clients.push(client);
   });

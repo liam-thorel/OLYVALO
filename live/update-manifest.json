@@ -1,5 +1,5 @@
 {
-  "version": "4.21.0",
+  "version": "4.21.1",
   "files": [
     "index.js",
     "lol-watcher.js",
@@ -24,6 +24,7 @@
     "maintenance.js",
     "presence-schema.js",
     "riot-identity.js",
+    "riot-activity.js",
     "history-index.js",
     "valorant-mode-utils.js",
     "IDENTITE.bat",
