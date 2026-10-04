@@ -1,107 +1,20 @@
 <!doctype html>
+<!--
+  Ancienne vue compacte de l'overlay, retirée : elle doublonnait la page Live
+  du site, en moins bien. L'overlay affiche désormais le site lui-même.
+
+  Le fichier reste publié parce que les overlays d'avant la 1.2.4 le chargent
+  encore au démarrage (et via leur bouton « Live ») : il les renvoie sur le
+  site, sans attendre qu'ils se mettent à jour.
+-->
 <html lang="fr">
 <head>
 <meta charset="utf-8">
+<title>OLYCITY</title>
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>OLYCITY — Overlay</title>
-<style>
-  /* Vue pensée pour ~420 px de large par-dessus une partie : gros contrastes,
-     peu de texte, rien qui demande de scroller pour l'essentiel. */
-  :root {
-    color-scheme: dark;
-    --bg: #0e1016; --card: #161922; --line: #262a35;
-    --text: #e7e9ee; --dim: #8b94a3; --red: #ff4656; --green: #3fcf6b;
-  }
-  * { box-sizing: border-box; }
-  body {
-    margin: 0; padding: 12px; background: var(--bg); color: var(--text);
-    font: 13px/1.45 system-ui, -apple-system, "Segoe UI", sans-serif;
-  }
-  h2 {
-    margin: 0 0 8px; font-size: 10px; font-weight: 700; letter-spacing: 2px;
-    text-transform: uppercase; color: var(--dim);
-  }
-  section { margin-bottom: 16px; }
-  .card { background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: 12px; }
-  .empty { color: var(--dim); text-align: center; padding: 20px 12px; }
-
-  .game-head { display: flex; align-items: baseline; gap: 8px; margin-bottom: 10px; }
-  .game-map { font-weight: 700; font-size: 15px; }
-  .badge {
-    font-size: 10px; letter-spacing: 1px; text-transform: uppercase;
-    padding: 2px 7px; border-radius: 999px; border: 1px solid var(--line); color: var(--dim);
-  }
-  .badge.live { border-color: var(--red); color: var(--red); }
-
-  .player { display: flex; align-items: center; gap: 10px; padding: 6px 0; }
-  .player + .player { border-top: 1px solid var(--line); }
-  .player img { width: 30px; height: 30px; border-radius: 6px; background: var(--line); flex: none; }
-  .player-name { font-weight: 600; flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .player-meta { color: var(--dim); font-size: 12px; text-align: right; flex: none; }
-
-  .bet { display: flex; align-items: center; gap: 10px; }
-  .bet + .bet { margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--line); }
-  .bet-main { flex: 1; min-width: 0; }
-  .bet-players { font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .bet-odds { color: var(--dim); font-size: 12px; }
-  .bet-timer { color: var(--red); font-variant-numeric: tabular-nums; font-weight: 700; flex: none; }
-
-  /* Un liseré de couleur suffit à distinguer les camps : à cette largeur, une
-     étiquette « Allié / Ennemi » mangerait la place du nom. */
-  .skin-row { display: flex; align-items: center; gap: 8px; padding: 5px 0; }
-  .skin-row + .skin-row { border-top: 1px solid var(--line); }
-  .skin-side { width: 3px; min-height: 16px; align-self: stretch; border-radius: 2px; background: var(--line); flex: none; }
-  .skin-side.ally { background: var(--green); }
-  .skin-side.enemy { background: var(--red); }
-  .skin-name { font-weight: 600; flex: none; max-width: 40%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .skin-list { color: var(--dim); font-size: 12px; flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; text-align: right; }
-
-  footer { color: var(--dim); font-size: 11px; text-align: center; padding-top: 4px; }
-  .offline { color: var(--red); }
-
-  /* La fenêtre descend jusqu'à 320 px de large. En dessous de ~380, « nom à
-     gauche, détail à droite » se chevauche : on empile. */
-  @media (max-width: 380px) {
-    body { padding: 8px; }
-    .card { padding: 10px; }
-    .player { flex-wrap: wrap; }
-    .player-meta { flex-basis: 100%; text-align: left; padding-left: 40px; }
-    .skin-row { flex-wrap: wrap; }
-    .skin-name { max-width: none; }
-    .skin-list { flex-basis: 100%; text-align: left; padding-left: 11px; }
-    .bet { flex-wrap: wrap; }
-    .bet-timer { flex-basis: 100%; text-align: right; }
-  }
-
-  /* Fenêtre très basse : on rend la page défilable plutôt que de tronquer, et
-     on récupère de la hauteur sur les marges. */
-  @media (max-height: 420px) {
-    body { padding: 8px; }
-    section { margin-bottom: 10px; }
-    h2 { margin-bottom: 5px; }
-    .player { padding: 4px 0; }
-    .skin-row { padding: 3px 0; }
-  }
-</style>
+<meta name="robots" content="noindex">
+<script>location.replace('./');</script>
+<style>html, body { margin: 0; background: #0a0c10; }</style>
 </head>
-<body>
-  <section id="game-section">
-    <h2>Partie en cours</h2>
-    <div id="game" class="card"><div class="empty">Connexion au Live…</div></div>
-  </section>
-
-  <section id="skins-section" hidden>
-    <h2>Skins de la partie</h2>
-    <div id="skins" class="card"></div>
-  </section>
-
-  <section id="bets-section" hidden>
-    <h2>Paris ouverts</h2>
-    <div id="bets" class="card"></div>
-  </section>
-
-  <footer id="status"></footer>
-
-  <script type="module" src="./js/overlay-view.mjs"></script>
-</body>
+<body></body>
 </html>

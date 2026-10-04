@@ -11,14 +11,14 @@ const SITE_PATH_PREFIX = '/OLYVALO';
 // L'adresse propre du site. Contrairement à github.io, elle n'héberge que
 // OLYCITY : toute l'origine est sûre, quel que soit le chemin.
 //
-// Le sous-domaine seulement, pas olycity.fr ni www : ils ne servent pas le
-// site, et l'overlay — toujours au premier plan, lancé avec Windows — ne doit
-// rien afficher d'autre.
+// Avec olycity.fr, le site principal : le logo du tracker y mène. Pas www,
+// ni aucun autre sous-domaine — l'overlay, toujours au premier plan et lancé
+// avec Windows, n'affiche que ce qui appartient à OLYCITY.
 //
 // Acceptée AVANT que le domaine ne soit branché : dès qu'il l'est, GitHub
 // redirige l'ancienne adresse vers celle-ci, et un overlay qui ne la
 // connaîtrait pas renverrait chaque lien du site vers le navigateur.
-const OWN_ORIGINS = new Set(['https://tracker.olycity.fr']);
+const OWN_ORIGINS = new Set(['https://tracker.olycity.fr', 'https://olycity.fr']);
 
 function parse(url) {
   try {

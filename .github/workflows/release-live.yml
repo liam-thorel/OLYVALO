@@ -24,6 +24,16 @@ on:
         description: 'Réécrire les notes de la release depuis la branche par défaut'
         type: boolean
         default: false
+  # Appelé par auto-release.yml quand la version du script change sur main :
+  # plus de tag à poser à la main. Le tag est créé par l'appelant, avant.
+  workflow_call:
+    inputs:
+      tag:
+        type: string
+        required: true
+      force_notes:
+        type: boolean
+        default: false
 
 permissions:
   contents: write

@@ -19,6 +19,18 @@ on:
       tag:
         description: 'Release à laquelle joindre l’exécutable (ex. v4.17.11)'
         required: true
+  # Appelé par auto-release.yml quand la version de l'overlay change sur main :
+  # plus de lancement manuel. `ref` est le commit exact à compiler — sans lui,
+  # on compilerait la tête de main, qui a pu avancer entre-temps.
+  workflow_call:
+    inputs:
+      tag:
+        type: string
+        required: true
+      ref:
+        type: string
+        required: false
+        default: ''
 
 permissions:
   contents: write
@@ -37,7 +49,7 @@ jobs:
       # branche par défaut : le tag visé sert alors uniquement de destination.
       - uses: actions/checkout@v4
         with:
-          ref: ${{ github.event_name == 'workflow_dispatch' && github.ref || github.ref_name }}
+          ref: ${{ inputs.ref || (github.event_name == 'workflow_dispatch' && github.ref || github.ref_name) }}
 
       # Les tags antérieurs à l'introduction de l'overlay n'ont pas ce dossier.
       # On sort proprement plutôt que de faire échouer une release de script.

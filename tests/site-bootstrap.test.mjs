@@ -91,7 +91,9 @@ test('le bandeau live ne prétend pas afficher un score indisponible en direct',
 test('OLYCITY is the product brand while games remain contextual modes', () => {
   assert.match(page, /<title>OLYCITY<\/title>/);
   assert.match(page, /name="application-name" content="OLYCITY"/);
-  assert.match(page, /class="brand"[^>]+aria-label="Retour à l’accueil"/);
+  // La roue mène au site principal ; l'accueil du tracker garde son bouton.
+  assert.match(page, /<a class="brand" href="https:\/\/olycity\.fr" aria-label="OLYCITY — site principal"/);
+  assert.match(page, /data-page="home" onclick="window\.OLYCITY\?\.nav\('home'\)"/);
   assert.doesNotMatch(page, /class="brand-title"/);
   assert.doesNotMatch(page, /id="brand-subtitle"|id="hero-subtitle"/);
   assert.doesNotMatch(gameMode, /setText\('(?:brand|hero)-subtitle'/);

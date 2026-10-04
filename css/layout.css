@@ -20,7 +20,7 @@
 
 .brand{
   display:flex; align-items:center; justify-content:center; cursor:pointer; flex-shrink:0;
-  padding:0; border:0; background:transparent; color:inherit;
+  padding:0; border:0; background:transparent; color:inherit; text-decoration:none;
 }
 .brand-mark{
   width:38px; height:38px;

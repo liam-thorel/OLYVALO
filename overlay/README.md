@@ -64,12 +64,13 @@ fichier se trouve dans `%APPDATA%\OLYCITY Overlay\overlay.log`.
 | **Ctrl + Shift + F8** | L'affiche ou le masque |
 | Clic sur l'icône | Idem |
 | Fermeture du jeu | L'overlay disparaît |
-| Barre du haut | Déplacer la fenêtre, régler l'opacité, changer de vue |
+| Barre du haut | Déplacer la fenêtre, régler l'opacité, masquer |
 
-L'overlay ouvre une **vue compacte** (`overlay.html`) pensée pour une fenêtre
-étroite au-dessus d'une partie : la game en cours, les joueurs présents et les
-paris ouverts, sans la coquille du site. Le bouton **Site** bascule vers le site
-complet quand on veut plus que l'essentiel, **Live** ramène à la vue compacte.
+L'overlay affiche **le site lui-même** (tracker.olycity.fr), dans sa mise en
+page étroite. L'ancienne vue compacte, qui ne montrait que la partie en cours,
+a été retirée : elle doublonnait la page Live du site. `overlay.html` reste
+publié, mais ne fait plus que rediriger vers le site, pour les overlays
+installés avant la 1.2.4.
 
 Une fenêtre fermée à la main ne revient pas toute seule : elle attend la partie
 suivante. Un choix explicite n'est jamais écrasé par l'automatisme.
@@ -115,13 +116,14 @@ npm run build      # produit dist/OLYCITY-Overlay.exe (Windows uniquement)
 ```
 
 L'exécutable publié est construit par `.github/workflows/release-overlay.yml`
-sur un runner `windows-latest`. Il a son propre cycle : le mêler au workflow du
-script Live obligerait à bumper la version du Live — et donc à pousser une mise
-à jour sur tous les postes — juste pour republier l'overlay.
+sur un runner `windows-latest`. **Rien à lancer à la main** : quand la version
+de `package.json` change sur `main`, `.github/workflows/auto-release.yml` le
+construit et le joint à la dernière release, et les overlays installés le
+récupèrent. Il a son propre cycle : publier l'overlay ne crée pas de version du
+script, donc ne pousse pas de mise à jour sur tous les postes.
 
-Déclenchement manuel : le workflow compile la **branche courante** et joint
-l'exécutable à la **release choisie**. C'est ce qui permet de l'attacher à une
-release publiée avant que ce dossier n'existe.
+Le déclenchement manuel reste possible (Actions → « Package de l'overlay ») :
+il compile la branche courante et joint l'exécutable à la release choisie.
 
 La logique testable — détection du jeu, règles d'affichage, validation des
 réglages, politique de navigation — vit dans `lib/` et est couverte par
