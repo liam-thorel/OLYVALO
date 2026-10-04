@@ -18,7 +18,7 @@
  */
 
 const FIREBASE_URL = 'https://realtime-database-5bb9f-default-rtdb.europe-west1.firebasedatabase.app';
-const ROSTER_URL = 'https://liam-thorel.github.io/OLYVALO/data/roster.json';
+const ROSTER_URL = 'https://tracker.olycity.fr/data/roster.json';
 const DORMANT_DAYS = 120;
 
 const WRITE = process.argv.includes('--write');

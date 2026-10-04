@@ -71,7 +71,7 @@ async function sendOne(env, entry, message, fetchImpl = fetch) {
     data:JSON.stringify(message),
     options:{ ttl:300, urgency:'normal' },
   }, entry.subscription, {
-    subject:env.VAPID_SUBJECT || 'https://liam-thorel.github.io/OLYVALO/',
+    subject:env.VAPID_SUBJECT || 'https://tracker.olycity.fr/',
     publicKey:env.VAPID_PUBLIC_KEY,
     privateKey:env.VAPID_PRIVATE_KEY,
   });

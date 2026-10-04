@@ -1,9 +1,9 @@
 require('dotenv').config();
 
 const FIREBASE_URL = 'https://realtime-database-5bb9f-default-rtdb.europe-west1.firebasedatabase.app';
-const ROSTER_URL = process.env.ROSTER_URL || 'https://liam-thorel.github.io/OLYVALO/data/roster.json';
+const ROSTER_URL = process.env.ROSTER_URL || 'https://tracker.olycity.fr/data/roster.json';
 // Table agent -> rôle, partagée avec les pages Comps du site.
-const ROLES_URL = process.env.ROLES_URL || 'https://liam-thorel.github.io/OLYVALO/data/roles.json';
+const ROLES_URL = process.env.ROLES_URL || 'https://tracker.olycity.fr/data/roles.json';
 
 const DISCORD_TOKEN = process.env.DISCORD_TOKEN;
 const DISCORD_CLIENT_ID = process.env.DISCORD_CLIENT_ID;

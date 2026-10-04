@@ -15,8 +15,12 @@ const { redirectTarget } = require('../live/http-redirect.js');
 test('overlay : le sous-domaine du site est accepté, et lui seul', () => {
   assert.equal(isAllowedUrl('https://tracker.olycity.fr/overlay.html'), true);
   assert.equal(isAllowedUrl('https://tracker.olycity.fr/#live'), true);
-  // L'ancienne adresse reste valable : c'est elle qui redirige.
+  // L'overlay charge directement le domaine, sans passer par la redirection.
+  assert.equal(siteUrl('overlay.html'), 'https://tracker.olycity.fr/overlay.html');
+  assert.equal(siteUrl('#live'), 'https://tracker.olycity.fr/#live');
   assert.equal(isAllowedUrl(siteUrl('overlay.html')), true);
+  // L'ancienne adresse reste valable pour les liens qui y pointent encore.
+  assert.equal(isAllowedUrl('https://liam-thorel.github.io/OLYVALO/overlay.html'), true);
 
   // Le domaine nu et www ne servent pas le site : l'overlay, toujours au
   // premier plan, n'a rien à y afficher.
@@ -77,4 +81,13 @@ test('Pages : le fichier CNAME désigne le sous-domaine', () => {
   // S'il désigne une autre adresse que celle des réglages, un déploiement
   // depuis la branche remettrait l'ancienne.
   assert.equal(readFileSync(new URL('../CNAME', import.meta.url), 'utf8').trim(), 'tracker.olycity.fr');
+});
+
+test('les liens publiés pointent sur la nouvelle adresse', () => {
+  const read = path => readFileSync(new URL(path, import.meta.url), 'utf8');
+  // Les liens du bot sont postés dans Discord et y restent : une adresse qui
+  // ne fait que rediriger y vieillirait mal.
+  assert.match(read('../discord-bot/index.js'), /const SITE_URL = 'https:\/\/tracker\.olycity\.fr';/);
+  assert.match(read('../discord-bot/config.js'), /'https:\/\/tracker\.olycity\.fr\/data\/roster\.json'/);
+  assert.match(read('../README.md'), /href="https:\/\/tracker\.olycity\.fr\/"/);
 });

@@ -10,7 +10,7 @@
 </p>
 
 <p align="center">
-  <a href="https://liam-thorel.github.io/OLYVALO/"><strong>Ouvrir OLYCITY</strong></a>
+  <a href="https://tracker.olycity.fr/"><strong>Ouvrir OLYCITY</strong></a>
   ·
   <a href="https://github.com/liam-thorel/OLYVALO/releases/latest"><strong>Télécharger OLYCITY Live</strong></a>
 </p>
