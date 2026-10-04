@@ -1,5 +1,5 @@
 {
-  "version": "4.21.1",
+  "version": "4.21.2",
   "files": [
     "index.js",
     "lol-watcher.js",
@@ -20,6 +20,7 @@
     "package.json",
     "identity.js",
     "ask-identity.js",
+    "http-redirect.js",
     "account-binding.js",
     "maintenance.js",
     "presence-schema.js",

@@ -17,13 +17,22 @@ const {
   readIdentity, writeIdentity, slugifyMemberName,
 } = require('./identity.js');
 
+const { redirectTarget, MAX_REDIRECTS } = require('./http-redirect.js');
+
 const FIREBASE_URL = 'https://realtime-database-5bb9f-default-rtdb.europe-west1.firebasedatabase.app';
 const ROSTER_URL = 'https://liam-thorel.github.io/OLYVALO/data/roster.json';
 const INSTALL_DIR = __dirname;
 
-function getJson(url) {
+function getJson(url, redirectsLeft = MAX_REDIRECTS) {
   return new Promise(resolve => {
     const request = https.get(url, { timeout: 8000 }, response => {
+      // Le site a déménagé sur olycity.fr : l'ancienne adresse répond 301.
+      const next = redirectTarget(url, response.statusCode, response.headers.location);
+      if (next && redirectsLeft > 0) {
+        response.resume();
+        resolve(getJson(next, redirectsLeft - 1));
+        return;
+      }
       if (response.statusCode !== 200) { response.resume(); resolve(null); return; }
       let body = '';
       response.on('data', chunk => { body += chunk; });
