@@ -420,6 +420,9 @@ function drawWheel(canvas, size, speed, alpha) {
 
     ctx.restore();
     ctx.restore();
+    // Lu par hub-transition.mjs : la roue qui s'envole vers olycity.fr part
+    // de l'angle exact où celle-ci se trouve.
+    canvas.wheelAngle = angle;
     angle += speed;
     raf = requestAnimationFrame(draw);
   };
