@@ -11,16 +11,16 @@ const json = (body, status = 200, headers = {}) => new Response(JSON.stringify(b
 /**
  * Origines autorisées, séparées par des virgules dans SITE_ORIGIN.
  *
- * Une seule origine ne suffisait plus : pendant le passage à olycity.fr, le
+ * Une seule origine ne suffisait plus : pendant le passage à tracker.olycity.fr, le
  * site répond aux deux adresses (et un onglet resté ouvert sur l'ancienne
  * continue d'appeler le worker). La première est celle renvoyée par défaut.
  */
 export function siteOrigins(env) {
-  const list = String(env?.SITE_ORIGIN || 'https://olycity.fr,https://liam-thorel.github.io')
+  const list = String(env?.SITE_ORIGIN || 'https://tracker.olycity.fr,https://liam-thorel.github.io')
     .split(',')
     .map(entry => entry.trim().replace(/\/$/, ''))
     .filter(Boolean);
-  return list.length ? list : ['https://olycity.fr'];
+  return list.length ? list : ['https://tracker.olycity.fr'];
 }
 
 function corsHeaders(request, env) {
