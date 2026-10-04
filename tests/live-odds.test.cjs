@@ -1,5 +1,5 @@
 const assert = require('node:assert/strict');
-const { oddsFromScore, isHalfTime, ownScore, raceProbability, TARGET_ROUNDS } = require('../discord-bot/live-odds.js');
+const { oddsFromScore, isHalfTime, ownScore, raceProbability, TARGET_ROUNDS, SCORE_WEIGHT } = require('../discord-bot/live-odds.js');
 
 // Le moteur d'avant-match ne peut s'appuyer que sur le rang et le winrate :
 // Riot masque l'adversaire jusqu'à la fin de la partie. Le score, lui, est un
@@ -27,9 +27,32 @@ assert.equal(oddsFromScore(6, 6).probability, 0.5, 'à égalité, 50 %');
 assert.equal(oddsFromScore(6, 6).oddsWin, 2);
 assert.equal(oddsFromScore(6, 6).oddsLose, 2);
 
-// 12–11 : il me faut 1 manche, 2 à l'adversaire.
-assert.equal(oddsFromScore(12, 11).probability, 0.75);
-assert.equal(oddsFromScore(12, 11).oddsWin, 1.33);
+// 12–11 : il me faut 1 manche, 2 à l'adversaire. La course exacte donne 75 % ;
+// le score ne comptant que pour moitié, on retient 62,5 %.
+assert.equal(SCORE_WEIGHT, 0.5);
+assert.equal(oddsFromScore(12, 11).probability, 0.625);
+assert.equal(oddsFromScore(12, 11).oddsWin, 1.6);
+// Sans amortissement, on retrouve la course exacte.
+assert.equal(oddsFromScore(12, 11, { weight: 1 }).probability, 0.75);
+
+// ─── Le cas signalé : des cotes de mi-temps bien trop généreuses ─────────────
+// À 8-4, l'équipe menée était cotée 7,49 ; dès 9-3, le plafond de 20.
+assert.equal(oddsFromScore(4, 8).oddsWin, 3.16, '8-4 : 3,16 pour l’équipe menée, plus 7,49');
+assert.equal(oddsFromScore(8, 4).oddsWin, 1.46);
+assert.equal(oddsFromScore(5, 7).oddsWin, 2.53, '7-5 : un écart serré reste serré');
+assert.equal(oddsFromScore(6, 6).oddsWin, 2, 'l’égalité ne bouge pas');
+// Même une mi-temps à sens unique ne paie jamais plus de 4.
+for (let theirs = 6; theirs <= 12; theirs++) {
+  const mine = 12 - theirs;
+  assert.ok(oddsFromScore(mine, theirs).oddsWin <= 4, `${mine}-${theirs} : ${oddsFromScore(mine, theirs).oddsWin}`);
+}
+// L'ordre reste respecté : plus l'écart est grand, plus la cote de l'équipe menée monte.
+let previous = 0;
+for (const [mine, theirs] of [[6, 6], [5, 7], [4, 8], [3, 9], [2, 10], [1, 11], [0, 12]]) {
+  const cote = oddsFromScore(mine, theirs).oddsWin;
+  assert.ok(cote >= previous, `${mine}-${theirs} ne doit pas payer moins que l’écart précédent`);
+  previous = cote;
+}
 
 // Mené, la cote de victoire monte ; menant, elle descend. C'est tout l'intérêt.
 assert.ok(oddsFromScore(3, 9).oddsWin > oddsFromScore(6, 6).oddsWin);
@@ -49,7 +72,7 @@ assert.equal(oddsFromScore('abc', 3), null);
 assert.equal(oddsFromScore(undefined, undefined), null);
 
 assert.match(oddsFromScore(9, 3).explanation, /9–3/);
-assert.match(oddsFromScore(9, 3).explanation, /95%/);
+assert.match(oddsFromScore(9, 3).explanation, /73%/, 'la probabilité affichée est celle qui fait la cote');
 
 // ─── Détection de la mi-temps ────────────────────────────────────────────────
 // Le score est republié à chaque manche : exiger l'égalité exacte évite de

@@ -16,7 +16,7 @@ import { statsKey, readStats, writeStats, selectedAccount, toggleSelection, need
   firebasePath, publishable, remoteStats, mergeStores } from './account-stats.mjs?v=20260922-partage';
 import { setStoredKey, storedKey, forgetCachedKey } from './henrik-key.mjs';
 import { rosterHTML, guestCardHTML, mapSectionHTML, agentPageHTML, navMapsHTML, compHTML, globalNotesHTML } from './render.js?v=20260920-puuid-accounts';
-import { initTheme, initTilt, initParallax, initSearch, initKeyboard, initHeroParticles, initWheelLogos, initLivePage, initHistoryPage } from './interactions.js?v=20261003-party-count';
+import { initTheme, initTilt, initParallax, initSearch, initKeyboard, initHeroParticles, initWheelLogos, initLivePage, initHistoryPage } from './interactions.js?v=20261004-roue';
 import { storage } from './storage.js';
 import { avatarLayersHTML } from './avatars.mjs';
 import { initAdminPage } from './admin.mjs?v=20261003-party-count';
@@ -33,6 +33,7 @@ import { initHomeGroup } from './home-group.mjs?v=20260930-consistent-live';
 import { initPwaInstall } from './pwa-install.mjs?v=20260901-deploy-updates';
 import { initSiteTelemetry } from './site-telemetry.mjs?v=20260825-site-health';
 import { liveDataStore, liveTimestamp } from './live-data-store.mjs?v=20260930-consistent-live';
+import { initHubTransition } from './hub-transition.mjs?v=20261004-roue';
 export { state };
 
 initSiteTelemetry();
@@ -959,6 +960,7 @@ async function boot() {
 
   initHeroParticles();
   initWheelLogos();
+  initHubTransition();
   initTheme();
   initGameMode();
   initParallax();

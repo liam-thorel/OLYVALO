@@ -22,6 +22,19 @@ const HALF_TIME_ROUNDS = 12;
 const MIN_PROBABILITY = 0.05;
 const MAX_PROBABILITY = 0.95;
 
+/**
+ * Poids du score dans la probabilité : 0 l'ignorerait (toujours 50/50), 1 le
+ * prendrait pour argent comptant.
+ *
+ * À 1, le modèle « chaque manche est un pile ou face » donnait 87 % à l'équipe
+ * qui mène 8-4, soit 7,49 de cote pour l'autre, et 20 (le plafond) dès 9-3.
+ * Bien trop sûr de lui : au changement de camp l'économie repart de zéro, et
+ * les remontées sont fréquentes en classé. À 0,5, on fait la moitié du chemin
+ * entre 50/50 et le calcul exact : 8-4 donne 3,16, et la cote de l'équipe
+ * menée ne dépasse jamais 4.
+ */
+const SCORE_WEIGHT = 0.5;
+
 function clamp(value, min, max) {
   return Math.max(min, Math.min(max, value));
 }
@@ -62,13 +75,14 @@ function raceProbability(need, theirNeed) {
  * Retourne null si le score est inexploitable : mieux vaut ne pas ouvrir de
  * pari que d'en ouvrir un sur une cote inventée.
  */
-function oddsFromScore(mine, theirs, { target = TARGET_ROUNDS } = {}) {
+function oddsFromScore(mine, theirs, { target = TARGET_ROUNDS, weight = SCORE_WEIGHT } = {}) {
   const won = roundsWon(mine);
   const lost = roundsWon(theirs);
   if (won === null || lost === null) return null;
   if (won >= target || lost >= target) return null; // partie déjà pliée
 
-  const probability = clamp(raceProbability(target - won, target - lost), MIN_PROBABILITY, MAX_PROBABILITY);
+  const race = raceProbability(target - won, target - lost);
+  const probability = clamp(0.5 + (race - 0.5) * weight, MIN_PROBABILITY, MAX_PROBABILITY);
   return {
     probability,
     // Pas de marge : la cote est l'inverse exact de la probabilité, comme en
@@ -103,5 +117,5 @@ function ownScore(score, selfTeam) {
 
 module.exports = {
   oddsFromScore, isHalfTime, ownScore, raceProbability,
-  TARGET_ROUNDS, HALF_TIME_ROUNDS,
+  TARGET_ROUNDS, HALF_TIME_ROUNDS, SCORE_WEIGHT,
 };
