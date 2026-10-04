@@ -1,8 +1,7 @@
 /**
  * Courbes de progression — rendu.
  *
- * Séparé de la page pour la même raison que overlay-view.mjs l'est de
- * l'overlay : le balisage se teste alors sans navigateur, et l'aperçu de
+ * Séparé de la page pour que le balisage se teste sans navigateur, et que l'aperçu de
  * conception affiche EXACTEMENT ce que verra l'utilisateur plutôt qu'une
  * imitation qui dérivera.
  *

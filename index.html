@@ -17,7 +17,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Tomorrow:wght@400;500;600;700&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="./css/tokens.css?v=20260824-page-shell">
-  <link rel="stylesheet" href="./css/layout.css?v=20261003-party-count">
+  <link rel="stylesheet" href="./css/layout.css?v=20261004-hub-link">
   <link rel="stylesheet" href="./css/components.css?v=20260920-puuid-accounts">
   <link rel="stylesheet" href="./css/home.css?v=20260825-human-banner">
   <link rel="stylesheet" href="./css/agent-page.css?v=20260720-avatars">
@@ -142,11 +142,14 @@
   <!-- TOP BAR -->
   <nav class="topbar">
     <div class="topbar-row">
-      <button class="brand" type="button" onclick="window.OLYCITY?.nav('home')" aria-label="Retour à l’accueil" title="Accueil">
+      <!-- La roue mène au site principal OLYCITY. L'accueil du tracker reste
+           accessible par « Accueil », juste à côté. Un vrai lien plutôt qu'un
+           bouton : clic molette et « ouvrir dans un onglet » fonctionnent. -->
+      <a class="brand" href="https://olycity.fr" aria-label="OLYCITY — site principal" title="olycity.fr">
         <div class="brand-mark brand-mark-wheel" style="width:36px;height:40px;padding:0;background:transparent;border:none">
           <canvas id="logo-canvas-topbar" width="36" height="40"></canvas>
         </div>
-      </button>
+      </a>
 
       <!-- PAGE NAV -->
       <div class="page-nav" id="page-nav">

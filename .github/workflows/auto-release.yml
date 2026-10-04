@@ -1,0 +1,127 @@
+name: Publication automatique
+
+# Publier demandait deux gestes manuels, faciles à oublier ou à rater :
+#   - poser un tag vX.Y.Z pour sortir une version du script ;
+#   - lancer « Package de l'overlay » à la main pour republier l'overlay seul.
+#
+# Désormais la VERSION fait foi. Au merge sur main :
+#   - si la version de live/package.json n'a pas encore de release, le tag est
+#     créé sur le commit mergé et la release publiée (script + overlay) ;
+#   - sinon, si la version d'overlay/package.json diffère de celle annoncée par
+#     la dernière release, l'overlay est reconstruit et joint à cette release,
+#     sans créer de version du script — donc sans mise à jour forcée des postes.
+#
+# Poser un tag à la main reste possible : release-live.yml et
+# release-overlay.yml réagissent toujours aux tags.
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'live/**'
+      - 'overlay/**'
+      - '.github/workflows/auto-release.yml'
+      - '.github/workflows/release-live.yml'
+      - '.github/workflows/release-overlay.yml'
+  # Pour relancer après un échec, sans rien modifier.
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+# Deux merges rapprochés ne doivent pas publier deux fois la même version.
+concurrency:
+  group: auto-release
+  cancel-in-progress: false
+
+jobs:
+  # Une version cassée ne doit pas partir sur les postes.
+  tests:
+    uses: ./.github/workflows/tests.yml
+
+  plan:
+    needs: tests
+    runs-on: ubuntu-latest
+    outputs:
+      live_tag: ${{ steps.plan.outputs.live_tag }}
+      overlay_tag: ${{ steps.plan.outputs.overlay_tag }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0   # les tags, pour comparer avec la dernière version
+
+      - name: Décider quoi publier
+        id: plan
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          repo='${{ github.repository }}'
+          live_version=$(jq -r .version live/package.json)
+          live_tag="v$live_version"
+          overlay_version=$(jq -r .version overlay/package.json)
+          new_live=''
+
+          # ── Script ─────────────────────────────────────────────────────────
+          # La cohérence des quatre emplacements de version (package.json,
+          # manifeste, SCRIPT_VERSION, notes) est déjà vérifiée par les tests,
+          # qui tournent juste avant.
+          if gh release view "$live_tag" --repo "$repo" > /dev/null 2>&1; then
+            echo "Script : $live_tag déjà publiée, rien à faire."
+            # Du code du script modifié sans nouvelle version n'atteint jamais
+            # les postes : ça ne se voit qu'en ne voyant pas le correctif
+            # arriver. On le signale sur le run.
+            if ! git diff --quiet "$live_tag" HEAD -- live/ ':(exclude)live/RELEASE-NOTES.md'; then
+              echo "::warning::live/ a changé depuis $live_tag sans nouvelle version : ces changements n'atteindront pas les postes. Augmente la version pour les publier."
+            fi
+          else
+            new_live="$live_tag"
+            if git ls-remote --exit-code --tags origin "refs/tags/$live_tag" > /dev/null; then
+              # Tag présent mais release absente : une publication précédente a
+              # échoué en cours de route. On reprend, sans recréer le tag.
+              echo "::notice::Le tag $live_tag existe sans release : nouvelle tentative de publication."
+            else
+              # Un tag poussé avec le jeton du workflow ne déclenche pas les
+              # workflows « on: push: tags » : pas de double publication, c'est
+              # ce workflow qui appelle la suite.
+              git tag "$live_tag" "$GITHUB_SHA"
+              git push origin "refs/tags/$live_tag"
+              echo "::notice::Nouvelle version du script : $live_tag"
+            fi
+          fi
+
+          # ── Overlay ────────────────────────────────────────────────────────
+          # Les overlays installés lisent latest.yml sur la DERNIÈRE release :
+          # c'est là que l'exécutable doit se trouver.
+          if [ -n "$new_live" ]; then
+            overlay_tag="$new_live"   # chaque release porte aussi l'overlay
+          else
+            latest=$(gh release view --repo "$repo" --json tagName --jq .tagName)
+            published=$( (gh release download "$latest" --repo "$repo" -p latest.yml -O - 2>/dev/null || true) \
+              | sed -n 's/^version: *//p' | tr -d '\r' | head -1)
+            if [ "$published" = "$overlay_version" ]; then
+              overlay_tag=''
+              echo "Overlay : $overlay_version déjà sur $latest, rien à faire."
+            else
+              overlay_tag="$latest"
+              echo "::notice::Overlay ${published:-absent} → $overlay_version, joint à $latest"
+            fi
+          fi
+
+          echo "live_tag=$new_live" >> "$GITHUB_OUTPUT"
+          echo "overlay_tag=$overlay_tag" >> "$GITHUB_OUTPUT"
+
+  live:
+    needs: plan
+    if: needs.plan.outputs.live_tag != ''
+    uses: ./.github/workflows/release-live.yml
+    with:
+      tag: ${{ needs.plan.outputs.live_tag }}
+
+  overlay:
+    needs: [plan, live]
+    # `live` est sauté quand seul l'overlay change : ce n'est pas un échec.
+    if: ${{ !cancelled() && needs.plan.outputs.overlay_tag != '' && needs.live.result != 'failure' }}
+    uses: ./.github/workflows/release-overlay.yml
+    with:
+      tag: ${{ needs.plan.outputs.overlay_tag }}
+      ref: ${{ github.sha }}

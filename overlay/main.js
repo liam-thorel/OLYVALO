@@ -44,7 +44,6 @@ let settings = sanitize(null);
 let state = createOverlayState();
 let lastRunning = { valorant: false, lol: false };
 // Jeu actuellement affiché par la vue compacte, via le fragment d'URL.
-let shownGame = '';
 let firstRun = false;
 let updater = null;
 let lastUpdateCheckAt = 0;
@@ -139,7 +138,7 @@ function createWindow() {
   siteView = new WebContentsView({
     webPreferences: { contextIsolation: true, nodeIntegration: false, sandbox: true },
   });
-  siteView.webContents.loadURL(siteUrl('overlay.html'));
+  siteView.webContents.loadURL(siteUrl());
   window_.contentView.addChildView(siteView);
 
   const resizeChrome = () => {
@@ -265,7 +264,6 @@ async function pollGames() {
     apply(reduce(state, 'game-closed'));
   }
 
-  showGame(running);
 
   if (anyGameRunning(running) && state.visible) assertOnTop();
 
@@ -273,27 +271,6 @@ async function pollGames() {
 
   pollTimer = setTimeout(pollGames, nextPollDelay(running));
   pollTimer.unref?.();
-}
-
-/**
- * Aligne la vue sur le jeu lancé. Sans ça, une session Valorant encore
- * fraîche de la partie précédente s'affiche par-dessus la game LoL en cours :
- * la vue prend la plus récente des deux flux confondus.
- *
- * Valorant l'emporte si les deux tournent — on ne joue pas aux deux à la fois,
- * mais le client LoL reste souvent ouvert en fond.
- */
-function showGame(running) {
-  const next = running.valorant ? 'valorant' : running.lol ? 'lol' : '';
-  if (next === shownGame) return;
-  shownGame = next;
-  log('[vue] jeu affiché :', next || 'aucun');
-  const target = next ? `#${next}` : '';
-  siteView?.webContents
-    .executeJavaScript(`location.hash = ${JSON.stringify(target)}`)
-    // La page peut ne pas être chargée (démarrage, réseau coupé) : on
-    // retombe sur un chargement complet, qui portera le bon fragment.
-    .catch(() => siteView?.webContents.loadURL(siteUrl(`overlay.html${target}`)));
 }
 
 function maybeCheckForUpdate(gameRunning) {
@@ -607,8 +584,6 @@ if (!app.requestSingleInstanceLock()) {
   });
 
   ipcMain.on('overlay:hide', () => apply(reduce(state, 'hide')));
-  ipcMain.on('overlay:home', () => siteView?.webContents.loadURL(siteUrl('overlay.html')));
-  ipcMain.on('overlay:full-site', () => siteView?.webContents.loadURL(siteUrl('#live')));
   ipcMain.on('overlay:opacity', (_event, value) => {
     settings.opacity = sanitize({ ...settings, opacity: value }).opacity;
     window_?.setOpacity(settings.opacity);

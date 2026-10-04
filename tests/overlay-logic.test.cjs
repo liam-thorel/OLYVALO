@@ -275,20 +275,25 @@ assert.ok(minWidth >= 280, 'en dessous, la barre de titre perd ses commandes');
 assert.ok(minHeight >= 200, 'une fenêtre trop basse n’affiche plus rien d’utile');
 assert.ok(defaultWidth >= minWidth, 'le défaut ne peut pas être sous le minimum');
 
-// La feuille de style doit couvrir cette largeur minimale, sinon les lignes
-// « nom à gauche, détail à droite » se chevauchent.
-const overlayPage = readFileSync(path.join(__dirname, '..', 'overlay.html'), 'utf8');
-const breakpoints = [...overlayPage.matchAll(/@media \(max-width:\s*(\d+)px\)/g)]
-  .map(match => Number(match[1]));
-assert.ok(breakpoints.length > 0, 'aucun point de rupture : la vue ne s’adapte pas');
+// L'overlay affiche le site lui-même : c'est la feuille responsive du site qui
+// doit couvrir la fenêtre la plus étroite, sinon la mise en page de bureau
+// déborde d'une fenêtre de 320 px.
+const siteCss = readFileSync(path.join(__dirname, '..', 'css', 'responsive.css'), 'utf8');
+const breakpoints = [...siteCss.matchAll(/@media[^{]*\(max-width:\s*(\d+)px\)/g)].map(match => Number(match[1]));
+assert.ok(breakpoints.length > 0, 'aucun point de rupture : le site ne s’adapte pas');
 assert.ok(Math.max(...breakpoints) >= minWidth,
   `le point de rupture (${Math.max(...breakpoints)}px) doit couvrir la largeur minimale (${minWidth}px)`);
 
-// Aucune largeur fixe ne doit dépasser la fenêtre la plus étroite. On ignore
-// les valeurs des media queries, qui sont des seuils et non des tailles.
-const withoutMedia = overlayPage.replace(/@media[^{]*\{/g, '{');
-const fixedWidths = [...withoutMedia.matchAll(/(?:min-)?width:\s*(\d+)px/g)].map(m => Number(m[1]));
-fixedWidths.forEach(width => assert.ok(width < minWidth,
-  `largeur fixe de ${width}px, supérieure à la fenêtre minimale de ${minWidth}px`));
+// L'ancienne vue compacte ne fait plus que renvoyer vers le site : les
+// overlays d'avant la 1.2.4 la chargent encore au démarrage.
+const overlayPage = readFileSync(path.join(__dirname, '..', 'overlay.html'), 'utf8');
+assert.match(overlayPage, /location\.replace\('\.\/'\)/, 'overlay.html redirige vers le site');
+assert.doesNotMatch(overlayPage, /<script[^>]+src=/, 'plus aucun script de l’ancienne vue');
+
+// La nouvelle version charge directement le site, sans passer par overlay.html.
+const mainSource = readFileSync(path.join(__dirname, '..', 'overlay', 'main.js'), 'utf8');
+assert.doesNotMatch(mainSource, /overlay\.html/, 'plus aucune référence à la vue compacte');
+assert.doesNotMatch(mainSource, /location\.hash = /,
+  'le fragment #valorant/#lol pilotait la vue compacte ; sur le site, il n’a pas de sens');
 
 console.log('overlay-logic: détection du jeu, visibilité, réglages et navigation validés');

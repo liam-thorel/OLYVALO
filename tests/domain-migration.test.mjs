@@ -12,19 +12,20 @@ const { redirectTarget } = require('../live/http-redirect.js');
 // Passage du site à tracker.olycity.fr. Pendant la transition, l'ancienne adresse
 // redirige vers la nouvelle : tout ce qui ne connaît qu'une des deux casse.
 
-test('overlay : le sous-domaine du site est accepté, et lui seul', () => {
+test('overlay : le tracker et le site principal sont acceptés, et eux seuls', () => {
   assert.equal(isAllowedUrl('https://tracker.olycity.fr/overlay.html'), true);
   assert.equal(isAllowedUrl('https://tracker.olycity.fr/#live'), true);
   // L'overlay charge directement le domaine, sans passer par la redirection.
-  assert.equal(siteUrl('overlay.html'), 'https://tracker.olycity.fr/overlay.html');
+  assert.equal(siteUrl(), 'https://tracker.olycity.fr/');
   assert.equal(siteUrl('#live'), 'https://tracker.olycity.fr/#live');
   assert.equal(isAllowedUrl(siteUrl('overlay.html')), true);
   // L'ancienne adresse reste valable pour les liens qui y pointent encore.
   assert.equal(isAllowedUrl('https://liam-thorel.github.io/OLYVALO/overlay.html'), true);
 
-  // Le domaine nu et www ne servent pas le site : l'overlay, toujours au
-  // premier plan, n'a rien à y afficher.
-  assert.equal(isAllowedUrl('https://olycity.fr/'), false);
+  // olycity.fr est le site principal, où mène le logo du tracker. www et les
+  // autres sous-domaines restent refusés : l'overlay, toujours au premier
+  // plan, n'affiche que ce qui appartient à OLYCITY.
+  assert.equal(isAllowedUrl('https://olycity.fr/'), true);
   assert.equal(isAllowedUrl('https://www.olycity.fr/'), false);
   assert.equal(isAllowedUrl('http://tracker.olycity.fr/'), false, 'http n’est pas https');
   assert.equal(isAllowedUrl('https://tracker.olycity.fr.evil.example/'), false, 'un suffixe n’est pas le domaine');
