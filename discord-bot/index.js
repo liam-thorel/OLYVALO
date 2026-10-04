@@ -35,7 +35,7 @@ const { cancelledGame, cancelledTitle, cancelledExplanation, rrPenaltyLine } = r
 const { outcomeHeader } = require('./outcome-header.js');
 const { formatLolRank, POSITION_ICONS } = require('./lol-rank.js');
 
-const SITE_URL = 'https://liam-thorel.github.io/OLYVALO';
+const SITE_URL = 'https://tracker.olycity.fr';
 
 const client = new Client({ intents: [GatewayIntentBits.Guilds] });
 client.commands = new Collection();

@@ -50,8 +50,15 @@ function isSafeExternalUrl(url) {
   return !!parsed && (parsed.protocol === 'https:' || parsed.protocol === 'http:');
 }
 
+// Adresse chargée par l'overlay : directement le domaine, plutôt que
+// l'ancienne adresse github.io qui ne fait plus que rediriger. Un détour de
+// moins à chaque ouverture, et plus de dépendance à cette redirection, qui
+// disparaîtrait si le site quittait un jour GitHub Pages. L'ancienne adresse
+// reste autorisée ci-dessus pour les liens qui y pointent encore.
+const SITE_HOME = 'https://tracker.olycity.fr';
+
 function siteUrl(hash = '') {
-  return `${SITE_ORIGIN}${SITE_PATH_PREFIX}/${hash}`;
+  return `${SITE_HOME}/${hash}`;
 }
 
-module.exports = { isAllowedUrl, isSafeExternalUrl, siteUrl, SITE_ORIGIN, SITE_PATH_PREFIX, OWN_ORIGINS };
+module.exports = { isAllowedUrl, isSafeExternalUrl, siteUrl, SITE_ORIGIN, SITE_PATH_PREFIX, OWN_ORIGINS, SITE_HOME };
