@@ -99,11 +99,11 @@ const run = async s => { opened.length = 0; await maybeOpenHalfTimeRound(s, { [s
   assert.equal(calls.length, 1, 'un pari de mi-temps doit s’ouvrir');
   assert.equal(calls[0].phase, 'half', 'la phase distingue ce pari de celui d’avant-match');
   assert.ok(calls[0].odds, 'les cotes viennent du score, pas de l’estimation d’avant-match');
-  assert.equal(calls[0].odds.oddsWin, 1.05, '9–3 : large favori');
+  assert.equal(calls[0].odds.oddsWin, 1.38, '9–3 : favori, sans plus — le score ne compte que pour moitié');
 
   // Le camp compte : mené 3–9, la cote de victoire doit monter.
   calls = await run(session({ selfTeam: 'CHAOS' }));
-  assert.equal(calls[0].odds.oddsWin, 20, 'du côté CHAOS, 9–3 se lit 3–9');
+  assert.equal(calls[0].odds.oddsWin, 3.66, 'du côté CHAOS, 9–3 se lit 3–9');
 
   // ─── Une seule fois par partie ─────────────────────────────────────────────
   // Le score est republié à chaque manche et la session reste active.
