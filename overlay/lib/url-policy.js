@@ -8,6 +8,14 @@
 const SITE_ORIGIN = 'https://liam-thorel.github.io';
 const SITE_PATH_PREFIX = '/OLYVALO';
 
+// Le domaine propre du site. Contrairement à github.io, il n'héberge que
+// OLYCITY : toute l'origine est sûre, quel que soit le chemin.
+//
+// Accepté AVANT que le domaine ne soit branché : dès qu'il l'est, GitHub
+// redirige l'ancienne adresse vers celle-ci, et un overlay qui ne la
+// connaîtrait pas renverrait chaque lien du site vers le navigateur.
+const OWN_ORIGINS = new Set(['https://olycity.fr', 'https://www.olycity.fr']);
+
 function parse(url) {
   try {
     return new URL(String(url));
@@ -20,6 +28,7 @@ function parse(url) {
 function isAllowedUrl(url) {
   const parsed = parse(url);
   if (!parsed) return false;
+  if (OWN_ORIGINS.has(parsed.origin)) return true;
   if (parsed.origin !== SITE_ORIGIN) return false;
   // Même origine ne suffit pas : github.io héberge les pages de tous les
   // dépôts de l'utilisateur, on reste sur celui d'OLYCITY.
@@ -41,4 +50,4 @@ function siteUrl(hash = '') {
   return `${SITE_ORIGIN}${SITE_PATH_PREFIX}/${hash}`;
 }
 
-module.exports = { isAllowedUrl, isSafeExternalUrl, siteUrl, SITE_ORIGIN, SITE_PATH_PREFIX };
+module.exports = { isAllowedUrl, isSafeExternalUrl, siteUrl, SITE_ORIGIN, SITE_PATH_PREFIX, OWN_ORIGINS };

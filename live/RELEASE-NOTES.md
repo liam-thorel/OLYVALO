@@ -1,36 +1,8 @@
-<!-- version: 4.21.1 -->
-### Présence et identité fiables — Valorant et League of Legends
+<!-- version: 4.21.2 -->
+Cette mise à jour prépare le passage du site à son nouveau domaine, **olycity.fr**.
 
-- Correction du format Riot actuel : l'état local est lu dans `matchPresenceData.sessionLoopState`. Un joueur seul dans son groupe est désormais reconnu dans le menu, au lieu de rester « Client Riot ouvert ».
-- Les présences du lanceur Riot ou de League ne masquent plus celle de Valorant ; si plusieurs présences Valorant sont disponibles, la plus récente est utilisée.
-- Tests ajoutés à partir de la structure réellement observée : lobby solo, recherche, sélection, partie et présence invalide, avec compatibilité de l'ancien format.
-- Le script ne remplace plus l'identité locale inconnue par celle d'un ami : seule la présence du PUUID local est utilisée.
-- Une erreur temporaire de la présence Riot n'interrompt plus la vérification Agent Select et de la partie via les autres sources existantes.
-- Le Live distingue le menu, la recherche de partie et l'absence lorsque Riot fournit ces informations. Le groupe Riot reste distinct du match confirmé.
-- League of Legends publie également son activité depuis les phases du client LCU, sans modifier le fonctionnement du bot.
-- Suppression de l'ancien scan inutilisé des amis par fragments de pseudonymes. Les comptes restent rattachés aux profils par PUUID.
+### Nouveau domaine
 
-La mise à jour automatique inclut le nouveau module. Le redémarrage conserve les protections existantes pendant une partie.
+- L'assistant d'installation lit la liste des membres sur le site. Quand l'ancienne adresse redirigera vers olycity.fr, il ne savait pas suivre la redirection : un nouveau poste n'aurait plus pu choisir son membre. Il suit maintenant les redirections, vers https uniquement.
 
-### Fonctionnalités conservées de la version précédente
-Cette mise à jour affiche le score en direct, corrige les statistiques de la Live Game, et les dodges, remakes et égalités signalés à Discord.
-
-### Score en direct
-
-- Le score de la partie s'affiche désormais en direct sur la page Live (« Nous 8 – 5 Eux »), vu depuis l'équipe du joueur suivi.
-- Il était figé à 0-0 : le script le lisait dans une réponse Riot qui ne contient pas d'équipes, et remettait le score à zéro à chaque rafraîchissement. Il vient maintenant de la présence Riot, mise à jour à chaque manche.
-- Effet de bord attendu : le pari de mi-temps du bot, qui attend 12 manches jouées, ne pouvait jamais s'ouvrir. Il s'ouvrira désormais.
-
-### Dodges et remakes
-
-- Un **dodge** en sélection d'agents était publié sans sa file : le bot ne pouvait pas savoir que la partie annulée était une classée, et se taisait — alors que la pénalité de RR, elle, était bien appliquée par Riot. Le script publie désormais la vraie file, le RR perdu (lu sous l'identifiant de la sélection d'agents, le seul endroit où il figure) et un marqueur « partie annulée ».
-- Un **remake** (un joueur qui ne se connecte pas, partie annulée au premier round) était publié comme une **défaite** : Riot renvoie un rapport complet où personne n'a gagné. Il est maintenant reconnu à son nombre de manches et signalé comme partie annulée.
-- Une **égalité** était publiée comme une **défaite** : le rapport Riot ne marque aucune équipe gagnante, et « pas gagné » devenait « perdu ». Les paris étaient donc tranchés comme une défaite. Une partie sans vainqueur est désormais publiée comme une égalité, et les mises sont remboursées. Une reddition à score égal, elle, a bien un vainqueur et reste tranchée normalement.
-
-### Statistiques de l'acte
-
-- La ligne « X% WR · N games » d'un joueur pouvait décrire un **acte passé** tout en étant présentée comme l'acte en cours. L'acte était deviné à partir du dictionnaire renvoyé par Riot, dont les clés sont des identifiants sans ordre garanti : le script prenait la dernière entrée, c'est-à-dire un acte au hasard.
-- L'acte de référence est désormais celui que le joueur local est en train de jouer — la seule source fiable, puisqu'il y joue à l'instant même.
-- Un joueur qui n'a pas fait de classée cet acte-ci n'affiche plus rien, au lieu des chiffres de l'acte précédent.
-
-La mise à jour du script se télécharge automatiquement en arrière-plan. Si une partie est en cours, OLYCITY Live attend sa fin avant de redémarrer.
+Rien ne change pour les postes déjà installés. La mise à jour du script se télécharge automatiquement en arrière-plan. Si une partie est en cours, OLYCITY Live attend sa fin avant de redémarrer.

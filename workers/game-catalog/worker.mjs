@@ -13,13 +13,28 @@ const json = (body, status = 200, headers = {}) => new Response(JSON.stringify(b
   headers: { 'Content-Type': 'application/json; charset=utf-8', ...headers },
 });
 
+/**
+ * Origines autorisées, séparées par des virgules dans SITE_ORIGIN.
+ *
+ * Une seule origine ne suffisait plus : pendant le passage à olycity.fr, le
+ * site répond aux deux adresses (et un onglet resté ouvert sur l'ancienne
+ * continue d'appeler le worker). La première est celle renvoyée par défaut.
+ */
+export function siteOrigins(env) {
+  const list = String(env?.SITE_ORIGIN || 'https://olycity.fr,https://liam-thorel.github.io')
+    .split(',')
+    .map(entry => entry.trim().replace(/\/$/, ''))
+    .filter(Boolean);
+  return list.length ? list : ['https://olycity.fr'];
+}
+
 function corsHeaders(request, env) {
   const origin = request.headers.get('Origin') || '';
-  const configured = String(env.SITE_ORIGIN || 'https://liam-thorel.github.io').replace(/\/$/, '');
-  const allowed = origin === configured
+  const origins = siteOrigins(env);
+  const allowed = origins.includes(origin)
     || /^http:\/\/(127\.0\.0\.1|localhost)(:\d+)?$/.test(origin);
   return {
-    'Access-Control-Allow-Origin': allowed ? origin : configured,
+    'Access-Control-Allow-Origin': allowed ? origin : origins[0],
     'Access-Control-Allow-Methods': 'GET, OPTIONS',
     'Access-Control-Allow-Headers': 'Accept, Content-Type',
     Vary: 'Origin',
