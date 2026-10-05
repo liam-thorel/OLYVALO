@@ -49,7 +49,8 @@ export function rosterAccounts(player, overlay = null) {
     .filter(account => account?.name)
     .map(account => ({ riotId: riotIdOf(account), puuid: String(account.puuid || '').trim(), source: 'roster' }));
 
-  const stored = Object.values(overlay?.accounts?.[memberKey(player?.name)] || {});
+  const stored = Object.values(overlay?.accounts?.[memberKey(player?.name)] || {})
+    .sort((a,b) => Number(a?.updatedAt || 0) - Number(b?.updatedAt || 0));
   const hidden = new Set();
   const hiddenPuuids = new Set();
   let explicitMain = null;
@@ -72,6 +73,7 @@ export function rosterAccounts(player, overlay = null) {
     const known = declared.find(entry =>
       (puuid && entry.puuid === puuid) || lower(entry.riotId) === lower(riotId));
     if (known) {
+      known.updatedAt = Math.max(Number(known.updatedAt || 0), Number(account.updatedAt || 0));
       // Le puuid renseigné depuis l'admin complète une ligne du dépôt qui n'en
       // avait pas : c'est le cas de tous les comptes d'avant la migration.
       if (!known.puuid && puuid) known.puuid = puuid;
@@ -84,7 +86,7 @@ export function rosterAccounts(player, overlay = null) {
       }
       return;
     }
-    declared.push({ riotId, puuid, source: 'admin' });
+    declared.push({ riotId, puuid, source: 'admin', updatedAt:Number(account.updatedAt || 0) });
   });
 
   const visible = declared.filter(account =>
@@ -99,14 +101,16 @@ export function rosterAccounts(player, overlay = null) {
   return visible.map((account, position) => ({ ...account, isMain: position === 0 }));
 }
 
-/**
- * Pourquoi cette carte n'affiche ni rang ni statistiques.
- *
- * Quatre causes distinctes, qui ne se corrigent pas de la même façon — les
- * confondre sous un trou silencieux envoie chercher au mauvais endroit. Rien
- * n'est renvoyé quand la carte a de quoi se remplir : un bandeau permanent
- * finirait par ne plus être lu.
- */
+/** Le pseudo récent du même compte prime sur celui d'une ancienne synchro. */
+export function currentRiotId(account = null, stats = {}) {
+  const current = String(account?.riotId || '').trim();
+  const observed = String(stats?.riotId || '').trim();
+  if (!observed) return current;
+  if (account?.puuid && stats?.puuid && account.puuid !== stats.puuid) return current;
+  return current && Number(account?.updatedAt || 0) >= Number(stats?.syncedAt || 0) ? current : observed;
+}
+
+/** Pourquoi une carte n'affiche ni rang ni statistiques, sans diagnostic trompeur. */
 export function cardStatus(stats = {}, { hasApiKey = true, hasRiot = true, syncing = false } = {}) {
   // Une synchro est en cours : le bouton le dit déjà. Poser un diagnostic sur
   // le point d'être répondu est au mieux du bruit, au pire faux — c'est ce qui

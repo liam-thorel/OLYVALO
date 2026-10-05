@@ -511,8 +511,8 @@ test('every roster sync and selection is keyed by PUUID, never by the declared n
   // Le nom COURANT revient avec les stats : l'écran cessait sinon d'être
   // synchrone avec Riot sans que rien ne le signale.
   assert.match(henrik, /riotId,\n\s*renamed: wasRenamed\(declaredRiotId, riotId\)/);
-  assert.match(render, /const liveRiotId = stats\.riotId \|\| shown\?\.riotId \|\| '';/,
-    'la carte affiche le pseudo observé avant celui du dépôt');
+  assert.match(render, /const liveRiotId = currentRiotId\(shown, stats\);/,
+    'la carte départage le pseudo du client et celui des stats par fraîcheur');
   assert.match(render, /tracker\.gg[\s\S]{0,120}encodeURIComponent\(liveName\)/,
     'le lien Tracker suit le compte affiché, pas le principal du dépôt');
 

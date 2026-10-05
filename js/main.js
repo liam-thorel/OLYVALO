@@ -11,22 +11,23 @@ const SITE_VERSION = '20260929-champions-comps';
 const FIREBASE_URL = 'https://realtime-database-5bb9f-default-rtdb.europe-west1.firebasedatabase.app';
 const BOOT_RETRY_KEY = 'olycity-boot-retry';
 import { syncAccount as henrikSyncAccount, syncAllPlayers as henrikSyncAll, persistPlayerStats } from './henrik.js?v=20260920-puuid';
-import { rosterAccounts } from './roster-card-utils.mjs?v=20260920-puuid';
+import { rosterAccounts } from './roster-card-utils.mjs?v=20261005-riot-rename';
+import { initRosterIdentitySync } from './roster-identity-sync.mjs?v=20261005-riot-rename';
 import { statsKey, readStats, writeStats, selectedAccount, toggleSelection, needsSync,
   firebasePath, publishable, remoteStats, mergeStores } from './account-stats.mjs?v=20260922-partage';
 import { setStoredKey, storedKey, forgetCachedKey } from './henrik-key.mjs';
-import { rosterHTML, guestCardHTML, mapSectionHTML, agentPageHTML, navMapsHTML, compHTML, globalNotesHTML } from './render.js?v=20261005-roster-state';
-import { initTheme, initTilt, initParallax, initKeyboard, initHeroParticles, initWheelLogos, initLivePage, initHistoryPage } from './interactions.js?v=20261005-roster-state';
+import { rosterHTML, guestCardHTML, mapSectionHTML, agentPageHTML, navMapsHTML, compHTML, globalNotesHTML } from './render.js?v=20261005-riot-rename';
+import { initTheme, initTilt, initParallax, initKeyboard, initHeroParticles, initWheelLogos, initLivePage, initHistoryPage } from './interactions.js?v=20261005-riot-rename';
 import { storage } from './storage.js';
 import { avatarLayersHTML } from './avatars.mjs';
 import { initAdminPage } from './admin.mjs?v=20261005-return-live';
 import { initBettingPage } from './betting-page.mjs?v=20260930-consistent-live';
-import { initRrCurvePage } from './rr-curve-page.mjs?v=20260930-consistent-live';
+import { initRrCurvePage } from './rr-curve-page.mjs?v=20261005-riot-rename';
 import { initSiteSwitcher } from './site-switcher.mjs';
 import { sharedProfileId, rememberSharedProfile } from './shared-profile.mjs';
 import { getGameMode, initGameMode, setGameMode } from './game-mode.mjs?v=20260824-home-title';
 import { initLolHistoryPage, initLolLivePage } from './lol-pages.mjs?v=20261005-all-modes';
-import { initLolRosterPages } from './lol-roster.mjs?v=20261005-roster-state';
+import { initLolRosterPages } from './lol-roster.mjs?v=20261005-riot-rename';
 import { state } from './state.mjs?v=20261005-sites-history';
 import { memberId, mergeMemberProfiles, resolveMemberProfile } from './member-profiles.mjs?v=20260823-profile-picker';
 import { initHomeDashboard } from './home-dashboard.mjs?v=20261005-tracker-home';
@@ -1067,6 +1068,14 @@ async function boot() {
       .catch(error => console.warn('[OLYCITY] Notifications indisponibles', error));
   }
   if (!window._lolRosterCleanup) window._lolRosterCleanup = initLolRosterPages();
+  if (!window._rosterIdentityCleanup) window._rosterIdentityCleanup = initRosterIdentitySync({
+    initial:state.ROSTER_OVERLAY?.accounts || {},
+    onChange:accounts=>{
+      state.ROSTER_OVERLAY = {...(state.ROSTER_OVERLAY || {}),accounts};
+      window.OLYCITY._renderRoster();
+      window.dispatchEvent(new CustomEvent('olycity:roster-identity-change'));
+    },
+  });
 
   // Guest card — Enter key support
   document.addEventListener('keydown', e => {

@@ -21,8 +21,8 @@ test('all site consumers use one module URL for shared application state', () =>
 test('roster fix invalidates cached renderer and League modules through the entrypoint', () => {
   const main = fs.readFileSync(new URL('../js/main.js',import.meta.url),'utf8');
   const interactions = fs.readFileSync(new URL('../js/interactions.js',import.meta.url),'utf8');
-  assert.match(main,/render\.js\?v=20261005-roster-state/);
-  assert.match(main,/interactions\.js\?v=20261005-roster-state/);
-  assert.match(main,/lol-roster\.mjs\?v=20261005-roster-state/);
-  assert.match(interactions,/lol-roster\.mjs\?v=20261005-roster-state/);
+  assert.match(main,/render\.js\?v=20261005-riot-rename/);
+  assert.match(main,/interactions\.js\?v=20261005-riot-rename/);
+  assert.match(main,/lol-roster\.mjs\?v=20261005-riot-rename/);
+  assert.match(interactions,/lol-roster\.mjs\?v=20261005-riot-rename/);
 });

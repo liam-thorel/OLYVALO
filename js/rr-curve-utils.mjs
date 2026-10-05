@@ -393,7 +393,7 @@ export function buildMembers(roster = [], overlay = null) {
     const hidden = new Set();
     const hiddenPuuids = new Set();
 
-    Object.values(accounts[member.id] || {}).forEach(account => {
+    Object.values(accounts[member.id] || {}).sort((a,b) => Number(a?.updatedAt || 0) - Number(b?.updatedAt || 0)).forEach(account => {
       if (!account?.name) return;
       const riotId = account.tag ? `${account.name}#${account.tag}` : String(account.name);
       const puuid = String(account.puuid || '').trim();

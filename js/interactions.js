@@ -15,9 +15,9 @@ import {
 } from './live-sessions.mjs?v=20260809-live-server-local';
 import { chooseLiveSession, freshLiveClients, groupLiveClients, isVersionAtLeast, liveClientSummary, liveSessionSignal, recoveringLiveClients, retainRecentLiveClients } from './live-clients.mjs?v=20261005-return-live';
 import { liveClientStatus, liveClientSummaryText, liveWaitingState } from './live-status.mjs?v=20261005-sites-history';
-import { buildLiveIdentityIndex, resolveLiveIdentity } from './live-identities.mjs?v=20260809-live-groups';
+import { buildLiveIdentityIndex, resolveLiveIdentity } from './live-identities.mjs?v=20261005-riot-rename';
 import { updateScriptDownload } from './downloads.mjs?v=20260912-separate-downloads';
-import { PLAYERS as LOL_ROSTER_PLAYERS } from './lol-roster.mjs?v=20261005-roster-state';
+import { PLAYERS as LOL_ROSTER_PLAYERS } from './lol-roster.mjs?v=20261005-riot-rename';
 import { serverVisual } from './server-visuals.mjs?v=20260809-live-server-local';
 import { avatarLayersHTML } from './avatars.mjs?v=20260720-avatars';
 import { filterHistoryGames, historyDailyPerformances, historyGameForOwner, historyMode, historyOwnerAccountLabel, historyOwnerKey, historyOwnerLabel, historyPlayerName, historyPlayerPerformance, historyPlayerPerformances, historyRankedPlayers, historyReports, historyScoreText, historyTrackerUrl, isHistorySelf, normalizeHistoryEntries } from './history-utils.mjs?v=20261005-sites-history';
@@ -498,7 +498,7 @@ export function initLivePage() {
     .catch(() => {});
 
   function rosterProfileForName(name = '') {
-    return resolveLiveIdentity({ playerName: name }, _rosterIdentityIndex);
+    return resolveLiveIdentity({ playerName: name }, _rosterIdentityIndex, {participants:currentLiveData?.players || []});
   }
 
   // Depuis la v4.16.0, chaque script publie le membre OLYCITY choisi à
@@ -506,13 +506,21 @@ export function initLivePage() {
   // elle reste juste immédiatement après un changement de pseudo, sans
   // attendre que rosterOverlay/accounts soit relu.
   function profileForEntry(entry = {}) {
-    return resolveLiveIdentity(entry, _rosterIdentityIndex)
+    const ownSession = lastSessions[entry.puuid];
+    const participants = ownSession?.players || (!entry.matchId || entry.matchId === currentLiveData?.matchId ? currentLiveData?.players : []) || [];
+    return resolveLiveIdentity(entry, _rosterIdentityIndex, {participants})
       || (entry.member ? { avatar: '', member: entry.member } : null);
   }
 
   function ensureRosterCache() {
     if (_rosterFetched) return;
     _rosterFetched = true;
+    if (state.ROSTER.length) {
+      _rosterIdentityIndex = buildLiveIdentityIndex(state.ROSTER, state.ROSTER_OVERLAY || {}, LOL_ROSTER_PLAYERS);
+      renderDiagnostic();
+      updateSessionPicker(lastSessions);
+      return;
+    }
     fetch('./data/roster.json?v=20260809-mathis-main').then(response => response.json()).then(roster => {
       // Le roster local suffit immédiatement pour les comptes principaux et
       // les smurfs connus. Firebase enrichit ensuite l'index avec les comptes
@@ -531,6 +539,12 @@ export function initLivePage() {
         .catch(() => {});
     }).catch(() => {});
   }
+  window.addEventListener('olycity:roster-identity-change',()=>{
+    _rosterIdentityIndex = buildLiveIdentityIndex(state.ROSTER, state.ROSTER_OVERLAY || {}, LOL_ROSTER_PLAYERS);
+    renderDiagnostic();
+    updateSessionPicker(lastSessions);
+    if (currentLiveData) { lastDataKey='';updateUI(currentLiveData); }
+  });
   // Round timer using roundStartTime from Firebase
   let timerInterval = null;
   let lastRoundStart = null;
@@ -1421,7 +1435,7 @@ export function initLivePage() {
     const isMe = myName && p.name?.includes(myName.split('#')[0]);
     const fixedAgent = fixAgentName(p);
     const imgUrl = agentIconUrl(fixedAgent, p.agentId);
-    const profile = rosterProfileForName(p.name || '');
+    const profile = resolveLiveIdentity({...p,playerName:p.name || ''}, _rosterIdentityIndex, {participants:currentLiveData?.players || []});
     const member = profile?.member || olycityMember(p.name);
     const memberAvatar = profile?.avatar
       ? `<span class="live-player-member-avatar" title="${escapeDiagnosticText(member)}">${avatarLayersHTML(member, profile.avatar)}</span>`

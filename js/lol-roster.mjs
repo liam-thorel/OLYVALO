@@ -233,6 +233,7 @@ export function initLolRosterPages() {
   // puisque personne n'était encore identifié. Le site publie déjà l'événement,
   // il suffisait de l'écouter.
   window.addEventListener('olycity:profile-change', rerender);
+  window.addEventListener('olycity:roster-identity-change', rerender);
 
   document.getElementById('lol-roster-grid')?.addEventListener('click', async event => {
     const bouton = event.target.closest('[data-auto-accept]');

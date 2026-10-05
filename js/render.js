@@ -7,7 +7,7 @@ import { valorantApi } from './api.js';
 import { state } from './state.mjs?v=20261005-sites-history';
 import { formatRelTime } from './storage.js';
 import { avatarLayersHTML } from './avatars.mjs?v=20260720-avatars';
-import { rosterAccounts, cardStatus, isStale } from './roster-card-utils.mjs?v=20260920-puuid';
+import { rosterAccounts, currentRiotId, cardStatus, isStale } from './roster-card-utils.mjs?v=20261005-riot-rename';
 import { statsKey, readStats, selectedAccount } from './account-stats.mjs?v=20260920-puuid';
 import { storedKey } from './henrik-key.mjs';
 
@@ -406,7 +406,7 @@ export function rosterHTML() {
     // Le pseudo affiché est celui que Riot a renvoyé à la dernière synchro, et
     // non celui du dépôt : « Wong Chi Ming#2046 » n'existe plus depuis que le
     // compte s'appelle « FakePlasticTrees#1706 ». Le PUUID, lui, n'a pas bougé.
-    const liveRiotId = stats.riotId || shown?.riotId || '';
+    const liveRiotId = currentRiotId(shown, stats);
     const [liveName, liveTag] = String(liveRiotId).split('#');
     const trackerUrl = liveName && liveTag
       ? `https://tracker.gg/valorant/profile/riot/${encodeURIComponent(liveName)}%23${encodeURIComponent(liveTag)}/overview`
@@ -431,11 +431,11 @@ export function rosterHTML() {
     // vient chercher ici ; les smurfs, eux, étaient purement et simplement
     // invisibles.
     const smurfs = accounts.filter(account => !account.isMain);
-    const renamed = stats.renamed && shown && stats.riotId && stats.riotId !== shown.riotId;
+    const renamed = shown && liveRiotId && liveRiotId !== (shown.renamedFrom || shown.riotId);
     const riotLine = shown ? `
         <button class="player-riot-id" type="button" data-riot-id="${esc(liveRiotId)}"
                 onclick="window.OLYCITY.copyRiotId(this)"
-                title="${renamed ? `Copier ${esc(liveRiotId)} — le dépôt déclare encore ${esc(shown.riotId)}` : `Copier ${esc(liveRiotId)}`}">
+                title="${renamed ? `Copier ${esc(liveRiotId)} — ancien pseudo : ${esc(shown.renamedFrom || shown.riotId)}` : `Copier ${esc(liveRiotId)}`}">
           <span class="player-riot-id-text">${esc(liveRiotId)}</span>${renamed ? '<span class="player-riot-id-renamed" title="Renommé depuis ce que déclare le dépôt">renommé</span>' : ''}<span class="player-riot-id-copy">⧉</span>
         </button>` : '';
 
