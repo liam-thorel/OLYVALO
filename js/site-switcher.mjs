@@ -6,8 +6,12 @@ export function initSiteSwitcher(root = document.querySelector('header') || docu
   const details = document.createElement('details');
   details.className = 'oly-site-switcher';
   const services = [['Portail','https://olycity.fr/'],['Tracker','https://tracker.olycity.fr/'],['Games','https://games.olycity.fr/'],['Musique','https://musique.olycity.fr/']];
-  details.innerHTML = '<summary aria-label="Changer de site OLYCITY">Sites</summary><nav aria-label="Sites OLYCITY">' + services.map(([name,url]) => '<a href="'+url+'"'+(new URL(url).origin === location.origin ? ' aria-current="page"' : '')+'>'+name+'</a>').join('') + '</nav>';
+  details.innerHTML = '<summary aria-label="Changer de site OLYCITY"><svg class="site-switch-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg><span>Sites</span><span class="game-switch-chevron" aria-hidden="true"></span></summary><nav aria-label="Sites OLYCITY">' + services.map(([name,url]) => '<a href="'+url+'"'+(new URL(url).origin === location.origin ? ' aria-current="page"' : '')+'>'+name+'</a>').join('') + '</nav>';
   root.append(details);
   details.addEventListener('keydown', event => { if (event.key === 'Escape') { details.open = false; details.querySelector('summary').focus(); } });
   document.addEventListener('click', event => { if (!details.contains(event.target)) details.open = false; });
+  details.addEventListener('focusout', event => { if (!details.contains(event.relatedTarget)) details.open = false; });
+  details.addEventListener('toggle', () => {
+    if (details.open) document.querySelectorAll('.game-switch[open]').forEach(el => { el.open = false; });
+  });
 }

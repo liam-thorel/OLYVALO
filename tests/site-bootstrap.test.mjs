@@ -232,7 +232,7 @@ test('mobile data pages keep readable spacing, controls and roster details', () 
   assert.match(responsive, /\.section-inner\s*\{\s*padding:\s*0/);
   assert.match(lolStyles, /\.lol-roster-champion strong\{font-size:10px\}/);
   assert.match(coopStyles, /\.coop-cover\{aspect-ratio:16\/7\}/);
-  assert.match(page, /lol-mode\.css\?v=20260922-autoaccept/);
+  assert.match(page, /lol-mode\.css\?v=20261005-game-picker/);
   assert.doesNotMatch(page, /href="\.\/css\/coop-games\.css/);
   assert.match(designSystem, /\.history-filter-group\s*\{\s*grid-template-columns:\s*55px minmax\(0,1fr\)/);
   assert.match(designSystem, /\.coop-filter-field:last-child\s*\{\s*flex-basis:\s*100%/);

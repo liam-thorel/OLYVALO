@@ -1,8 +1,34 @@
 /* Global game switch */
-.game-switch { display:flex; align-items:center; padding:3px; border:1px solid var(--border2); background:var(--surf2); }
-.game-switch-btn { min-width:42px; padding:6px 8px; border:0; background:transparent; color:var(--muted); font:700 9px/1 'Tomorrow',sans-serif; letter-spacing:1.2px; cursor:pointer; transition:.2s ease; }
-.game-switch-btn:hover { color:var(--text); }
-.game-switch-btn.active { background:var(--red); color:#fff; box-shadow:0 0 18px var(--red-glow); }
+.game-switch { position:relative; flex-shrink:0; color:var(--text); font:600 13px/1.3 system-ui,sans-serif; }
+.game-switch summary { display:flex; align-items:center; gap:9px; min-height:44px; padding:0 12px; border:1px solid #343844; border-radius:6px; background:#101319; color:#e2e5ee; cursor:pointer; list-style:none; touch-action:manipulation; }
+.game-switch summary::-webkit-details-marker { display:none; }
+.game-switch summary:focus-visible,.game-switch-btn:focus-visible { outline:2px solid var(--red); outline-offset:3px; }
+.game-switch[open] summary { border-color:var(--red); }
+.game-switch-chevron { width:6px; height:6px; margin-left:6px; border-right:1.5px solid currentColor; border-bottom:1.5px solid currentColor; transform:rotate(45deg); }
+.game-switch[open] .game-switch-chevron { transform:rotate(225deg); }
+.game-switch-options { position:absolute; top:calc(100% + 6px); right:0; z-index:10000; width:250px; max-width:calc(100vw - 24px); padding:6px; border:1px solid #343844; border-radius:6px; background:#101319; box-shadow:0 12px 30px #0008; }
+.game-switch .game-switch-btn { display:flex; align-items:center; gap:10px; width:100%; min-height:48px; padding:10px; border:0; border-radius:4px; background:transparent; color:#e2e5ee; text-align:left; font:600 13px/1.3 system-ui,sans-serif; letter-spacing:0; cursor:pointer; touch-action:manipulation; }
+.game-switch .game-switch-btn.active { background:#242832; box-shadow:none; }
+.game-switch-mark { display:grid; place-items:center; flex:0 0 24px; width:24px; height:24px; border:1px solid #ff465555; border-radius:4px; color:#ff6978; background:#ff465518; font:800 13px/1 'Tomorrow',sans-serif; }
+[data-game-choice="lol"] .game-switch-mark,:root[data-game="lol"] .game-switch summary .game-switch-mark { border-color:#c99b3f66; background:#0c2638; color:#e4bd65; }
+.game-switch-check { margin-left:auto; color:var(--red); visibility:hidden; }
+[data-game-short] { display:none; }
+@media (max-width:768px) { .game-switch [data-game-label] { display:none; } .game-switch [data-game-short] { display:inline; } .game-switch summary { gap:6px; padding:0 8px; } .game-switch-options { left:0; right:auto; } }
+.game-switch-btn.active .game-switch-check { visibility:visible; }
+/* Both selectors share the same restrained, game-themed treatment. */
+.game-switch summary,.oly-site-switcher.oly-site-switcher summary { gap:10px; border:1px solid var(--border2); border-radius:8px; background:linear-gradient(135deg,var(--surf3),var(--surf)); color:var(--text); box-shadow:inset 0 1px 0 #ffffff08,0 2px 8px #0002; font:600 13px/1.3 system-ui,sans-serif; list-style:none; transition:transform 120ms ease-out; }
+.oly-site-switcher summary::-webkit-details-marker { display:none; }
+.site-switch-icon { width:19px; height:19px; color:var(--muted); }
+.game-switch summary:active,.oly-site-switcher summary:active { transform:scale(.98); }
+.oly-site-switcher summary:focus-visible { outline:2px solid var(--red); outline-offset:3px; }
+.oly-site-switcher[open] summary { border-color:var(--red); }
+.oly-site-switcher[open] .game-switch-chevron { transform:rotate(225deg); }
+.oly-site-switcher.oly-site-switcher nav { top:calc(100% + 6px); padding:6px; border-radius:8px; border-color:var(--border2); background:var(--surf); }
+.oly-site-switcher.oly-site-switcher a { display:flex; align-items:center; border-radius:4px; color:var(--text); font:600 13px/1.3 system-ui,sans-serif; }
+.oly-site-switcher.oly-site-switcher [aria-current] { color:var(--red); background:var(--red-low); }
+.oly-site-switcher [aria-current]::after { content:'✓'; margin-left:auto; padding-left:20px; }
+@media (prefers-reduced-motion:reduce) { .game-switch summary,.oly-site-switcher summary { transition:none; } .game-switch summary:active,.oly-site-switcher summary:active { transform:none; } }
+@media (hover:hover) and (pointer:fine) { .game-switch summary:hover,.game-switch .game-switch-btn:hover { background:#242832; } }
 .game-switch-count { display:inline-grid; place-items:center; min-width:16px; height:16px; margin-left:3px; padding:0 4px; border-radius:9px; background:rgba(255,255,255,.08); color:currentColor; font-size:8px; letter-spacing:0; }
 .game-switch-btn.active .game-switch-count { background:rgba(9,12,18,.28); }
 .page-nav-btn[data-page="live"] .page-nav-icon { color:var(--red)!important; }

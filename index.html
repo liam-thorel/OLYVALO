@@ -22,7 +22,7 @@
   <link rel="stylesheet" href="./css/home.css?v=20261005-tracker-home">
   <link rel="stylesheet" href="./css/agent-page.css?v=20260720-avatars">
   <link rel="stylesheet" href="./css/responsive.css?v=20261003-party-count">
-  <link rel="stylesheet" href="./css/lol-mode.css?v=20260922-autoaccept">
+  <link rel="stylesheet" href="./css/lol-mode.css?v=20261005-game-picker">
   <link rel="stylesheet" href="./css/curse.css?v=20260818-curse-lifecycle">
   <link rel="stylesheet" href="./css/design-system.css?v=20261005-tracker-home">
 </head>
@@ -184,10 +184,13 @@
       <!-- MAP SELECTOR (visible only on maps page) -->
 
       <div class="topbar-tools">
-        <div class="game-switch" role="group" aria-label="Choisir le jeu">
-          <button class="game-switch-btn active" type="button" data-game-choice="valorant" aria-pressed="true">VAL <span class="game-switch-count" data-game-count="valorant" aria-label="aucun script connecté">0</span></button>
-          <button class="game-switch-btn" type="button" data-game-choice="lol" aria-pressed="false">LoL <span class="game-switch-count" data-game-count="lol" aria-label="aucun script connecté">0</span></button>
-        </div>
+        <details class="game-switch">
+          <summary aria-label="Choisir le jeu : Valorant"><span class="game-switch-mark" aria-hidden="true">V</span><span data-game-label>Valorant</span><span data-game-short aria-hidden="true">VAL</span><span class="game-switch-chevron" aria-hidden="true"></span></summary>
+          <div class="game-switch-options" role="group" aria-label="Choisir le jeu">
+            <button class="game-switch-btn active" type="button" data-game-choice="valorant" aria-pressed="true"><span class="game-switch-mark" aria-hidden="true">V</span><span>Valorant</span><span class="game-switch-count" data-game-count="valorant" aria-label="aucun script connecté">0</span><span class="game-switch-check" aria-hidden="true">✓</span></button>
+            <button class="game-switch-btn" type="button" data-game-choice="lol" aria-pressed="false"><span class="game-switch-mark" aria-hidden="true">L</span><span>League of Legends</span><span class="game-switch-count" data-game-count="lol" aria-label="aucun script connecté">0</span><span class="game-switch-check" aria-hidden="true">✓</span></button>
+          </div>
+        </details>
         <!-- Profile indicator -->
         <button class="profile-indicator" id="profile-indicator" type="button" onclick="window.OLYCITY._showProfilePicker()" title="Changer de profil" aria-label="Changer de profil">
           <span class="profile-indicator-name">—</span>
@@ -511,6 +514,6 @@
   <!-- Firebase SDK -->
   <!-- Présence Firebase -->
   <script src="./js/presence.js?v=20261005-return-live"></script>
-  <script type="module" src="./js/main.js?v=20261005-riot-rename"></script>
+  <script type="module" src="./js/main.js?v=20261005-game-picker"></script>
 </body>
 </html>
