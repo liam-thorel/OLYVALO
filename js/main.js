@@ -183,6 +183,14 @@ window.OLYCITY = {
   },
 
   nav(page, pushHistory = true) {
+    // Le catalogue coop et les soirées vivent désormais sur games.olycity.fr
+    // (mêmes données Firebase). La page mémorisée est oubliée pour qu'un retour
+    // arrière vers le tracker ne renvoie pas aussitôt vers les jeux.
+    if (page === 'games') {
+      sessionStorage.removeItem('olycity-page');
+      window.location.assign('https://games.olycity.fr/#coop');
+      return;
+    }
     if (!['home', 'maps', 'roster', 'live', 'history', 'courbes', 'admin', 'betting', 'games'].includes(page)) page = 'home';
     if (getGameMode() === 'lol' && page === 'maps') page = 'home';
     this.closeMobileNavMenu();
