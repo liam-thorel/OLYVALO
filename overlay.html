@@ -1,20 +1,60 @@
 <!doctype html>
 <!--
   Ancienne vue compacte de l'overlay, retirée : elle doublonnait la page Live
-  du site, en moins bien. L'overlay affiche désormais le site lui-même.
+  du site. L'overlay affiche désormais le site lui-même.
 
   Le fichier reste publié parce que les overlays d'avant la 1.2.4 le chargent
-  encore au démarrage (et via leur bouton « Live ») : il les renvoie sur le
-  site, sans attendre qu'ils se mettent à jour.
+  encore (au démarrage et via leur bouton « Live »).
+    - À partir de la 1.2.2, ils connaissent tracker.olycity.fr : on les renvoie
+      sur le site.
+    - Jusqu'à la 1.2.1, ils n'autorisent que l'ancienne adresse github.io : la
+      redirection serait bloquée, et ils ouvriraient le site dans le navigateur
+      en restant sur une page vide. On leur explique plutôt comment se mettre
+      à jour.
 -->
 <html lang="fr">
 <head>
 <meta charset="utf-8">
 <title>OLYCITY</title>
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="dark">
 <meta name="robots" content="noindex">
-<script>location.replace('./');</script>
-<style>html, body { margin: 0; background: #0a0c10; }</style>
+<script>
+  // Version de l'overlay, lue dans l'identifiant du navigateur Electron :
+  // « … OLYCITY Overlay/1.2.1 Chrome/… Electron/… ».
+  (function () {
+    var ua = navigator.userAgent;
+    var match = /Electron\//.test(ua) && ua.match(/\/(\d+)\.(\d+)\.(\d+) Chrome\//);
+    var version = match ? Number(match[1]) * 1e6 + Number(match[2]) * 1e3 + Number(match[3]) : null;
+    var tooOld = version !== null && version < 1002002; // avant la 1.2.2
+    if (!tooOld) location.replace('./');
+    else document.documentElement.dataset.trop = 'ancien';
+  })();
+</script>
+<style>
+  html, body { margin: 0; background: #0a0c10; color: #e2e5ee; font: 14px/1.5 system-ui, -apple-system, 'Segoe UI', sans-serif; }
+  main { display: none; box-sizing: border-box; max-width: 420px; margin: 0 auto; padding: 28px 18px; }
+  [data-trop="ancien"] main { display: block; }
+  h1 { margin: 0 0 10px; font-size: 18px; color: #ff4656; letter-spacing: .5px; }
+  p { margin: 0 0 12px; color: #9298ab; }
+  ol { margin: 0 0 18px; padding-left: 20px; }
+  li { margin-bottom: 6px; }
+  strong { color: #e2e5ee; }
+  a.dl { display: inline-block; padding: 9px 14px; border: 1px solid #ff4656; border-radius: 6px; color: #ff4656; text-decoration: none; font-weight: 600; }
+  a.dl:hover { background: rgba(255,70,86,.12); }
+</style>
 </head>
-<body></body>
+<body>
+  <main>
+    <h1>Mets l’overlay à jour</h1>
+    <p>Cette version de l’overlay ne connaît pas encore la nouvelle adresse du site, <strong>tracker.olycity.fr</strong>.</p>
+    <ol>
+      <li>Clic droit sur l’icône <strong>OLYCITY</strong> dans la zone de notification (en bas à droite).</li>
+      <li>Choisis <strong>« Redémarrer pour installer »</strong> si l’option est là.</li>
+    </ol>
+    <p>Sinon, installe la dernière version par-dessus l’ancienne :</p>
+    <a class="dl" href="https://github.com/liam-thorel/OLYVALO/releases/latest/download/OLYCITY-Overlay-Setup.exe">Télécharger l’overlay</a>
+    <p style="margin-top:16px">En attendant, le bouton <strong>Site</strong> de la barre du haut fonctionne.</p>
+  </main>
+</body>
 </html>

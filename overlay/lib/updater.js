@@ -6,8 +6,15 @@
  * que de ne pas se mettre à jour du tout.
  *
  *   1. Le téléchargement se fait en fond, sans rien demander.
- *   2. L'installation attend la FERMETURE de l'application. Jamais pendant
- *      qu'elle tourne, encore moins pendant une game.
+ *   2. L'installation n'interrompt jamais une partie, ni quelqu'un qui
+ *      regarde l'overlay.
+ *
+ * Elle attendait la fermeture de l'application. Mais l'overlay vit dans la
+ * zone de notification et ne se ferme pratiquement jamais, et un arrêt de
+ * Windows le tue sans lui laisser le temps d'installer : des postes sont
+ * restés des semaines sur une version qui ne connaissait pas la nouvelle
+ * adresse du site. Elle se fait donc désormais en silence, dès que la fenêtre
+ * est masquée et qu'aucun jeu ne tourne — voir shouldInstallNow.
  *
  * Ce module ne fait que câbler les évènements et journaliser ; l'appelant
  * décide quoi montrer. Séparé de main.js pour que la logique de décision
@@ -30,6 +37,17 @@ function shouldCheck({ gameRunning, lastCheckAt, now, intervalMs = CHECK_INTERVA
   if (gameRunning) return false;
   if (!lastCheckAt) return true;
   return now - lastCheckAt >= intervalMs;
+}
+
+/**
+ * Faut-il installer maintenant la mise à jour téléchargée ?
+ *
+ * Seulement quand personne ne peut s'en apercevoir : pas de partie en cours,
+ * et la fenêtre masquée. L'installation est silencieuse et relance
+ * l'application, qui revient masquée dans la zone de notification.
+ */
+function shouldInstallNow({ downloaded, gameRunning, visible }) {
+  return Boolean(downloaded) && !gameRunning && !visible;
 }
 
 /** Résumé lisible d'une version téléchargée, pour le menu et le journal. */
@@ -68,13 +86,14 @@ function setupAutoUpdate({ autoUpdater, log, onStateChange = () => {} }) {
       log('[maj] échec —', error?.message || error);
       return null;
     }),
-    // Utilisé par l'entrée de menu : l'utilisateur choisit le moment.
-    installNow: () => autoUpdater.quitAndInstall(),
+    // Installation silencieuse (pas de fenêtre d'installation par-dessus le
+    // bureau), puis relance de l'overlay.
+    installNow: () => autoUpdater.quitAndInstall(true, true),
     pending: () => downloaded,
   };
 }
 
 module.exports = {
-  setupAutoUpdate, shouldCheck, updateLabel,
+  setupAutoUpdate, shouldCheck, shouldInstallNow, updateLabel,
   CHECK_INTERVAL_MS, FIRST_CHECK_DELAY_MS,
 };
