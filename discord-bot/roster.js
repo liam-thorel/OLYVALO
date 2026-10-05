@@ -1,9 +1,10 @@
 const { ROSTER_URL } = require('./config.js');
 const { fbGet } = require('./firebase.js');
+const { declaredAccounts, declaredOwners, declaredElsewhere } = require('./roster-ownership.js');
 
 const REFRESH_MS = 5 * 60 * 1000;
 
-let members = [];       // [{ id, name, avatar, riotIds: ['name#tag', ...], mainRiotId, puuids: [...] }]
+let members = [];       // [{ id, name, avatar, riotIds: ['name#tag', ...], mainRiotId, lolMainRiotId, puuids: [...] }]
 let riotIdIndex = {};   // 'name#tag' lowercase -> member
 let memberIdIndex = {}; // id de membre -> member
 let puuidIndex = {};    // puuid -> member
@@ -41,9 +42,9 @@ function formatRosterAccount(account) {
   return account.tag ? `${account.name}#${account.tag}` : String(account.name);
 }
 
-function rosterAccounts(player) {
-  return [player?.riot, ...(player?.smurfs || [])].filter(account => account?.name);
-}
+// Principal, smurfs ET principal LoL : un compte LoL déclaré doit être
+// reconnu comme celui du membre, même avant que le script ne l'enregistre.
+const rosterAccounts = declaredAccounts;
 
 function riotIdsFromRoster(player) {
   return rosterAccounts(player).map(formatRosterAccount).filter(Boolean);
@@ -74,20 +75,33 @@ function mainRiotIdFromRoster(player) {
   return formatRosterAccount(player?.riot);
 }
 
+/**
+ * Compte principal en LoL, quand il diffère de celui de Valorant.
+ *
+ * Plusieurs membres ne jouent pas à LoL sur leur compte Valorant (Nico,
+ * Liam, Noé, Mathis). Avec un seul principal par membre, leur vrai compte LoL
+ * s'affichait « (smurf) » dans chaque notification LoL.
+ */
+function lolMainRiotIdFromRoster(player) {
+  return formatRosterAccount(player?.lol);
+}
+
 function indexRoster(roster, overlay) {
   const overlayMembers = overlay?.members || {};
   const overlayAccounts = overlay?.accounts || {};
+  const owners = declaredOwners(roster, slugify);
 
   const staticMembers = roster.map(player => ({
     id: slugify(player.name), name: player.name, avatar: player.avatar || null,
     discordId: extractDiscordId(player.avatar), riotIds: riotIdsFromRoster(player),
-    mainRiotId: mainRiotIdFromRoster(player), puuids: puuidsFromRoster(player),
+    mainRiotId: mainRiotIdFromRoster(player), lolMainRiotId: lolMainRiotIdFromRoster(player),
+    puuids: puuidsFromRoster(player),
   }));
 
   const staticIds = new Set(staticMembers.map(m => m.id));
   const extraMembers = Object.entries(overlayMembers)
     .filter(([id]) => !staticIds.has(id))
-    .map(([id, m]) => ({ id, name: m.name, avatar: m.avatar || null, discordId: extractDiscordId(m.avatar), riotIds: [], mainRiotId: null, puuids: [] }));
+    .map(([id, m]) => ({ id, name: m.name, avatar: m.avatar || null, discordId: extractDiscordId(m.avatar), riotIds: [], mainRiotId: null, lolMainRiotId: null, puuids: [] }));
 
   members = [...staticMembers, ...extraMembers];
 
@@ -95,6 +109,10 @@ function indexRoster(roster, overlay) {
     const accounts = overlayAccounts[member.id];
     if (!accounts) return;
     Object.values(accounts).forEach(account => {
+      // Compte déclaré dans roster.json sous un AUTRE membre : il lui reste.
+      // Le script enregistre un compte sous celui qui le joue, et un compte
+      // prêté finissait chez l'emprunteur. Voir roster-ownership.js.
+      if (declaredElsewhere(member.id, account, owners)) return;
       const riotId = `${account.name}#${account.tag}`;
       // Compte retiré depuis l'admin. Un compte déclaré dans roster.json ne
       // peut pas être effacé d'ici — le fichier est versionné — mais il peut

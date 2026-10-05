@@ -7,7 +7,7 @@ import { valorantApi } from './api.js';
 import { state } from './state.mjs?v=20261005-sites-history';
 import { formatRelTime } from './storage.js';
 import { avatarLayersHTML } from './avatars.mjs?v=20260720-avatars';
-import { rosterAccounts, currentRiotId, cardStatus, isStale } from './roster-card-utils.mjs?v=20261005-riot-rename';
+import { rosterAccounts, currentRiotId, cardStatus, isStale } from './roster-card-utils.mjs?v=20261006-proprietaire';
 import { statsKey, readStats, selectedAccount } from './account-stats.mjs?v=20260920-puuid';
 import { storedKey } from './henrik-key.mjs';
 
@@ -341,7 +341,7 @@ export function rosterHTML() {
     // La carte montre UN COMPTE à la fois, choisi dans la liste des puces.
     // Fondre le main et ses smurfs donnait un rang pris au hasard — celui de la
     // dernière synchro — et un winrate mêlant deux niveaux de jeu.
-    const accounts = rosterAccounts(p, state.ROSTER_OVERLAY);
+    const accounts = rosterAccounts(p, state.ROSTER_OVERLAY, state.ROSTER);
     const shown = selectedAccount(accounts, state.SELECTED_ACCOUNT?.[p.name] || '');
     const stats = readStats(state.ACCOUNT_STATS, shown, { legacy: state.PLAYER_STATS, memberName: p.name }) || {};
     const syncedAgentStats = Array.isArray(stats.topAgentStats) && stats.topAgentStats.length

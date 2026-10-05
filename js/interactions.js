@@ -15,7 +15,7 @@ import {
 } from './live-sessions.mjs?v=20260809-live-server-local';
 import { chooseLiveSession, freshLiveClients, groupLiveClients, isVersionAtLeast, liveClientSummary, liveSessionSignal, recoveringLiveClients, retainRecentLiveClients } from './live-clients.mjs?v=20261005-return-live';
 import { liveClientStatus, liveClientSummaryText, liveWaitingState } from './live-status.mjs?v=20261005-sites-history';
-import { buildLiveIdentityIndex, resolveLiveIdentity } from './live-identities.mjs?v=20261005-riot-rename';
+import { buildLiveIdentityIndex, resolveLiveIdentity } from './live-identities.mjs?v=20261006-proprietaire';
 import { updateScriptDownload } from './downloads.mjs?v=20260912-separate-downloads';
 import { PLAYERS as LOL_ROSTER_PLAYERS } from './lol-roster.mjs?v=20261005-riot-rename';
 import { serverVisual } from './server-visuals.mjs?v=20260809-live-server-local';
@@ -498,7 +498,7 @@ export function initLivePage() {
     .catch(() => {});
 
   function rosterProfileForName(name = '') {
-    return resolveLiveIdentity({ playerName: name }, _rosterIdentityIndex, {participants:currentLiveData?.players || []});
+    return resolveLiveIdentity({ playerName: name }, _rosterIdentityIndex);
   }
 
   // Depuis la v4.16.0, chaque script publie le membre OLYCITY choisi à
@@ -506,9 +506,7 @@ export function initLivePage() {
   // elle reste juste immédiatement après un changement de pseudo, sans
   // attendre que rosterOverlay/accounts soit relu.
   function profileForEntry(entry = {}) {
-    const ownSession = lastSessions[entry.puuid];
-    const participants = ownSession?.players || (!entry.matchId || entry.matchId === currentLiveData?.matchId ? currentLiveData?.players : []) || [];
-    return resolveLiveIdentity(entry, _rosterIdentityIndex, {participants})
+    return resolveLiveIdentity(entry, _rosterIdentityIndex)
       || (entry.member ? { avatar: '', member: entry.member } : null);
   }
 
@@ -1435,7 +1433,7 @@ export function initLivePage() {
     const isMe = myName && p.name?.includes(myName.split('#')[0]);
     const fixedAgent = fixAgentName(p);
     const imgUrl = agentIconUrl(fixedAgent, p.agentId);
-    const profile = resolveLiveIdentity({...p,playerName:p.name || ''}, _rosterIdentityIndex, {participants:currentLiveData?.players || []});
+    const profile = resolveLiveIdentity({...p,playerName:p.name || ''}, _rosterIdentityIndex);
     const member = profile?.member || olycityMember(p.name);
     const memberAvatar = profile?.avatar
       ? `<span class="live-player-member-avatar" title="${escapeDiagnosticText(member)}">${avatarLayersHTML(member, profile.avatar)}</span>`

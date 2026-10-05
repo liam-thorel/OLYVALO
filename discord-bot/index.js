@@ -445,7 +445,7 @@ async function announceCancelledGame(game, sessions, betting, cancelled) {
   const channelIds = new Set();
   players.forEach(({ member }) => trackersForPlayerGame(member.name, game).forEach(t => channelIds.add(t.channelId)));
 
-  const names = players.map(({ member, session }) => `**${member.name}**${accountMark(member, session.playerName)}`).join(', ');
+  const names = players.map(({ member, session }) => `**${member.name}**${accountMark(member, session.playerName, game)}`).join(', ');
   const description = [
     names,
     cancelledExplanation(cancelled.kind),
@@ -881,7 +881,7 @@ function buildLolPlayerEmbed(member, session) {
   const embed = new EmbedBuilder()
     .setColor(GAME_META.lol.color)
     .setAuthor({
-      name: `${positionIcon ? `${positionIcon} ` : ''}${member.name}${accountDetail(member, session.playerName)} — ${championName}`,
+      name: `${positionIcon ? `${positionIcon} ` : ''}${member.name}${accountDetail(member, session.playerName, 'lol')} — ${championName}`,
       iconURL: session.champion?.image || member.avatar || undefined,
     });
 
@@ -939,7 +939,7 @@ async function notifyLolGameStart(session, snapshot) {
   if (channelIds.size === 0) return;
 
   const embeds = rosterPlayers.map(({ session: s, member }) => buildLolPlayerEmbed(member, s)).slice(0, 10);
-  const names = rosterPlayers.map(({ member, session: s }) => `**${member.name}**${accountMark(member, s.playerName)}`).join(', ');
+  const names = rosterPlayers.map(({ member, session: s }) => `**${member.name}**${accountMark(member, s.playerName, 'lol')}`).join(', ');
   const stackBanner = rosterPlayers.length > 1 ? `🔥 **STACK OLYCITY** — ${rosterPlayers.length} joueurs dans la même game !\n` : '';
 
   await Promise.all([...channelIds].map(async channelId => {

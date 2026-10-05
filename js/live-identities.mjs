@@ -1,3 +1,5 @@
+import { declaredOwners, declaredElsewhere } from './roster-ownership.mjs';
+
 function normalize(value = '') {
   return String(value).trim().toLocaleLowerCase('fr');
 }
@@ -21,8 +23,7 @@ export function buildLiveIdentityIndex(roster = [], overlay = {}, knownAccounts 
   const byPuuid = new Map();
   const byRiotId = new Map();
   const byAccountName = new Map();
-  const accountPuuids = new Map();
-  const mainAccounts = new Map();
+  const owners = declaredOwners(roster, slugify);
 
   const registerMember = (memberId, member = {}) => {
     const id = memberId || slugify(member.name);
@@ -43,7 +44,6 @@ export function buildLiveIdentityIndex(roster = [], overlay = {}, knownAccounts 
     const fullId = normalize(riotId(account));
     if (fullId) byRiotId.set(fullId, profile);
     if (account.puuid) byPuuid.set(String(account.puuid), profile);
-    if (fullId && account.puuid) accountPuuids.set(fullId,String(account.puuid));
     const accountName = normalize(account.name || String(account.playerName || '').split('#')[0]);
     if (!accountName) return;
     const existing = byAccountName.get(accountName);
@@ -52,9 +52,10 @@ export function buildLiveIdentityIndex(roster = [], overlay = {}, knownAccounts 
 
   roster.forEach(member => {
     const profile = registerMember(slugify(member.name), member);
-    if (profile && member.riot?.puuid) mainAccounts.set(profile.id,String(member.riot.puuid));
     registerAccount(profile, member.riot);
     (member.smurfs || []).forEach(account => registerAccount(profile, account));
+    // Compte principal LoL, quand il diffère de celui de Valorant.
+    registerAccount(profile, member.lol);
   });
 
   knownAccounts.forEach(account => {
@@ -69,24 +70,27 @@ export function buildLiveIdentityIndex(roster = [], overlay = {}, knownAccounts 
   Object.entries(overlay?.members || {}).forEach(([memberId, member]) => registerMember(memberId, member));
   Object.entries(overlay?.accounts || {}).forEach(([memberId, accounts]) => {
     const profile = byMemberId.get(memberId) || registerMember(memberId, overlay?.members?.[memberId] || {});
-    Object.values(accounts || {}).forEach(account => registerAccount(profile, account));
+    // Un compte déclaré dans roster.json sous un autre membre lui reste : le
+    // script enregistre un compte sous celui qui le JOUE, et un compte prêté
+    // finissait chez l'emprunteur. Voir roster-ownership.mjs.
+    Object.values(accounts || {})
+      .filter(account => !declaredElsewhere(memberId, account, owners))
+      .forEach(account => registerAccount(profile, account));
   });
 
-  return { byMemberId, byMemberName, byPuuid, byRiotId, byAccountName, accountPuuids, mainAccounts };
+  return { byMemberId, byMemberName, byPuuid, byRiotId, byAccountName };
 }
 
-export function resolveLiveIdentity(entry = {}, index, {participants=[]} = {}) {
+/**
+ * Membre derrière une session ou un joueur du Live.
+ *
+ * L'identité publiée par le script (`memberId`) passe en premier : elle dit
+ * qui joue sur CE poste, y compris sur un compte prêté. Le compte (PUUID,
+ * puis Riot ID) ne sert que pour les joueurs vus dans la partie, qui n'ont
+ * pas de script derrière eux.
+ */
+export function resolveLiveIdentity(entry = {}, index) {
   if (!index) return null;
-  // A shared smurf is played by Mathis only when Nico's main is in THIS
-  // match. This affects live labels, never account ownership or statistics.
-  const shared = index.accountPuuids?.get('og anunoby#oly');
-  const nicoMain = index.mainAccounts?.get('nico');
-  const isShared = shared && entry.puuid ? String(entry.puuid) === shared
-    : normalize(entry.playerName) === 'og anunoby#oly';
-  const sharedInMatch = participants.some(player=>shared ? String(player?.puuid || '') === shared
-    : normalize(player?.playerName || player?.name) === 'og anunoby#oly');
-  if (isShared && sharedInMatch && nicoMain && participants.some(player=>String(player?.puuid || '') === nicoMain)
-    && index.byMemberId.has('mathis')) return index.byMemberId.get('mathis');
   if (entry.memberId && index.byMemberId.has(entry.memberId)) return index.byMemberId.get(entry.memberId);
   if (entry.member && index.byMemberName.has(normalize(entry.member))) return index.byMemberName.get(normalize(entry.member));
   if (entry.puuid && index.byPuuid.has(String(entry.puuid))) return index.byPuuid.get(String(entry.puuid));

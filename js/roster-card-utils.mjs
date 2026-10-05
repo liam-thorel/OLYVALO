@@ -1,3 +1,4 @@
+import { declaredOwners, declaredElsewhere } from './roster-ownership.mjs';
 /**
  * Cartes du roster Valorant — logique pure.
  *
@@ -43,13 +44,20 @@ export function memberKey(value = '') {
  * `hidden` retire un compte du roster vivant (on ne peut pas effacer une ligne
  * du dépôt depuis le site), et `role: 'main'` le fait passer en tête — sinon
  * le réglage de l'admin resterait sans effet sur l'écran.
+ *
+ * `roster` (facultatif) : le roster entier. Un compte qu'il déclare sous un
+ * AUTRE membre n'est pas affiché ici, même si Firebase l'a rangé chez ce
+ * joueur — voir roster-ownership.mjs.
  */
-export function rosterAccounts(player, overlay = null) {
+export function rosterAccounts(player, overlay = null, roster = null) {
   const declared = [player?.riot, ...(player?.smurfs || [])]
     .filter(account => account?.name)
     .map(account => ({ riotId: riotIdOf(account), puuid: String(account.puuid || '').trim(), source: 'roster' }));
 
-  const stored = Object.values(overlay?.accounts?.[memberKey(player?.name)] || {})
+  const key = memberKey(player?.name);
+  const owners = roster ? declaredOwners(roster, memberKey) : null;
+  const stored = Object.values(overlay?.accounts?.[key] || {})
+    .filter(account => !declaredElsewhere(key, account, owners))
     .sort((a,b) => Number(a?.updatedAt || 0) - Number(b?.updatedAt || 0));
   const hidden = new Set();
   const hiddenPuuids = new Set();

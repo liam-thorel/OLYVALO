@@ -443,7 +443,7 @@ test('roster cards surface the Riot ID, the smurfs and why a card is empty', () 
   // Le Riot ID était la grande absence de l'écran : il n'existait que dans
   // l'URL du bouton Tracker. Les smurfs, eux, n'étaient affichés nulle part,
   // ni ceux de roster.json ni ceux enregistrés depuis l'admin.
-  assert.match(render, /rosterAccounts\(p, state\.ROSTER_OVERLAY\)/,
+  assert.match(render, /rosterAccounts\(p, state\.ROSTER_OVERLAY, state\.ROSTER\)/,
     'les comptes viennent du dépôt ET de l’admin, comme pour les courbes');
   assert.match(render, /class="player-riot-id"/);
   assert.match(render, /class="player-smurf\$\{active \? ' is-active' : ''\}"/);

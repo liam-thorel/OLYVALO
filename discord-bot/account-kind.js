@@ -24,12 +24,16 @@ function normalize(value) {
  *  - `main`    : c'est le compte déclaré dans roster.json ;
  *  - `smurf`   : c'en est un autre, et le principal est connu ;
  *  - `unknown` : plusieurs comptes, mais aucun n'est déclaré principal.
+ *
+ * Le principal dépend du JEU : plusieurs membres ne jouent pas à LoL sur leur
+ * compte Valorant (`lol` dans roster.json). Sans lui, on retombe sur le
+ * principal Valorant.
  */
-function accountKind(member, riotId) {
+function accountKind(member, riotId, game = 'valorant') {
   const accounts = member?.riotIds || [];
   if (accounts.length <= 1) return 'solo';
 
-  const main = normalize(member?.mainRiotId);
+  const main = normalize(game === 'lol' ? (member?.lolMainRiotId || member?.mainRiotId) : member?.mainRiotId);
   if (!main) return 'unknown';
 
   const played = normalize(riotId);
@@ -48,8 +52,8 @@ function shortAccount(riotId) {
  * Volontairement sans le nom du compte : l'en-tête doit rester lisible quand
  * cinq joueurs sont stackés. Le détail va dans l'embed, qui a la place.
  */
-function accountMark(member, riotId) {
-  const kind = accountKind(member, riotId);
+function accountMark(member, riotId, game = 'valorant') {
+  const kind = accountKind(member, riotId, game);
   if (kind === 'main') return ' (main)';
   if (kind === 'smurf') return ' (smurf)';
   return '';
@@ -62,8 +66,8 @@ function accountMark(member, riotId) {
  * c'est moins qu'un « main/smurf », mais c'est vrai, et ça suffit à lever
  * l'ambiguïté entre deux comptes d'un même membre.
  */
-function accountDetail(member, riotId) {
-  const kind = accountKind(member, riotId);
+function accountDetail(member, riotId, game = 'valorant') {
+  const kind = accountKind(member, riotId, game);
   if (kind === 'solo') return '';
   const short = shortAccount(riotId);
   if (!short) return '';
