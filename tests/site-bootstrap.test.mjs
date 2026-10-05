@@ -100,11 +100,13 @@ test('OLYCITY is the product brand while games remain contextual modes', () => {
   assert.match(gameMode, /primary\.textContent = '● Voir le Live'/);
 });
 
-test('home is one live priority, three visual worlds and a compact member strip', () => {
+test('Tracker home is game-scoped, with two visual worlds and no redundant hub planner', () => {
   assert.match(page, /id="home-now-card"/);
   assert.match(page, /data-home-world="valorant"/);
   assert.match(page, /data-home-world="lol"/);
-  assert.match(page, /data-home-world="coop"/);
+  assert.doesNotMatch(page, /data-home-world="coop"/);
+  assert.doesNotMatch(page, /id="search-input"|id="search-results"/);
+  assert.match(homeDashboard, /document\.addEventListener\('olycity:gamechange', handleGameChange\)/);
   assert.match(page, /data-home-world="valorant" data-home-page="maps"/);
   assert.match(page, /data-home-world="lol" data-home-page="roster"/);
   assert.match(homeDashboard, /addEventListener\('click', handleWorldClick\)/);
@@ -112,8 +114,8 @@ test('home is one live priority, three visual worlds and a compact member strip'
   assert.match(homeStyles, /valorant-keyart\.webp/);
   assert.match(homeStyles, /league-champions-group\.webp/);
   assert.match(homeStyles, /peak-keyart\.webp/);
-  assert.match(page, /home\.css\?v=20260825-human-banner/);
-  assert.match(page, /design-system\.css\?v=20260830-section-icons/);
+  assert.match(page, /home\.css\?v=20261005-tracker-home/);
+  assert.match(page, /design-system\.css\?v=20261005-tracker-home/);
   assert.match(page, /<span class="hero-title-frame">OLYCITY<\/span>/);
   assert.doesNotMatch(page, /id="hero-eyebrow"/);
   assert.match(page, /id="home-member-faces"/);
@@ -121,9 +123,9 @@ test('home is one live priority, three visual worlds and a compact member strip'
   assert.doesNotMatch(page, /Agents prioritaires|id="stier-row"|id="mini-roster"/);
   assert.match(main, /initHomeDashboard\(/);
   assert.match(homeDashboard, /liveDataStore\.subscribe\(render\)/);
-  assert.match(homeStyles, /\.home-world-grid\{display:grid;grid-template-columns:repeat\(3,minmax\(0,1fr\)\)/);
+  assert.match(homeStyles, /\.home-world-grid\{display:grid;grid-template-columns:repeat\(2,minmax\(0,1fr\)\)/);
   assert.match(homeStyles, /@media\(max-width:768px\)/);
-  assert.match(page, /id="home-tonight-content"/);
+  assert.doesNotMatch(page, /id="home-tonight-content"/);
   assert.match(page, /id="home-activity-list"/);
   assert.match(homeGroup, /groupNight\/current/);
   assert.match(main, /initHomeGroup\(state\.MEMBERS\)/);
@@ -161,7 +163,7 @@ test('mobile navigation keeps primary sections reachable with a compact more men
   assert.match(main, /navBtn\.setAttribute\('aria-current', 'page'\)/);
   assert.match(coopStyles, /\.coop-card-actions button,\.coop-card-actions a\{display:flex;min-height:44px/);
   assert.doesNotMatch(page, /data-page="games"|data-mobile-page="games"/);
-  assert.match(page, /data-home-world="coop" data-home-page="games"/);
+  assert.doesNotMatch(page, /data-home-world="coop" data-home-page="games"/);
   assert.match(designSystem, /:root\[data-game="lol"\] \.page-nav > \.page-nav-btn\[data-page="roster"\][\s\S]*display: flex !important/);
   assert.match(designSystem, /:root\[data-game="lol"\] \.mobile-nav-more-sheet > \[data-mobile-page="roster"\][\s\S]*display: none/);
 });
@@ -403,9 +405,11 @@ test('Live and Admin share one realtime Firebase store', () => {
     .flatMap(file => [...fs.readFileSync(new URL(file, jsDirectory), 'utf8').matchAll(/from ['"](\.\/live-data-store\.mjs\?v=[^'"]+)['"]/g)])
     .map(match => match[1]);
   assert.deepEqual([...new Set(liveStoreSpecifiers)], [
-    './live-data-store.mjs?v=20260930-consistent-live',
+    './live-data-store.mjs?v=20261005-return-live',
   ]);
   assert.match(liveDataStore, /valorantClients: 'live\/clients'/);
+  assert.match(main, /addEventListener\('pagehide', \(\) => liveDataStore\.pause\(\)\)/);
+  assert.match(main, /event\.persisted[\s\S]*liveDataStore\.resume\(\)/);
   assert.match(interactions, /liveDataStore\.subscribe/);
   assert.match(lolPages, /liveDataStore\.subscribe/);
   assert.match(admin, /liveDataStore\.subscribe/);

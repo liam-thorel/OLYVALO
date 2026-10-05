@@ -308,7 +308,7 @@
   .home-now-copy > strong { font-size: 27px; }
   .home-world-grid { grid-template-columns: 1fr 1fr; gap: 9px; }
   .home-world { min-height: 126px; }
-  .home-world[data-home-world="valorant"] { grid-row: span 2; min-height: 261px; }
+  .home-world[data-home-world="valorant"] { min-height: 150px; }
   .home-world-copy { left: 12px; bottom: 11px; }
   .home-world-copy strong { font-size: 15px; }
   .home-world-copy small { font-size: 9px; }
@@ -352,7 +352,7 @@
 }
 
 @media (max-width: 380px) {
-  .home-world[data-home-world="valorant"] { min-height: 237px; }
+  .home-world[data-home-world="valorant"] { min-height: 150px; }
   .home-world-grid { grid-template-columns: minmax(0,1.05fr) minmax(0,.95fr); }
   .home-world-copy small { display: none; }
 }

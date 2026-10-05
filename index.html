@@ -19,12 +19,12 @@
   <link rel="stylesheet" href="./css/tokens.css?v=20260824-page-shell">
   <link rel="stylesheet" href="./css/layout.css?v=20261004-hub-link">
   <link rel="stylesheet" href="./css/components.css?v=20260920-puuid-accounts">
-  <link rel="stylesheet" href="./css/home.css?v=20260825-human-banner">
+  <link rel="stylesheet" href="./css/home.css?v=20261005-tracker-home">
   <link rel="stylesheet" href="./css/agent-page.css?v=20260720-avatars">
   <link rel="stylesheet" href="./css/responsive.css?v=20261003-party-count">
   <link rel="stylesheet" href="./css/lol-mode.css?v=20260922-autoaccept">
   <link rel="stylesheet" href="./css/curse.css?v=20260818-curse-lifecycle">
-  <link rel="stylesheet" href="./css/design-system.css?v=20260830-section-icons">
+  <link rel="stylesheet" href="./css/design-system.css?v=20261005-tracker-home">
 </head>
 <body>
   <svg class="oly-icon-sprite" aria-hidden="true" focusable="false">
@@ -193,11 +193,6 @@
           <span class="profile-indicator-name">—</span>
         </button>
 
-        <div class="search-wrap" data-valorant-only>
-          <span class="search-icon">⌕</span>
-          <input type="text" id="search-input" class="search-input" placeholder="Agent…" autocomplete="off">
-        </div>
-        <div class="search-results" id="search-results"></div>
 
       </div>
     </div>
@@ -261,9 +256,6 @@
         <button class="home-world" data-home-world="lol" data-home-page="roster" type="button">
           <span class="home-world-copy"><small>Roster & Rangs</small><strong>League of Legends</strong></span>
         </button>
-        <button class="home-world" data-home-world="coop" data-home-page="games" type="button">
-          <span class="home-world-copy"><small>Votes du groupe</small><strong>Coop</strong></span>
-        </button>
       </div>
 
       <div class="home-member-row">
@@ -277,17 +269,14 @@
       </div>
 
       <div class="home-group-grid">
-        <section class="home-group-panel home-tonight-panel" aria-labelledby="home-tonight-title">
-          <div class="home-group-heading">
-            <span>Ce soir</span>
-            <button id="home-tonight-open" type="button">Organiser</button>
-          </div>
-          <div class="home-tonight-content" id="home-tonight-content">
-            <div><strong id="home-tonight-title">On se retrouve quand ?</strong><small>Choisis une heure et un jeu avec le groupe.</small></div>
+        <section class="home-group-panel home-tracker-shortcuts" aria-label="Accès au Tracker">
+          <div class="home-tracker-links">
+            <button type="button" onclick="window.OLYCITY?.nav('roster')"><svg aria-hidden="true"><use href="#oly-icon-roster"></use></svg><span><strong>Roster</strong><small>Rangs & statistiques</small></span><span class="home-tracker-arrow" aria-hidden="true">→</span></button>
+            <button type="button" onclick="window.OLYCITY?.nav('history')"><svg aria-hidden="true"><use href="#oly-icon-history"></use></svg><span><strong>Historique</strong><small>Dernières parties</small></span><span class="home-tracker-arrow" aria-hidden="true">→</span></button>
           </div>
         </section>
         <section class="home-group-panel home-activity-panel" aria-labelledby="home-activity-title">
-          <div class="home-group-heading"><span id="home-activity-title">Activité récente</span><small id="home-activity-count"></small></div>
+          <div class="home-group-heading"><span id="home-activity-title">Changements de rang</span><small id="home-activity-count"></small></div>
           <div class="home-activity-list" id="home-activity-list">
             <span class="home-inline-loading">Synchronisation du groupe…</span>
           </div>
@@ -521,7 +510,7 @@
 
   <!-- Firebase SDK -->
   <!-- Présence Firebase -->
-  <script src="./js/presence.js?v=20260720-avatars"></script>
-  <script type="module" src="./js/main.js?v=20261005-sites-history"></script>
+  <script src="./js/presence.js?v=20261005-return-live"></script>
+  <script type="module" src="./js/main.js?v=20261005-tracker-home"></script>
 </body>
 </html>

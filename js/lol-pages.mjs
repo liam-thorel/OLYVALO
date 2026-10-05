@@ -1,6 +1,6 @@
-import { groupLolSessions, lolKda, lolMapLabel, normalizeLolHistory, summarizeLolDays } from './lol-utils.mjs?v=20260930-consistent-live';
-import { liveDataStore, liveTimestamp } from './live-data-store.mjs?v=20260930-consistent-live';
-import { liveClientSummary } from './live-clients.mjs?v=20261003-live-states';
+import { groupLolSessions, isTftSession, lolKda, lolMapLabel, normalizeLolHistory, summarizeLolDays } from './lol-utils.mjs?v=20261005-all-modes';
+import { liveDataStore, liveTimestamp } from './live-data-store.mjs?v=20261005-return-live';
+import { liveClientSummary } from './live-clients.mjs?v=20261005-return-live';
 import { liveClientSummaryText, liveWaitingState, normalizeLolClientState } from './live-status.mjs?v=20261005-sites-history';
 import { createHistoryPager } from './history-pager.mjs?v=20261005-sites-history';
 import { createHistoryDisclosureState } from './history-disclosure-state.mjs';
@@ -78,6 +78,7 @@ function sessionCard(group) {
       <div class="lol-region-badge">${esc(region)}</div>
     </header>
     <div class="lol-live-players">${group.players.map(player => {
+      if (isTftSession(player)) return `<div class="lol-live-player"><div class="lol-live-player-main"><small>Teamfight Tactics</small><strong>${esc(player.playerName || player.riotId || 'Joueur')}</strong><span>Partie TFT en cours</span></div></div>`;
       const champion = player.champion || {};
       const opponent = player.matchup || player.opponent || {};
       return `<div class="lol-live-player">

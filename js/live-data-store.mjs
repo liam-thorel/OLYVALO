@@ -103,6 +103,7 @@ export function createLiveDataStore({
   let generation = 0;
   let started = false;
   let refreshPromise = null;
+  let refreshController = null;
   let lastStreamActivityAt = 0;
   let lastRecoveryAt = 0;
   let watchdogTimer = null;
@@ -214,7 +215,8 @@ export function createLiveDataStore({
     const requestGeneration = generation;
     const events = Object.fromEntries(Object.keys(LIVE_CHANNELS).map(channel => [channel, []]));
     refreshEvents = events;
-    refreshPromise = fetchJson(`${firebaseUrl}/live.json`, { timeoutMs }).then(incomingRoot => {
+    refreshController = new AbortController();
+    refreshPromise = fetchJson(`${firebaseUrl}/live.json`, { timeoutMs, signal:refreshController.signal }).then(incomingRoot => {
       if (requestGeneration !== generation) return;
       Object.entries(LIVE_CHANNELS).forEach(([channel, path]) => {
         const incoming = incomingRoot?.[path.split('/').at(-1)] || {};
@@ -240,6 +242,7 @@ export function createLiveDataStore({
     }).finally(() => {
       if (requestGeneration === generation) {
         refreshPromise = null;
+        refreshController = null;
         refreshEvents = null;
       }
     });
@@ -254,21 +257,35 @@ export function createLiveDataStore({
     return () => listeners.delete(listener);
   }
 
-  function destroy() {
+  function pause() {
     generation += 1;
+    refreshController?.abort();
+    refreshController = null;
     refreshPromise = null;
     refreshEvents = null;
     if (watchdogTimer) clearInterval(watchdogTimer);
     watchdogTimer = null;
     sources.forEach(source => source.close());
     sources.clear();
-    listeners.clear();
     started = false;
     lastStreamActivityAt = 0;
     lastRecoveryAt = 0;
+    Object.values(channelState).forEach(status => { status.connected = false; });
   }
 
-  return { apply, destroy, recoverIfSilent, refresh, snapshot, start, subscribe };
+  function resume() {
+    // A restored document must not reuse a frozen GET or a formerly open SSE.
+    // Keep data and subscriptions: destroy() would orphan the visible widgets.
+    pause();
+    return refresh();
+  }
+
+  function destroy() {
+    pause();
+    listeners.clear();
+  }
+
+  return { apply, destroy, pause, resume, recoverIfSilent, refresh, snapshot, start, subscribe };
 }
 
 export const liveDataStore = createLiveDataStore();

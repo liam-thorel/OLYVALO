@@ -1,4 +1,4 @@
-import { liveTimestamp, mergeRealtimeEvent } from './live-data-store.mjs?v=20260930-consistent-live';
+import { liveTimestamp, mergeRealtimeEvent } from './live-data-store.mjs?v=20261005-return-live';
 
 export const LOL_FRESH_MS = 55_000;
 
@@ -57,11 +57,19 @@ const LOL_MAP_BY_MODE = {
   TUTORIAL: 'Tutoriel',
   PRACTICETOOL: 'Outil d’entraînement',
   SWIFTPLAY: 'Faille de l’invocateur',
+  ONEFORALL: 'Faille de l’invocateur',
+  ARSR: 'Faille de l’invocateur',
+  STRAWBERRY: 'Swarm',
+  ULTBOOK: 'Faille de l’invocateur',
+  BRAWL: 'Bandlewood',
 };
 
 export function lolMapLabel(session) {
+  if (isTftSession(session)) return 'Teamfight Tactics';
   const mode = String(session?.mode || '').toUpperCase();
   if (LOL_MAP_BY_MODE[mode]) return LOL_MAP_BY_MODE[mode];
+  const maps = { 11:'Faille de l’invocateur', 12:'Abîme hurlant', 30:'Arène' };
+  if (maps[Number(session?.mapId)]) return maps[Number(session.mapId)];
   // Mode inconnu : la description de file reste plus parlante qu'une carte
   // inventée, et à défaut on n'affirme rien.
   return session?.queueDescription || '';
@@ -93,4 +101,9 @@ export function summarizeLolDays(matches) {
 
 export function mergeFirebaseEvent(current, event) {
   return mergeRealtimeEvent(current, event || {path:'/',data:null});
+}
+
+export function isTftSession(session = {}) {
+  return session.gameFamily === 'tft' || String(session.mode || '').toUpperCase().startsWith('TFT')
+    || Number(session.mapId) === 22 || [1090,1100,1110,1111,1130,1150,1160,1210].includes(Number(session.queueId));
 }

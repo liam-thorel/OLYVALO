@@ -3,6 +3,41 @@ import assert from 'node:assert/strict';
 
 import { createLiveDataStore, isLiveRecordExpired, liveTimestamp, mergeRealtimeEvent, routeLiveRootEvent, staleLiveRecords } from '../js/live-data-store.mjs';
 
+test('hub round trips abort old reads and restore live subscribers immediately', async () => {
+  const sources = [];
+  const requests = [];
+  class FakeSource {
+    constructor() { this.handlers = {}; this.closed = false; sources.push(this); }
+    addEventListener(type, handler) { this.handlers[type] = handler; }
+    close() { this.closed = true; }
+  }
+  const store = createLiveDataStore({ EventSourceImpl:FakeSource, fetchJson:(url, options) => new Promise(resolve => requests.push({ resolve, options })) });
+  let seen = null;
+  store.subscribe(value => { seen = value; }, { refreshOnStart:false });
+  store.apply('valorantClients', {path:'/',data:{known:{state:'idle'}}});
+  const oldRead = store.refresh();
+  store.pause();
+  assert.equal(requests[0].options.signal.aborted, true);
+  assert.equal(sources[0].closed, true);
+  assert.ok(store.snapshot().valorantClients.known, 'preserve visible data while resuming');
+  const resumed = store.resume();
+  assert.equal(sources.length, 2, 'reconnect without the 75-second silence delay');
+  assert.equal(requests.length, 2, 'do not reuse a frozen request');
+  requests[1].resolve({clients:{current:{state:'in-game'}}});
+  await resumed;
+  assert.ok(seen.valorantClients.current, 'existing widgets remain subscribed');
+  requests[0].resolve({clients:{stale:{state:'idle'}}});
+  await oldRead;
+  sources[0].handlers.put({type:'put',data:JSON.stringify({path:'/',data:{clients:{stale:{}}}})});
+  assert.deepEqual(Object.keys(store.snapshot().valorantClients), ['current']);
+  store.pause();
+  const again = store.resume();
+  requests[2].resolve({clients:{current:{state:'queue'}}});
+  await again;
+  assert.equal(seen.valorantClients.current.state, 'queue');
+  store.destroy();
+});
+
 test('realtime events replace, patch and delete nested values', () => {
   let state = mergeRealtimeEvent({}, { path:'/', data:{ p1:{ state:'idle', map:'Breeze' } } });
   state = mergeRealtimeEvent(state, { path:'/p1/state', data:'in-game' });

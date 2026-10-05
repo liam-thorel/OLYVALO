@@ -16,24 +16,24 @@ import { statsKey, readStats, writeStats, selectedAccount, toggleSelection, need
   firebasePath, publishable, remoteStats, mergeStores } from './account-stats.mjs?v=20260922-partage';
 import { setStoredKey, storedKey, forgetCachedKey } from './henrik-key.mjs';
 import { rosterHTML, guestCardHTML, mapSectionHTML, agentPageHTML, navMapsHTML, compHTML, globalNotesHTML } from './render.js?v=20260920-puuid-accounts';
-import { initTheme, initTilt, initParallax, initSearch, initKeyboard, initHeroParticles, initWheelLogos, initLivePage, initHistoryPage } from './interactions.js?v=20261005-sites-history';
+import { initTheme, initTilt, initParallax, initKeyboard, initHeroParticles, initWheelLogos, initLivePage, initHistoryPage } from './interactions.js?v=20261005-return-live';
 import { storage } from './storage.js';
 import { avatarLayersHTML } from './avatars.mjs';
-import { initAdminPage } from './admin.mjs?v=20261003-party-count';
+import { initAdminPage } from './admin.mjs?v=20261005-return-live';
 import { initBettingPage } from './betting-page.mjs?v=20260930-consistent-live';
 import { initRrCurvePage } from './rr-curve-page.mjs?v=20260930-consistent-live';
 import { initSiteSwitcher } from './site-switcher.mjs';
 import { sharedProfileId, rememberSharedProfile } from './shared-profile.mjs';
 import { getGameMode, initGameMode, setGameMode } from './game-mode.mjs?v=20260824-home-title';
-import { initLolHistoryPage, initLolLivePage } from './lol-pages.mjs?v=20261005-history';
+import { initLolHistoryPage, initLolLivePage } from './lol-pages.mjs?v=20261005-all-modes';
 import { initLolRosterPages } from './lol-roster.mjs?v=20261005-sites-history';
 import { state } from './state.mjs?v=20261005-sites-history';
 import { memberId, mergeMemberProfiles, resolveMemberProfile } from './member-profiles.mjs?v=20260823-profile-picker';
-import { initHomeDashboard } from './home-dashboard.mjs?v=20261003-party-count';
-import { initHomeGroup } from './home-group.mjs?v=20260930-consistent-live';
+import { initHomeDashboard } from './home-dashboard.mjs?v=20261005-tracker-home';
+import { initHomeGroup } from './home-group.mjs?v=20261005-tracker-home';
 import { initPwaInstall } from './pwa-install.mjs?v=20260901-deploy-updates';
 import { initSiteTelemetry } from './site-telemetry.mjs?v=20260825-site-health';
-import { liveDataStore, liveTimestamp } from './live-data-store.mjs?v=20260930-consistent-live';
+import { liveDataStore, liveTimestamp } from './live-data-store.mjs?v=20261005-return-live';
 import { initHubTransition } from './hub-transition.mjs?v=20261005-retour';
 export { state };
 
@@ -978,7 +978,12 @@ async function boot() {
   if (!window._liveResumeBound) {
     window._liveResumeBound = true;
     let lastResumeAt = 0;
-    const resumePageData = () => {
+    window.addEventListener('pagehide', () => liveDataStore.pause());
+    const resumePageData = (event) => {
+      if (event?.type === 'pageshow' && event.persisted) {
+        lastResumeAt = 0;
+        void liveDataStore.resume();
+      }
       if (document.visibilityState !== 'visible') return;
       if (Date.now() - lastResumeAt < 750) return;
       lastResumeAt = Date.now();
@@ -1062,7 +1067,6 @@ async function boot() {
       .catch(error => console.warn('[OLYCITY] Notifications indisponibles', error));
   }
   if (!window._lolRosterCleanup) window._lolRosterCleanup = initLolRosterPages();
-  initSearch((name) => window.OLYCITY.showAgentPage(name));
 
   // Guest card — Enter key support
   document.addEventListener('keydown', e => {

@@ -1,6 +1,14 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { activeLolSessions, groupLolSessions, lolKda, mergeFirebaseEvent, normalizeLolHistory, summarizeLolDays } from '../js/lol-utils.mjs';
+import { activeLolSessions, groupLolSessions, isTftSession, lolMapLabel, lolKda, mergeFirebaseEvent, normalizeLolHistory, summarizeLolDays } from '../js/lol-utils.mjs';
+
+test('TFT sessions, including older scripts, never claim to be on the Rift', () => {
+  for (const session of [{mode:'TFT'},{queueId:1100,mode:'CLASSIC'},{gameFamily:'tft'},{mapId:22},{queueId:1210}]) {
+    assert.equal(isTftSession(session),true);
+    assert.equal(lolMapLabel(session),'Teamfight Tactics');
+  }
+  assert.equal(isTftSession({queueId:420,mode:'CLASSIC'}),false);
+});
 
 test('root PATCH preserves unrelated games and votes, PUT replaces them', () => {
   const current = { a:{ title:'Peak', votes:{ nico:true } }, b:{ title:'Big Walk' } };

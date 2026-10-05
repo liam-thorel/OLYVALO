@@ -1,8 +1,9 @@
 import { avatarLayersHTML } from './avatars.mjs';
-import { freshLiveClients, liveClientSummary, liveSessionSignal } from './live-clients.mjs?v=20261003-live-states';
+import { freshLiveClients, liveClientSummary, liveSessionSignal } from './live-clients.mjs?v=20261005-return-live';
 import { liveClientSummaryText, normalizeLolClientState } from './live-status.mjs?v=20261003-party-count';
-import { liveDataStore, liveTimestamp } from './live-data-store.mjs?v=20260930-consistent-live';
-import { activeLolSessions } from './lol-utils.mjs?v=20260930-consistent-live';
+import { liveDataStore, liveTimestamp } from './live-data-store.mjs?v=20261005-return-live';
+import { activeLolSessions, isTftSession, lolMapLabel } from './lol-utils.mjs?v=20261005-all-modes';
+import { getGameMode } from './game-mode.mjs?v=20260824-home-title';
 
 function activeValorantSessions(raw = {}, now = Date.now()) {
   return Object.entries(raw)
@@ -27,8 +28,9 @@ function onlineMemberIds(snapshot, now = Date.now()) {
 }
 
 export function homeDashboardState(snapshot = {}, now = Date.now(), context = {}) {
-  const valorantSessions = activeValorantSessions(snapshot.valorantSessions, now);
-  const leagueSessions = activeLolSessions(snapshot.lolSessions, now);
+  const mode = context.game === 'lol' ? 'lol' : 'valorant';
+  const valorantSessions = mode === 'valorant' ? activeValorantSessions(snapshot.valorantSessions, now) : [];
+  const leagueSessions = mode === 'lol' ? activeLolSessions(snapshot.lolSessions, now) : [];
   const onlineIds = onlineMemberIds(snapshot, now);
 
   if (valorantSessions.length) {
@@ -43,38 +45,28 @@ export function homeDashboardState(snapshot = {}, now = Date.now(), context = {}
   if (leagueSessions.length) {
     const players = new Set(leagueSessions.map(item => item.memberId).filter(Boolean)).size || leagueSessions.length;
     return {
-      state:'lol', kicker:'Live · League of Legends', title:'Partie en cours',
-      detail:`${players} membre${players > 1 ? 's' : ''} sur la Faille`, action:'Voir le Live', page:'live', onlineIds,
+      state:'lol', kicker:isTftSession(leagueSessions[0]) ? 'Live · Teamfight Tactics' : 'Live · League of Legends', title:isTftSession(leagueSessions[0]) ? 'Partie TFT en cours' : 'Partie en cours',
+      detail:`${players} membre${players > 1 ? 's' : ''} · ${leagueSessions[0].queueDescription || lolMapLabel(leagueSessions[0]) || 'Mode en cours de détection'}`, action:'Voir le Live', page:'live', onlineIds,
     };
   }
-  if (context.plan) {
-    const optionCount = context.plan.options?.length || 1;
-    const gameCount = context.plan.games?.length || (context.plan.gameId ? 1 : 0);
-    return {
-      state:'night', kicker:context.needsResponse ? 'Ta réponse est attendue' : context.plan.final ? 'Soirée validée' : 'Prochaine soirée',
-      title:context.plan.final ? context.plan.gameTitle : context.needsResponse ? 'Tu es disponible quand ?' : context.plan.gameTitle,
-      detail:`${optionCount} créneau${optionCount > 1 ? 'x' : ''}${gameCount ? ` · ${gameCount} jeu${gameCount > 1 ? 'x' : ''}` : ''}`,
-      action:context.needsResponse ? 'Donner mon avis' : 'Voir la soirée', page:'home', actionType:'group-night', onlineIds,
-    };
-  }
-  if (onlineIds.size) {
+  {
     const valorantClients = freshLiveClients(snapshot.valorantClients, snapshot.valorantSessions, now);
     const leagueClients = freshLeagueClients(snapshot, now);
-    const clients = [...valorantClients, ...leagueClients];
+    const clients = mode === 'lol' ? leagueClients : valorantClients;
+    if (clients.length) {
     const summary = liveClientSummary(clients);
-    const detail = [
-      valorantClients.length && `Valorant : ${liveClientSummaryText(liveClientSummary(valorantClients))}`,
-      leagueClients.length && `LoL : ${liveClientSummaryText(liveClientSummary(leagueClients))}`,
-    ].filter(Boolean).join(' · ');
+    const detail = liveClientSummaryText(summary);
     return {
-      state:'idle', kicker:'En ce moment',
-      title:summary.inGame ? 'Partie détectée' : summary.agentSelect ? 'Sélection en cours' : summary.queue ? 'Recherche de partie' : `${onlineIds.size} membre${onlineIds.size > 1 ? 's' : ''} connecté${onlineIds.size > 1 ? 's' : ''}`,
+      state:mode, kicker:`En ce moment · ${mode === 'lol' ? 'League of Legends' : 'Valorant'}`,
+      title:summary.inGame ? 'Partie détectée' : summary.agentSelect ? 'Sélection en cours' : summary.queue ? 'Recherche de partie' : `${clients.length} membre${clients.length > 1 ? 's' : ''} connecté${clients.length > 1 ? 's' : ''}`,
       detail:detail || 'Scripts connectés · état de jeu inconnu', action:'Voir le Live', page:'live', onlineIds,
     };
+    }
   }
   return {
-    state:'idle', kicker:'Prochaine soirée', title:'On joue à quoi ?',
-    detail:'Découvrir les propositions coop', action:'Voir les jeux', page:'games', onlineIds,
+    state:mode, kicker:`En ce moment · ${mode === 'lol' ? 'League of Legends' : 'Valorant'}`, title:'Pas de partie en cours',
+    detail:mode === 'lol' ? 'Retrouve les rangs et les champions du groupe.' : 'Prépare la prochaine partie avec les compositions par map.',
+    action:mode === 'lol' ? 'Voir le roster' : 'Explorer les maps', page:mode === 'lol' ? 'roster' : 'maps', onlineIds,
   };
 }
 
@@ -95,7 +87,7 @@ function renderSnapshot(snapshot, members, context = {}) {
   const onlineLabel = document.getElementById('home-online-label');
   if (!card || !kicker || !title || !detail || !action || !faces || !onlineLabel) return;
 
-  const model = homeDashboardState(snapshot, Date.now(), context);
+  const model = homeDashboardState(snapshot, Date.now(), { ...context, game:getGameMode() });
   faces.innerHTML = memberFaces(members, model.onlineIds);
   onlineLabel.textContent = `${model.onlineIds.size} en ligne`;
   card.dataset.state = model.state;
@@ -103,13 +95,10 @@ function renderSnapshot(snapshot, members, context = {}) {
   title.textContent = model.title;
   detail.textContent = model.detail;
   action.textContent = model.action;
-  card.onclick = () => model.actionType === 'group-night'
-    ? document.getElementById('home-tonight-open')?.click()
-    : window.OLYCITY?.nav(model.page);
+  card.onclick = () => window.OLYCITY?.nav(model.page);
 }
 
 export function initHomeDashboard({ members = [], navigate, openUniverse } = {}) {
-  let context = {};
   const worldButtons = [...document.querySelectorAll('[data-home-world][data-home-page]')];
   const handleWorldClick = event => {
     const { homeWorld, homePage } = event.currentTarget.dataset;
@@ -117,14 +106,14 @@ export function initHomeDashboard({ members = [], navigate, openUniverse } = {})
     else (openUniverse || window.OLYCITY?.openUniverse?.bind(window.OLYCITY))?.(homeWorld, homePage);
   };
   worldButtons.forEach(button => button.addEventListener('click', handleWorldClick));
-  const render = snapshot => renderSnapshot(snapshot, members, context);
-  const handlePlan = event => { context = event.detail || {}; render(liveDataStore.snapshot()); };
-  window.addEventListener('olycity:group-plan', handlePlan);
+  const render = snapshot => renderSnapshot(snapshot, members);
+  const handleGameChange = () => render(liveDataStore.snapshot());
+  document.addEventListener('olycity:gamechange', handleGameChange);
   const unsubscribe = liveDataStore.subscribe(render);
   const timer = window.setInterval(() => render(liveDataStore.snapshot()), 10_000);
   return () => {
     worldButtons.forEach(button => button.removeEventListener('click', handleWorldClick));
-    window.removeEventListener('olycity:group-plan', handlePlan);
+    document.removeEventListener('olycity:gamechange', handleGameChange);
     unsubscribe();
     window.clearInterval(timer);
   };

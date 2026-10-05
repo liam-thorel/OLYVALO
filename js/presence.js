@@ -80,6 +80,23 @@ async function initPresence() {
 }
 
 window._initPresence = initPresence;
+// BFCache preserves this script and its listeners, not a usable connection.
+// Release the socket on departure and reconnect the same session on return.
+window.addEventListener('pagehide', () => {
+  if (!db) return;
+  clearInterval(heartbeatTimer);
+  heartbeatTimer = null;
+  db.goOffline();
+});
+window.addEventListener('pageshow', event => {
+  if (!event.persisted || !db) return;
+  db.goOnline();
+  if (!sessionRef) return;
+  sessionRef.onDisconnect().remove();
+  void sessionRef.set({ ts:Date.now() }).catch(error => console.warn('[Présence] Reconnexion', error));
+  clearInterval(heartbeatTimer);
+  heartbeatTimer = setInterval(() => sessionRef?.set({ ts:Date.now() }), 8000);
+});
 window._changePresence = async (newProfile) => {
   clearInterval(heartbeatTimer);
   heartbeatTimer = null;

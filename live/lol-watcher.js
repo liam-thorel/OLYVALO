@@ -29,6 +29,7 @@ const { fetchOpggSoloProfile } = require('./opgg-profile');
 const { lolHistorySummary } = require('./history-index');
 const { safeFirebaseKey, lolAccountKey, legacyKeyToDrop } = require('./lol-keys.js');
 const { readyCheckPlan, autoAcceptEnabled } = require('./ready-check.js');
+const { lolGameMetadata } = require('./lol-gameflow.js');
 
 const HEARTBEAT_MS = 20000;
 // Phases actives d'une game : GameStart = chargement, InProgress = en jeu, Reconnect = reco après un crash.
@@ -442,7 +443,15 @@ function extractEndOfGameStats(data, myPuuid) {
 function createLolWatcher({
   putFB, getFB = async () => null, ts, scriptVersion, log = console.log,
   getIdentity = () => null, bindAccount = async () => {},
+  requestLcu = lcuGet, readClientLock = readLockfile,
+  loadChampions = ensureChampionData, loadSoloProfile = fetchSoloQueueProfile,
 }) {
+  // Injectable local readers let tests exercise the actual watcher without a
+  // running Riot client or writes to the production database.
+  const lcuGet = requestLcu;
+  const readLockfile = readClientLock;
+  const ensureChampionData = loadChampions;
+  const fetchSoloQueueProfile = loadSoloProfile;
   let wasActive = false;
   let sessionKey = '';
   let matchStartedAt = 0;
@@ -675,7 +684,7 @@ function createLolWatcher({
     const key = lolAccountKey({ puuid, playerName });
     if (!key) return;
     const now = Date.now();
-    if (key === identityKey && phase === identityPhase && now - identityHeartbeat < 60_000) return;
+    if (key === identityKey && phase === identityPhase && now - identityHeartbeat < HEARTBEAT_MS) return;
     if (identityKey && key !== identityKey) await markIdentityOffline();
     const region = await ensureRegion();
     identityKey = key;
@@ -826,12 +835,19 @@ function createLolWatcher({
     missedPolls = 0;
 
     const phase = sessionRes.data?.phase;
-    const queue = sessionRes.data?.gameData?.queue || {};
+    let metadata = lolGameMetadata(sessionRes.data);
+    if (!metadata.mode || metadata.queueId === null || metadata.queueId === 0) {
+      const lobbyRes = await lcuGet(cachedLock, '/lol-lobby/v2/lobby');
+      if (lobbyRes.ok) metadata = lolGameMetadata(sessionRes.data, lobbyRes.data);
+    }
     const observedMatchId = sessionRes.data?.gameData?.gameId
       ? String(sessionRes.data.gameData.gameId)
       : '';
-    currentQueueId = queue.id ?? currentQueueId;
     const summonerRes = await lcuGet(cachedLock, '/lol-summoner/v1/current-summoner');
+    if (identitySnapshot?.puuid && summonerRes.data?.puuid && identitySnapshot.puuid !== summonerRes.data.puuid) {
+      await markInactive();
+      await markIdentityOffline();
+    }
     await publishIdentity(summonerRes.data, phase);
 
     // Le ready check a sa propre phase de gameflow : on n'interroge l'endpoint
@@ -848,6 +864,10 @@ function createLolWatcher({
     // gardes, et par le filtre d'historique ci-dessous.
 
     if (phase === 'ChampSelect') {
+      // A new selection must never inherit the previous game's champion/file.
+      if (wasActive) await markInactive();
+      currentQueueId = metadata.queueId;
+      currentQueueDescription = metadata.queueDescription;
       await updateChampSelectCache();
       return;
     }
@@ -868,16 +888,19 @@ function createLolWatcher({
 
     const gameName = summonerRes.data?.gameName;
     const tagLine = summonerRes.data?.tagLine;
-    if (!gameName || !tagLine) return; // identité pas encore dispo, on retentera au prochain poll
-    const playerName = `${gameName}#${tagLine}`;
+    const myPuuid = summonerRes.data?.puuid || identitySnapshot?.puuid;
+    if (!myPuuid) return; // never attach a game to another account by display name
+    const playerName = gameName && tagLine ? `${gameName}#${tagLine}` : identitySnapshot?.playerName;
+    if (!playerName) return;
 
     if (wasActive && currentRiotMatchId && observedMatchId && currentRiotMatchId !== observedMatchId) {
       log(`[${ts()}] 🔵 LoL — nouvelle partie Riot détectée (${observedMatchId})`);
       await markInactive();
-      currentQueueId = queue.id ?? null;
     }
 
-    const isNewMatch = !wasActive || sessionKey !== playerName
+    currentQueueId = metadata.queueId;
+    currentQueueDescription = metadata.queueDescription;
+    const isNewMatch = !wasActive
       || Boolean(currentRiotMatchId && observedMatchId && currentRiotMatchId !== observedMatchId);
     if (isNewMatch) {
       matchStartedAt = Date.now();
@@ -887,20 +910,20 @@ function createLolWatcher({
       log(`[${ts()}] 🔵 LoL — game détectée pour ${playerName}`);
     }
     wasActive = true;
+    sessionKey = playerName; // renames update display copy, not match identity
     if (!currentRiotMatchId && observedMatchId) currentRiotMatchId = observedMatchId;
 
     const now = Date.now();
     if (!isNewMatch && now - lastHeartbeat < HEARTBEAT_MS) return;
     lastHeartbeat = now;
 
-    const myPuuid = summonerRes.data?.puuid;
     const mySelection = (sessionRes.data?.gameData?.playerChampionSelections || []).find(p => p.puuid === myPuuid);
 
-    const champions = await ensureChampionData();
-    const champion = mySelection ? champions[mySelection.championId] : null;
+    const champions = metadata.gameFamily === 'tft' ? {} : await ensureChampionData();
+    const champion = metadata.gameFamily === 'tft' ? null : mySelection ? champions[mySelection.championId] : null;
     const matchup = champSelectMatchupChampionId ? champions[champSelectMatchupChampionId] : null;
-    if (champion) currentChampion = champion;
-    if (queue.description) currentQueueDescription = queue.description;
+    if (metadata.gameFamily === 'tft') currentChampion = null;
+    else if (champion) currentChampion = champion;
     const region = await ensureRegion();
 
     const sessionMember = getIdentity();
@@ -919,12 +942,15 @@ function createLolWatcher({
       memberId: sessionMember?.memberId || '',
       member: sessionMember?.memberName || '',
       puuid: myPuuid || '',
-      mode: queue.gameMode || '',
-      queueDescription: queue.description || '',
+      mode: metadata.mode,
+      gameFamily: metadata.gameFamily,
+      mapId: metadata.mapId,
+      phase,
+      queueDescription: metadata.queueDescription,
       champion: currentChampion,
-      matchup: matchup ? { name: matchup.name, image: matchup.image } : null,
-      position: champSelectPosition || '',
-      rank: rankBefore,
+      matchup: metadata.gameFamily !== 'tft' && matchup ? { name: matchup.name, image: matchup.image } : null,
+      position: metadata.gameFamily === 'tft' ? '' : champSelectPosition || '',
+      rank: metadata.gameFamily === 'tft' ? null : rankBefore,
       region: region || '',
       scriptVersion,
     });

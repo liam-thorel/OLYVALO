@@ -1,8 +1,9 @@
 {
-  "version": "4.21.2",
+  "version": "4.21.3",
   "files": [
     "index.js",
     "lol-watcher.js",
+    "lol-gameflow.js",
     "lol-keys.js",
     "ready-check.js",
     "loadouts.js",

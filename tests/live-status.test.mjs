@@ -68,8 +68,8 @@ test('home distinguishes agent select from game and aligns its one-minute freshn
   assert.doesNotMatch(waiting.detail,/prépare|prêt/);
   const both=homeDashboardState({valorantClients:{nico:{online:true,memberId:'nico',state:'idle',riotClient:true,ts:now}},lolClients:{nico:{connected:true,memberId:'nico',phase:'Lobby',ts:now}}},now);
   assert.equal(both.onlineIds.size,1);
-  assert.match(both.detail,/Valorant : 1 client Riot ouvert/);
-  assert.match(both.detail,/LoL : 1 dans le menu/);
+  assert.match(both.detail,/1 client Riot ouvert/);
+  assert.doesNotMatch(both.detail,/LoL :/);
 });
 test('Admin does not resurrect an old game or confuse a fresh selection with an in-game session', () => {
   const now=2_000_000_000_000;

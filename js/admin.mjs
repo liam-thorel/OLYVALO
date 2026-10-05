@@ -12,11 +12,11 @@
  * juste un garde-fou contre un visiteur qui tomberait sur l'URL.
  */
 
-import { accountLiveState, accountRiotId, discoveryRows, normalizeGames } from './admin-account-utils.mjs?v=20260930-consistent-live';
-import { buildScriptHealth, scriptDiagnosticText, scriptHealthSummary } from './admin-health-utils.mjs?v=20261003-party-count';
+import { accountLiveState, accountRiotId, discoveryRows, normalizeGames } from './admin-account-utils.mjs?v=20261005-return-live';
+import { buildScriptHealth, scriptDiagnosticText, scriptHealthSummary } from './admin-health-utils.mjs?v=20261005-return-live';
 import { validateLineup, lineupCoverage, mergeLineups } from './lineup-utils.mjs?v=20260913-lineup-contrib';
 import { fetchJsonWithRetry, fetchJsonWithTimeout } from './request-utils.mjs?v=20260930-consistent-live';
-import { isLiveRecordExpired, liveDataStore, staleLiveRecords } from './live-data-store.mjs?v=20260930-consistent-live';
+import { isLiveRecordExpired, liveDataStore, staleLiveRecords } from './live-data-store.mjs?v=20261005-return-live';
 import { mergeMemberProfiles } from './member-profiles.mjs?v=20260823-profile-picker';
 import { readSiteVitals } from './site-telemetry.mjs?v=20260825-site-health';
 import { attributionRows, attributionWarnings, deletionPlan, reassignPlan, roleOf, isValidPuuid, knownPuuidFor,

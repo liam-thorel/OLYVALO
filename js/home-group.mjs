@@ -144,6 +144,19 @@ async function firebaseWrite(path, method, body) {
 
 async function loadHomeGroup() {
   const historyQuery = '?orderBy=%22%24key%22&limitToLast=6';
+  // The Tracker no longer loads the hub's games or session planner.
+  if (!document.getElementById('home-tonight-open')) {
+    const [valorant, lol] = await Promise.allSettled([
+      fetchJsonWithRetry(`${FIREBASE_ROOT}/historyIndex/valorant.json${historyQuery}`, { timeoutMs:3_500 }),
+      fetchJsonWithRetry(`${FIREBASE_ROOT}/live/lolHistory.json${historyQuery}`, { timeoutMs:3_500 }),
+    ]);
+    renderActivity(buildHomeActivity({
+      valorant:valorant.status === 'fulfilled' ? valorant.value : {},
+      lol:lol.status === 'fulfilled' ? lol.value : {},
+      members, lastSeen:Number(localStorage.getItem(LAST_SEEN_KEY)) || 0,
+    }));
+    return;
+  }
   const [nightResult, gamesResult, valorantResult, lolResult] = await Promise.allSettled([
     fetchJsonWithRetry(`${FIREBASE_ROOT}/groupNight/current.json`, { timeoutMs:3_500 }),
     fetchJsonWithRetry(`${FIREBASE_ROOT}/coopGames.json`, { timeoutMs:3_500 }),
@@ -317,6 +330,7 @@ function scheduleReload() {
 }
 
 function startRealtime() {
+  if (!document.getElementById('home-tonight-open')) return;
   if (!pageActive || stream || typeof EventSource === 'undefined') return;
   stream = new EventSource(`${FIREBASE_ROOT}/groupNight/current.json`);
   stream.addEventListener('put', scheduleReload);

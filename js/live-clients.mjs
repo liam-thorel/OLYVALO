@@ -1,4 +1,4 @@
-import { liveTimestamp } from './live-data-store.mjs?v=20260930-consistent-live';
+import { liveTimestamp } from './live-data-store.mjs?v=20261005-return-live';
 import { liveClientStatus } from './live-status.mjs?v=20261003-party-count';
 
 // Deux ou trois requêtes Riot locales peuvent ponctuellement prendre plus de

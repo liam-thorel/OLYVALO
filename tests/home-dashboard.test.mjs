@@ -14,24 +14,34 @@ test('home dashboard gives one clear priority to an active Valorant match', () =
   assert.equal(model.page, 'live');
 });
 
-test('home dashboard falls back from League live to online members then coop', () => {
-  const league = homeDashboardState({ lolSessions:{ liam:{ active:true, memberId:'liam', matchId:'EUW1', ts:now - 2_000 } } }, now);
+test('home dashboard follows the selected game, including idle League', () => {
+  const league = homeDashboardState({ lolSessions:{ liam:{ active:true, memberId:'liam', matchId:'EUW1', ts:now - 2_000 } } }, now, { game:'lol' });
   assert.equal(league.state, 'lol');
   assert.equal(league.page, 'live');
 
-  const online = homeDashboardState({ lolClients:{ liam:{ connected:true, memberId:'liam', lastSeen:now - 2_000 } } }, now);
+  const online = homeDashboardState({ lolClients:{ liam:{ connected:true, memberId:'liam', lastSeen:now - 2_000 } } }, now, { game:'lol' });
   assert.equal(online.title, '1 membre connecté');
 
   const empty = homeDashboardState({}, now);
-  assert.equal(empty.title, 'On joue à quoi ?');
-  assert.equal(empty.page, 'games');
+  assert.equal(empty.title, 'Pas de partie en cours');
+  assert.equal(empty.page, 'maps');
 });
 
-test('home dashboard asks the selected member to answer the next group night', () => {
-  const model = homeDashboardState({}, now, {
-    plan:{ gameTitle:'PEAK', options:[{ id:'one' }, { id:'two' }], games:[{ id:'peak' }] }, needsResponse:true,
-  });
-  assert.equal(model.state, 'night');
-  assert.equal(model.title, 'Tu es disponible quand ?');
-  assert.equal(model.actionType, 'group-night');
+test('switching League to Valorant cannot keep a League match or yellow state', () => {
+  const snapshot = { lolSessions:{ liam:{ active:true, matchId:'EUW1', ts:now } } };
+  assert.equal(homeDashboardState(snapshot, now, {game:'lol'}).state, 'lol');
+  const valorant = homeDashboardState(snapshot, now, {game:'valorant'});
+  assert.equal(valorant.state, 'valorant');
+  assert.equal(valorant.title, 'Pas de partie en cours');
+  assert.equal(valorant.page, 'maps');
+});
+
+test('concurrent games do not override the selected universe or claim ARAM is on the Rift', () => {
+  const snapshot = {
+    valorantSessions:{nico:{active:true,mapClean:'Haven',ts:now}},
+    lolSessions:{liam:{active:true,matchId:'1',mode:'ARAM',queueDescription:'ARAM',ts:now}},
+  };
+  assert.equal(homeDashboardState(snapshot,now).title,'Haven');
+  assert.match(homeDashboardState(snapshot,now,{game:'lol'}).detail,/ARAM/);
+  assert.doesNotMatch(homeDashboardState(snapshot,now,{game:'lol'}).detail,/Faille/);
 });
