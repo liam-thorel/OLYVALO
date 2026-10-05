@@ -23,7 +23,7 @@ const { createOverlayState, reduce } = require('./lib/overlay-state.js');
 const { parseSettings, sanitize } = require('./lib/settings.js');
 const { isAllowedUrl, isSafeExternalUrl, siteUrl } = require('./lib/url-policy.js');
 const { createLogger } = require('./lib/logger.js');
-const { setupAutoUpdate, shouldCheck, updateLabel, FIRST_CHECK_DELAY_MS } = require('./lib/updater.js');
+const { setupAutoUpdate, shouldCheck, shouldInstallNow, updateLabel, FIRST_CHECK_DELAY_MS } = require('./lib/updater.js');
 const { loginItemVerdict, unblockCommand, verdictMessage, STARTUP_SETTINGS_URL } = require('./lib/login-item.js');
 const { hotkeyOptions, hotkeyLabel, hotkeyStatusLabel } = require('./lib/hotkey.js');
 
@@ -43,7 +43,6 @@ let pollTimer = null;
 let settings = sanitize(null);
 let state = createOverlayState();
 let lastRunning = { valorant: false, lol: false };
-// Jeu actuellement affiché par la vue compacte, via le fragment d'URL.
 let firstRun = false;
 let updater = null;
 let lastUpdateCheckAt = 0;
@@ -268,9 +267,27 @@ async function pollGames() {
   if (anyGameRunning(running) && state.visible) assertOnTop();
 
   maybeCheckForUpdate(anyGameRunning(running));
+  maybeInstallUpdate();
 
   pollTimer = setTimeout(pollGames, nextPollDelay(running));
   pollTimer.unref?.();
+}
+
+/**
+ * Installe la mise à jour téléchargée dès que personne ne peut s'en
+ * apercevoir — voir shouldInstallNow. Appelé à chaque sondage des jeux et dès
+ * la fin d'un téléchargement : une mise à jour arrivée pendant une partie
+ * s'installe à la fin de celle-ci, une fois l'overlay masqué.
+ */
+function maybeInstallUpdate() {
+  // Déjà en train de quitter (installation lancée au tour précédent) : le
+  // sondage suivant ne doit pas la relancer.
+  if (!updater || app.isQuitting) return;
+  const downloaded = updater.pending();
+  if (!shouldInstallNow({ downloaded, gameRunning: anyGameRunning(lastRunning), visible: state.visible })) return;
+  log('[maj] installation silencieuse de la', downloaded?.version || '?');
+  app.isQuitting = true;
+  updater.installNow();
 }
 
 function maybeCheckForUpdate(gameRunning) {
@@ -564,7 +581,7 @@ if (!app.requestSingleInstanceLock()) {
       const { autoUpdater } = require('electron-updater');
       updater = setupAutoUpdate({
         autoUpdater, log,
-        onStateChange: () => refreshTrayMenu(), // fait apparaître « Redémarrer pour installer »
+        onStateChange: () => { refreshTrayMenu(); maybeInstallUpdate(); }, // « Redémarrer pour installer », ou installation directe
       });
       const firstCheck = setTimeout(() => maybeCheckForUpdate(false), FIRST_CHECK_DELAY_MS);
       firstCheck.unref?.();

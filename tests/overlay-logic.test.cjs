@@ -230,7 +230,7 @@ const fakeFs = (files = {}) => ({
 }
 
 // ─── Mise à jour automatique ─────────────────────────────────────────────────
-const { shouldCheck, updateLabel, CHECK_INTERVAL_MS } = require('../overlay/lib/updater.js');
+const { shouldCheck, shouldInstallNow, updateLabel, CHECK_INTERVAL_MS } = require('../overlay/lib/updater.js');
 
 // Ne jamais télécharger 90 Mo pendant une partie : ça mange la bande passante
 // au pire moment, et l'installation devra de toute façon attendre la fermeture.
@@ -255,6 +255,30 @@ assert.ok(checks <= 5, `au plus quelques vérifications par jour, obtenu ${check
 // Le libellé du menu doit nommer la version quand on la connaît.
 assert.match(updateLabel({ version: '1.2.0' }), /1\.2\.0/);
 assert.match(updateLabel(null), /Redémarrer/);
+
+// ─── Installation : dès que personne ne peut s'en apercevoir ─────────────────
+// Elle attendait la fermeture de l'application, qui n'arrive pratiquement
+// jamais : l'overlay vit dans la zone de notification, et un arrêt de Windows
+// le tue sans installer. Des postes sont restés des semaines en arrière.
+const pret = { version: '1.2.5' };
+assert.equal(shouldInstallNow({ downloaded: pret, gameRunning: false, visible: false }), true,
+  'masqué, sans partie : on installe tout de suite');
+assert.equal(shouldInstallNow({ downloaded: pret, gameRunning: true, visible: false }), false,
+  'jamais pendant une partie');
+assert.equal(shouldInstallNow({ downloaded: pret, gameRunning: false, visible: true }), false,
+  'jamais sous les yeux de quelqu’un');
+assert.equal(shouldInstallNow({ downloaded: null, gameRunning: false, visible: false }), false,
+  'rien de téléchargé, rien à installer');
+
+const updaterSource = readFileSync(path.join(__dirname, '..', 'overlay', 'lib', 'updater.js'), 'utf8');
+assert.match(updaterSource, /quitAndInstall\(true, true\)/, 'installation silencieuse, puis relance');
+const mainForUpdates = readFileSync(path.join(__dirname, '..', 'overlay', 'main.js'), 'utf8');
+assert.match(mainForUpdates, /maybeCheckForUpdate\(anyGameRunning\(running\)\);\n\s*maybeInstallUpdate\(\);/,
+  'examiné à chaque sondage : une mise à jour arrivée en partie s’installe après');
+assert.match(mainForUpdates, /onStateChange: \(\) => \{ refreshTrayMenu\(\); maybeInstallUpdate\(\); \}/,
+  'et dès la fin du téléchargement');
+assert.match(mainForUpdates, /if \(!updater \|\| app\.isQuitting\) return;/,
+  'une seule installation, même si le sondage repasse avant la fermeture');
 assert.match(updateLabel({}), /Redémarrer/);
 
 // ─── Format de la fenêtre ────────────────────────────────────────────────────
@@ -289,6 +313,26 @@ assert.ok(Math.max(...breakpoints) >= minWidth,
 const overlayPage = readFileSync(path.join(__dirname, '..', 'overlay.html'), 'utf8');
 assert.match(overlayPage, /location\.replace\('\.\/'\)/, 'overlay.html redirige vers le site');
 assert.doesNotMatch(overlayPage, /<script[^>]+src=/, 'plus aucun script de l’ancienne vue');
+
+// Jusqu'à la 1.2.1, l'overlay n'autorise que github.io : la redirection vers
+// tracker.olycity.fr serait bloquée, il ouvrirait le navigateur et resterait
+// sur une page vide. On rejoue le script de la page avec l'identifiant de
+// navigateur de chaque version.
+const vm = require('node:vm');
+const stubScript = overlayPage.match(/<script>([\s\S]*?)<\/script>/)[1];
+const verdict = userAgent => {
+  const sandbox = { navigator: { userAgent }, location: { replaced: null, replace(to) { this.replaced = to; } }, document: { documentElement: { dataset: {} } } };
+  vm.runInNewContext(stubScript, sandbox);
+  return sandbox.location.replaced ? 'redirige' : sandbox.document.documentElement.dataset.trop;
+};
+const overlayUa = version => `Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) OLYCITY Overlay/${version} Chrome/128.0.6613.36 Electron/32.0.1 Safari/537.36`;
+assert.equal(verdict(overlayUa('1.0.0')), 'ancien');
+assert.equal(verdict(overlayUa('1.2.1')), 'ancien', 'la 1.2.1 ne connaît pas encore tracker.olycity.fr');
+assert.equal(verdict(overlayUa('1.2.2')), 'redirige', 'la 1.2.2 si');
+assert.equal(verdict(overlayUa('1.10.0')), 'redirige', 'comparaison numérique, pas alphabétique');
+assert.equal(verdict('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36'), 'redirige',
+  'un navigateur ordinaire va sur le site');
+assert.match(overlayPage, /releases\/latest\/download\/OLYCITY-Overlay-Setup\.exe/, 'lien direct vers la dernière version');
 
 // La nouvelle version charge directement le site, sans passer par overlay.html.
 const mainSource = readFileSync(path.join(__dirname, '..', 'overlay', 'main.js'), 'utf8');
