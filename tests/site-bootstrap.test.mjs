@@ -160,13 +160,14 @@ test('mobile navigation keeps primary sections reachable with a compact more men
   assert.match(main, /morePages\.includes\(page\)/);
   assert.match(main, /navBtn\.setAttribute\('aria-current', 'page'\)/);
   assert.match(coopStyles, /\.coop-card-actions button,\.coop-card-actions a\{display:flex;min-height:44px/);
-  assert.match(page, /data-page="games" data-nav-scope="shared"/);
+  assert.doesNotMatch(page, /data-page="games"|data-mobile-page="games"/);
+  assert.match(page, /data-home-world="coop" data-home-page="games"/);
   assert.match(designSystem, /:root\[data-game="lol"\] \.page-nav > \.page-nav-btn\[data-page="roster"\][\s\S]*display: flex !important/);
   assert.match(designSystem, /:root\[data-game="lol"\] \.mobile-nav-more-sheet > \[data-mobile-page="roster"\][\s\S]*display: none/);
 });
 
 test('section navigation uses one meaningful SVG icon language', () => {
-  for (const icon of ['home', 'maps', 'roster', 'live', 'history', 'games', 'betting', 'more']) {
+  for (const icon of ['home', 'maps', 'roster', 'live', 'history', 'betting', 'more']) {
     assert.match(page, new RegExp(`id="oly-icon-${icon}"`));
     assert.match(page, new RegExp(`href="#oly-icon-${icon}"`));
   }
