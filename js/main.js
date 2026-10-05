@@ -16,17 +16,18 @@ import { statsKey, readStats, writeStats, selectedAccount, toggleSelection, need
   firebasePath, publishable, remoteStats, mergeStores } from './account-stats.mjs?v=20260922-partage';
 import { setStoredKey, storedKey, forgetCachedKey } from './henrik-key.mjs';
 import { rosterHTML, guestCardHTML, mapSectionHTML, agentPageHTML, navMapsHTML, compHTML, globalNotesHTML } from './render.js?v=20260920-puuid-accounts';
-import { initTheme, initTilt, initParallax, initSearch, initKeyboard, initHeroParticles, initWheelLogos, initLivePage, initHistoryPage } from './interactions.js?v=20261004-roue';
+import { initTheme, initTilt, initParallax, initSearch, initKeyboard, initHeroParticles, initWheelLogos, initLivePage, initHistoryPage } from './interactions.js?v=20261005-sites-history';
 import { storage } from './storage.js';
 import { avatarLayersHTML } from './avatars.mjs';
 import { initAdminPage } from './admin.mjs?v=20261003-party-count';
 import { initBettingPage } from './betting-page.mjs?v=20260930-consistent-live';
 import { initRrCurvePage } from './rr-curve-page.mjs?v=20260930-consistent-live';
-import { initCoopGamesPage } from './coop-games-page.mjs?v=20260930-consistent-live';
+import { initSiteSwitcher } from './site-switcher.mjs';
+import { sharedProfileId, rememberSharedProfile } from './shared-profile.mjs';
 import { getGameMode, initGameMode, setGameMode } from './game-mode.mjs?v=20260824-home-title';
-import { initLolHistoryPage, initLolLivePage } from './lol-pages.mjs?v=20261003-party-count';
-import { initLolRosterPages } from './lol-roster.mjs?v=20260930-consistent-live';
-import { state } from './state.mjs?v=20260806-lol-roster';
+import { initLolHistoryPage, initLolLivePage } from './lol-pages.mjs?v=20261005-history';
+import { initLolRosterPages } from './lol-roster.mjs?v=20261005-sites-history';
+import { state } from './state.mjs?v=20261005-sites-history';
 import { memberId, mergeMemberProfiles, resolveMemberProfile } from './member-profiles.mjs?v=20260823-profile-picker';
 import { initHomeDashboard } from './home-dashboard.mjs?v=20261003-party-count';
 import { initHomeGroup } from './home-group.mjs?v=20260930-consistent-live';
@@ -37,6 +38,7 @@ import { initHubTransition } from './hub-transition.mjs?v=20261005-retour';
 export { state };
 
 initSiteTelemetry();
+initSiteSwitcher(document.querySelector('.topbar-tools'));
 
 function updateGameSwitchCounts(snapshot = liveDataStore.snapshot(), now = Date.now()) {
   const counts = {
@@ -246,9 +248,6 @@ window.OLYCITY = {
     }
     if (page === 'betting') {
       initBettingPage();
-    }
-    if (page === 'games') {
-      initCoopGamesPage(state.MEMBERS);
     }
     const navBtn = document.querySelector(`.page-nav-btn[data-page="${page}"]`);
     if (navBtn) {
@@ -636,6 +635,7 @@ window.OLYCITY = {
       : resolveMemberProfile(state.MEMBERS, { id:profileId, name:profileId });
     if (!profile) return;
     localStorage.setItem('olycity-member-id', profile.id);
+    rememberSharedProfile(profile.id);
     localStorage.setItem('olycity-profile', profile.name);
     state.currentProfile = profile.name;
     window.OLYCITY._applyProfileIndicator(profile.name);
@@ -989,7 +989,6 @@ async function boot() {
         void liveDataStore.recoverIfSilent();
         void liveDataStore.refresh({ timeoutMs:3_500 });
       }
-      if (activePage === 'games') initCoopGamesPage(state.MEMBERS);
       if (activePage === 'history') {
         if (getGameMode() === 'lol') void initLolHistoryPage();
         else void initHistoryPage();
@@ -1144,13 +1143,15 @@ async function boot() {
   });
 
   // Profile system
-  const savedMember = resolveMemberProfile(state.MEMBERS, {
-    id:localStorage.getItem('olycity-member-id'),
-    name:localStorage.getItem('olycity-profile'),
+  const sharedId = sharedProfileId();
+  const savedMember = sharedId === 'guest' ? null : resolveMemberProfile(state.MEMBERS, {
+    id:sharedId || localStorage.getItem('olycity-member-id'),
+    name:sharedId ? '' : localStorage.getItem('olycity-profile'),
   });
-  const savedGuest = localStorage.getItem('olycity-profile') === 'Guest';
+  const savedGuest = sharedId === 'guest' || (!sharedId && localStorage.getItem('olycity-profile') === 'Guest');
   if (savedMember || savedGuest) {
     const profile = savedMember || { id:'guest', name:'Guest' };
+    rememberSharedProfile(profile.id);
     localStorage.setItem('olycity-member-id', profile.id);
     localStorage.setItem('olycity-profile', profile.name);
     state.currentProfile = profile.name;

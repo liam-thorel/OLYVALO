@@ -8,6 +8,8 @@ assert.equal(historyScoreText({ mode:'competitive', score:{ blue:13, red:4 }, pl
 assert.equal(historyScoreText({ mode:'competitive', score:{ blue:13, red:4 } }), 'Bleu 13 · Rouge 4');
 assert.equal(historyScoreText({ mode:'abilitydraftarena', selfTeam:'ORDER', score:{ blue:0, red:0 } }), '');
 assert.equal(historyScoreText({ mode:'deathmatch', score:{ blue:0, red:0 } }), '');
+assert.equal(historyScoreText({ queueId:'hurm', score:{ blue:0, red:1 } }), '');
+assert.equal(historyScoreText({ queueId:'hurm', selfTeam:'ORDER', score:{ blue:100, red:90 } }), '100–90');
 assert.equal(historyScoreText({ mode:'competitive', score:{ blue:null, red:13 } }), '');
 
 assert.equal(historyMode({ mode: 'competitive' }), 'competitive');

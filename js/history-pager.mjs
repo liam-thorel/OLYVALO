@@ -45,13 +45,19 @@ export function createHistoryPager({
     if (!force && indexedAt && Date.now() - indexedAt < cacheMs) return index;
     if (indexPromise) return indexPromise;
     indexPromise = (async () => {
-      const rawIndex = await fetchJson(url(indexPath), { timeoutMs:6_000, attempts:2, retryDelays:[500] });
+      // One bounded attempt, then the independent legacy path. Repeating both
+      // requests and the whole page kept first visits loading for over a minute.
+      let rawIndex = null;
+      try { rawIndex = await fetchJson(url(indexPath), { timeoutMs:4_000, attempts:1 }); }
+      catch (error) {
+        if (Number(error?.status) === 401 || Number(error?.status) === 403) throw error;
+      }
       if (rawIndex && Object.keys(rawIndex).length) return rebuildIndex(rawIndex);
 
       // Compatibilité de secours avant/pendant une migration d'index : une
       // lecture complète reste fonctionnelle, puis les détails sont gardés en
       // mémoire afin de ne pas être retéléchargés.
-      const legacy = await fetchJson(url(dataPath), { timeoutMs:8_000, attempts:2, retryDelays:[500] });
+      const legacy = await fetchJson(url(dataPath), { timeoutMs:4_000, attempts:1 });
       Object.entries(legacy || {}).forEach(([id, value]) => detailCache.set(id, value));
       return rebuildIndex(legacy || {});
     })().finally(() => { indexPromise = null; });

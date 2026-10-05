@@ -66,7 +66,7 @@ export function liveWaitingState(summary = {}) {
   if (summary.queue) return { title:'Recherche de partie en cours', detail:'Le Live apparaîtra lorsqu’une partie sera trouvée.' };
   if (summary.issues) return { title:'Suivi à vérifier', detail:'Le script est connecté mais ne peut pas confirmer l’état du jeu.' };
   return {
-    title:`${summary.total || 0} script${summary.total === 1 ? '' : 's'} connecté${summary.total === 1 ? '' : 's'}`,
+    title:summary.total ? 'Aucune partie en cours' : 'Aucun suivi disponible',
     detail:summary.total && summary.clientClosed === summary.total
       ? 'Ouvre le jeu pour que le script puisse détecter ta partie.'
       : 'Aucune partie confirmée pour le moment. Le suivi est automatique.',

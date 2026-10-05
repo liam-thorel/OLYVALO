@@ -11,7 +11,7 @@ import { join } from 'node:path';
  * donc le VRAI script du workflow, extrait du YAML, dans un dépôt jetable où
  * `gh` est remplacé par un faux qui répond selon le scénario.
  */
-const workflow = readFileSync(new URL('../.github/workflows/auto-release.yml', import.meta.url), 'utf8');
+const workflow = readFileSync(new URL('../.github/workflows/auto-release.yml', import.meta.url), 'utf8').replace(/\r\n/g, '\n');
 
 function planScript() {
   const lines = workflow.split('\n');
@@ -135,8 +135,8 @@ test('script modifié sans nouvelle version : signalé, pas publié', { skip: !h
 });
 
 test('les workflows de release sont appelables, et l’overlay compile le commit exact', () => {
-  const live = readFileSync(new URL('../.github/workflows/release-live.yml', import.meta.url), 'utf8');
-  const overlay = readFileSync(new URL('../.github/workflows/release-overlay.yml', import.meta.url), 'utf8');
+  const live = readFileSync(new URL('../.github/workflows/release-live.yml', import.meta.url), 'utf8').replace(/\r\n/g, '\n');
+  const overlay = readFileSync(new URL('../.github/workflows/release-overlay.yml', import.meta.url), 'utf8').replace(/\r\n/g, '\n');
   assert.match(live, /\n  workflow_call:\n    inputs:\n      tag:/);
   assert.match(overlay, /\n  workflow_call:\n    inputs:\n      tag:/);
   assert.match(overlay, /ref: \$\{\{ inputs\.ref \|\| /);

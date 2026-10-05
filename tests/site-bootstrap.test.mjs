@@ -227,7 +227,7 @@ test('mobile data pages keep readable spacing, controls and roster details', () 
   assert.match(lolStyles, /\.lol-roster-champion strong\{font-size:10px\}/);
   assert.match(coopStyles, /\.coop-cover\{aspect-ratio:16\/7\}/);
   assert.match(page, /lol-mode\.css\?v=20260922-autoaccept/);
-  assert.match(page, /coop-games\.css\?v=20260824-mobile-data-cache/);
+  assert.doesNotMatch(page, /href="\.\/css\/coop-games\.css/);
   assert.match(designSystem, /\.history-filter-group\s*\{\s*grid-template-columns:\s*55px minmax\(0,1fr\)/);
   assert.match(designSystem, /\.coop-filter-field:last-child\s*\{\s*flex-basis:\s*100%/);
 });
@@ -245,9 +245,9 @@ test('mobile Live and expanded history prioritize useful information', () => {
 });
 
 test('coop games expose explicit categories and cache-safe search modules', () => {
-  assert.match(page, /data-coop-status="open"/);
-  assert.match(page, /id="coop-genre"/);
-  assert.match(page, /<option value="recent" selected>Les derniers ajoutés<\/option>/);
+  assert.doesNotMatch(page, /id="page-games"|id="coop-game-modal"/);
+  assert.doesNotMatch(main, /import \{ initCoopGamesPage \}/);
+  assert.match(main, /window\.location\.assign\('https:\/\/games\.olycity\.fr\/#coop'\)/);
   assert.doesNotMatch(page, /id="coop-status-filter"/);
   assert.doesNotMatch(coopPage, /coop-status-cycle|nextCoopStatus/);
   assert.match(coopPage, /data-action="set-status"/);
@@ -266,19 +266,19 @@ test('history and admin requests cannot stay pending forever', () => {
   assert.match(interactions, /data-history-load-more/);
   assert.match(lolPages, /lolHistoryPager\.loadNext/);
   assert.match(historyPager, /timeoutMs:6_000, attempts:2/);
-  assert.match(historyPager, /timeoutMs:8_000, attempts:2/);
+  assert.match(historyPager, /timeoutMs:4_000, attempts:1/);
   assert.match(admin, /fetchJsonWithTimeout\(`\$\{FIREBASE_URL\}\/\$\{path\}\.json`/);
   assert.match(main, /getGameMode\(\) === 'lol'\) initLolHistoryPage\(\);[\s\S]*else initHistoryPage\(\)/);
   assert.doesNotMatch(main, /initHistoryPage\(\);\s*initLolHistoryPage\(\);/);
   assert.match(main, /fetchJsonWithRetry\(`\.\/data\/comps\.json/);
   assert.match(interactions, /Nouvelle tentative automatique/);
-  assert.match(lolPages, /Nouvelle tentative automatique/);
+  assert.match(lolPages, /if\s*\(historyLoadPromise\) return historyLoadPromise/);
   assert.match(coopPage, /Reconnexion à la liste/);
 });
 
 test('returning to a data page retries it without requiring F5', () => {
   assert.match(main, /window\.addEventListener\('online', resumePageData\)/);
-  assert.match(main, /activePage === 'games'[\s\S]*initCoopGamesPage\(state\.MEMBERS\)/);
+  assert.doesNotMatch(main, /activePage === 'games'[\s\S]*initCoopGamesPage/);
   assert.match(main, /activePage === 'history'[\s\S]*initLolHistoryPage\(\)[\s\S]*initHistoryPage\(\)/);
   assert.match(layout, /\.search-input:focus-visible\s*\{\s*outline:none/);
 });

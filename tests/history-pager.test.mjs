@@ -2,6 +2,30 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { createHistoryPager, historyIndexTimestamp } from '../js/history-pager.mjs';
 
+test('an unavailable index falls back once to the legacy history', async () => {
+  const calls = [];
+  const pager = createHistoryPager({ firebaseUrl:'https://firebase', indexPath:'index', dataPath:'history', fetchJson:async (url, options) => {
+    calls.push(url);
+    assert.equal(options.attempts, 1);
+    assert.equal(options.timeoutMs, 4000);
+    if (url.endsWith('/index.json')) throw new Error('network');
+    return { match:{ ts:100 } };
+  } });
+  const result = await pager.loadNext();
+  assert.equal(result.data.match.ts, 100);
+  assert.equal(calls.length, 2);
+});
+
+test('a forbidden index does not attempt a legacy bypass', async () => {
+  let calls = 0;
+  const pager = createHistoryPager({ firebaseUrl:'https://firebase', indexPath:'index', dataPath:'history', fetchJson:async () => {
+    calls++;
+    throw Object.assign(new Error('forbidden'), { status:403 });
+  } });
+  await assert.rejects(pager.loadNext(), /forbidden/);
+  assert.equal(calls, 1);
+});
+
 test('history index timestamps support Valorant reports and flat LoL records', () => {
   assert.equal(historyIndexTimestamp({ ts:10 }), 10);
   assert.equal(historyIndexTimestamp({ reports:{ a:{ ts:20 }, b:{ endTs:30 } } }), 30);

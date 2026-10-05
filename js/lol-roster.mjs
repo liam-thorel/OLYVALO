@@ -179,9 +179,10 @@ function rosterCard(player) {
     <div class="lol-roster-stats">
       <div><small>Parties</small><strong>${games || '—'}</strong><span>${games ? `${wins}V · ${losses}D` : player.seasonVerified ? '0V · 0D' : 'En attente'}</span></div>
       <div><small>Winrate</small><strong>${games ? `${winRate}%` : '—'}</strong><span>SoloQ</span></div>
-      <div title="${esc(seasonRole ? 'Rôle principal estimé d’après les champions de la saison' : roleGames ? `Rôle observé sur ${roleGames} parties vues par le script` : 'Rôle observé — données insuffisantes')}"><small>Rôle</small><strong>${esc(mainRole)}</strong><span>${seasonRole ? 'Saison' : roleGames ? `${roleGames} vues` : 'Insuffisant'}</span></div>
+      <div title="${esc(seasonRole ? 'Rôle principal estimé d’après les champions de la saison' : roleGames ? `Rôle observé sur ${roleGames} parties vues par le script` : 'Rôle observé — données insuffisantes')}"><small>Rôle</small><strong>${esc(mainRole)}</strong><span>${seasonRole ? 'Estimé · saison' : roleGames ? `${roleGames} vues` : 'Insuffisant'}</span></div>
     </div>
     ${autoAcceptRow(player, lolSettings)}
+    <small class="lol-roster-freshness">${player.updatedAt ? `Données du ${esc(new Date(player.updatedAt).toLocaleDateString('fr-FR'))}` : 'Actualisation non datée'} · ${player.seasonVerified ? 'Saison SoloQ' : 'Parties observées'}</small>
     <div class="lol-roster-mains"><div class="lol-roster-mains-title"><span>Top 3 champions SoloQ</span><small>Portraits Riot Data Dragon</small></div>
       ${player.topChampions?.length ? player.topChampions.map(championRow).join('') : `<div class="lol-roster-empty">${player.seasonVerified ? 'Aucune partie SoloQ cette saison.' : 'Le top champions apparaîtra après la synchronisation.'}</div>`}
     </div>

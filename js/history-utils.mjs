@@ -45,6 +45,8 @@ export function historyScoreText(game = {}) {
   if (historyMode(game) === 'deathmatch' || game.modeFamily === 'free-for-all'
       || /abilitydraft|gauntlet/.test(mode)) return '';
   const { blue, red } = game.score || {};
+  // Some TDM producers publish outcome flags rather than the actual kill score.
+  if (/team.?deathmatch|hurm/.test(mode) && Math.max(Number(blue), Number(red)) <= 1) return '';
   if (![blue, red].every(value => Number.isInteger(value) && value >= 0)) return '';
   const self = (game.players || []).find(player => isHistorySelf(game, player));
   const team = String(game.selfTeam || self?.team || self?.teamId || '').toUpperCase();

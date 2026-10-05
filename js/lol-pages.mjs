@@ -1,8 +1,8 @@
 import { groupLolSessions, lolKda, lolMapLabel, normalizeLolHistory, summarizeLolDays } from './lol-utils.mjs?v=20260930-consistent-live';
 import { liveDataStore, liveTimestamp } from './live-data-store.mjs?v=20260930-consistent-live';
 import { liveClientSummary } from './live-clients.mjs?v=20261003-live-states';
-import { liveClientSummaryText, liveWaitingState, normalizeLolClientState } from './live-status.mjs?v=20261003-party-count';
-import { createHistoryPager } from './history-pager.mjs?v=20260930-consistent-live';
+import { liveClientSummaryText, liveWaitingState, normalizeLolClientState } from './live-status.mjs?v=20261005-sites-history';
+import { createHistoryPager } from './history-pager.mjs?v=20261005-sites-history';
 import { createHistoryDisclosureState } from './history-disclosure-state.mjs';
 
 const historyDisclosures = createHistoryDisclosureState('data-lol-history-id');
@@ -13,8 +13,8 @@ let historyLoadSequence = 0;
 let historyReady = false;
 let lastHistoryState = null;
 let lastHistorySavedAt = 0;
-let historyRecoveryAttempts = 0;
-let historyRecoveryTimer = null;
+let historyLoadPromise = null;
+let historyView = { player:'all', period:'all' };
 const lolHistoryPager = createHistoryPager({
   firebaseUrl:FIREBASE_URL,
   indexPath:'historyIndex/lol',
@@ -160,6 +160,7 @@ function matchRow(match) {
 }
 
 function renderHistory(matches, player = 'all', period = 'all', pagerState = lolHistoryPager.snapshot()) {
+  historyView = { player, period };
   const el = document.getElementById('lol-history-content');
   if (!el) return;
   const now = Date.now();
@@ -220,7 +221,15 @@ function renderHistory(matches, player = 'all', period = 'all', pagerState = lol
   historyDisclosures.restore(el);
 }
 
-export async function initLolHistoryPage() {
+export function initLolHistoryPage() {
+  // Focus/pageshow/navigation must share a load, not invalidate each other's
+  // completion and repeatedly replace a working page with a spinner.
+  if (historyLoadPromise) return historyLoadPromise;
+  historyLoadPromise = loadLolHistoryPage().finally(() => { historyLoadPromise = null; });
+  return historyLoadPromise;
+}
+
+async function loadLolHistoryPage() {
   const el = document.getElementById('lol-history-content');
   if (!el) return;
   const loadSequence = ++historyLoadSequence;
@@ -230,7 +239,7 @@ export async function initLolHistoryPage() {
   if (cached?.state) {
     lastHistoryState = cached.state;
     lastHistorySavedAt = cached.savedAt;
-    renderHistory(normalizeLolHistory(cached.state.data), 'all', 'all', cached.state);
+    renderHistory(normalizeLolHistory(cached.state.data), historyView.player, historyView.period, cached.state);
     showHistorySyncNote(cached.savedAt, 'syncing');
   } else {
     el.innerHTML = '<div class="data-state-card is-loading"><span class="data-state-pulse" aria-hidden="true"></span><div><strong>Chargement de l’historique</strong><small>Récupération des dernières parties League of Legends</small></div><span class="data-state-lines" aria-hidden="true"><i></i><i></i></span></div>';
@@ -239,23 +248,15 @@ export async function initLolHistoryPage() {
     const pagerState = historyReady ? await lolHistoryPager.refresh() : await lolHistoryPager.loadNext();
     if (loadSequence !== historyLoadSequence) return;
     historyReady = true;
-    historyRecoveryAttempts = 0;
-    clearTimeout(historyRecoveryTimer);
     rememberHistoryState(pagerState);
     const matches = normalizeLolHistory(pagerState.data);
-    renderHistory(matches, 'all', 'all', pagerState);
+    renderHistory(matches, historyView.player, historyView.period, pagerState);
+    el.insertAdjacentHTML('afterbegin', '<p class="lol-history-cache-note" role="status">Historique actualisé à l’instant</p>');
   } catch {
     if (loadSequence !== historyLoadSequence) return;
     if (cached?.state) {
-      renderHistory(normalizeLolHistory(cached.state.data), 'all', 'all', cached.state);
+      renderHistory(normalizeLolHistory(cached.state.data), historyView.player, historyView.period, cached.state);
       showHistorySyncNote(cached.savedAt, 'offline');
-      return;
-    }
-    if (historyRecoveryAttempts < 2 && document.getElementById('page-history')?.classList.contains('active') && document.documentElement.dataset.game === 'lol') {
-      historyRecoveryAttempts += 1;
-      el.innerHTML = `<div class="data-state-card is-loading"><span class="data-state-pulse" aria-hidden="true"></span><div><strong>Reconnexion à l’historique</strong><small>Nouvelle tentative automatique ${historyRecoveryAttempts}/2…</small></div><span class="data-state-lines" aria-hidden="true"><i></i><i></i></span></div>`;
-      clearTimeout(historyRecoveryTimer);
-      historyRecoveryTimer = setTimeout(initLolHistoryPage, 700 * historyRecoveryAttempts);
       return;
     }
     el.innerHTML = '<div class="data-state-card is-error"><span class="data-state-pulse" aria-hidden="true"></span><div><strong>Historique indisponible</strong><small>La connexion a pris trop de temps.</small></div><button type="button" data-lol-history-retry class="btn btn-primary">Réessayer</button></div>';
