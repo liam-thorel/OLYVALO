@@ -17,7 +17,7 @@ import { chooseLiveSession, freshLiveClients, groupLiveClients, isVersionAtLeast
 import { liveClientStatus, liveClientSummaryText, liveWaitingState } from './live-status.mjs?v=20261005-sites-history';
 import { buildLiveIdentityIndex, resolveLiveIdentity } from './live-identities.mjs?v=20260809-live-groups';
 import { updateScriptDownload } from './downloads.mjs?v=20260912-separate-downloads';
-import { PLAYERS as LOL_ROSTER_PLAYERS } from './lol-roster.mjs?v=20261005-sites-history';
+import { PLAYERS as LOL_ROSTER_PLAYERS } from './lol-roster.mjs?v=20261005-roster-state';
 import { serverVisual } from './server-visuals.mjs?v=20260809-live-server-local';
 import { avatarLayersHTML } from './avatars.mjs?v=20260720-avatars';
 import { filterHistoryGames, historyDailyPerformances, historyGameForOwner, historyMode, historyOwnerAccountLabel, historyOwnerKey, historyOwnerLabel, historyPlayerName, historyPlayerPerformance, historyPlayerPerformances, historyRankedPlayers, historyReports, historyScoreText, historyTrackerUrl, isHistorySelf, normalizeHistoryEntries } from './history-utils.mjs?v=20261005-sites-history';

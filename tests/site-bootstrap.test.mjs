@@ -62,7 +62,10 @@ test('shared state does not import the versioned entry module twice', () => {
   assert.match(main, /from '\.\/state\.mjs/);
   assert.doesNotMatch(interactions, /from '\.\/main\.js/);
   assert.doesNotMatch(render, /from '\.\/main\.js/);
-  assert.match(lolRoster, /from '\.\/state\.mjs\?v=20260806-lol-roster'/);
+  const sharedUrl = main.match(/from '(\.\/state\.mjs[^']*)'/)?.[1];
+  for (const source of [interactions, render, lolRoster]) {
+    assert.equal(source.match(/from '(\.\/state\.mjs[^']*)'/)?.[1], sharedUrl);
+  }
 });
 
 test('League roster panels are mounted without duplicating detailed ranks on home', () => {

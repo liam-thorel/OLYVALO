@@ -1,6 +1,6 @@
 import { mergeFirebaseEvent, normalizeLolHistory } from './lol-utils.mjs';
 import { matchEntry, historyOf, displayRiotId, mergePlayers, observedPuuids, autoAcceptControl } from './lol-roster-utils.mjs?v=20260922-autoaccept';
-import { state } from './state.mjs?v=20260806-lol-roster';
+import { state } from './state.mjs?v=20261005-sites-history';
 
 const FIREBASE_URL = 'https://realtime-database-5bb9f-default-rtdb.europe-west1.firebasedatabase.app';
 /**

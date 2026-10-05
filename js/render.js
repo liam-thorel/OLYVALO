@@ -4,7 +4,7 @@
  */
 
 import { valorantApi } from './api.js';
-import { state } from './state.mjs?v=20260806-lol-roster';
+import { state } from './state.mjs?v=20261005-sites-history';
 import { formatRelTime } from './storage.js';
 import { avatarLayersHTML } from './avatars.mjs?v=20260720-avatars';
 import { rosterAccounts, cardStatus, isStale } from './roster-card-utils.mjs?v=20260920-puuid';
