@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import { hubLogoRect, landingAngle, startTransform, isPlainClick, arrivalUrl } from '../js/hub-transition.mjs';
+import { hubLogoRect, landingAngle, startTransform, isPlainClick, arrivalUrl, restoreHubTransition } from '../js/hub-transition.mjs';
 
 // Transition tracker → olycity.fr. La position d'arrivée reproduit le CSS du
 // hub (olycity-hub/index.html) ; vérifiée de bout en bout dans Chromium à
@@ -65,9 +65,23 @@ test('câblage : lien, angle de la roue et initialisation', () => {
     'sans l’angle, la roue sauterait au moment où la copie la remplace');
   const main = read('../js/main.js');
   assert.match(main, /import \{ initHubTransition \} from '\.\/hub-transition\.mjs/);
-  assert.match(main, /initWheelLogos\(\);\n\s*initHubTransition\(\);/);
+  assert.match(main, /initWheelLogos\(\);\r?\n\s*initHubTransition\(\);/);
   const module = read('../js/hub-transition.mjs');
   assert.match(module, /prefers-reduced-motion: reduce/, 'mouvement réduit : lien normal');
   assert.match(module, /addEventListener\('pageshow'/, 'retour arrière : la page ne reste pas masquée');
   assert.match(module, /replace\(\/<defs>/, 'la feuille de style du SVG n’est pas injectée dans le tracker');
+});
+
+test('restauration : annule le fondu persistant et retire les copies sans toucher aux autres animations', () => {
+  let cancelled = 0;
+  let removed = 0;
+  const canvas = { style: { opacity: '0' } };
+  const nodes = [{ remove() { removed++; } }, { remove() { removed++; } }];
+  restoreHubTransition(canvas, nodes, { cancel() { cancelled++; } });
+  assert.equal(cancelled, 1);
+  assert.equal(removed, 2);
+  assert.equal(nodes.length, 0);
+  assert.equal(canvas.style.opacity, '');
+  restoreHubTransition(canvas, nodes, null);
+  assert.equal(removed, 2, 'restaurer deux fois est sans effet secondaire');
 });

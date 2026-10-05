@@ -96,6 +96,12 @@ function cleanup(nodes) {
   nodes.forEach(node => node.remove());
 }
 
+export function restoreHubTransition(canvas, nodes, fade) {
+  fade?.cancel();
+  cleanup(nodes.splice(0));
+  canvas.style.opacity = '';
+}
+
 export function initHubTransition(link = document.querySelector('a.brand')) {
   const canvas = link?.querySelector('canvas');
   if (!link || !canvas) return;
@@ -108,14 +114,20 @@ export function initHubTransition(link = document.querySelector('a.brand')) {
 
   let leaving = false;
   const created = [];
+  let fade = null;
+  let recoveryTimer = null;
+  const restore = () => {
+    clearTimeout(recoveryTimer);
+    restoreHubTransition(canvas, created, fade);
+    fade = null;
+    leaving = false;
+  };
 
   // Retour arrière depuis le hub : la page revient du cache telle qu'on l'a
   // quittée, recouverte par l'animation. On rend la page.
   window.addEventListener('pageshow', event => {
     if (!event.persisted) return;
-    cleanup(created.splice(0));
-    canvas.style.opacity = '';
-    leaving = false;
+    restore();
   });
 
   link.addEventListener('click', async event => {
@@ -165,7 +177,7 @@ export function initHubTransition(link = document.querySelector('a.brand')) {
 
     // La copie remplace la roue du tracker en fondu : les deux dessins
     // diffèrent légèrement, et une substitution sèche se verrait.
-    canvas.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 140, fill: 'forwards' });
+    fade = canvas.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 140, fill: 'forwards' });
     const flight = flyer.animate([
       { transform: startTransform(from, to), filter: 'drop-shadow(0 0 0 rgba(255,70,86,0))', opacity: 0, offset: 0 },
       { opacity: 1, offset: 0.18 },
@@ -177,11 +189,9 @@ export function initHubTransition(link = document.querySelector('a.brand')) {
     window.location.href = destination;
 
     // Navigation bloquée ou réseau coupé : on ne laisse pas la page masquée.
-    setTimeout(() => {
+    recoveryTimer = setTimeout(() => {
       if (document.visibilityState !== 'visible') return;
-      cleanup(created.splice(0));
-      canvas.getAnimations().forEach(animation => animation.cancel());
-      leaving = false;
+      restore();
     }, 6000);
   });
 }

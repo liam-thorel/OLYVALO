@@ -33,7 +33,7 @@ import { initHomeGroup } from './home-group.mjs?v=20260930-consistent-live';
 import { initPwaInstall } from './pwa-install.mjs?v=20260901-deploy-updates';
 import { initSiteTelemetry } from './site-telemetry.mjs?v=20260825-site-health';
 import { liveDataStore, liveTimestamp } from './live-data-store.mjs?v=20260930-consistent-live';
-import { initHubTransition } from './hub-transition.mjs?v=20261004-roue';
+import { initHubTransition } from './hub-transition.mjs?v=20261005-retour';
 export { state };
 
 initSiteTelemetry();
