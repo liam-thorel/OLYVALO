@@ -17,7 +17,7 @@ import { statsKey, readStats, writeStats, selectedAccount, toggleSelection, need
   firebasePath, publishable, remoteStats, mergeStores } from './account-stats.mjs?v=20260922-partage';
 import { setStoredKey, storedKey, forgetCachedKey } from './henrik-key.mjs';
 import { rosterHTML, guestCardHTML, mapSectionHTML, agentPageHTML, navMapsHTML, compHTML, globalNotesHTML } from './render.js?v=20261006-proprietaire';
-import { initTheme, initTilt, initParallax, initKeyboard, initHeroParticles, initWheelLogos, initLivePage, initHistoryPage } from './interactions.js?v=20261006-proprietaire';
+import { initTheme, initTilt, initParallax, initKeyboard, initHeroParticles, initWheelLogos, initLivePage, initHistoryPage } from './interactions.js?v=20261006-puuid-lol';
 import { storage } from './storage.js';
 import { avatarLayersHTML } from './avatars.mjs';
 import { initAdminPage } from './admin.mjs?v=20261005-return-live';
@@ -27,7 +27,7 @@ import { initSiteSwitcher } from './site-switcher.mjs?v=20261005-game-picker';
 import { sharedProfileId, rememberSharedProfile } from './shared-profile.mjs';
 import { getGameMode, initGameMode, setGameMode } from './game-mode.mjs?v=20261005-game-picker';
 import { initLolHistoryPage, initLolLivePage } from './lol-pages.mjs?v=20261005-all-modes';
-import { initLolRosterPages } from './lol-roster.mjs?v=20261005-riot-rename';
+import { initLolRosterPages } from './lol-roster.mjs?v=20261006-puuid-lol';
 import { state } from './state.mjs?v=20261005-sites-history';
 import { memberId, mergeMemberProfiles, resolveMemberProfile } from './member-profiles.mjs?v=20260823-profile-picker';
 import { initHomeDashboard } from './home-dashboard.mjs?v=20261005-tracker-home';

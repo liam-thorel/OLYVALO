@@ -22,7 +22,7 @@ test('roster fix invalidates cached renderer and League modules through the entr
   const main = fs.readFileSync(new URL('../js/main.js',import.meta.url),'utf8');
   const interactions = fs.readFileSync(new URL('../js/interactions.js',import.meta.url),'utf8');
   assert.match(main,/render\.js\?v=20261006-proprietaire/);
-  assert.match(main,/interactions\.js\?v=20261006-proprietaire/);
-  assert.match(main,/lol-roster\.mjs\?v=20261005-riot-rename/);
-  assert.match(interactions,/lol-roster\.mjs\?v=20261005-riot-rename/);
+  assert.match(main,/interactions\.js\?v=20261006-puuid-lol/);
+  assert.match(main,/lol-roster\.mjs\?v=20261006-puuid-lol/);
+  assert.match(interactions,/lol-roster\.mjs\?v=20261006-puuid-lol/);
 });

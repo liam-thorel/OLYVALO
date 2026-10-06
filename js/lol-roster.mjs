@@ -17,7 +17,7 @@ const FIREBASE_URL = 'https://realtime-database-5bb9f-default-rtdb.europe-west1.
  * tests/roster-ownership.test.mjs.
  */
 const PLAYERS = [
-  { name: 'Nico', riotId: 'phileas fogg#OLY' },
+  { name: 'Nico', riotId: 'phileas fogg#OLY', puuid: '24b71119-bcf3-590a-b29f-189c833ab2ca' },
   { name: 'Liam', riotId: 'FakePlasticTrees#1706', puuid: 'facae061-6042-55eb-b88a-14d58be02fe3' },
   { name: 'Noé', riotId: 'NoWaY#alone' },
   { name: 'Rayhan', riotId: 'RayBaz#OLY', puuid: '00de932d-85f0-5ab1-a8c7-5ec7a5e77ec7' },

@@ -144,6 +144,9 @@ test('données réelles : mains et comptes LoL', () => {
     const entry = players.find(player => player.name === member.name);
     if (!entry) continue;
     const lolMain = member.lol || member.riot;
+    // Dès que roster.json connaît le PUUID, la page LoL doit le porter aussi :
+    // sinon elle continue de reconnaître le compte à son nom.
+    if (lolMain.puuid) assert.ok(entry.puuid, `${member.name} : PUUID connu dans roster.json, absent de la page LoL`);
     if (entry.puuid && lolMain.puuid) {
       comparedByPuuid += 1;
       assert.equal(entry.puuid, lolMain.puuid, `${member.name} : la page LoL et roster.json désignent deux comptes`);
@@ -151,7 +154,7 @@ test('données réelles : mains et comptes LoL', () => {
       assert.equal(entry.riotId.toLowerCase(), id(lolMain).toLowerCase(), `${member.name} : page LoL ${entry.riotId}, roster.json ${id(lolMain)}`);
     }
   }
-  assert.ok(comparedByPuuid >= 3, 'la plupart des comptes se comparent par PUUID');
+  assert.ok(comparedByPuuid >= 4, 'la plupart des comptes se comparent par PUUID');
 
   // Liam : Wong Chi Ming et FakePlasticTrees sont le même compte, renommé.
   // Un seul compte, donc pas de principal LoL séparé.
