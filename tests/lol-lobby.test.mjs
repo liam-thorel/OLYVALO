@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { createRequire } from 'node:module';
-import { formatMasteryPoints, tierLabel, soloWinrate, lobbyTeams, lobbyHTML, lobbyOf } from '../js/lol-live-utils.mjs';
+import { formatMasteryPoints, tierLabel, soloWinrate, lobbyTeams, lobbyHTML, lobbyOf, championIcons, championIconById } from '../js/lol-live-utils.mjs';
 
 const require = createRequire(import.meta.url);
 const { participantsFromGameflow, masteryFor, collectLobby } = require('../live/lol-lobby.js');
@@ -64,6 +64,7 @@ test('collecte : rang, maîtrise, rôle principal, et repli d’un endpoint à l
   const [moi] = await collectLobby({ lcu, session: onlyMe, myPuuid: MOI, champions: { 3: { name: 'Quinn', image: 'https://ddragon/quinn.png' } } });
 
   assert.equal(moi.riotId, 'Liam#OLY');
+  assert.equal(moi.championId, 3, 'le numéro du champion part toujours');
   assert.deepEqual(moi.champion, { name: 'Quinn', image: 'https://ddragon/quinn.png' });
   assert.equal(moi.rank.tier, 'CHALLENGER');
   assert.equal(moi.rank.lp, 2728);
@@ -150,4 +151,28 @@ test('câblage : le script publie le lobby, la page Live l’affiche', () => {
   assert.match(pages, /\$\{lobbyHTML\(group\)\}/);
   const manifest = JSON.parse(readFileSync(new URL('../live/update-manifest.json', import.meta.url), 'utf8'));
   assert.ok(manifest.files.includes('lol-lobby.js'), 'le module part avec la mise à jour');
+});
+
+test('icônes : Data Dragon d’abord, le numéro du champion en secours', () => {
+  const cdragon = id => `https://raw.communitydragon.org/latest/plugins/rcp-be-lol-game-data/global/default/v1/champion-icons/${id}.png`;
+  assert.equal(championIconById(133), cdragon(133));
+  assert.equal(championIconById(0), '');
+  assert.equal(championIconById('abc'), '');
+
+  assert.deepEqual(championIcons({ championId: 133, champion: { image: 'https://ddragon/quinn.png' } }),
+    { src: 'https://ddragon/quinn.png', fallback: cdragon(133) }, 'si Data Dragon ne charge pas, on bascule');
+  assert.deepEqual(championIcons({ championId: 133, champion: null }),
+    { src: cdragon(133), fallback: '' }, 'liste des champions indisponible côté script : l’icône vient du numéro');
+  assert.deepEqual(championIcons({ champion: { image: 'https://ddragon/x.png' } }), { src: 'https://ddragon/x.png', fallback: '' });
+  assert.deepEqual(championIcons({}), { src: '', fallback: '' });
+
+  const html = lobbyHTML({ players: [{ puuid: 'p', lobby: { players: [{ puuid: 'p', ally: true, championId: 133, champion: null }] } }] });
+  assert.match(html, new RegExp(`<img src="${cdragon(133).replace(/[.?]/g, '\\$&')}"`), 'icône même sans liste Data Dragon');
+  const withBoth = lobbyHTML({ players: [{ puuid: 'p', lobby: { players: [{ puuid: 'p', ally: true, championId: 133, champion: { name: 'Quinn', image: 'https://ddragon/quinn.png' } }] } }] });
+  assert.match(withBoth, /data-fallback="https:\/\/raw\.communitydragon\.org\//);
+
+  const pages = readFileSync(new URL('../js/lol-pages.mjs', import.meta.url), 'utf8');
+  assert.match(pages, /container\.addEventListener\('error', event => \{/, 'erreurs d’image écoutées');
+  assert.match(pages, /\}, true\);/, 'en phase de capture : elles ne remontent pas');
+  assert.match(pages, /bindChampionIconFallback\(el\);/);
 });

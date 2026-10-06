@@ -39,6 +39,27 @@ export function soloWinrate(rank) {
   return { percent: Math.round((wins / games) * 100), games };
 }
 
+/**
+ * Icône du champion par son numéro, chez CommunityDragon (miroir des données
+ * du client) : aucune version à connaître, contrairement à Data Dragon.
+ */
+export function championIconById(championId) {
+  const id = Number(championId);
+  return Number.isInteger(id) && id > 0
+    ? `https://raw.communitydragon.org/latest/plugins/rcp-be-lol-game-data/global/default/v1/champion-icons/${id}.png`
+    : '';
+}
+
+/**
+ * Icône à afficher, et celle de secours si elle ne charge pas. L'image de
+ * Data Dragon d'abord (publiée par le script), le numéro sinon.
+ */
+export function championIcons(player) {
+  const byId = championIconById(player?.championId);
+  const primary = String(player?.champion?.image || '') || byId;
+  return { src: primary, fallback: byId && byId !== primary ? byId : '' };
+}
+
 export function roleLabel(role) {
   return ROLE_LABELS[String(role || '').toLowerCase()] || '';
 }
@@ -83,6 +104,7 @@ function splitRiotId(riotId) {
 
 function playerRow(player, olycity) {
   const champion = player?.champion || {};
+  const icons = championIcons(player);
   const mastery = formatMasteryPoints(player?.mastery?.points);
   const masteryTitle = mastery
     ? `Maîtrise ${champion.name ? `sur ${champion.name} ` : ''}: ${Number(player.mastery.points).toLocaleString('fr-FR')} points`
@@ -96,7 +118,7 @@ function playerRow(player, olycity) {
   const classes = ['lol-lobby-player', olycity ? 'is-olycity' : '', player?.self ? 'is-self' : ''].filter(Boolean).join(' ');
   return `<div class="${classes}">
       <div class="lol-lobby-champ"${masteryTitle ? ` title="${esc(masteryTitle)}"` : ''}>
-        ${champion.image ? `<img src="${esc(champion.image)}" alt="" loading="lazy">` : '<span>?</span>'}
+        ${icons.src ? `<img src="${esc(icons.src)}"${icons.fallback ? ` data-fallback="${esc(icons.fallback)}"` : ''} alt="" loading="lazy">` : '<span>?</span>'}
         ${mastery ? `<b class="lol-mastery">${esc(mastery)}</b>` : ''}
       </div>
       <div class="lol-lobby-id"${player?.riotId ? ` title="${esc(player.riotId)}"` : ''}><strong>${esc(name || 'Joueur masqué')}</strong><small>${esc(champion.name || '')}${role ? `<span class="lol-lobby-role-inline"> · ${esc(role)}</span>` : ''}</small></div>

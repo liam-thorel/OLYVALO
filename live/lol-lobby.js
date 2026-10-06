@@ -112,6 +112,9 @@ async function collectLobby({ lcu, session, myPuuid, champions = {}, log = () =>
       team: participant.team,
       ally: participant.ally,
       self: participant.self,
+      // Le numéro du champion part toujours : si la liste Data Dragon n'a pas
+      // pu être chargée, le site retrouve l'icône à partir de lui seul.
+      championId: participant.championId || null,
       champion: champion ? { name: champion.name, image: champion.image } : null,
       position: participant.position,
       mainRole: '',
