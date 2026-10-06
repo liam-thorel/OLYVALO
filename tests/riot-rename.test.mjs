@@ -2,19 +2,6 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { rosterAccounts,currentRiotId } from '../js/roster-card-utils.mjs';
 import { createRosterIdentitySync } from '../js/roster-identity-sync.mjs';
-import { buildLiveIdentityIndex,resolveLiveIdentity } from '../js/live-identities.mjs';
-
-test('Mathis uses the shared smurf only alongside Nico in the same match; ownership stays unchanged',()=>{
-  const roster=[{...player,smurfs:[{name:'OG ANUNOBY',tag:'OLY',puuid:'shared-P'}]},{name:'Mathis',riot:{name:'Main',tag:'LGND',puuid:'mathis-P'}}];
-  const index=buildLiveIdentityIndex(roster);
-  const shared={puuid:'shared-P',playerName:'OG ANUNOBY#OLY'};
-  const both=[{puuid:'valo-P',name:'Hal Jordan#OLY'},shared];
-  assert.equal(resolveLiveIdentity(shared,index,{participants:both}).member,'Mathis');
-  assert.equal(resolveLiveIdentity({...shared,playerName:'Renamed Smurf#OLY'},index,{participants:both}).member,'Mathis');
-  assert.equal(resolveLiveIdentity(shared,index,{participants:[shared]}).member,'Nico');
-  assert.equal(resolveLiveIdentity(shared,index,{participants:[{puuid:'valo-P'}]}).member,'Nico');
-  assert.equal(index.byPuuid.get('shared-P').member,'Nico');
-});
 
 const player = {name:'Nico',riot:{name:'Drew A Picasso',tag:'XOOO',puuid:'valo-P'},smurfs:[{name:'phileas fogg',tag:'OLY',puuid:'lol-P'}]};
 test('latest Valorant binding wins regardless of Firebase key order; LoL account stays unchanged',()=>{

@@ -13,7 +13,7 @@
 
 import { fetchJsonWithRetry } from './request-utils.mjs?v=20260930-consistent-live';
 import { getGameMode } from './game-mode.mjs';
-import { valorantAccountSeries, lolAccountSeries, defaultVisible, withinRange, untrackedAccounts, curveDiagnostics, buildMembers, TIME_RANGES } from './rr-curve-utils.mjs?v=20261005-riot-rename';
+import { valorantAccountSeries, lolAccountSeries, defaultVisible, withinRange, untrackedAccounts, curveDiagnostics, buildMembers, TIME_RANGES } from './rr-curve-utils.mjs?v=20261006-proprietaire';
 import { renderCurvePage, emptyState } from './rr-curve-view.mjs?v=20260922-synergies';
 import { duoRanking, MIN_DUO_GAMES } from './synergy-utils.mjs?v=20260922-synergies';
 

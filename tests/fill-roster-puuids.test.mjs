@@ -70,4 +70,13 @@ assert.match(dejaLa.report[0].status, /déjà renseigné/);
 assert.deepEqual(fillRoster([], found).filled, []);
 assert.deepEqual(fillRoster(null, found).filled, []);
 
+// Le principal LoL, déclaré à part, est complété comme les autres comptes.
+{
+  const roster = [{ name: 'Nico', riot: { name: 'Main', tag: 'EUW', puuid: 'p-main' }, lol: { name: 'phileas fogg', tag: 'OLY' } }];
+  const found = collectPuuids({ overlay: { accounts: { nico: { a: { name: 'phileas fogg', tag: 'OLY', puuid: 'p-lol' } } } } });
+  const { filled } = fillRoster(roster, found);
+  assert.equal(filled[0].lol.puuid, 'p-lol', 'le compte LoL reçoit son puuid');
+  assert.equal(filled[0].riot.puuid, 'p-main', 'le reste est intact');
+}
+
 console.log('fill-roster-puuids: récolte, arbitrage et écriture non destructive validés');

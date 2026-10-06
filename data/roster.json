@@ -15,13 +15,11 @@
       "puuid": "d70bdb3f-d6e9-5f3e-9390-dca672074a55"
     },
     "avatar": "https://cdn.discordapp.com/avatars/295547782880559107/1ca11cbf7817b43b11e47b02ae56f80a.png?size=512",
-    "smurfs": [
-      {
-        "name": "OG ANUNOBY",
-        "tag": "OLY",
-        "puuid": "7749bfcd-152d-517c-bbec-bb5164d8abfd"
-      }
-    ]
+    "smurfs": [],
+    "lol": {
+      "name": "phileas fogg",
+      "tag": "OLY"
+    }
   },
   {
     "name": "Liam",
@@ -33,8 +31,8 @@
     ],
     "tag": "ENTRY",
     "riot": {
-      "name": "Wong Chi Ming",
-      "tag": "2046",
+      "name": "FakePlasticTrees",
+      "tag": "1706",
       "region": "eu",
       "puuid": "facae061-6042-55eb-b88a-14d58be02fe3"
     },
@@ -81,14 +79,24 @@
     ],
     "tag": "DUEL",
     "riot": {
-      "name": "M A I R",
-      "tag": "LGND",
+      "name": "OG ANUNOBY",
+      "tag": "OLY",
       "region": "eu",
-      "puuid": "cb9d47bb-b4a7-5859-9310-32fe7722549a"
+      "puuid": "7749bfcd-152d-517c-bbec-bb5164d8abfd"
     },
     "avatar": "https://cdn.discordapp.com/avatars/775273322950688780/2b6fdcf90608c24413fb3777bfda41e0.png?size=512",
     "smurfs": [
-    ]
+      {
+        "name": "M A I R",
+        "tag": "LGND",
+        "puuid": "cb9d47bb-b4a7-5859-9310-32fe7722549a"
+      }
+    ],
+    "lol": {
+      "name": "M A I R",
+      "tag": "LGND",
+      "puuid": "cb9d47bb-b4a7-5859-9310-32fe7722549a"
+    }
   },
   {
     "name": "Noé",
@@ -105,6 +113,10 @@
       "region": "eu",
       "puuid": "39267141-767e-5dc4-b65a-ae62ee837487"
     },
-    "avatar": "https://cdn.discordapp.com/avatars/951936970924376145/45ae491d48cb98d10107c7b06209faec.png?size=512"
+    "avatar": "https://cdn.discordapp.com/avatars/951936970924376145/45ae491d48cb98d10107c7b06209faec.png?size=512",
+    "lol": {
+      "name": "NoWaY",
+      "tag": "alone"
+    }
   }
 ]

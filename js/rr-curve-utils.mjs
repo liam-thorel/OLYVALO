@@ -1,3 +1,5 @@
+import { declaredOwners, declaredElsewhere } from './roster-ownership.mjs';
+
 /**
  * Courbes de progression — logique pure.
  *
@@ -365,6 +367,8 @@ function slugify(value) {
  */
 export function buildMembers(roster = [], overlay = null) {
   const accounts = overlay?.accounts || {};
+  // Un compte déclaré dans roster.json sous un autre membre lui reste.
+  const owners = declaredOwners(Array.isArray(roster) ? roster : [], slugify);
   const overlayMembers = overlay?.members || {};
 
   const fromRoster = (Array.isArray(roster) ? roster : []).map(player => ({
@@ -395,6 +399,7 @@ export function buildMembers(roster = [], overlay = null) {
 
     Object.values(accounts[member.id] || {}).sort((a,b) => Number(a?.updatedAt || 0) - Number(b?.updatedAt || 0)).forEach(account => {
       if (!account?.name) return;
+      if (declaredElsewhere(member.id, account, owners)) return;
       const riotId = account.tag ? `${account.name}#${account.tag}` : String(account.name);
       const puuid = String(account.puuid || '').trim();
       // Masqué depuis l'admin : un compte de roster.json ne peut pas être

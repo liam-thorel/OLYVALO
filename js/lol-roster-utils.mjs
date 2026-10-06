@@ -37,7 +37,7 @@ export function puuidByRiotId(roster = [], overlay = null) {
     if (!index.has(norm(riotId))) index.set(norm(riotId), puuid);
   };
   (Array.isArray(roster) ? roster : []).forEach(player => {
-    [player?.riot, ...(player?.smurfs || [])].forEach(add);
+    [player?.riot, ...(player?.smurfs || []), player?.lol].forEach(add);
   });
   Object.values(overlay?.accounts || {}).forEach(accounts => {
     Object.values(accounts || {}).forEach(add);
