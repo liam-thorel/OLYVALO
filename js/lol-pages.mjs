@@ -4,6 +4,7 @@ import { liveClientSummary } from './live-clients.mjs?v=20261005-return-live';
 import { liveClientSummaryText, liveWaitingState, normalizeLolClientState } from './live-status.mjs?v=20261005-sites-history';
 import { createHistoryPager } from './history-pager.mjs?v=20261005-sites-history';
 import { createHistoryDisclosureState } from './history-disclosure-state.mjs';
+import { lobbyHTML } from './lol-live-utils.mjs?v=20261006-lobby';
 
 const historyDisclosures = createHistoryDisclosureState('data-lol-history-id');
 
@@ -88,6 +89,7 @@ function sessionCard(group) {
         <div class="lol-rank"><small>Rang</small><strong>${esc(rankLabel(player.rank))}</strong></div>
       </div>`;
     }).join('')}</div>
+    ${lobbyHTML(group)}
     <footer><span class="lol-status-dot"></span> Données actualisées automatiquement</footer>
   </article>`;
 }

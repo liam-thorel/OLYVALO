@@ -45,19 +45,34 @@ function participantFor(game, identity = {}) {
   return participants.length === 1 ? participants[0] : null;
 }
 
+/**
+ * Poste joué dans une partie de l'historique.
+ *
+ * Les champs explicites (teamPosition…) d'abord. À défaut, l'historique du
+ * client ne donne que timeline.lane (TOP, JUNGLE, MIDDLE, BOTTOM) et
+ * timeline.role (SOLO, NONE, DUO_CARRY, DUO_SUPPORT) : le rôle ne sert qu'à
+ * départager les deux joueurs de la voie du bas. Le lire en premier, comme
+ * avant, faisait de chaque top et de chaque mid (« SOLO ») une partie sans
+ * poste — et faussait le rôle principal.
+ */
 function roleKey(participant = {}) {
   const timeline = participant.timeline || {};
   const stats = participant.stats || {};
-  const role = String(participant.teamPosition || participant.individualPosition || participant.assignedPosition || stats.teamPosition || timeline.role || '').toUpperCase();
+  const pick = value => {
+    const raw = String(value || '').toUpperCase();
+    if (raw.includes('UTILITY') || raw.includes('SUPPORT')) return 'support';
+    if (raw.includes('JUNGLE')) return 'jungle';
+    if (raw.includes('MIDDLE') || raw === 'MID') return 'mid';
+    if (raw.includes('BOTTOM') || raw === 'BOT' || raw.includes('CARRY') || raw === 'ADC') return 'adc';
+    if (raw.includes('TOP')) return 'top';
+    return '';
+  };
+  const explicit = pick(participant.teamPosition || participant.individualPosition || participant.assignedPosition || stats.teamPosition);
+  if (explicit) return explicit;
   const lane = String(participant.lane || stats.lane || timeline.lane || '').toUpperCase();
-  const raw = role || lane;
-  if (raw.includes('UTILITY') || raw.includes('SUPPORT')) return 'support';
-  if (raw.includes('JUNGLE')) return 'jungle';
-  if (raw.includes('MIDDLE') || raw === 'MID') return 'mid';
-  if (raw.includes('BOTTOM') || raw.includes('BOT') || raw.includes('CARRY')) return 'adc';
-  if (raw.includes('TOP')) return 'top';
-  if (lane === 'BOTTOM' && role.includes('SUPPORT')) return 'support';
-  return '';
+  const role = String(timeline.role || participant.role || '').toUpperCase();
+  if (lane === 'BOTTOM' || lane === 'BOT') return role.includes('SUPPORT') ? 'support' : 'adc';
+  return pick(lane) || pick(role);
 }
 
 function numeric(source, ...keys) {

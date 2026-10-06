@@ -30,6 +30,7 @@ const { lolHistorySummary } = require('./history-index');
 const { safeFirebaseKey, lolAccountKey, legacyKeyToDrop } = require('./lol-keys.js');
 const { readyCheckPlan, autoAcceptEnabled } = require('./ready-check.js');
 const { lolGameMetadata } = require('./lol-gameflow.js');
+const { collectLobby } = require('./lol-lobby.js');
 
 const HEARTBEAT_MS = 20000;
 // Phases actives d'une game : GameStart = chargement, InProgress = en jeu, Reconnect = reco après un crash.
@@ -537,6 +538,10 @@ function createLolWatcher({
   let currentQueueDescription = '';
   let currentMatchId = '';
   let currentRiotMatchId = '';
+  // Les 10 joueurs de la partie (voir lol-lobby.js), collectés une fois par
+  // partie, en tâche de fond : la collecte ne retarde jamais le battement.
+  let lobbyMatchId = '';
+  let lobbyPlayers = null;
   let rankBefore = null;
   let postGameSince = 0;
   let capturedResult = null;
@@ -602,10 +607,33 @@ function createLolWatcher({
     currentQueueDescription = '';
     currentMatchId = '';
     currentRiotMatchId = '';
+    lobbyMatchId = '';
+    lobbyPlayers = null;
     rankBefore = null;
     postGameSince = 0;
     capturedResult = null;
     eogLogged = false;
+  }
+
+  /**
+   * Lance la collecte des 10 joueurs pour la partie en cours, une seule fois.
+   * Le résultat est publié au battement suivant.
+   */
+  function ensureLobby(session, myPuuid, champions) {
+    if (!currentMatchId || lobbyMatchId === currentMatchId) return;
+    const matchId = currentMatchId;
+    lobbyMatchId = matchId;
+    collectLobby({ lcu: endpoint => lcuGet(cachedLock, endpoint), session, myPuuid, champions, log })
+      .then(players => {
+        if (lobbyMatchId !== matchId) return; // la partie a changé entre-temps
+        lobbyPlayers = players;
+        lastHeartbeat = 0; // publier sans attendre le prochain battement
+        log(`[${ts()}] 🔵 LoL — ${players.length} joueurs de la partie collectés`);
+      })
+      .catch(error => {
+        log(`[${ts()}] ⚠️ LoL — joueurs de la partie : ${error.message}`);
+        if (lobbyMatchId === matchId) lobbyMatchId = ''; // nouvelle tentative au battement suivant
+      });
   }
 
   async function markInactive() {
@@ -924,6 +952,7 @@ function createLolWatcher({
     const matchup = champSelectMatchupChampionId ? champions[champSelectMatchupChampionId] : null;
     if (metadata.gameFamily === 'tft') currentChampion = null;
     else if (champion) currentChampion = champion;
+    if (metadata.gameFamily !== 'tft') ensureLobby(sessionRes.data, myPuuid, champions);
     const region = await ensureRegion();
 
     const sessionMember = getIdentity();
@@ -951,6 +980,8 @@ function createLolWatcher({
       matchup: metadata.gameFamily !== 'tft' && matchup ? { name: matchup.name, image: matchup.image } : null,
       position: metadata.gameFamily === 'tft' ? '' : champSelectPosition || '',
       rank: metadata.gameFamily === 'tft' ? null : rankBefore,
+      // Les 10 joueurs : rang et winrate SoloQ, maîtrise, rôle principal.
+      lobby: metadata.gameFamily !== 'tft' && lobbyPlayers?.length ? { players: lobbyPlayers } : null,
       region: region || '',
       scriptVersion,
     });
