@@ -10,13 +10,18 @@ const FIREBASE_URL = 'https://realtime-database-5bb9f-default-rtdb.europe-west1.
  * jouent pas à LoL sur le compte qu'ils utilisent sur Valorant. La liste sert
  * donc de base, et mergePlayers() y ajoute les joueurs du roster et de l'admin
  * qui n'y figurent pas.
+ *
+ * Le PUUID, quand on le connaît, est ce qui identifie le compte : le Riot ID
+ * n'est qu'un libellé, qui change à chaque renommage. Il doit correspondre au
+ * principal LoL de data/roster.json (`lol`, sinon `riot`) — vérifié par
+ * tests/roster-ownership.test.mjs.
  */
 const PLAYERS = [
   { name: 'Nico', riotId: 'phileas fogg#OLY' },
-  { name: 'Liam', riotId: 'FakePlasticTrees#1706' },
+  { name: 'Liam', riotId: 'FakePlasticTrees#1706', puuid: 'facae061-6042-55eb-b88a-14d58be02fe3' },
   { name: 'Noé', riotId: 'NoWaY#alone' },
-  { name: 'Rayhan', riotId: 'RayBaz#OLY' },
-  { name: 'Mathis', riotId: 'M A I R#LGND' },
+  { name: 'Rayhan', riotId: 'RayBaz#OLY', puuid: '00de932d-85f0-5ab1-a8c7-5ec7a5e77ec7' },
+  { name: 'Mathis', riotId: 'M A I R#LGND', puuid: 'cb9d47bb-b4a7-5859-9310-32fe7722549a' },
   {
     name: 'Logan',
     riotId: 'Stupefiant#NOXUS',

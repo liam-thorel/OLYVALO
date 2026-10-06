@@ -31,8 +31,8 @@
     ],
     "tag": "ENTRY",
     "riot": {
-      "name": "Wong Chi Ming",
-      "tag": "2046",
+      "name": "FakePlasticTrees",
+      "tag": "1706",
       "region": "eu",
       "puuid": "facae061-6042-55eb-b88a-14d58be02fe3"
     },
@@ -43,11 +43,7 @@
         "tag": "5378",
         "puuid": "7624d420-e3ef-5ee0-9508-c4e78e914c02"
       }
-    ],
-    "lol": {
-      "name": "FakePlasticTrees",
-      "tag": "1706"
-    }
+    ]
   },
   {
     "name": "Rayhan",

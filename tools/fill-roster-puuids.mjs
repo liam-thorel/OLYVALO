@@ -88,6 +88,9 @@ export function fillRoster(roster, found) {
     const next = { ...player };
     if (next.riot) next.riot = patch(next.riot);
     if (Array.isArray(next.smurfs)) next.smurfs = next.smurfs.map(patch);
+    // Principal LoL déclaré à part : sans PUUID, le bot ne le reconnaît que
+    // par son nom, jusqu'au premier renommage.
+    if (next.lol) next.lol = patch(next.lol);
     return next;
   });
   return { filled, report };

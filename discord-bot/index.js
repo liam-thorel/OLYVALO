@@ -224,7 +224,7 @@ function buildValorantGroupEmbed(rosterPlayers) {
   const lines = rosterPlayers.map(({ member, session: s }) => {
     const sideLabel = s.side ? (s.side === 'ATTAQUE' ? '⚔️ Attaque' : '🛡️ Défense') : null;
     // L'embed a la place de nommer le compte, pas seulement sa nature.
-    const name = `**${member.name}**${accountDetail(member, s.playerName)}`;
+    const name = `**${member.name}**${accountDetail(member, s)}`;
     return sideLabel ? `${name} — ${sideLabel}` : name;
   });
   return new EmbedBuilder()
@@ -384,7 +384,7 @@ async function notifyValorantGameStart(session, snapshot) {
   const embeds = [buildValorantGroupEmbed(rosterPlayers)];
   // « (main) » / « (smurf) » plutôt que le nom du compte : l'en-tête doit
   // rester lisible avec cinq joueurs stackés. Le détail est dans l'embed.
-  const names = rosterPlayers.map(({ member, session: s }) => `**${member.name}**${accountMark(member, s.playerName)}`).join(', ');
+  const names = rosterPlayers.map(({ member, session: s }) => `**${member.name}**${accountMark(member, s)}`).join(', ');
   const stackBanner = rosterPlayers.length > 1 ? `🔥 **STACK OLYCITY** — ${rosterPlayers.length} joueurs dans la même game !\n` : '';
 
   await Promise.all([...channelIds].map(async channelId => {
@@ -445,7 +445,7 @@ async function announceCancelledGame(game, sessions, betting, cancelled) {
   const channelIds = new Set();
   players.forEach(({ member }) => trackersForPlayerGame(member.name, game).forEach(t => channelIds.add(t.channelId)));
 
-  const names = players.map(({ member, session }) => `**${member.name}**${accountMark(member, session.playerName, game)}`).join(', ');
+  const names = players.map(({ member, session }) => `**${member.name}**${accountMark(member, session, game)}`).join(', ');
   const description = [
     names,
     cancelledExplanation(cancelled.kind),
@@ -881,7 +881,7 @@ function buildLolPlayerEmbed(member, session) {
   const embed = new EmbedBuilder()
     .setColor(GAME_META.lol.color)
     .setAuthor({
-      name: `${positionIcon ? `${positionIcon} ` : ''}${member.name}${accountDetail(member, session.playerName, 'lol')} — ${championName}`,
+      name: `${positionIcon ? `${positionIcon} ` : ''}${member.name}${accountDetail(member, session, 'lol')} — ${championName}`,
       iconURL: session.champion?.image || member.avatar || undefined,
     });
 
@@ -939,7 +939,7 @@ async function notifyLolGameStart(session, snapshot) {
   if (channelIds.size === 0) return;
 
   const embeds = rosterPlayers.map(({ session: s, member }) => buildLolPlayerEmbed(member, s)).slice(0, 10);
-  const names = rosterPlayers.map(({ member, session: s }) => `**${member.name}**${accountMark(member, s.playerName, 'lol')}`).join(', ');
+  const names = rosterPlayers.map(({ member, session: s }) => `**${member.name}**${accountMark(member, s, 'lol')}`).join(', ');
   const stackBanner = rosterPlayers.length > 1 ? `🔥 **STACK OLYCITY** — ${rosterPlayers.length} joueurs dans la même game !\n` : '';
 
   await Promise.all([...channelIds].map(async channelId => {

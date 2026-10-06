@@ -4,7 +4,7 @@ const { declaredAccounts, declaredOwners, declaredElsewhere } = require('./roste
 
 const REFRESH_MS = 5 * 60 * 1000;
 
-let members = [];       // [{ id, name, avatar, riotIds: ['name#tag', ...], mainRiotId, lolMainRiotId, puuids: [...] }]
+let members = [];       // [{ id, name, avatar, riotIds, mainRiotId, mainPuuid, lolMainRiotId, lolMainPuuid, puuids }]
 let riotIdIndex = {};   // 'name#tag' lowercase -> member
 let memberIdIndex = {}; // id de membre -> member
 let puuidIndex = {};    // puuid -> member
@@ -95,13 +95,17 @@ function indexRoster(roster, overlay) {
     id: slugify(player.name), name: player.name, avatar: player.avatar || null,
     discordId: extractDiscordId(player.avatar), riotIds: riotIdsFromRoster(player),
     mainRiotId: mainRiotIdFromRoster(player), lolMainRiotId: lolMainRiotIdFromRoster(player),
+    // Le PUUID fait foi pour désigner le principal : un compte renommé garde
+    // le sien, alors que son Riot ID dans roster.json devient périmé.
+    mainPuuid: String(player?.riot?.puuid || '').trim() || null,
+    lolMainPuuid: String(player?.lol?.puuid || '').trim() || null,
     puuids: puuidsFromRoster(player),
   }));
 
   const staticIds = new Set(staticMembers.map(m => m.id));
   const extraMembers = Object.entries(overlayMembers)
     .filter(([id]) => !staticIds.has(id))
-    .map(([id, m]) => ({ id, name: m.name, avatar: m.avatar || null, discordId: extractDiscordId(m.avatar), riotIds: [], mainRiotId: null, lolMainRiotId: null, puuids: [] }));
+    .map(([id, m]) => ({ id, name: m.name, avatar: m.avatar || null, discordId: extractDiscordId(m.avatar), riotIds: [], mainRiotId: null, lolMainRiotId: null, mainPuuid: null, lolMainPuuid: null, puuids: [] }));
 
   members = [...staticMembers, ...extraMembers];
 
@@ -121,11 +125,21 @@ function indexRoster(roster, overlay) {
         member.riotIds = member.riotIds.filter(known => known.toLowerCase() !== riotId.toLowerCase());
         if (account.puuid) member.puuids = member.puuids.filter(puuid => puuid !== String(account.puuid));
         if (member.mainRiotId && member.mainRiotId.toLowerCase() === riotId.toLowerCase()) member.mainRiotId = null;
+        if (account.puuid && member.mainPuuid === String(account.puuid)) member.mainPuuid = null;
         return;
       }
       // Rôle choisi à la main dans l'admin : il l'emporte sur la position
       // dans roster.json, qui n'était qu'une convention d'écriture.
-      if (String(account.role || '').toLowerCase() === 'main') member.mainRiotId = riotId;
+      if (String(account.role || '').toLowerCase() === 'main') {
+        member.mainRiotId = riotId;
+        member.mainPuuid = String(account.puuid || '').trim() || null;
+      }
+      // Principal LoL déclaré sans PUUID : l'enregistrement du script, lui,
+      // en porte un. Le nom ne sert qu'à faire ce rapprochement, une fois.
+      if (!member.lolMainPuuid && account.puuid && member.lolMainRiotId
+        && member.lolMainRiotId.toLowerCase() === riotId.toLowerCase()) {
+        member.lolMainPuuid = String(account.puuid).trim();
+      }
       // rosterOverlay et roster.json peuvent déclarer le même compte.
       if (!member.riotIds.some(known => known.toLowerCase() === riotId.toLowerCase())) {
         member.riotIds.push(riotId);

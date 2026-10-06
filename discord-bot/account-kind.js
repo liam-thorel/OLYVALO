@@ -18,27 +18,49 @@ function normalize(value) {
 }
 
 /**
+ * Compte joué : la session elle-même ({ puuid, playerName }), ou un Riot ID
+ * seul pour les appelants qui n'ont que lui.
+ */
+function playedAccount(account) {
+  if (account && typeof account === 'object') {
+    return { puuid: String(account.puuid || '').trim(), riotId: String(account.playerName || account.riotId || '') };
+  }
+  return { puuid: '', riotId: String(account || '') };
+}
+
+/**
  * Nature du compte sur lequel se joue cette partie :
  *
  *  - `solo`    : le membre n'a qu'un compte connu — rien à préciser ;
- *  - `main`    : c'est le compte déclaré dans roster.json ;
+ *  - `main`    : c'est le compte principal déclaré ;
  *  - `smurf`   : c'en est un autre, et le principal est connu ;
  *  - `unknown` : plusieurs comptes, mais aucun n'est déclaré principal.
+ *
+ * Par PUUID d'abord. Comparer des Riot ID désignait comme smurf le main d'un
+ * joueur renommé : roster.json garde l'ancien pseudo (Wong Chi Ming), la
+ * partie arrive sous le nouveau (FakePlasticTrees) — même compte, même PUUID.
+ * Le nom ne sert qu'en repli, quand l'un des deux PUUID manque.
  *
  * Le principal dépend du JEU : plusieurs membres ne jouent pas à LoL sur leur
  * compte Valorant (`lol` dans roster.json). Sans lui, on retombe sur le
  * principal Valorant.
  */
-function accountKind(member, riotId, game = 'valorant') {
-  const accounts = member?.riotIds || [];
-  if (accounts.length <= 1) return 'solo';
+function accountKind(member, account, game = 'valorant') {
+  // Comptes distincts : par PUUID quand on les a — un compte renommé
+  // apparaît sous deux pseudos, mais reste un seul compte.
+  const puuids = new Set((member?.puuids || []).filter(Boolean));
+  const count = puuids.size || (member?.riotIds || []).length;
+  if (count <= 1) return 'solo';
 
-  const main = normalize(game === 'lol' ? (member?.lolMainRiotId || member?.mainRiotId) : member?.mainRiotId);
+  const played = playedAccount(account);
+  const lol = game === 'lol' && Boolean(member?.lolMainRiotId || member?.lolMainPuuid);
+  const mainPuuid = lol ? member?.lolMainPuuid : member?.mainPuuid;
+  if (mainPuuid && played.puuid) return played.puuid === mainPuuid ? 'main' : 'smurf';
+
+  const main = normalize(lol ? member?.lolMainRiotId : member?.mainRiotId);
   if (!main) return 'unknown';
-
-  const played = normalize(riotId);
-  if (!played) return 'unknown';
-  return played === main ? 'main' : 'smurf';
+  if (!normalize(played.riotId)) return 'unknown';
+  return normalize(played.riotId) === main ? 'main' : 'smurf';
 }
 
 /** « RayBaz#OLY » → « RayBaz ». Le tag n'apporte rien à l'œil. */
@@ -52,8 +74,8 @@ function shortAccount(riotId) {
  * Volontairement sans le nom du compte : l'en-tête doit rester lisible quand
  * cinq joueurs sont stackés. Le détail va dans l'embed, qui a la place.
  */
-function accountMark(member, riotId, game = 'valorant') {
-  const kind = accountKind(member, riotId, game);
+function accountMark(member, account, game = 'valorant') {
+  const kind = accountKind(member, account, game);
   if (kind === 'main') return ' (main)';
   if (kind === 'smurf') return ' (smurf)';
   return '';
@@ -66,10 +88,10 @@ function accountMark(member, riotId, game = 'valorant') {
  * c'est moins qu'un « main/smurf », mais c'est vrai, et ça suffit à lever
  * l'ambiguïté entre deux comptes d'un même membre.
  */
-function accountDetail(member, riotId, game = 'valorant') {
-  const kind = accountKind(member, riotId, game);
+function accountDetail(member, account, game = 'valorant') {
+  const kind = accountKind(member, account, game);
   if (kind === 'solo') return '';
-  const short = shortAccount(riotId);
+  const short = shortAccount(playedAccount(account).riotId);
   if (!short) return '';
   if (kind === 'main') return ` (main · ${short})`;
   if (kind === 'smurf') return ` (smurf · ${short})`;

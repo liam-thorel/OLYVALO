@@ -99,6 +99,30 @@ test('bot : propriété et main par jeu', () => {
   assert.equal(accountKind({ riotIds: ['A#1', 'B#2'], mainRiotId: 'A#1' }, 'A#1', 'lol'), 'main');
 });
 
+test('bot : le main se reconnaît au PUUID, même renommé', () => {
+  // roster.json garde un ancien pseudo ; la partie arrive sous le nouveau.
+  botRoster.__test.indexRoster([
+    { name: 'Liam', riot: { name: 'Wong Chi Ming', tag: '2046', puuid: 'liam-P' }, smurfs: [{ name: 'Xi Jinping', tag: '5378', puuid: 'smurf-P' }] },
+  ], {});
+  const liam = botRoster.memberById('liam');
+  assert.equal(accountKind(liam, { puuid: 'liam-P', playerName: 'FakePlasticTrees#1706' }), 'main',
+    'par le nom, ce main renommé passait pour un smurf');
+  assert.equal(accountKind(liam, { puuid: 'smurf-P', playerName: 'Wong Chi Ming#2046' }), 'smurf',
+    'et un smurf qui reprendrait l’ancien pseudo du main ne passe pas pour lui');
+  assert.equal(accountKind(liam, 'Wong Chi Ming#2046'), 'main', 'sans PUUID, repli sur le nom');
+
+  // Principal LoL déclaré sans PUUID : celui de l'enregistrement du script
+  // est repris, et c'est lui qui décide ensuite.
+  botRoster.__test.indexRoster([
+    { name: 'Nico', riot: { name: 'Drew', tag: 'X', puuid: 'nico-P' }, lol: { name: 'phileas fogg', tag: 'OLY' } },
+  ], { accounts: { nico: { a: { name: 'phileas fogg', tag: 'OLY', puuid: 'pf-P' } } } });
+  const nico = botRoster.memberById('nico');
+  assert.equal(nico.lolMainPuuid, 'pf-P');
+  assert.equal(accountKind(nico, { puuid: 'pf-P', playerName: 'Nouveau Nom#OLY' }, 'lol'), 'main', 'renommé, toujours son main LoL');
+  assert.equal(accountKind(nico, { puuid: 'nico-P', playerName: 'Drew#X' }, 'lol'), 'smurf');
+  assert.equal(accountKind(nico, { puuid: 'nico-P', playerName: 'Drew#X' }, 'valorant'), 'main');
+});
+
 test('données réelles : mains et comptes LoL', () => {
   const roster = JSON.parse(readFileSync(new URL('../data/roster.json', import.meta.url), 'utf8'));
   const by = Object.fromEntries(roster.map(member => [member.name, member]));
@@ -108,15 +132,30 @@ test('données réelles : mains et comptes LoL', () => {
   assert.ok(!(by.Nico.smurfs || []).some(account => id(account) === 'OG ANUNOBY#OLY'), 'et plus un smurf de Nico');
   assert.notEqual(id(by.Nico.lol), id(by.Nico.riot), 'le main LoL de Nico diffère de son main Valorant');
 
-  // La page LoL a sa propre liste de comptes : elle doit dire la même chose
-  // que roster.json, sinon le site et le bot désigneraient deux mains LoL.
+  // La page LoL a sa propre liste de comptes : elle doit désigner le même
+  // compte que roster.json — par PUUID quand les deux le connaissent, le nom
+  // n'étant qu'un libellé qui change à chaque renommage.
   const source = readFileSync(new URL('../js/lol-roster.mjs', import.meta.url), 'utf8');
-  const players = [...source.matchAll(/\{ name: '([^']+)', riotId: '([^']+)'/g)].map(([, name, riotId]) => ({ name, riotId }));
+  const players = [...source.matchAll(/\{ name: '([^']+)', riotId: '([^']+)'(?:, puuid: '([^']+)')?/g)]
+    .map(([, name, riotId, puuid]) => ({ name, riotId, puuid: puuid || '' }));
   assert.ok(players.length >= 5, 'liste des comptes LoL lisible');
+  let comparedByPuuid = 0;
   for (const member of roster) {
     const entry = players.find(player => player.name === member.name);
     if (!entry) continue;
-    const lolMain = id(member.lol || member.riot);
-    assert.equal(entry.riotId.toLowerCase(), lolMain.toLowerCase(), `${member.name} : page LoL ${entry.riotId}, roster.json ${lolMain}`);
+    const lolMain = member.lol || member.riot;
+    if (entry.puuid && lolMain.puuid) {
+      comparedByPuuid += 1;
+      assert.equal(entry.puuid, lolMain.puuid, `${member.name} : la page LoL et roster.json désignent deux comptes`);
+    } else {
+      assert.equal(entry.riotId.toLowerCase(), id(lolMain).toLowerCase(), `${member.name} : page LoL ${entry.riotId}, roster.json ${id(lolMain)}`);
+    }
   }
+  assert.ok(comparedByPuuid >= 3, 'la plupart des comptes se comparent par PUUID');
+
+  // Liam : Wong Chi Ming et FakePlasticTrees sont le même compte, renommé.
+  // Un seul compte, donc pas de principal LoL séparé.
+  assert.equal(id(by.Liam.riot), 'FakePlasticTrees#1706');
+  assert.equal(by.Liam.riot.puuid, 'facae061-6042-55eb-b88a-14d58be02fe3');
+  assert.equal(by.Liam.lol, undefined);
 });
