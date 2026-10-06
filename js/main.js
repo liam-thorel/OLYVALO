@@ -26,7 +26,7 @@ import { initRrCurvePage } from './rr-curve-page.mjs?v=20261006-proprietaire';
 import { initSiteSwitcher } from './site-switcher.mjs?v=20261005-game-picker';
 import { sharedProfileId, rememberSharedProfile } from './shared-profile.mjs';
 import { getGameMode, initGameMode, setGameMode } from './game-mode.mjs?v=20261005-game-picker';
-import { initLolHistoryPage, initLolLivePage } from './lol-pages.mjs?v=20261005-all-modes';
+import { initLolHistoryPage, initLolLivePage } from './lol-pages.mjs?v=20261006-icones';
 import { initLolRosterPages } from './lol-roster.mjs?v=20261006-puuid-lol';
 import { state } from './state.mjs?v=20261005-sites-history';
 import { memberId, mergeMemberProfiles, resolveMemberProfile } from './member-profiles.mjs?v=20260823-profile-picker';

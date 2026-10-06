@@ -54,4 +54,13 @@ test('top champions break a games+winrate tie by average KDA, not name', () => {
 
 test('support role is detected from bottom lane support metadata', () => {
   assert.equal(roleKey({ timeline: { lane: 'BOTTOM', role: 'DUO_SUPPORT' } }), 'support');
+  // Format de l'historique du client : la voie fait foi, le rôle ne fait que
+  // départager le bas. « SOLO » ou « NONE » ne doivent pas masquer la voie.
+  assert.equal(roleKey({ timeline: { lane: 'TOP', role: 'SOLO' } }), 'top');
+  assert.equal(roleKey({ timeline: { lane: 'MIDDLE', role: 'SOLO' } }), 'mid');
+  assert.equal(roleKey({ timeline: { lane: 'JUNGLE', role: 'NONE' } }), 'jungle');
+  assert.equal(roleKey({ timeline: { lane: 'BOTTOM', role: 'DUO_CARRY' } }), 'adc');
+  assert.equal(roleKey({ teamPosition: 'UTILITY', timeline: { lane: 'BOTTOM', role: 'DUO_CARRY' } }), 'support',
+    'un poste explicite l’emporte');
+  assert.equal(roleKey({ timeline: { lane: 'NONE', role: 'NONE' } }), '');
 });

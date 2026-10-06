@@ -4,6 +4,7 @@ import { liveClientSummary } from './live-clients.mjs?v=20261005-return-live';
 import { liveClientSummaryText, liveWaitingState, normalizeLolClientState } from './live-status.mjs?v=20261005-sites-history';
 import { createHistoryPager } from './history-pager.mjs?v=20261005-sites-history';
 import { createHistoryDisclosureState } from './history-disclosure-state.mjs';
+import { lobbyHTML } from './lol-live-utils.mjs?v=20261006-icones';
 
 const historyDisclosures = createHistoryDisclosureState('data-lol-history-id');
 
@@ -88,6 +89,7 @@ function sessionCard(group) {
         <div class="lol-rank"><small>Rang</small><strong>${esc(rankLabel(player.rank))}</strong></div>
       </div>`;
     }).join('')}</div>
+    ${lobbyHTML(group)}
     <footer><span class="lol-status-dot"></span> Données actualisées automatiquement</footer>
   </article>`;
 }
@@ -115,7 +117,23 @@ function renderLolLive(raw, clients = {}, statuses = {}) {
     el.innerHTML = `<div class="lol-empty-state"><span class="lol-empty-rune">L</span><strong>${esc(waiting.title)}</strong><small>${esc(liveClientSummaryText(summary))}</small><small>${esc(waiting.detail)}</small></div>`;
     return;
   }
+  bindChampionIconFallback(el);
   el.innerHTML = groups.map(sessionCard).join('');
+}
+
+// Icône de champion qui ne charge pas : on bascule sur celle de secours
+// (par numéro de champion). Les erreurs d'image ne remontent pas : il faut
+// les écouter en phase de capture.
+function bindChampionIconFallback(container) {
+  if (!container || container.dataset.iconFallback) return;
+  container.dataset.iconFallback = '1';
+  container.addEventListener('error', event => {
+    const img = event.target;
+    if (!(img instanceof HTMLImageElement) || !img.dataset.fallback) return;
+    const fallback = img.dataset.fallback;
+    delete img.dataset.fallback; // une seule tentative
+    img.src = fallback;
+  }, true);
 }
 
 export function initLolLivePage() {
