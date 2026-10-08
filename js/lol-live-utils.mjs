@@ -32,8 +32,11 @@ export function tierLabel(rank) {
 
 /** Winrate de la saison SoloQ, ou null sans partie classée. */
 export function soloWinrate(rank) {
-  const wins = Number(rank?.wins) || 0;
-  const losses = Number(rank?.losses) || 0;
+  // Victoires ET défaites, sinon rien : le client ne donne que les victoires
+  // des autres joueurs, et un winrate calculé sans défaites vaut 100 %.
+  if (rank?.wins == null || rank?.losses == null) return null;
+  const wins = Number(rank.wins) || 0;
+  const losses = Number(rank.losses) || 0;
   const games = wins + losses;
   if (!games) return null;
   return { percent: Math.round((wins / games) * 100), games };
@@ -58,6 +61,21 @@ export function championIcons(player) {
   const byId = championIconById(player?.championId);
   const primary = String(player?.champion?.image || '') || byId;
   return { src: primary, fallback: byId && byId !== primary ? byId : '' };
+}
+
+/**
+ * Peak : plus haut rang connu. Sa portée dépend de la source, et on la dit :
+ * op.gg couvre les saisons passées, le client seulement la saison en cours et
+ * la précédente.
+ */
+export function peakInfo(peak) {
+  const label = tierLabel(peak);
+  if (!label) return null;
+  const seasons = Number(peak?.seasons) || 0;
+  const title = peak?.source === 'op.gg' && seasons
+    ? `Plus haut rang connu, sur ${seasons + 1} saisons (op.gg)`
+    : 'Plus haut rang de la saison en cours et de la précédente';
+  return { label, title };
 }
 
 export function roleLabel(role) {
@@ -115,6 +133,7 @@ function playerRow(player, olycity) {
   const winrate = soloWinrate(player?.rank);
   const winrateClass = !winrate ? '' : winrate.percent >= 55 ? ' is-good' : winrate.percent <= 45 ? ' is-bad' : '';
   const role = roleLabel(player?.mainRole);
+  const peak = peakInfo(player?.peak);
   const classes = ['lol-lobby-player', olycity ? 'is-olycity' : '', player?.self ? 'is-self' : ''].filter(Boolean).join(' ');
   return `<div class="${classes}">
       <div class="lol-lobby-champ"${masteryTitle ? ` title="${esc(masteryTitle)}"` : ''}>
@@ -122,7 +141,8 @@ function playerRow(player, olycity) {
         ${mastery ? `<b class="lol-mastery">${esc(mastery)}</b>` : ''}
       </div>
       <div class="lol-lobby-id"${player?.riotId ? ` title="${esc(player.riotId)}"` : ''}><strong>${esc(name || 'Joueur masqué')}</strong><small>${esc(champion.name || '')}${role ? `<span class="lol-lobby-role-inline"> · ${esc(role)}</span>` : ''}</small></div>
-      <div class="lol-lobby-rank"><strong data-tier="${esc(String(player?.rank?.tier || '').toLowerCase())}">${esc(tier || 'Non classé')}</strong><small>${esc(lp)}</small></div>
+      <div class="lol-lobby-rank"><strong data-tier="${esc(String(player?.rank?.tier || '').toLowerCase())}">${esc(tier || 'Non classé')}</strong><small>${esc(lp)}${peak ? `<span class="lol-lobby-peak-inline"> · Peak ${esc(peak.label)}</span>` : ''}</small></div>
+      <div class="lol-lobby-peak"${peak ? ` title="${esc(peak.title)}"` : ''}><small>Peak</small><strong data-tier="${esc(String(player?.peak?.tier || '').toLowerCase())}">${esc(peak?.label || '—')}</strong></div>
       <div class="lol-lobby-wr${winrateClass}"><strong>${winrate ? `${winrate.percent}%` : '—'}</strong><small>${winrate ? `${winrate.games} parties` : 'SoloQ'}</small></div>
       <div class="lol-lobby-role"><small>Rôle</small><strong>${esc(role || '—')}</strong></div>
     </div>`;

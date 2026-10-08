@@ -4,7 +4,8 @@
  * ⚠️ Contrainte à connaître avant tout : une fenêtre « toujours au-dessus » ne
  * peut PAS s'afficher par-dessus un jeu en plein écran exclusif. Windows donne
  * la surface entière au jeu et rien ne passe. Valorant doit être réglé sur
- * « Plein écran fenêtré ». C'est rappelé dans l'interface au premier lancement.
+ * « Plein écran fenêtré », LoL en « Sans bordure ». La barre du haut le rappelle,
+ * et prévient si LoL est réglé en plein écran (voir lib/display-mode.js).
  *
  * Ce que cette application ne fait PAS, volontairement : aucune injection dans
  * le processus du jeu, aucun hook clavier bas niveau, aucune lecture de la
@@ -26,6 +27,7 @@ const { createLogger } = require('./lib/logger.js');
 const { setupAutoUpdate, shouldCheck, shouldInstallNow, updateLabel, FIRST_CHECK_DELAY_MS } = require('./lib/updater.js');
 const { loginItemVerdict, unblockCommand, verdictMessage, STARTUP_SETTINGS_URL } = require('./lib/login-item.js');
 const { hotkeyOptions, hotkeyLabel, hotkeyStatusLabel } = require('./lib/hotkey.js');
+const { lolConfigPaths, lolWindowMode, displayHint } = require('./lib/display-mode.js');
 
 const TITLEBAR_HEIGHT = 36;
 // La vue compacte est dessinée pour une colonne étroite posée sur le côté de
@@ -38,6 +40,7 @@ const MIN_SIZE = { width: 320, height: 240 };
 
 let window_ = null;
 let siteView = null;
+let chromeView = null; // la barre du haut
 let tray = null;
 let pollTimer = null;
 let settings = sanitize(null);
@@ -132,6 +135,7 @@ function createWindow() {
     },
   });
   chrome.webContents.loadFile(path.join(__dirname, 'ui', 'shell.html'));
+  chromeView = chrome;
   window_.contentView.addChildView(chrome);
 
   siteView = new WebContentsView({
@@ -213,6 +217,31 @@ function logWindowState(context) {
     `position=${bounds.x},${bounds.y} ${bounds.width}x${bounds.height}`);
 }
 
+/** Mode d'affichage de LoL lu dans son game.cfg, ou null s'il est introuvable. */
+function readLolWindowMode() {
+  for (const cfgPath of lolConfigPaths()) {
+    try {
+      if (fs.existsSync(cfgPath)) return lolWindowMode(fs.readFileSync(cfgPath, 'utf8'));
+    } catch { /* fichier verrouillé ou illisible : on essaie le suivant */ }
+  }
+  return null;
+}
+
+/**
+ * Met à jour le rappel de la barre du haut selon le jeu lancé. Si LoL est en
+ * plein écran, l'overlay ne PEUT pas passer par-dessus : on le dit, au lieu de
+ * laisser croire que le raccourci ne marche pas.
+ */
+function refreshDisplayHint(running) {
+  const lolMode = running.lol ? readLolWindowMode() : null;
+  if (running.lol) log('[jeu] mode d\'affichage LoL :', lolMode || 'inconnu');
+  const hint = displayHint(running, lolMode);
+  if (hint.warn) log('[jeu] ⚠️', hint.text);
+  chromeView?.webContents
+    .executeJavaScript(`window.setHint && window.setHint(${JSON.stringify(hint.text)}, ${hint.warn})`)
+    .catch(() => {});
+}
+
 function apply(next) {
   const wasVisible = state.visible;
   state = next;
@@ -256,10 +285,12 @@ async function pollGames() {
     const games = Object.entries(running).filter(([, on]) => on).map(([game]) => game).join(', ');
     log('[jeu] lancé :', games);
     ensureHotkeyAlive(`lancement de ${games}`);
+    refreshDisplayHint(running);
     apply(reduce(state, 'game-launched'));
     logWindowState('après lancement du jeu');
   } else if (transition === 'closed') {
     log('[jeu] fermé');
+    refreshDisplayHint(running);
     apply(reduce(state, 'game-closed'));
   }
 

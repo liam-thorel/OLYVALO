@@ -2,10 +2,11 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { createRequire } from 'node:module';
-import { formatMasteryPoints, tierLabel, soloWinrate, lobbyTeams, lobbyHTML, lobbyOf, championIcons, championIconById } from '../js/lol-live-utils.mjs';
+import { formatMasteryPoints, tierLabel, soloWinrate, lobbyTeams, lobbyHTML, lobbyOf, championIcons, championIconById, peakInfo } from '../js/lol-live-utils.mjs';
 
 const require = createRequire(import.meta.url);
-const { participantsFromGameflow, masteryFor, collectLobby } = require('../live/lol-lobby.js');
+const { participantsFromGameflow, masteryFor, collectLobby, enrichLobby, bestRank, clientPeaks, trustworthyRank } = require('../live/lol-lobby.js');
+const { findPreviousSeasons } = require('../live/opgg-profile.js');
 
 const MOI = 'p-moi';
 const session = {
@@ -97,6 +98,8 @@ test('affichage : maîtrise en points, rang, winrate', () => {
   assert.equal(tierLabel(null), null);
   assert.deepEqual(soloWinrate({ wins: 669, losses: 592 }), { percent: 53, games: 1261 });
   assert.equal(soloWinrate({ wins: 0, losses: 0 }), null);
+  assert.equal(soloWinrate({ wins: 200, losses: null }), null, 'défaites inconnues : pas de 100 % inventé');
+  assert.equal(soloWinrate({ wins: 200 }), null);
 });
 
 test('affichage : notre équipe d’abord, dans l’ordre des postes', () => {
@@ -175,4 +178,82 @@ test('icônes : Data Dragon d’abord, le numéro du champion en secours', () =>
   assert.match(pages, /container\.addEventListener\('error', event => \{/, 'erreurs d’image écoutées');
   assert.match(pages, /\}, true\);/, 'en phase de capture : elles ne remontent pas');
   assert.match(pages, /bindChampionIconFallback\(el\);/);
+});
+
+test('winrate : le client ne donne pas les défaites des autres — pas de faux 100 %', () => {
+  // Le cas signalé : tous les winrates à 100 % sauf le sien.
+  const other = trustworthyRank({ tier: 'GOLD', division: 'II', lp: 40, wins: 87, losses: 0, games: 87, winRate: 100 }, false);
+  assert.equal(other.winRate, null);
+  assert.equal(other.wins, null);
+  assert.equal(other.tier, 'GOLD', 'le rang, lui, reste juste');
+  assert.equal(soloWinrate(other), null, 'affiché « — » en attendant op.gg');
+  const moi = trustworthyRank({ tier: 'GOLD', wins: 87, losses: 0, games: 87, winRate: 100 }, true);
+  assert.equal(moi.winRate, 100, 'pour soi, le client donne vraiment les défaites');
+  const vrai = trustworthyRank({ tier: 'GOLD', wins: 30, losses: 20 }, false);
+  assert.equal(vrai.losses, 20, 'des défaites connues sont gardées');
+});
+
+test('peak : palier, puis division, puis LP', () => {
+  assert.equal(bestRank([{ tier: 'GOLD', division: 'I' }, { tier: 'PLATINUM', division: 'IV' }]).tier, 'PLATINUM');
+  assert.equal(bestRank([{ tier: 'DIAMOND', division: 'III' }, { tier: 'DIAMOND', division: 'I' }]).division, 'I');
+  assert.equal(bestRank([{ tier: 'MASTER', lp: 300 }, { tier: 'MASTER', lp: 120 }]).lp, 300);
+  assert.equal(bestRank([{ tier: 'CHALLENGER', division: 'I', lp: 900 }, { tier: 'GRANDMASTER', lp: 999 }]).tier, 'CHALLENGER');
+  assert.equal(bestRank([null, { tier: 'NONE' }, {}]), null);
+  // Le client garde la saison en cours et la précédente.
+  const peaks = clientPeaks({ queues: [{ queueType: 'RANKED_SOLO_5x5', highestTier: 'GOLD', highestDivision: 'I', previousSeasonHighestTier: 'DIAMOND', previousSeasonHighestDivision: 'IV' }] });
+  assert.equal(bestRank(peaks).tier, 'DIAMOND');
+});
+
+test('op.gg : saisons passées lues dans la page', () => {
+  const chunk = 'x:{"summoner":{"previous_seasons":[{"season_id":25,"tier_info":{"tier":"DIAMOND","division":2,"lp":40}},{"season_id":27,"tier_info":{"tier":"UNRANKED"}}]}}';
+  const html = `<script>self.__next_f.push([1,${JSON.stringify(chunk)}])</script>`;
+  assert.deepEqual(findPreviousSeasons(html), [{ seasonId: 25, tier: 'DIAMOND', division: 'II', lp: 40 }]);
+  assert.deepEqual(findPreviousSeasons('<html>rien</html>'), [], 'page inattendue : liste vide, jamais une erreur');
+});
+
+test('enrichissement op.gg : winrate et peak de tous les temps', async () => {
+  const players = [
+    { riotId: 'Adversaire#EUW', rank: { tier: 'GOLD', division: 'II', lp: 40, wins: null, losses: null }, peak: { tier: 'GOLD', division: 'I', source: 'client' } },
+    { riotId: 'Inconnu#EUW', rank: { tier: 'SILVER', division: 'I', wins: null, losses: null }, peak: null },
+    { riotId: '', champion: { name: 'Lulu' } }, // masqué : rien à chercher
+  ];
+  const asked = [];
+  const fetchProfile = async riotId => {
+    asked.push(riotId);
+    if (riotId === 'Inconnu#EUW') throw new Error('OP.GG HTTP 429');
+    return { rank: { tier: 'GOLD', division: 'II', lp: 40, wins: 60, losses: 40, games: 100, winRate: 60 },
+      pastSeasons: [{ seasonId: 23, tier: 'DIAMOND', division: 'III', lp: 10 }, { seasonId: 25, tier: 'PLATINUM', division: 'I' }] };
+  };
+  const pauses = [];
+  const out = await enrichLobby(players, { fetchProfile, wait: async ms => { pauses.push(ms); } });
+  assert.deepEqual(asked, ['Adversaire#EUW', 'Inconnu#EUW'], 'pas de requête sans Riot ID');
+  assert.equal(soloWinrate(out[0].rank).percent, 60, 'winrate de la saison, d’après op.gg');
+  assert.equal(out[0].peak.tier, 'DIAMOND');
+  assert.equal(out[0].peak.division, 'III');
+  assert.equal(out[0].peak.source, 'op.gg');
+  assert.equal(out[1].rank.wins, null, 'op.gg en échec : on garde le client, sans inventer');
+  assert.equal(out[1].peak.tier, 'SILVER');
+  assert.ok(pauses.length >= 2 && pauses.every(ms => ms > 0), 'requêtes espacées : op.gg n’est pas une API');
+});
+
+test('affichage du peak, avec sa portée', () => {
+  assert.deepEqual(peakInfo({ tier: 'DIAMOND', division: 'III', source: 'op.gg', seasons: 3 }),
+    { label: 'Diamond III', title: 'Plus haut rang connu, sur 4 saisons (op.gg)' });
+  assert.match(peakInfo({ tier: 'GOLD', division: 'I', source: 'client' }).title, /saison en cours et de la précédente/);
+  assert.equal(peakInfo(null), null);
+  const html = lobbyHTML({ players: [{ puuid: 'p', lobby: { players: [
+    { puuid: 'p', ally: true, riotId: 'A#1', rank: { tier: 'GOLD', division: 'II', lp: 40, wins: null, losses: null }, peak: { tier: 'DIAMOND', division: 'III', source: 'op.gg', seasons: 3 } },
+  ] } }] });
+  assert.match(html, /<small>Peak<\/small><strong data-tier="diamond">Diamond III<\/strong>/);
+  assert.match(html, /<strong>—<\/strong><small>SoloQ<\/small>/, 'winrate inconnu : « — », jamais 100 %');
+});
+
+test('collecte : un adversaire sans défaites connues n’affiche pas 100 %', async () => {
+  const ranked = { queues: [{ queueType: 'RANKED_SOLO_5x5', tier: 'GOLD', division: 'II', leaguePoints: 40, wins: 87, losses: 0 }] };
+  const lcu = async endpoint => (endpoint.startsWith('/lol-ranked/') ? { ok: true, data: ranked } : { ok: false });
+  const session = { gameData: { teamOne: [{ puuid: 'moi', championId: 1 }], teamTwo: [{ puuid: 'lui', championId: 2 }] } };
+  const [moi, lui] = await collectLobby({ lcu, session, myPuuid: 'moi' });
+  assert.equal(soloWinrate(lui.rank), null, 'chez l’adversaire, le client ne dit rien des défaites');
+  assert.equal(soloWinrate(moi.rank).percent, 100, 'pour soi, les chiffres sont complets');
+  assert.equal(lui.peak.tier, 'GOLD', 'peak au moins égal au rang actuel');
 });
