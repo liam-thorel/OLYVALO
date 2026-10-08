@@ -23,16 +23,23 @@
   label { display: flex; align-items: center; gap: 6px; color: #8b94a3; -webkit-app-region: no-drag; }
   input[type=range] { width: 84px; accent-color: #ff4656; }
   .hint { color: #8b94a3; font-size: 11px; }
-  @media (max-width: 620px) { .hint, label { display: none; } }
+  .hint.warn { color: #ffb347; font-weight: 600; }
+  @media (max-width: 620px) { .hint:not(.warn), label { display: none; } }
 </style>
 
 <span class="brand">OLYCITY</span>
 <span class="spacer"></span>
-<span class="hint">Valorant doit être en « Plein écran fenêtré »</span>
+<span class="hint" id="hint">Valorant doit être en « Plein écran fenêtré »</span>
 <label>Opacité <input id="opacity" type="range" min="0.3" max="1" step="0.05" value="0.95"></label>
 <button id="hide" title="Masquer (Ctrl+Shift+F8)">✕</button>
 
 <script>
   document.getElementById('hide').onclick = () => window.overlay.hide();
+  // Appelé par le processus principal selon le jeu lancé (lib/display-mode.js).
+  window.setHint = (text, warn) => {
+    const hint = document.getElementById('hint');
+    hint.textContent = text;
+    hint.classList.toggle('warn', Boolean(warn));
+  };
   document.getElementById('opacity').oninput = event => window.overlay.setOpacity(event.target.value);
 </script>

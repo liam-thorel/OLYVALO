@@ -89,6 +89,50 @@ function masteryFor(payload, championId) {
   return { points, level: Number(entry.championLevel ?? entry.level ?? 0) || null };
 }
 
+const TIERS = ['IRON', 'BRONZE', 'SILVER', 'GOLD', 'PLATINUM', 'EMERALD', 'DIAMOND', 'MASTER', 'GRANDMASTER', 'CHALLENGER'];
+const APEX = new Set(['MASTER', 'GRANDMASTER', 'CHALLENGER']);
+const DIVISION_ORDER = { IV: 0, III: 1, II: 2, I: 3, '': 3 };
+
+/** Valeur comparable d'un rang : palier, puis division, puis LP. */
+function rankScore(rank) {
+  const tier = TIERS.indexOf(String(rank?.tier || '').toUpperCase());
+  if (tier < 0) return -1;
+  const division = APEX.has(TIERS[tier]) ? 3 : (DIVISION_ORDER[String(rank?.division || '').toUpperCase()] ?? 0);
+  return tier * 10_000 + division * 1_000 + Math.min(999, Math.max(0, Number(rank?.lp) || 0));
+}
+
+/** Le meilleur de plusieurs rangs, ou null. */
+function bestRank(ranks) {
+  return (ranks || []).filter(rank => rankScore(rank) >= 0)
+    .reduce((best, rank) => (!best || rankScore(rank) > rankScore(best) ? rank : best), null);
+}
+
+/**
+ * Plus hauts rangs SoloQ connus du client : saison en cours et précédente.
+ * Le client ne garde pas plus loin — l'historique complet vient d'op.gg.
+ */
+function clientPeaks(payload) {
+  const queues = Array.isArray(payload?.queues) ? payload.queues : [];
+  const solo = queues.find(queue => queue?.queueType === 'RANKED_SOLO_5x5') || payload?.queueMap?.RANKED_SOLO_5x5;
+  if (!solo) return [];
+  return [
+    { tier: solo.highestTier, division: solo.highestDivision },
+    { tier: solo.previousSeasonHighestTier, division: solo.previousSeasonHighestDivision },
+    { tier: solo.previousSeasonEndTier, division: solo.previousSeasonEndDivision },
+  ].filter(rank => rankScore(rank) >= 0);
+}
+
+/**
+ * Le client ne donne que les VICTOIRES des autres joueurs : leurs défaites
+ * valent 0. Calculé tel quel, chaque adversaire affichait 100 % de winrate.
+ * Hors de soi, des défaites à zéro ne sont donc pas une information : on
+ * efface le winrate plutôt que de l'inventer — op.gg le complète ensuite.
+ */
+function trustworthyRank(rank, self) {
+  if (!rank || self || Number(rank.losses) > 0) return rank;
+  return { ...rank, wins: null, losses: null, games: null, winRate: null };
+}
+
 function riotIdOf(summoner, fallback = '') {
   if (summoner?.gameName) return summoner.tagLine ? `${summoner.gameName}#${summoner.tagLine}` : String(summoner.gameName);
   return fallback || '';
@@ -119,6 +163,7 @@ async function collectLobby({ lcu, session, myPuuid, champions = {}, log = () =>
       position: participant.position,
       mainRole: '',
       rank: null,
+      peak: null,
       mastery: null,
     };
     if (!participant.puuid) { players.push(base); continue; }
@@ -128,7 +173,11 @@ async function collectLobby({ lcu, session, myPuuid, champions = {}, log = () =>
     if (summoner.ok) base.riotId = riotIdOf(summoner.data, base.riotId);
 
     const ranked = await lcu(`/lol-ranked/v1/ranked-stats/${id}`);
-    if (ranked.ok) base.rank = soloRankFromStats(ranked.data);
+    if (ranked.ok) {
+      base.rank = trustworthyRank(soloRankFromStats(ranked.data), participant.self);
+      const peak = bestRank([...clientPeaks(ranked.data), base.rank]);
+      if (peak) base.peak = { tier: peak.tier, division: APEX.has(String(peak.tier).toUpperCase()) ? '' : peak.division || '', lp: peak.lp ?? null, source: 'client' };
+    }
 
     // Deux endpoints selon la version du client : par PUUID (récents), par
     // identifiant d'invocateur (anciens).
@@ -157,7 +206,46 @@ async function collectLobby({ lcu, session, myPuuid, champions = {}, log = () =>
   return players;
 }
 
+/**
+ * Deuxième passe, sur op.gg : winrate de la saison (le client ne donne pas
+ * les défaites des autres) et rangs des saisons passées, pour le peak de tous
+ * les temps. Joueur par joueur, espacés : op.gg n'est pas une API, il ne faut
+ * pas le marteler. Un échec laisse simplement la donnée du client.
+ */
+async function enrichLobby(players, { fetchProfile, region = 'euw', pauseMs = 400, wait = ms => new Promise(resolve => setTimeout(resolve, ms)), log = () => {} }) {
+  const enriched = [];
+  for (const player of players) {
+    if (!player.riotId || !player.riotId.includes('#')) { enriched.push(player); continue; }
+    let profile = null;
+    try {
+      profile = await fetchProfile(player.riotId, region);
+    } catch (error) {
+      log(`[lol] op.gg ${player.riotId} : ${error.message}`);
+    }
+    const next = { ...player };
+    const seasonRank = profile?.rank;
+    if (seasonRank && Number.isFinite(Number(seasonRank.wins)) && Number.isFinite(Number(seasonRank.losses))) {
+      next.rank = { ...(player.rank || {}), ...seasonRank };
+    }
+    const seasons = Array.isArray(profile?.pastSeasons) ? profile.pastSeasons : [];
+    const peak = bestRank([player.peak, ...seasons, next.rank]);
+    if (peak) {
+      next.peak = {
+        tier: peak.tier,
+        division: APEX.has(String(peak.tier).toUpperCase()) ? '' : peak.division || '',
+        lp: peak.lp ?? null,
+        source: seasons.length ? 'op.gg' : (player.peak?.source || 'client'),
+        seasons: seasons.length,
+      };
+    }
+    enriched.push(next);
+    await wait(pauseMs);
+  }
+  return enriched;
+}
+
 module.exports = {
   participantsFromGameflow, masteryFor, collectLobby, normalizePosition,
+  enrichLobby, bestRank, rankScore, clientPeaks, trustworthyRank,
   TEAM_ORDER, TEAM_CHAOS, HISTORY_SIZE,
 };

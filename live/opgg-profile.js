@@ -60,6 +60,66 @@ function findSoloQueueData(html) {
   return candidates.sort((left, right) => Number(right.season_id || 0) - Number(left.season_id || 0))[0] || null;
 }
 
+/** Tableau JSON qui commence à `start` ('['), ou null. */
+function extractJsonArray(text, start) {
+  if (text[start] !== '[') return null;
+  let depth = 0;
+  let quoted = false;
+  let escaped = false;
+  for (let index = start; index < text.length; index += 1) {
+    const char = text[index];
+    if (quoted) {
+      if (escaped) escaped = false;
+      else if (char === '\\') escaped = true;
+      else if (char === '"') quoted = false;
+      continue;
+    }
+    if (char === '"') quoted = true;
+    else if (char === '[') depth += 1;
+    else if (char === ']' && --depth === 0) return text.slice(start, index + 1);
+  }
+  return null;
+}
+
+const DIVISIONS = { 1: 'I', 2: 'II', 3: 'III', 4: 'IV' };
+
+/**
+ * Rangs de fin des saisons passées, tels qu'op.gg les affiche en tête de
+ * profil (« S2024 Diamond 2 »…). Ils servent au peak « de tous les temps ».
+ *
+ * Lecture défensive : op.gg ne documente pas sa page, on cherche les tableaux
+ * `previous_seasons` et leurs `tier_info`. Rien de trouvé = liste vide, jamais
+ * une erreur — le peak retombe alors sur ce que dit le client.
+ */
+function findPreviousSeasons(html) {
+  const seasons = new Map();
+  for (const chunk of flightChunks(html)) {
+    let offset = 0;
+    while ((offset = chunk.indexOf('"previous_seasons":[', offset)) >= 0) {
+      const start = offset + '"previous_seasons":'.length;
+      const source = extractJsonArray(chunk, start);
+      offset = start + 1;
+      if (!source) continue;
+      let entries;
+      try { entries = JSON.parse(source); } catch { continue; }
+      (Array.isArray(entries) ? entries : []).forEach(entry => {
+        const info = entry?.tier_info || entry?.tierInfo || entry;
+        const tier = String(info?.tier || '').toUpperCase();
+        if (!tier || tier === 'UNRANKED' || tier === 'NONE') return;
+        const division = typeof info.division === 'number' ? (DIVISIONS[info.division] || '') : String(info.division || '').toUpperCase();
+        const seasonId = Number(entry?.season_id ?? entry?.seasonId ?? 0);
+        seasons.set(seasonId || `${tier}${division}${seasons.size}`, {
+          seasonId,
+          tier,
+          division: ['MASTER', 'GRANDMASTER', 'CHALLENGER'].includes(tier) ? '' : division,
+          lp: Number.isFinite(Number(info.lp)) ? Number(info.lp) : null,
+        });
+      });
+    }
+  }
+  return [...seasons.values()];
+}
+
 function rankFromDescription(html) {
   const encoded = html.match(/<meta name="description" content="([^"]*)"/i)?.[1] || '';
   const description = decodeEntities(encoded);
@@ -91,6 +151,7 @@ function parseOpggSoloProfile(html, riotId = '') {
         rank: null,
         soloQueue: { games: 0, wins: 0, losses: 0, winRate: 0 },
         topChampions: [],
+        pastSeasons: findPreviousSeasons(html),
         seasonId: 0,
         source: 'op.gg',
         seasonVerified: true,
@@ -129,6 +190,7 @@ function parseOpggSoloProfile(html, riotId = '') {
       winRate: games ? Math.round((wins / games) * 100) : 0,
     },
     topChampions,
+    pastSeasons: findPreviousSeasons(html),
     seasonId: Number(data.season_id || 0),
     source: 'op.gg',
     seasonVerified: true,
@@ -174,4 +236,4 @@ async function fetchOpggSoloProfile(riotId, region = 'euw') {
   return parseOpggSoloProfile(html, riotId);
 }
 
-module.exports = { fetchOpggSoloProfile, parseOpggSoloProfile };
+module.exports = { fetchOpggSoloProfile, parseOpggSoloProfile, findPreviousSeasons };

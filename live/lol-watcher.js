@@ -30,7 +30,7 @@ const { lolHistorySummary } = require('./history-index');
 const { safeFirebaseKey, lolAccountKey, legacyKeyToDrop } = require('./lol-keys.js');
 const { readyCheckPlan, autoAcceptEnabled } = require('./ready-check.js');
 const { lolGameMetadata } = require('./lol-gameflow.js');
-const { collectLobby } = require('./lol-lobby.js');
+const { collectLobby, enrichLobby } = require('./lol-lobby.js');
 
 const HEARTBEAT_MS = 20000;
 // Phases actives d'une game : GameStart = chargement, InProgress = en jeu, Reconnect = reco après un crash.
@@ -624,11 +624,19 @@ function createLolWatcher({
     const matchId = currentMatchId;
     lobbyMatchId = matchId;
     collectLobby({ lcu: endpoint => lcuGet(cachedLock, endpoint), session, myPuuid, champions, log })
-      .then(players => {
+      .then(async players => {
         if (lobbyMatchId !== matchId) return; // la partie a changé entre-temps
         lobbyPlayers = players;
         lastHeartbeat = 0; // publier sans attendre le prochain battement
         log(`[${ts()}] 🔵 LoL — ${players.length} joueurs de la partie collectés`);
+        // Deuxième passe, op.gg : winrate et peak de tous les temps. Les données
+        // du client sont déjà publiées : celles-ci les complètent ensuite.
+        const region = await ensureRegion();
+        const enriched = await enrichLobby(players, { fetchProfile: cachedOpggProfile, region: region || 'euw', log });
+        if (lobbyMatchId !== matchId) return;
+        lobbyPlayers = enriched;
+        lastHeartbeat = 0;
+        log(`[${ts()}] 🔵 LoL — winrates et peaks complétés (op.gg)`);
       })
       .catch(error => {
         log(`[${ts()}] ⚠️ LoL — joueurs de la partie : ${error.message}`);
