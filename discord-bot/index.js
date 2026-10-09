@@ -1,9 +1,10 @@
 require('dotenv').config();
 const {
-  Client, GatewayIntentBits, Collection, EmbedBuilder, MessageFlags,
+  Client, GatewayIntentBits, Partials, Collection, EmbedBuilder, MessageFlags,
   ActionRowBuilder, ButtonBuilder, ButtonStyle, ModalBuilder, TextInputBuilder, TextInputStyle,
 } = require('discord.js');
-const { DISCORD_TOKEN, DISCORD_LOG_CHANNEL_ID } = require('./config.js');
+const { DISCORD_TOKEN, DISCORD_LOG_CHANNEL_ID, RESULT_DELETE_ALLOWED_IDS } = require('./config.js');
+const { createResultGuard } = require('./result-guard.js');
 const { ensureRoster, memberByIdentity } = require('./roster.js');
 const { startTrackerSync, loadTrackersOnce, trackersForPlayerGame } = require('./trackers.js');
 const { recordDiscovered } = require('./discovered.js');
@@ -37,8 +38,15 @@ const { formatLolRank, POSITION_ICONS } = require('./lol-rank.js');
 
 const SITE_URL = 'https://tracker.olycity.fr';
 
-const client = new Client({ intents: [GatewayIntentBits.Guilds] });
+// GuildMessages : sans lui, Discord n'envoie pas les suppressions de
+// messages, et un résultat supprimé ne pourrait pas revenir. Partials.Message :
+// l'évènement arrive même pour un message que le cache a déjà oublié.
+const client = new Client({
+  intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMessages],
+  partials: [Partials.Message],
+});
 client.commands = new Collection();
+const resultGuard = createResultGuard({ client, allowList: RESULT_DELETE_ALLOWED_IDS || [] });
 
 // Salon de logs optionnel (DISCORD_LOG_CHANNEL_ID) : les erreurs fatales y sont
 // postées avant que le process ne s'arrête — utile une fois déployé sur un host
@@ -663,7 +671,9 @@ async function notifyValorantGameEnd(sessions) {
 
     try {
       const channel = await client.channels.fetch(channelId);
-      await channel.send({ content: header || undefined, embeds: finalEmbeds, components: linkRow ? [linkRow] : [] });
+      const payload = { content: header || undefined, embeds: finalEmbeds, components: linkRow ? [linkRow] : [] };
+      // Surveillé : supprimé, il revient (result-guard.js).
+      resultGuard.remember(await channel.send(payload), payload);
     } catch (error) {
       console.error(`[notify:valorant-end] échec envoi salon ${channelId} —`, error.message);
     }
@@ -862,12 +872,14 @@ async function notifyLolGameEnd(sessions) {
 
     try {
       const channel = await client.channels.fetch(channelId);
-      await channel.send({
+      const payload = {
         content: header || undefined,
         embeds: finalEmbeds,
         files: allFiles,
         components: chunkButtonRows(dpmButtons),
-      });
+      };
+      // Surveillé : supprimé, il revient (result-guard.js).
+      resultGuard.remember(await channel.send(payload), payload);
     } catch (error) {
       console.error(`[notify:lol-end] échec envoi salon ${channelId} —`, error.message);
     }
@@ -1365,6 +1377,11 @@ client.once('ready', async () => {
   startValoMonthlyRecapScheduler(client);
   startLeaderboardScheduler(client);
   console.log('👂 Écoute des sessions Valorant et LoL en cours...');
+});
+
+// Un résultat de fin de partie supprimé revient, avec « Bien essayé ».
+client.on('messageDelete', message => {
+  resultGuard.handleDelete(message).catch(error => console.error('[résultats]', error.message));
 });
 
 client.on('error', error => console.error('[client:error]', error));
