@@ -59,6 +59,7 @@ assert.match(main, /ensureHotkeyAlive\(`lancement de \$\{games\}`\)/, 'revérifi
 
 // Sans trace à la réception, « la touche ne passe pas » et « la fenêtre ne se
 // voit pas » sont deux pannes indiscernables dans le journal.
-assert.match(main, /log\('\[raccourci\]', hotkeyLabel\(settings\.hotkey\), 'reçu'\)/);
+// Le journal dit aussi PAR OÙ l'appui est arrivé : Windows ou lecture directe.
+assert.match(main, /log\('\[raccourci\]', hotkeyLabel\(settings\.hotkey\), source === 'sondage' \? 'reçu \(lecture directe\)' : 'reçu'\)/);
 
 console.log('overlay-hotkey: raccourci modifiable, revérifié au lancement du jeu, et tracé à la réception');

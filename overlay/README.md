@@ -75,6 +75,22 @@ installés avant la 1.2.4.
 Une fenêtre fermée à la main ne revient pas toute seule : elle attend la partie
 suivante. Un choix explicite n'est jamais écrasé par l'automatisme.
 
+## Le raccourci ne fait rien dans LoL
+
+LoL bloque les raccourcis Windows (RegisterHotKey) tant qu'il a le focus : la
+touche n'arrive jamais à l'overlay. Depuis la 1.2.7, pendant que LoL tourne,
+l'overlay lit en plus l'état des touches du raccourci (GetAsyncKeyState) toutes
+les 40 ms. Ce n'est pas un hook clavier : il demande seulement « ces touches
+sont-elles enfoncées ? » et ne voit passer aucune autre frappe. La lecture
+s'arrête à la fermeture du jeu.
+
+Dans le journal, un appui ainsi capté apparaît comme
+`[raccourci] Ctrl+Maj+F8 reçu (lecture directe)`.
+
+Si la fenêtre s'est ouverte sur un autre écran (position mémorisée sur un
+second moniteur), clic droit sur l'icône → **Ramener la fenêtre sur cet
+écran** : elle revient au centre de l'écran où se trouve la souris.
+
 ## La barre des tâches réapparaît par-dessus le jeu
 
 C'est Windows, pas l'overlay. Dès qu'une fenêtre prend le **focus**, le shell
