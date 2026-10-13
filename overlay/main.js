@@ -12,6 +12,11 @@
  * mémoire du jeu. C'est une fenêtre ordinaire posée au-dessus, et le raccourci
  * passe par RegisterHotKey (globalShortcut), une API Win32 publique. Rien ici
  * n'entre en contact avec Vanguard.
+ *
+ * Seule exception : LoL bloque RegisterHotKey tant qu'il a le focus. Pendant
+ * qu'il tourne, on lit donc aussi l'état des touches du raccourci avec
+ * GetAsyncKeyState — une question « ces touches sont-elles enfoncées ? », pas
+ * un hook : aucune frappe ne nous passe sous les yeux. Voir lib/key-poll.js.
  */
 
 const { app, BaseWindow, WebContentsView, globalShortcut, Tray, Menu, shell, ipcMain, screen, dialog } = require('electron');
@@ -28,6 +33,8 @@ const { setupAutoUpdate, shouldCheck, shouldInstallNow, updateLabel, FIRST_CHECK
 const { loginItemVerdict, unblockCommand, verdictMessage, STARTUP_SETTINGS_URL } = require('./lib/login-item.js');
 const { hotkeyOptions, hotkeyLabel, hotkeyStatusLabel } = require('./lib/hotkey.js');
 const { lolConfigPaths, lolWindowMode, displayHint } = require('./lib/display-mode.js');
+const { acceleratorKeys, createKeyPoller, createDebounce } = require('./lib/key-poll.js');
+const { centeredBounds } = require('./lib/placement.js');
 
 const TITLEBAR_HEIGHT = 36;
 // La vue compacte est dessinée pour une colonne étroite posée sur le côté de
@@ -52,6 +59,11 @@ let lastUpdateCheckAt = 0;
 // Dernier verdict de Windows sur le démarrage automatique, pour que le menu
 // de la zone de notification dise la vérité plutôt que l'intention.
 let loginItemStatus = 'ok';
+// Lecture directe du raccourci pendant LoL (voir lib/key-poll.js).
+let keyPoller = null;
+let readKey; // undefined : pas encore chargé · null : indisponible
+// Partagé par les deux chemins : un même appui peut arriver par les deux.
+const acceptHotkeyPress = createDebounce();
 let log = (...parts) => console.log(...parts); // remplacé dès que userData est connu
 
 const settingsPath = () => path.join(app.getPath('userData'), 'settings.json');
@@ -293,7 +305,7 @@ async function pollGames() {
     refreshDisplayHint(running);
     apply(reduce(state, 'game-closed'));
   }
-
+  syncKeyPoller(running);
 
   if (anyGameRunning(running) && state.visible) assertOnTop();
 
@@ -336,14 +348,7 @@ function registerHotkey() {
   // Un raccourci déjà pris par une autre application fait échouer
   // l'enregistrement : sans repli, l'overlay deviendrait inaccessible pour qui
   // n'a pas d'icône dans la zone de notification visible.
-  const registered = globalShortcut.register(settings.hotkey, () => {
-    // Tracé AVANT d'agir : c'est ce qui permet de distinguer « la touche ne
-    // nous parvient pas » de « elle nous parvient mais la fenêtre ne se voit
-    // pas ». Sans cette ligne, les deux pannes sont indiscernables.
-    log('[raccourci]', hotkeyLabel(settings.hotkey), 'reçu');
-    apply(reduce(state, 'hotkey'));
-    logWindowState('après raccourci');
-  });
+  const registered = globalShortcut.register(settings.hotkey, () => onHotkey('windows'));
   if (!registered) {
     log('[raccourci]', hotkeyLabel(settings.hotkey), '— refusé, déjà pris par une autre application');
     if (settings.hotkey !== 'Control+Shift+F8') {
@@ -355,6 +360,79 @@ function registerHotkey() {
     log('[raccourci]', hotkeyLabel(settings.hotkey), '— enregistré');
   }
   return registered;
+}
+
+/** Un appui sur le raccourci, qu'il vienne de Windows ou de la lecture directe. */
+function onHotkey(source) {
+  // Le même appui arrive deux fois quand LoL tourne sans avoir le focus.
+  if (!acceptHotkeyPress()) return;
+  // Tracé AVANT d'agir : c'est ce qui permet de distinguer « la touche ne
+  // nous parvient pas » de « elle nous parvient mais la fenêtre ne se voit
+  // pas ». Sans cette ligne, les deux pannes sont indiscernables.
+  log('[raccourci]', hotkeyLabel(settings.hotkey), source === 'sondage' ? 'reçu (lecture directe)' : 'reçu');
+  apply(reduce(state, 'hotkey'));
+  logWindowState('après raccourci');
+}
+
+/** GetAsyncKeyState via koffi, ou null si le module natif ne se charge pas. */
+function asyncKeyReader() {
+  if (readKey !== undefined) return readKey;
+  readKey = null;
+  if (process.platform !== 'win32') return readKey;
+  try {
+    const koffi = require('koffi');
+    const GetAsyncKeyState = koffi.load('user32.dll').func('short __stdcall GetAsyncKeyState(int vKey)');
+    // Bit de poids fort : la touche est enfoncée en ce moment.
+    readKey = vk => (GetAsyncKeyState(vk) & 0x8000) !== 0;
+  } catch (error) {
+    log('[raccourci] lecture directe indisponible —', error.message);
+  }
+  return readKey;
+}
+
+/**
+ * LoL déclare son clavier avec RIDEV_NOHOTKEYS : tant qu'il a le focus,
+ * Windows ne nous transmet plus le raccourci. On lit alors les touches
+ * nous-mêmes, mais seulement pendant que LoL tourne.
+ */
+function syncKeyPoller(running) {
+  if (!running.lol) {
+    if (keyPoller?.running()) {
+      keyPoller.stop();
+      log('[raccourci] lecture directe arrêtée');
+    }
+    return;
+  }
+  if (keyPoller?.running()) return;
+  const isDown = asyncKeyReader();
+  if (!isDown) return;
+  const keys = acceleratorKeys(settings.hotkey);
+  if (!keys) {
+    log('[raccourci]', hotkeyLabel(settings.hotkey), '— lecture directe impossible pour cette combinaison');
+    return;
+  }
+  keyPoller = createKeyPoller({
+    isDown, keys,
+    onPress: () => onHotkey('sondage'),
+    onError: error => log('[raccourci] lecture directe interrompue —', error.message),
+  });
+  if (keyPoller.start()) log('[raccourci]', hotkeyLabel(settings.hotkey), '— lecture directe active (LoL bloque les raccourcis Windows)');
+}
+
+/**
+ * Ramène la fenêtre au milieu de l'écran où se trouve la souris. Une position
+ * mémorisée sur un second écran éteint ou tourné ailleurs laisse sinon
+ * l'overlay « affiché » sans que personne ne le voie.
+ */
+function bringWindowHere() {
+  if (!window_ || window_.isDestroyed()) return;
+  const display = screen.getDisplayNearestPoint(screen.getCursorScreenPoint());
+  window_.setBounds(centeredBounds(window_.getBounds(), display.workArea));
+  settings.bounds = window_.getBounds();
+  saveSettings();
+  apply(reduce(state, 'show'));
+  assertOnTop();
+  logWindowState('ramenée sur l\'écran de la souris');
 }
 
 /**
@@ -381,6 +459,10 @@ function setHotkey(accelerator) {
   settings.hotkey = accelerator;
   saveSettings();
   const registered = registerHotkey();
+  // La lecture directe sonde les touches de l'ancienne combinaison.
+  keyPoller?.stop();
+  keyPoller = null;
+  syncKeyPoller(lastRunning);
   refreshTrayMenu();
   if (registered) return;
   dialog.showMessageBox({
@@ -558,6 +640,7 @@ function refreshTrayMenu() {
       { label: updateLabel(updater.pending()), click: () => { app.isQuitting = true; updater.installNow(); } },
       { type: 'separator' },
     ] : []),
+    { label: 'Ramener la fenêtre sur cet écran', click: bringWindowHere },
     { label: 'Ouvrir le journal', click: () => shell.openPath(path.join(app.getPath('userData'), 'overlay.log')) },
     { type: 'separator' },
     { label: 'Quitter', click: () => { app.isQuitting = true; app.quit(); } },
@@ -641,6 +724,7 @@ if (!app.requestSingleInstanceLock()) {
   app.on('window-all-closed', () => { /* on vit dans la zone de notification */ });
   app.on('will-quit', () => {
     globalShortcut.unregisterAll();
+    keyPoller?.stop();
     if (pollTimer) clearTimeout(pollTimer);
   });
 }

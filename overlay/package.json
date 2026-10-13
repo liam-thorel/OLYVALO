@@ -1,7 +1,7 @@
 {
   "name": "olycity-overlay",
   "productName": "OLYCITY Overlay",
-  "version": "1.2.6",
+  "version": "1.2.7",
   "description": "Le site OLYCITY en surimpression, au lancement du jeu ou au raccourci clavier",
   "main": "main.js",
   "private": true,
@@ -10,7 +10,8 @@
     "build": "electron-builder --win --publish never"
   },
   "dependencies": {
-    "electron-updater": "6.8.9"
+    "electron-updater": "6.8.9",
+    "koffi": "3.3.3"
   },
   "devDependencies": {
     "electron": "43.7.0",
@@ -20,6 +21,7 @@
     "appId": "gg.olycity.overlay",
     "productName": "OLYCITY Overlay",
     "files": ["main.js", "preload.js", "lib/**/*", "ui/**/*"],
+    "asarUnpack": ["node_modules/koffi/**", "node_modules/@koromix/**"],
     "publish": [
       { "provider": "github", "owner": "liam-thorel", "repo": "OLYVALO" }
     ],
