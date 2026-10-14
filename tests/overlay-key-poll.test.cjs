@@ -150,3 +150,10 @@ assert.ok(pkg.build.asarUnpack.some(glob => glob.startsWith('node_modules/@korom
   'koffi 3 range son binaire Windows dans @koromix/koffi-win32-x64');
 const lock = JSON.parse(readFileSync(path.join(__dirname, '..', 'overlay', 'package-lock.json'), 'utf8'));
 assert.ok(lock.packages['node_modules/@koromix/koffi-win32-x64'], 'le binaire Windows est dans le lockfile');
+
+// ─── Site rechargé quand le réseau n'était pas prêt ──────────────────────────
+assert.match(main, /siteView\.webContents\.on\('did-fail-load'[\s\S]*?if \(!isMainFrame \|\| code === -3\) return;/,
+  'seule la page principale compte, et une navigation remplacée n’est pas une panne');
+assert.match(main, /Math\.min\(60_000, 5_000 \* failedLoads\)/, 'nouvel essai espacé');
+assert.match(main, /loadURL\(siteUrl\(\)\)\.catch\(\(\) => \{\}\)/, 'pas d’exception non interceptée au démarrage hors ligne');
+assert.match(main, /label: 'Recharger la page', click: \(\) => siteView\?\.webContents\.reloadIgnoringCache\(\)/);

@@ -1035,6 +1035,12 @@ body.profile-picker-open { overflow: hidden; }
 .user-avatar-primary {
   position: absolute; inset: 0; width: 100%; height: 100%;
 }
+/* Filet de sécurité : les calques ci-dessus sont en position absolue, et un
+   conteneur sans position les laisse remplir le premier ancêtre positionné.
+   Si la feuille de la page ne se charge pas (home.css dans l'overlay, lancé
+   avant le réseau), un avatar recouvrait tout l'accueil. Spécificité nulle :
+   toute règle de position explicite l'emporte. */
+:where(:has(> .user-avatar-initial)) { position: relative; }
 .user-avatar-initial {
   display: flex; align-items: center; justify-content: center;
   background: color-mix(in srgb, var(--avatar-color) 18%, var(--surf3));
