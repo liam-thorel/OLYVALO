@@ -581,3 +581,17 @@ test('Valorant sync results are shared through Firebase, not trapped per browser
   assert.ok((main.match(/realtime-database-5bb9f/g) || []).length === 1,
     'une seule définition de l’URL Firebase');
 });
+
+test('une feuille de style perdue ne laisse plus un avatar recouvrir l’accueil', () => {
+  // Sans home.css (chargement raté dans l'overlay, lancé avant le réseau),
+  // les calques d'avatar en position absolue remplissaient toute la page.
+  assert.match(components, /:where\(:has\(> \.user-avatar-initial\)\) \{ position: relative; \}/,
+    'filet de sécurité à spécificité nulle');
+  const lastSheet = page.lastIndexOf('<link rel="stylesheet"');
+  const retryAt = page.indexOf("searchParams.set('retry'");
+  assert.ok(retryAt > lastSheet, 'la relance suit les feuilles : elles sont chargées ou en échec quand elle s’exécute');
+  assert.ok(retryAt < page.indexOf('<body>'), 'avant tout rendu');
+  assert.match(page, /link\.sheet\.cssRules\.length/, 'Chromium garde une feuille vide pour un échec');
+  assert.match(page, /link\.href\.startsWith\(window\.location\.origin\)/, 'les polices Google ne sont pas relancées');
+  assert.match(page, /attempt < MAX_ATTEMPTS/, 'relance bornée');
+});

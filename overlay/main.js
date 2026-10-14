@@ -153,8 +153,23 @@ function createWindow() {
   siteView = new WebContentsView({
     webPreferences: { contextIsolation: true, nodeIntegration: false, sandbox: true },
   });
-  siteView.webContents.loadURL(siteUrl());
+  // L'échec est traité par did-fail-load ci-dessous ; la promesse rejetée,
+  // laissée sans suite, finirait en exception non interceptée.
+  siteView.webContents.loadURL(siteUrl()).catch(() => {});
   window_.contentView.addChildView(siteView);
+
+  // L'overlay démarre avec Windows, souvent avant que le réseau soit prêt :
+  // la page d'erreur de Chromium restait alors affichée jusqu'au redémarrage.
+  let failedLoads = 0;
+  siteView.webContents.on('did-fail-load', (_event, code, description, url, isMainFrame) => {
+    if (!isMainFrame || code === -3) return; // -3 : navigation remplacée par une autre
+    failedLoads += 1;
+    const delay = Math.min(60_000, 5_000 * failedLoads);
+    log('[site] chargement échoué —', description, `(${code}), nouvel essai dans ${delay / 1000} s`);
+    const timer = setTimeout(() => siteView?.webContents.loadURL(url || siteUrl()).catch(() => {}), delay);
+    timer.unref?.();
+  });
+  siteView.webContents.on('did-finish-load', () => { failedLoads = 0; });
 
   const resizeChrome = () => {
     const { width } = window_.getContentBounds();
@@ -641,6 +656,8 @@ function refreshTrayMenu() {
       { type: 'separator' },
     ] : []),
     { label: 'Ramener la fenêtre sur cet écran', click: bringWindowHere },
+    // Le site est chargé une fois au démarrage et reste ouvert des jours.
+    { label: 'Recharger la page', click: () => siteView?.webContents.reloadIgnoringCache() },
     { label: 'Ouvrir le journal', click: () => shell.openPath(path.join(app.getPath('userData'), 'overlay.log')) },
     { type: 'separator' },
     { label: 'Quitter', click: () => { app.isQuitting = true; app.quit(); } },

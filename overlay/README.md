@@ -87,6 +87,11 @@ s'arrête à la fermeture du jeu.
 Dans le journal, un appui ainsi capté apparaît comme
 `[raccourci] Ctrl+Maj+F8 reçu (lecture directe)`.
 
+Si la page s'affiche mal (mise en page cassée, image géante), clic droit sur
+l'icône → **Recharger la page**. L'overlay charge le site au démarrage de
+Windows et le garde ouvert : depuis la 1.2.7, il recharge de lui-même une page
+qui a échoué faute de réseau, et le site relance une feuille de style perdue.
+
 Si la fenêtre s'est ouverte sur un autre écran (position mémorisée sur un
 second moniteur), clic droit sur l'icône → **Ramener la fenêtre sur cet
 écran** : elle revient au centre de l'écran où se trouve la souris.
