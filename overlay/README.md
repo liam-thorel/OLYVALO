@@ -89,7 +89,7 @@ Dans le journal, un appui ainsi capté apparaît comme
 
 Si la page s'affiche mal (mise en page cassée, image géante), clic droit sur
 l'icône → **Recharger la page**. L'overlay charge le site au démarrage de
-Windows et le garde ouvert : depuis la 1.2.7, il recharge de lui-même une page
+Windows et le garde ouvert : depuis la 1.2.8, il recharge de lui-même une page
 qui a échoué faute de réseau, et le site relance une feuille de style perdue.
 
 Si la fenêtre s'est ouverte sur un autre écran (position mémorisée sur un
