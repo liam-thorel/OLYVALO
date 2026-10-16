@@ -1,0 +1,8 @@
+# Production : `docker compose up -d --build` (le bot redémarre seul après un crash ou un reboot)
+name: olycity-bot
+services:
+  bot:
+    build: .
+    container_name: olycity-bot
+    restart: unless-stopped
+    env_file: .env

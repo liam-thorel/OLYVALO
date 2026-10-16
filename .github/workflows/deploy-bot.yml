@@ -25,29 +25,38 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
+      # Le mini-PC est à la maison, sans port ouvert : le runner rejoint le réseau
+      # Tailscale le temps du déploiement pour l'atteindre en SSH.
+      - name: Rejoindre le réseau Tailscale
+        uses: tailscale/github-action@v3
+        with:
+          oauth-client-id: ${{ secrets.TS_OAUTH_CLIENT_ID }}
+          oauth-secret: ${{ secrets.TS_OAUTH_SECRET }}
+          tags: tag:ci
+
       - name: Préparer la clé SSH
         env:
-          SSH_KEY: ${{ secrets.ORACLE_SSH_KEY }}
+          SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
         run: |
-          test -n "$SSH_KEY" || { echo "::error::Secret ORACLE_SSH_KEY absent."; exit 1; }
+          test -n "$SSH_KEY" || { echo "::error::Secret DEPLOY_SSH_KEY absent."; exit 1; }
           install -m 700 -d ~/.ssh
           printf '%s\n' "$SSH_KEY" > ~/.ssh/deploy_key
           chmod 600 ~/.ssh/deploy_key
 
       - name: Déployer et redémarrer
         env:
-          HOST: ${{ secrets.ORACLE_HOST }}
-          USER: ${{ secrets.ORACLE_USER }}
+          HOST: ${{ secrets.DEPLOY_HOST }}
+          USER: ${{ secrets.DEPLOY_USER }}
         run: |
-          test -n "$HOST" && test -n "$USER" || { echo "::error::Secrets ORACLE_HOST / ORACLE_USER absents."; exit 1; }
+          test -n "$HOST" && test -n "$USER" || { echo "::error::Secrets DEPLOY_HOST / DEPLOY_USER absents."; exit 1; }
           ssh -i ~/.ssh/deploy_key \
               -o StrictHostKeyChecking=accept-new \
               -o ConnectTimeout=20 \
               "$USER@$HOST" 'bash -s' <<'REMOTE'
           set -euo pipefail
 
-          APP_DIR="$HOME/discord-bot"
-          PM2_NAME="olycity-bot"
+          APP_DIR="$HOME/olycity-bot"
+          CONTAINER="olycity-bot"
           TMP="$(mktemp -d)"
           trap 'rm -rf "$TMP"' EXIT
 
@@ -55,32 +64,27 @@ jobs:
           curl -fsSL https://github.com/liam-thorel/OLYVALO/archive/refs/heads/main.tar.gz -o "$TMP/oly.tar.gz"
           tar -xzf "$TMP/oly.tar.gz" -C "$TMP"
 
-          # Fusion sans suppression : .env et node_modules/ ne sont pas dans le
-          # dépôt, ils sont donc préservés tels quels.
+          # Fusion sans suppression : .env n'est pas dans le dépôt, il est donc
+          # préservé tel quel.
           echo "→ Synchronisation de discord-bot/"
+          mkdir -p "$APP_DIR"
           cp -r "$TMP/OLYVALO-main/discord-bot/." "$APP_DIR/"
 
           cd "$APP_DIR"
-          npm install --omit=dev --no-audit --no-fund
+          echo "→ Reconstruction et redémarrage de $CONTAINER"
+          docker compose up -d --build --force-recreate
+          docker image prune -f >/dev/null
 
-          echo "→ Redémarrage de $PM2_NAME"
-          pm2 restart "$PM2_NAME" --update-env
-          pm2 save
-
-          # Le bot fait process.exit(1) sur toute exception non capturée : sans
-          # cette vérification, un déploiement cassé passerait pour un succès.
+          # Le bot fait process.exit(1) sur toute exception non capturée et Docker
+          # le relance aussitôt : un conteneur « running » ne suffit donc pas, il
+          # ne doit pas non plus avoir redémarré depuis sa création.
           sleep 8
-          # Parsé avec node (déjà présent, il fait tourner le bot) plutôt qu'au
-          # grep : l'ordre des champs de `pm2 jlist` n'est pas garanti.
-          if pm2 jlist | node -e '
-            const list = JSON.parse(require("fs").readFileSync(0, "utf8"));
-            const proc = list.find(p => p.name === process.argv[1]);
-            process.exit(proc && proc.pm2_env.status === "online" ? 0 : 1);
-          ' "$PM2_NAME"; then
-            echo "✅ $PM2_NAME est en ligne"
+          state="$(docker inspect -f '{{.State.Running}} {{.RestartCount}}' "$CONTAINER")"
+          if [ "$state" = "true 0" ]; then
+            echo "✅ $CONTAINER est en ligne"
           else
-            echo "::error::$PM2_NAME n'est pas en ligne après le déploiement"
-            pm2 logs "$PM2_NAME" --err --lines 40 --nostream || true
+            echo "::error::$CONTAINER n'est pas en ligne après le déploiement ($state)"
+            docker logs --tail 40 "$CONTAINER" || true
             exit 1
           fi
           REMOTE

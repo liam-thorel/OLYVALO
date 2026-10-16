@@ -69,57 +69,36 @@ npm run deploy-commands
 
 ## 4. Héberger le bot
 
-### Option gratuite : Bot-Hosting.net
-
-1. Connecte-toi sur [bot-hosting.net](https://bot-hosting.net/login) avec Discord.
-2. Réclame des **coins** gratuits (générateur intégré, jusqu'à 10/jour) — ils
-   servent à créer et **renouveler** ton serveur (facturation hebdo ou
-   mensuelle payée en coins). ⚠️ Ce n'est pas un "gratuit et j'y pense plus" :
-   il faut repasser réclamer des coins régulièrement pour éviter que le
-   serveur expire, sans quoi le bot s'arrête.
-3. **Create Server** → langage **Node.js** (pas "JavaScript" ni "Java") →
-   choisis le plan le plus léger (ce bot n'a besoin de quasiment aucune
-   ressource) → confirme.
-4. Dans le panel du serveur, onglet **Files** :
-   - compresse le contenu de `discord-bot/` en `.zip` (inutile d'inclure
-     `node_modules/` — le serveur installe les dépendances à partir de
-     `package.json` tout seul)
-   - upload le zip, clique les `...` à côté → **Unarchive**
-   - sélectionne tous les fichiers extraits → **Move** → chemin `..` pour les
-     remonter à la racine, puis supprime le zip
-   - crée (ou upload) un fichier `.env` à la racine avec `DISCORD_TOKEN` et
-     `DISCORD_CLIENT_ID` remplis — le bot le lit exactement comme en local
-5. Onglet **Startup** : fichier principal = `index.js`.
-6. Enregistre les slash commands une seule fois (avant le premier démarrage,
-   puis à chaque fois qu'une commande change) — soit depuis la **console** du
-   panel avec `node deploy-commands.js`, soit depuis ta machine en local
-   (`npm run deploy-commands` — c'est juste un appel à l'API Discord, pas
-   besoin d'être sur le même serveur que le bot).
-7. Démarre le serveur depuis le panel. Regarde la console live pour vérifier
-   `✅ Connecté en tant que ...` et `👂 Écoute des sessions...`.
-
-### Alternative : VPS / cloud classique
+Le bot tourne en Docker sur le mini-PC de la maison (ACEPC AK1), à côté du bot
+musique. La préparation du serveur (Linux, Docker, Tailscale) est décrite dans le
+`DEPLOY.md` du dépôt `discord-music-bot`. Installation du bot, une seule fois :
 
 ```bash
-npm start
+mkdir -p ~/olycity-bot && cd ~/olycity-bot
+curl -fsSL https://github.com/liam-thorel/OLYVALO/archive/refs/heads/main.tar.gz | tar -xz --strip-components=2 OLYVALO-main/discord-bot
+nano .env                  # DISCORD_TOKEN, DISCORD_CLIENT_ID, …
+docker compose up -d --build
+docker compose logs -f     # attendre « ✅ Connecté en tant que ... »
 ```
 
-Garde le process actif avec un gestionnaire de process, par exemple
-[pm2](https://pm2.keymetrics.io/) :
+Le conteneur redémarre seul après un crash ou un redémarrage du mini-PC.
 
-```bash
-npm install -g pm2
-pm2 start index.js --name olycity-discord-bot
-pm2 save
-pm2 startup   # pour redémarrer automatiquement avec le serveur
-```
+| Action | Commande (dans `~/olycity-bot`) |
+|---|---|
+| Logs en direct | `docker compose logs -f` |
+| Redémarrer | `docker compose restart` |
+| Arrêter | `docker compose down` |
+
+Sans Docker, `npm install --omit=dev && npm start` fonctionne aussi (Node 18+).
 
 ## Déploiement automatique (GitHub Actions)
 
 Tout merge sur `main` qui touche `discord-bot/**` déclenche
 `.github/workflows/deploy-bot.yml` : la suite de tests tourne, puis — et
-seulement si elle passe — la VM est synchronisée et le bot redémarré. Plus
-aucun SSH manuel.
+seulement si elle passe — le mini-PC est synchronisé et le bot redémarré.
+
+Le mini-PC n'a aucun port ouvert sur Internet : le runner GitHub rejoint le
+réseau privé **Tailscale** le temps du déploiement, puis s'y connecte en SSH.
 
 ### Secrets à créer une fois
 
@@ -127,42 +106,29 @@ aucun SSH manuel.
 
 | Secret | Valeur |
 |---|---|
-| `ORACLE_HOST` | IP publique de la VM |
-| `ORACLE_USER` | `ubuntu` (ou `opc` sur Oracle Linux) |
-| `ORACLE_SSH_KEY` | contenu **complet** de la clé privée, en-têtes `-----BEGIN…` / `-----END…` compris |
+| `TS_OAUTH_CLIENT_ID` / `TS_OAUTH_SECRET` | client OAuth Tailscale (tag `tag:ci`, voir `DEPLOY.md` du bot musique) |
+| `DEPLOY_HOST` | nom Tailscale du mini-PC (ex. `ak1`) ou son IP `100.x.y.z` |
+| `DEPLOY_USER` | utilisateur Linux qui possède `~/olycity-bot` (membre du groupe `docker`) |
+| `DEPLOY_SSH_KEY` | contenu **complet** de la clé privée, en-têtes `-----BEGIN…` / `-----END…` compris |
 
 La clé n'est jamais écrite dans le dépôt : le workflow la lit depuis le secret,
 l'utilise, puis l'efface (`shred`).
 
 ### Ce que fait le déploiement
 
-1. Télécharge l'archive de `main` **depuis la VM**.
-2. Fusionne `discord-bot/` par-dessus `~/discord-bot/`. `.env` et
-   `node_modules/` ne sont pas dans le dépôt : ils sont préservés.
-3. `npm install --omit=dev`, puis `pm2 restart olycity-bot`.
-4. Vérifie que le process est bien `online` 8 s plus tard. Sinon, il affiche le
-   log d'erreur et **fait échouer le workflow** — le bot faisant `process.exit(1)`
-   sur toute exception non capturée, un déploiement cassé passerait sinon pour
-   un succès.
+1. Télécharge l'archive de `main` **depuis le mini-PC**.
+2. Fusionne `discord-bot/` par-dessus `~/olycity-bot/`. `.env` n'est pas dans le
+   dépôt : il est préservé.
+3. Reconstruit l'image et recrée le conteneur `olycity-bot`.
+4. Vérifie 8 s plus tard que le conteneur tourne **sans avoir redémarré**. Sinon,
+   il affiche ses derniers logs et **fait échouer le workflow** — le bot faisant
+   `process.exit(1)` sur toute exception non capturée, Docker le relancerait en
+   boucle et un déploiement cassé passerait sinon pour un succès.
 
 La synchronisation ne supprime jamais de fichier. Un fichier retiré du dépôt
-subsiste donc sur la VM, sans conséquence : `index.js` charge ses commandes via
+subsiste donc sur le mini-PC, sans conséquence : `index.js` charge ses commandes via
 une liste explicite de `require()`, pas un scan de dossier — un fichier orphelin
 n'est jamais chargé. À nettoyer à la main si besoin.
-
-### Prérequis réseau
-
-Le runner GitHub doit pouvoir joindre le port 22 de la VM. Sur Oracle Cloud il
-faut donc que la **security list** (et `iptables` sur l'instance) autorise le
-SSH entrant depuis Internet, et pas seulement depuis ton IP personnelle. C'est
-la cause d'échec la plus probable au premier essai.
-
-### Durcissement possible
-
-Le workflow utilise `StrictHostKeyChecking=accept-new` : il fait confiance à la
-clé d'hôte à la première connexion. Pour supprimer cette fenêtre, ajouter la
-sortie de `ssh-keyscan <ip>` dans un secret et l'écrire dans `~/.ssh/known_hosts`
-avant la connexion.
 
 ## Commandes
 
