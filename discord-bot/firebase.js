@@ -57,36 +57,70 @@ function applyAtPath(root, subPath, data) {
  * "/abc/result") pour chaque modif partielle ultérieure — on fusionne à la bonne
  * profondeur pour ne jamais écraser les clés soeurs au même niveau.
  */
+// Firebase envoie un événement `keep-alive` toutes les ~30 s sur chaque flux. Si plus
+// rien n'arrive pendant ce délai, la connexion est morte sans erreur (ex : le Wi-Fi du
+// serveur s'est reconnecté et la socket TCP est restée ouverte dans le vide) : EventSource
+// ne la rouvrirait jamais tout seul, et le bot raterait toutes les parties suivantes.
+const STALL_MS = 90 * 1000;
+const WATCHDOG_INTERVAL_MS = 15 * 1000;
+
 function watchNode(path, onUpdate, onError = () => {}) {
-  const es = new EventSource(`${FIREBASE_URL}/${path}.json`);
+  let es = null;
   let snapshot = {};
+  let lastEventAt = Date.now();
+  const alive = () => { lastEventAt = Date.now(); };
 
-  es.addEventListener('put', event => {
-    try {
-      const { path: subPath, data } = JSON.parse(event.data);
-      if (subPath === '/') snapshot = data || {};
-      else applyAtPath(snapshot, subPath, data);
-      onUpdate({ ...snapshot });
-    } catch (error) {
-      onError(error);
-    }
-  });
+  const open = () => {
+    es = new EventSource(`${FIREBASE_URL}/${path}.json`);
+    es.onopen = alive;
+    es.addEventListener('keep-alive', alive);
 
-  es.addEventListener('patch', event => {
-    try {
-      const { path: subPath, data } = JSON.parse(event.data);
-      Object.entries(data || {}).forEach(([key, value]) => {
-        applyAtPath(snapshot, `${subPath}/${key}`, value);
-      });
-      onUpdate({ ...snapshot });
-    } catch (error) {
-      onError(error);
-    }
-  });
+    es.addEventListener('put', event => {
+      alive();
+      try {
+        const { path: subPath, data } = JSON.parse(event.data);
+        if (subPath === '/') snapshot = data || {};
+        else applyAtPath(snapshot, subPath, data);
+        onUpdate({ ...snapshot });
+      } catch (error) {
+        onError(error);
+      }
+    });
 
-  es.onerror = () => onError(new Error(`Flux Firebase interrompu (${path}) — reconnexion auto`));
+    es.addEventListener('patch', event => {
+      alive();
+      try {
+        const { path: subPath, data } = JSON.parse(event.data);
+        Object.entries(data || {}).forEach(([key, value]) => {
+          applyAtPath(snapshot, `${subPath}/${key}`, value);
+        });
+        onUpdate({ ...snapshot });
+      } catch (error) {
+        onError(error);
+      }
+    });
 
-  return () => es.close();
+    es.onerror = () => onError(new Error(`Flux Firebase interrompu (${path}) — reconnexion auto`));
+  };
+
+  open();
+
+  // Chien de garde : flux silencieux trop longtemps → on le referme et on le rouvre.
+  // Firebase renvoie alors le noeud entier (`put` sur "/"), qui remplace le snapshot.
+  const watchdog = setInterval(() => {
+    const silentFor = Date.now() - lastEventAt;
+    if (silentFor < STALL_MS) return;
+    onError(new Error(`Flux Firebase silencieux depuis ${Math.round(silentFor / 1000)} s (${path}) — reconnexion forcée`));
+    es.close();
+    alive();
+    open();
+  }, WATCHDOG_INTERVAL_MS);
+  watchdog.unref?.();
+
+  return () => {
+    clearInterval(watchdog);
+    es.close();
+  };
 }
 
 module.exports = { fbGet, fbPut, fbPost, fbDelete, watchNode };
