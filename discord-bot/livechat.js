@@ -28,6 +28,8 @@ const MEDIA_HOSTS = [
   'media.giphy.com',
   'i.giphy.com',
   'i.imgur.com',
+  // Envois du site (Worker workers/livechat, stockage R2).
+  'olycity-livechat.olycity.workers.dev',
 ];
 
 const SIZES = ['grand', 'moyen', 'petit'];
