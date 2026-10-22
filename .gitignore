@@ -20,7 +20,7 @@ config.js
 
 # Secrets locaux du Worker de catalogue IGDB
 workers/game-catalog/.dev.vars
-workers/game-catalog/.wrangler/
+workers/*/.wrangler/
 
 # Artefacts d'exécution du script Live, créés sur le PC des joueurs et commités
 # par erreur : dossier de sauvegarde de l'auto-updater, verrou d'instance, et
