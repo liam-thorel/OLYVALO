@@ -1,12 +1,9 @@
-<!-- version: 4.23.0 -->
-### Nouveau : le livechat
+<!-- version: 4.23.1 -->
+### Livechat : les envois du site s'affichent
 
-Une image, un GIF, une vidéo ou un simple texte posté dans le salon **#livechat** du Discord, avec la commande **/livechat** ou sur **olycity.fr/livechat** s'affiche par-dessus l'écran de tous ceux qui ont OLYCITY Live, avec le nom de l'expéditeur et la légende en gros.
+- Les images, GIF et vidéos envoyés depuis **olycity.fr/livechat** sont désormais hébergés par OLYCITY (jusqu'à **500 Mo**) : la 4.23.0 ne savait pas encore les télécharger et les ignorait.
+- Les fichiers postés sur Discord sont acceptés jusqu'à 500 Mo eux aussi (au lieu de 60 Mo).
 
-- Trois formats : **grand** au centre, **moyen**, ou **petit** en haut à droite. Sur Discord, commence le message par `g:`, `m:` ou `p:` ; sur le site, le cadre se place et se redimensionne librement.
-- Une mention en début de message (`g: @Nico regarde`) ou le choix d'un destinataire sur le site l'envoie à une seule personne.
-- La fenêtre laisse passer les clics et ne prend jamais le focus : la partie reste jouable. **Ctrl+Maj+F9** fait disparaître le média affiché.
-- **LIVECHAT.bat** coupe ou réactive l'affichage sur ton PC et règle le volume des vidéos.
-- Comme l'overlay, l'affichage demande que le jeu soit en **plein écran fenêtré**.
+Rappel : **Ctrl+Maj+F9** fait disparaître le média affiché, et **LIVECHAT.bat** coupe l'affichage ou règle le volume sur ton PC.
 
 La mise à jour du script se télécharge automatiquement en arrière-plan. Si une partie est en cours, OLYCITY Live attend sa fin avant de redémarrer.

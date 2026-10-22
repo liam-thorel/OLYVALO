@@ -16,7 +16,7 @@ const LIVECHAT_RECEIVERS_PATH = 'livechat/receivers';
 // mème de la veille au démarrage du PC.
 const MAX_ITEM_AGE_MS = 90 * 1000;
 const MAX_TEXT_LENGTH = 220;
-const MAX_MEDIA_BYTES = 60 * 1024 * 1024;
+const MAX_MEDIA_BYTES = 500 * 1024 * 1024;
 
 // Les médias ne sont téléchargés que depuis ces hôtes : les pièces jointes
 // Discord (le site passe aussi par Discord) et les GIF intégrés par Discord.
@@ -30,6 +30,8 @@ const MEDIA_HOSTS = [
   'media.giphy.com',
   'i.giphy.com',
   'i.imgur.com',
+  // Envois du site (Worker workers/livechat, stockage R2).
+  'olycity-livechat.olycity.workers.dev',
 ];
 
 // Zone maximale occupée par le média, en fraction de l'écran : centre (cx, cy)

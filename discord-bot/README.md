@@ -178,9 +178,10 @@ membres qui ont OLYCITY Live (voir `live/livechat.js`) :
 - `/livechat media:<fichier> texte:<…> format:<Grand|Moyen|Petit> pour:<membre>`
   — la même chose depuis n'importe quel salon.
 
-Les envois du site `olycity.fr/livechat` arrivent dans le même salon par un
-webhook (Worker `workers/livechat`) : le bot ignore les messages de webhook,
-le Worker publie déjà l'élément. La file `livechat/queue` est purgée chaque
+Les envois du site `olycity.fr/livechat` (connexion Discord, fichiers jusqu'à
+500 Mo stockés dans R2) sont annoncés dans le même salon par un webhook
+(Worker `workers/livechat`) : le bot ignore les messages de webhook, le Worker
+publie déjà l'élément. La file `livechat/queue` est purgée chaque
 minute des éléments de plus de 10 minutes.
 
 ## Moteur de cotes
