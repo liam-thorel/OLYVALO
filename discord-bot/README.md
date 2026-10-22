@@ -41,6 +41,10 @@ dans cet ordre (`roster.js` → `memberByIdentity`) :
    - Permissions du bot : `Send Messages`, `Embed Links`
    - Ouvre l'URL générée pour inviter le bot sur ton serveur.
 4. Note l'**Application ID** (onglet General Information).
+5. Pour le salon `#livechat` : onglet **Bot** → *Privileged Gateway Intents*
+   → coche **Message Content Intent**. Le bot le détecte au démarrage ; sans
+   lui, seule la commande `/livechat` fonctionne (les messages du salon sont
+   ignorés), et le reste du bot n'est pas affecté.
 
 ## 2. Configuration
 
@@ -162,6 +166,22 @@ OLYCITY dans la même game (stack) est unique et partagé entre eux.
   joués, forme récente, calculés depuis l'historique enregistré par le script
   local (`live/history` et `live/lolHistory`) — vide tant qu'aucune game n'a
   été jouée avec le suivi actif.
+
+**Livechat** — images, GIF, vidéos ou textes affichés par-dessus l'écran des
+membres qui ont OLYCITY Live (voir `live/livechat.js`) :
+- `/livechat-salon` — fait du salon courant le `#livechat` (permission
+  **Gérer les salons**). Tout ce qui y est posté s'affiche : pièce jointe, GIF
+  Tenor, lien d'image ou simple texte. `g:`, `m:` ou `p:` en début de message
+  choisit le format (grand, moyen par défaut, petit) ; une mention juste après
+  vise une seule personne (`g: @Nico regarde`). Le bot réagit 📺 si au moins
+  un écran le reçoit, 💤 sinon.
+- `/livechat media:<fichier> texte:<…> format:<Grand|Moyen|Petit> pour:<membre>`
+  — la même chose depuis n'importe quel salon.
+
+Les envois du site `olycity.fr/livechat` arrivent dans le même salon par un
+webhook (Worker `workers/livechat`) : le bot ignore les messages de webhook,
+le Worker publie déjà l'élément. La file `livechat/queue` est purgée chaque
+minute des éléments de plus de 10 minutes.
 
 ## Moteur de cotes
 

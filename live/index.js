@@ -25,6 +25,7 @@ const { presenceRecordForPath } = require('./presence-schema.js');
 const { ownPresence, decodedPresence, valorantActivity } = require('./riot-activity.js');
 const { resolveRiotIdentity } = require('./riot-identity.js');
 const { valorantHistorySummary } = require('./history-index.js');
+const { createLiveChat } = require('./livechat.js');
 const {
   normalizeValorantMode,
   valorantModeLabel,
@@ -33,7 +34,7 @@ const {
 } = require('./valorant-mode-utils.js');
 
 const FIREBASE_URL = 'https://realtime-database-5bb9f-default-rtdb.europe-west1.firebasedatabase.app';
-const SCRIPT_VERSION = '4.22.1';
+const SCRIPT_VERSION = '4.23.0';
 const INSTANCE_LOCK_PATH = path.join(__dirname, '.olycity-live.lock');
 const LOG_PATH = path.join(__dirname, 'olycity.log');
 const MAX_LOG_BYTES = 5 * 1024 * 1024;
@@ -326,6 +327,17 @@ const accountBinder = createAccountBinder({
   putFB,
   getFB,
   log: message => console.log(`[${ts()}] 🔗 ${message}`),
+});
+
+// Médias postés sur #livechat ou olycity.fr/livechat, affichés par-dessus
+// l'écran (voir livechat.js). Désactivable sur ce PC avec LIVECHAT.bat.
+const liveChat = createLiveChat({
+  firebaseHost: new URL(FIREBASE_URL).hostname,
+  getIdentity: () => identity,
+  putFB,
+  log: message => console.log(`[${ts()}] ${message}`),
+  installDir: __dirname,
+  scriptVersion: SCRIPT_VERSION,
 });
 
 // Le script tourne en fenêtre cachée (silent.vbs) : impossible d'y poser une
@@ -1873,6 +1885,7 @@ async function start() {
   }, 10000);
   identityWatcher.unref?.();
   setInterval(updateAndRestart, 30 * 60 * 1000);
+  liveChat.start();
   pollValorantOnce();
   pollLolOnce();
 }
@@ -1883,6 +1896,7 @@ let shuttingDown = false;
 async function markSessionInactiveAndExit(signal) {
   if (shuttingDown) return;
   shuttingDown = true;
+  liveChat.stop();
   const sessionKey = stableSessionKey || authTokens?.puuid || selfPuuid;
   if (sessionKey) {
     await putFB(`live/sessions/${sessionKey}`, {

@@ -7,5 +7,7 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -File "%SCRIPT_DIR%manage.ps1"
 schtasks /delete /tn "OlycityLive" /f >nul 2>&1
 if exist "%NODE_EXE%" "%NODE_EXE%" "%SCRIPT_DIR%startup.js" remove >nul 2>&1
 del "%APPDATA%\Microsoft\Windows\Start Menu\Programs\Startup\OLYCITY-Live.vbs" >nul 2>&1
+rem Fenetre du livechat, compilee sur le poste au premier media.
+rmdir /s /q "%LOCALAPPDATA%\OLYCITY\livechat" >nul 2>&1
 echo   OLYCITY LIVE desinstalle.
 pause

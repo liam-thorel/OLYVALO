@@ -1,11 +1,12 @@
 require('dotenv').config();
 const {
-  Client, GatewayIntentBits, Partials, Collection, EmbedBuilder, MessageFlags,
+  Client, GatewayIntentBits, IntentsBitField, Partials, Collection, EmbedBuilder, MessageFlags,
   ActionRowBuilder, ButtonBuilder, ButtonStyle, ModalBuilder, TextInputBuilder, TextInputStyle,
 } = require('discord.js');
 const { DISCORD_TOKEN, DISCORD_LOG_CHANNEL_ID, RESULT_DELETE_ALLOWED_IDS } = require('./config.js');
 const { createResultGuard } = require('./result-guard.js');
-const { ensureRoster, memberByIdentity } = require('./roster.js');
+const { ensureRoster, memberByIdentity, memberByDiscordId } = require('./roster.js');
+const { handleLiveChatMessage, startLiveChatCleanup } = require('./livechat.js');
 const { startTrackerSync, loadTrackersOnce, trackersForPlayerGame } = require('./trackers.js');
 const { recordDiscovered } = require('./discovered.js');
 const { watchNode, fbGet } = require('./firebase.js');
@@ -82,6 +83,8 @@ process.on('uncaughtException', error => {
   './commands/leaderboard-lol-solo.js',
   './commands/leaderboard-valo.js',
   './commands/list.js',
+  './commands/livechat.js',
+  './commands/livechat-salon.js',
   './commands/mybets.js',
   './commands/recap-channel.js',
   './commands/recap-lol-flex.js',
@@ -1376,6 +1379,7 @@ client.once('ready', async () => {
   startValoWeeklyRecapScheduler(client);
   startValoMonthlyRecapScheduler(client);
   startLeaderboardScheduler(client);
+  startLiveChatCleanup();
   console.log('👂 Écoute des sessions Valorant et LoL en cours...');
 });
 
@@ -1384,10 +1388,44 @@ client.on('messageDelete', message => {
   resultGuard.handleDelete(message).catch(error => console.error('[résultats]', error.message));
 });
 
+// Salon #livechat : ce qui y est posté s'affiche sur l'écran des membres.
+client.on('messageCreate', message => {
+  handleLiveChatMessage(message, { memberByDiscordId, ensureRoster })
+    .catch(error => console.error('[livechat]', error.message));
+});
+
 client.on('error', error => console.error('[client:error]', error));
 client.on('warn', message => console.warn('[client:warn]', message));
 
-client.login(DISCORD_TOKEN).catch(error => console.error('[startup] login() a échoué —', error));
+// Lire le contenu des messages du salon #livechat demande l'intent privilégié
+// « Message Content », à cocher sur le portail Discord. Le demander alors
+// qu'il n'est pas coché ferait échouer la connexion entière : on vérifie
+// d'abord ce que l'application a le droit de demander. Sans lui, /livechat
+// fonctionne quand même.
+const GATEWAY_MESSAGE_CONTENT = 1 << 18;
+const GATEWAY_MESSAGE_CONTENT_LIMITED = 1 << 19;
+
+async function enableMessageContentIfAllowed() {
+  try {
+    const res = await fetch('https://discord.com/api/v10/applications/@me', {
+      headers: { Authorization: `Bot ${DISCORD_TOKEN}` },
+      signal: AbortSignal.timeout(5000),
+    });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const { flags = 0 } = await res.json();
+    if (!(flags & (GATEWAY_MESSAGE_CONTENT | GATEWAY_MESSAGE_CONTENT_LIMITED))) {
+      console.warn('[livechat] Intent « Message Content » non activé sur le portail Discord : seul /livechat fonctionnera.');
+      return;
+    }
+    client.options.intents = new IntentsBitField(client.options.intents).add(GatewayIntentBits.MessageContent).freeze();
+  } catch (error) {
+    console.warn('[livechat] Vérification de l’intent « Message Content » impossible —', error.message);
+  }
+}
+
+enableMessageContentIfAllowed()
+  .then(() => client.login(DISCORD_TOKEN))
+  .catch(error => console.error('[startup] login() a échoué —', error));
 
 // Exposé pour les tests : vérifier qu'aucun message ne part en deathmatch
 // exige d'exercer réellement le chemin de notification, pas seulement le
