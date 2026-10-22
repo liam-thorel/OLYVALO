@@ -102,7 +102,8 @@ La fenêtre est un petit programme WPF (`livechat-host.cs`) compilé sur le PC,
 au premier média reçu, par le `csc.exe` du .NET Framework livré avec Windows.
 Il est rangé dans `%LOCALAPPDATA%\OLYCITY\livechat`, ne tourne que lorsqu'un
 média arrive et se ferme après 3 minutes sans rien afficher. Les médias ne sont
-téléchargés que depuis Discord, Tenor, Giphy et Imgur.
+téléchargés que depuis Discord, Tenor, Giphy, Imgur et le Worker du site
+(500 Mo maximum).
 
 ## Désinstaller
 

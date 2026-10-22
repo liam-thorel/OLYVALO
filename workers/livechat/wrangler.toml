@@ -5,8 +5,12 @@ compatibility_date = "2026-10-20"
 [vars]
 SITE_ORIGIN = "https://olycity.fr,https://www.olycity.fr,https://tracker.olycity.fr"
 FIREBASE_ROOT = "https://realtime-database-5bb9f-default-rtdb.europe-west1.firebasedatabase.app"
-# Limite d'envoi du serveur Discord : 10 Mo sans boost, 50 Mo au niveau 2.
-MAX_UPLOAD_MB = "10"
+
+# Médias envoyés depuis le site (500 Mo max), effacés au bout d'un jour par
+# une règle de cycle de vie du bucket (voir README).
+[[r2_buckets]]
+binding = "MEDIA"
+bucket_name = "olycity-livechat-media"
 
 # Secret, jamais dans le dépôt :
 #   wrangler secret put DISCORD_WEBHOOK_URL
