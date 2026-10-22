@@ -83,6 +83,27 @@ Le serveur Riot de la partie est détecté depuis le `GamePodID` du match et env
 au Live (Paris, Francfort, Londres, etc.). Il apparaît aussi dans le sélecteur
 lorsque plusieurs games sont suivies en même temps.
 
+## Livechat
+
+Ce qui est posté dans le salon **#livechat** du Discord, avec **/livechat** ou
+sur **olycity.fr/livechat** s'affiche par-dessus l'écran : image, GIF, vidéo
+ou texte, avec le nom de l'expéditeur. Trois formats (grand, moyen, petit),
+ou une position libre depuis le site.
+
+- La fenêtre ne prend jamais le focus et laisse passer les clics : la partie
+  reste jouable. **Ctrl + Maj + F9** fait disparaître le média en cours.
+- **LIVECHAT.bat** coupe ou réactive l'affichage sur ce PC et règle le volume
+  des vidéos (réglage gardé dans `olycity-livechat.json`, conservé par les
+  mises à jour).
+- Comme l'overlay, il faut que le jeu soit en **plein écran fenêtré** : rien
+  ne peut s'afficher par-dessus un plein écran exclusif.
+
+La fenêtre est un petit programme WPF (`livechat-host.cs`) compilé sur le PC,
+au premier média reçu, par le `csc.exe` du .NET Framework livré avec Windows.
+Il est rangé dans `%LOCALAPPDATA%\OLYCITY\livechat`, ne tourne que lorsqu'un
+média arrive et se ferme après 3 minutes sans rien afficher. Les médias ne sont
+téléchargés que depuis Discord, Tenor, Giphy et Imgur.
+
 ## Désinstaller
 
 Double-clique sur **DESINSTALLER.bat** pour tout supprimer.

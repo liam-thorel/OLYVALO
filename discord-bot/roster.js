@@ -197,6 +197,12 @@ function memberByPuuid(puuid) {
   return puuidIndex[String(puuid || '')] || null;
 }
 
+// L'identifiant Discord n'est connu que par l'URL d'avatar du roster.
+function memberByDiscordId(discordId) {
+  if (!discordId) return null;
+  return members.find(member => member.discordId === String(discordId)) || null;
+}
+
 /**
  * Résout le membre OLYCITY derrière une session live, du signal le plus stable
  * au moins stable :
@@ -215,7 +221,7 @@ function memberByIdentity(session) {
 
 module.exports = {
   ensureRoster, memberNames, memberByName, memberByRiotId,
-  memberById, memberByPuuid, memberByIdentity,
+  memberById, memberByPuuid, memberByIdentity, memberByDiscordId,
   // Exposé pour les tests : rejouer l'indexation sans passer par le réseau.
   __test: { indexRoster },
 };

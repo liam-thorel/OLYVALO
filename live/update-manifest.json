@@ -1,5 +1,5 @@
 {
-  "version": "4.22.1",
+  "version": "4.23.0",
   "files": [
     "index.js",
     "lol-watcher.js",
@@ -37,6 +37,11 @@
     "updater.js",
     "poll-utils.js",
     "game-presence-utils.js",
+    "livechat.js",
+    "livechat-utils.js",
+    "livechat-host.cs",
+    "livechat-settings.js",
+    "LIVECHAT.bat",
     "update-manifest.json",
     "OLYCITY-LIVE.bat",
     "silent.vbs",
