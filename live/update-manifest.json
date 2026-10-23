@@ -1,5 +1,5 @@
 {
-  "version": "4.23.2",
+  "version": "4.23.3",
   "files": [
     "index.js",
     "lol-watcher.js",
@@ -37,6 +37,8 @@
     "updater.js",
     "poll-utils.js",
     "game-presence-utils.js",
+    "release-signal.js",
+    "firebase-stream.js",
     "livechat.js",
     "livechat-utils.js",
     "livechat-host.cs",

@@ -63,7 +63,7 @@ sur **IDENTITE.bat**.
 
 ## Mises à jour automatiques
 
-Le script vérifie les releases officielles au démarrage et toutes les 30 minutes, même pendant une partie. Une nouvelle version est téléchargée et vérifiée silencieusement en arrière-plan. Si une game est en cours, le script attend sa fin puis se redémarre tout seul ; personne n'a besoin de le fermer ou de le relancer. Le dossier `node_modules`, le runtime portable et les logs sont conservés.
+Le script vérifie les releases officielles au démarrage et toutes les 30 minutes, même pendant une partie. Il est aussi prévenu en direct de chaque publication (le workflow de release écrit la version dans `liveControl/release`, que le script écoute) et lance alors sa mise à jour dans la minute, sans attendre la vérification suivante. Une nouvelle version est téléchargée et vérifiée silencieusement en arrière-plan. Si une game est en cours, le script attend sa fin puis se redémarre tout seul ; personne n'a besoin de le fermer ou de le relancer. Le dossier `node_modules`, le runtime portable et les logs sont conservés.
 
 Pour désactiver temporairement la vérification pendant un dépannage, lance le script avec la variable `OLYCITY_SKIP_UPDATE=1`.
 

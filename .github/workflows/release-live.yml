@@ -241,3 +241,18 @@ jobs:
           gh release upload '${{ steps.version.outputs.tag }}' \
             '${{ steps.archive.outputs.name }}' OLYCITY-Live.zip \
             --clobber --repo '${{ github.repository }}'
+
+      # Les postes ne vérifient GitHub que toutes les 30 minutes. Ils écoutent
+      # en revanche liveControl/release en continu (live/release-signal.js) :
+      # y écrire la version publiée lance leur mise à jour tout de suite, qui
+      # attend comme toujours la fin d'une partie en cours. Un repackaging
+      # d'une vieille version y écrit une version plus ancienne : les postes,
+      # déjà au-dessus, l'ignorent.
+      - name: Prévenir les postes
+        run: |
+          set -euo pipefail
+          payload=$(jq -cn --arg version '${{ steps.version.outputs.version }}' --arg tag '${{ steps.version.outputs.tag }}' \
+            '{version: $version, tag: $tag, publishedAt: {".sv": "timestamp"}}')
+          curl -fsS --retry 3 -X PUT -H 'Content-Type: application/json' -d "$payload" \
+            'https://realtime-database-5bb9f-default-rtdb.europe-west1.firebasedatabase.app/liveControl/release.json?print=silent'
+          echo "Postes prévenus : v${{ steps.version.outputs.version }}"
