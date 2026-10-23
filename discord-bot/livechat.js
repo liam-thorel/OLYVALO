@@ -96,7 +96,12 @@ function buildLiveChatItem({ from, text = '', media = null, size = 'moyen', targ
   return {
     createdAt: { '.sv': 'timestamp' },
     source,
-    from: { name: String(from?.name || 'Anonyme').slice(0, 40), avatar: isAllowedMediaUrl(from?.avatar) ? from.avatar : null },
+    from: {
+      // Identifiant roster de l'expéditeur : le Live lui affiche aussi ses envois ciblés.
+      ...(from?.id ? { id: String(from.id) } : {}),
+      name: String(from?.name || 'Anonyme').slice(0, 40),
+      avatar: isAllowedMediaUrl(from?.avatar) ? from.avatar : null,
+    },
     text: cleanText(text),
     media: media && isAllowedMediaUrl(media.url) ? { url: media.url, kind: media.kind } : null,
     size: SIZES.includes(size) ? size : 'moyen',
@@ -158,10 +163,12 @@ async function setLiveChatChannelId(channelId) {
 /**
  * Résumé d'envoi : à qui le média va réellement s'afficher.
  */
-function deliverySummary(receivers, target, targetName) {
+function deliverySummary(receivers, target, targetName, senderId = null) {
   if (target) {
     const online = receivers.some(receiver => receiver.memberId === target);
-    return online ? `sur l'écran de **${targetName}**` : `pour **${targetName}**, mais son OLYCITY Live n'est pas en ligne`;
+    const senderOnline = Boolean(senderId) && senderId !== target && receivers.some(receiver => receiver.memberId === senderId);
+    if (online) return `sur l'écran de **${targetName}**${senderOnline ? ' (et sur le tien)' : ''}`;
+    return `pour **${targetName}**, mais son OLYCITY Live n'est pas en ligne${senderOnline ? ' — tu le vois quand même sur le tien' : ''}`;
   }
   if (!receivers.length) return 'mais aucun OLYCITY Live n\'est en ligne pour l\'instant';
   return `sur ${receivers.length} écran${receivers.length > 1 ? 's' : ''} (${receivers.map(r => r.name).join(', ')})`;
@@ -203,6 +210,7 @@ function parseLiveChatMessage(message, { memberByDiscordId }) {
 function senderFor(user, guildMember, memberByDiscordId) {
   const member = memberByDiscordId(user.id);
   return {
+    id: member?.id || null,
     name: member?.name || guildMember?.displayName || user.globalName || user.username,
     avatar: member?.avatar || user.displayAvatarURL?.({ extension: 'png', size: 128 }) || null,
   };

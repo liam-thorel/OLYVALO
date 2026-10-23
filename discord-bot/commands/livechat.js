@@ -59,7 +59,7 @@ module.exports = {
     const embed = new EmbedBuilder()
       .setColor(0xff4655)
       .setAuthor({ name: `${from.name} · livechat ${SIZE_LABELS[size]}`, iconURL: from.avatar || undefined })
-      .setDescription(`📺 Envoyé ${deliverySummary(receivers, target, targetName)}.${text ? `\n> ${text}` : ''}`);
+      .setDescription(`📺 Envoyé ${deliverySummary(receivers, target, targetName, from.id)}.${text ? `\n> ${text}` : ''}`);
     if (attachment && kind !== 'video') embed.setImage(attachment.url);
     await interaction.editReply({
       embeds: [embed],

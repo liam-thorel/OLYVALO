@@ -73,8 +73,8 @@ function mediaKind(kind, url = '') {
  */
 function layoutFor(size, box) {
   if (size === 'custom' && box && typeof box === 'object') {
-    const w = clamp(box.w, 0.08, 1, 0.46);
-    const h = clamp(box.h, 0.08, 1, Math.min(0.95, w * 1.6));
+    const w = clamp(box.w, 0.05, 1, 0.46);
+    const h = clamp(box.h, 0.04, 1, Math.min(0.95, w * 1.6));
     return {
       w,
       h,
@@ -108,7 +108,8 @@ function normalizeItem(id, raw) {
     id: String(id),
     createdAt: Number(raw.createdAt) || 0,
     source: raw.source === 'site' ? 'site' : 'discord',
-    from: { name: String(from.name || 'Anonyme').slice(0, 40), avatar },
+    // Identifiant roster de l'expéditeur : un envoi ciblé s'affiche aussi chez lui.
+    from: { id: String(from.id || '').trim() || null, name: String(from.name || 'Anonyme').slice(0, 40), avatar },
     text,
     media,
     size,
@@ -140,7 +141,9 @@ function displayDurationMs(item) {
  */
 function shouldDisplay(item, { memberId = '', now = Date.now(), seen = new Set(), enabled = true } = {}) {
   if (!item || !enabled || seen.has(item.id)) return false;
-  if (item.target && item.target !== memberId) return false;
+  // Un envoi ciblé s'affiche chez son destinataire, et chez celui qui l'envoie
+  // pour qu'il voie ce qu'il a fait apparaître.
+  if (item.target && item.target !== memberId && item.from.id !== memberId) return false;
   // Horloges du PC et de Firebase pas forcément d'accord : on tolère un écart.
   return item.createdAt > 0 && now - item.createdAt <= MAX_ITEM_AGE_MS && item.createdAt - now <= MAX_ITEM_AGE_MS;
 }
