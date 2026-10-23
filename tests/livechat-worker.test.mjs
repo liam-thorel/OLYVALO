@@ -154,3 +154,13 @@ test('un compte Discord hors roster ne peut rien envoyer', async () => {
     globalThis.fetch = realFetch;
   }
 });
+
+test('un extrait vidéo ne part que pour une vidéo, et se lit sur Discord', () => {
+  const parsed = parseSubmission({ mediaKey: 'abcdef12.mp4', trim: { startMs: 3200, endMs: 65000 } }, LIAM);
+  assert.deepEqual(parsed.trim, { startMs: 3200, endMs: 65000 });
+  assert.match(discordContent(parsed, 'https://x/m/abcdef12.mp4'), /extrait 0:03\.2 → 1:05/);
+  assert.deepEqual(queueItem(parsed, { url: 'u', kind: 'video' }).trim, { startMs: 3200, endMs: 65000 });
+  assert.equal(queueItem(parsed, { url: 'u', kind: 'image' }).trim, undefined);
+  assert.equal(parseSubmission({ text: 'yo', trim: { startMs: 5000, endMs: 5100 } }, LIAM).trim, null);
+  assert.equal(parseSubmission({ text: 'yo', trim: { startMs: 0, endMs: 2 * 60 * 60 * 1000 } }, LIAM).trim, null);
+});

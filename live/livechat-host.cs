@@ -106,6 +106,8 @@ namespace OlyLiveChat
         public int DurationMs;
         public int MaxVideoMs;
         public bool Loop;
+        public int StartMs;
+        public int EndMs;
         public double Volume;
     }
 
@@ -197,6 +199,8 @@ namespace OlyLiveChat
             item.DurationMs = (int)Num(cmd, "durationMs", 7000);
             item.MaxVideoMs = (int)Num(cmd, "maxVideoMs", 30000);
             item.Loop = Num(cmd, "loop", 0) > 0;
+            item.StartMs = Math.Max(0, (int)Num(cmd, "startMs", 0));
+            item.EndMs = Math.Max(0, (int)Num(cmd, "endMs", 0));
             item.Volume = Num(cmd, "volume", 0.6);
 
             if (current != null) Finish("replaced");
@@ -340,7 +344,7 @@ namespace OlyLiveChat
             media.MediaEnded += delegate
             {
                 if (current != item) return;
-                if (item.Loop) { media.Position = TimeSpan.Zero; media.Play(); }
+                if (item.Loop) { media.Position = TimeSpan.FromMilliseconds(item.StartMs); media.Play(); }
                 else Finish("end");
             };
             media.Open(new Uri(item.Path));
@@ -482,12 +486,16 @@ namespace OlyLiveChat
             if (media != null)
             {
                 media.IsMuted = item.Volume <= 0;
-                media.Position = TimeSpan.Zero;
+                // Extrait choisi sur le site : on part de son début et on
+                // s'arrête à sa fin, dans la limite de durée du poste.
+                media.Position = TimeSpan.FromMilliseconds(item.StartMs);
                 if (!item.Loop)
                 {
                     duration = item.MaxVideoMs;
-                    if (media.NaturalDuration.HasTimeSpan)
-                        duration = (int)Math.Min(duration, media.NaturalDuration.TimeSpan.TotalMilliseconds + 300);
+                    if (item.EndMs > item.StartMs)
+                        duration = Math.Min(duration, item.EndMs - item.StartMs);
+                    else if (media.NaturalDuration.HasTimeSpan)
+                        duration = (int)Math.Min(duration, media.NaturalDuration.TimeSpan.TotalMilliseconds - item.StartMs + 300);
                 }
             }
             else if (frames != null)
