@@ -22,14 +22,14 @@ test('un envoi exige un membre, et un média ou un texte', () => {
 
 test('le nom affiché vient du roster, jamais du navigateur', () => {
   const parsed = parseSubmission({ text: 'yo', fromName: 'Usurpateur', fromAvatar: 'https://evil.fr/a.png' }, LIAM);
-  assert.deepEqual(parsed.from, { name: 'Liam', avatar: LIAM.avatar });
+  assert.deepEqual(parsed.from, { id: 'liam', name: 'Liam', avatar: LIAM.avatar });
 });
 
 test('la zone perso, la cible et la durée sont nettoyées', () => {
   const parsed = parseSubmission({
     text: 'yo', size: 'custom', box: { cx: 2, cy: 0.3, w: 0.01 }, target: 'Nico<script>', durationMs: 999999,
   }, LIAM);
-  assert.deepEqual(parsed.box, { cx: 1, cy: 0.3, w: 0.08, h: 0.52 });
+  assert.deepEqual(parsed.box, { cx: 1, cy: 0.3, w: 0.05, h: 0.52 });
   assert.equal(parsed.target, 'nicoscript');
   assert.equal(parsed.durationMs, 30000);
   const item = queueItem(parsed, null, 'm1');

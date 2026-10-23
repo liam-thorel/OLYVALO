@@ -73,6 +73,11 @@ test('on n’affiche que le récent, une seule fois, et seulement au destinatair
   const targeted = normalizeItem('b', { createdAt: NOW, text: 'yo', target: 'nico' });
   assert.ok(shouldDisplay(targeted, { now: NOW, memberId: 'nico' }));
   assert.ok(!shouldDisplay(targeted, { now: NOW, memberId: 'liam' }));
+  const fromRayhan = normalizeItem('c', { createdAt: NOW, text: 'yo', target: 'nico', from: { id: 'rayhan', name: 'Rayhan' } });
+  assert.ok(shouldDisplay(fromRayhan, { now: NOW, memberId: 'rayhan' }), 'l’expéditeur voit aussi son envoi ciblé');
+  assert.ok(!shouldDisplay(fromRayhan, { now: NOW, memberId: 'liam' }), 'mais pas les autres');
+  assert.ok(!shouldDisplay(normalizeItem('d', { createdAt: NOW, text: 'yo', target: 'nico' }), { now: NOW, memberId: '' }),
+    'un poste sans identité ne devient pas l’expéditeur d’un envoi anonyme');
 });
 
 test('durées : le texte seul se lit, le grand format reste plus longtemps', () => {
@@ -165,5 +170,10 @@ test('Discord : écrans en ligne et nettoyage de la file', () => {
   assert.deepEqual(receivers, [{ memberId: 'liam', name: 'Liam' }]);
   assert.match(bot.deliverySummary(receivers, null), /1 écran \(Liam\)/);
   assert.match(bot.deliverySummary(receivers, 'nico', 'Nico'), /pas en ligne/);
+  assert.match(bot.deliverySummary(receivers, 'nico', 'Nico', 'liam'), /tu le vois quand même sur le tien/);
+  assert.match(bot.deliverySummary([...receivers, { memberId: 'nico', name: 'Nico' }], 'nico', 'Nico', 'liam'), /\*\*Nico\*\* \(et sur le tien\)/);
+  const item = bot.buildLiveChatItem({ from: { id: 'liam', name: 'Liam' }, text: 'yo', target: 'nico' });
+  assert.equal(item.from.id, 'liam');
+  assert.equal(normalizeItem('e', { ...item, createdAt: NOW }).from.id, 'liam');
   assert.deepEqual(bot.staleQueueKeys({ old: { createdAt: NOW - 3_600_000 }, fresh: { createdAt: NOW }, broken: {} }, NOW), ['old', 'broken']);
 });

@@ -202,8 +202,8 @@ export function parseSubmission(body = {}, member = null) {
     box = {
       cx: clamp(raw.cx, 0, 1, 0.5),
       cy: clamp(raw.cy, 0, 1, 0.5),
-      w: clamp(raw.w, 0.08, 1, 0.46),
-      h: clamp(raw.h, 0.08, 1, 0.52),
+      w: clamp(raw.w, 0.05, 1, 0.46),
+      h: clamp(raw.h, 0.04, 1, 0.52),
     };
   }
   const duration = Number(body.durationMs);
@@ -217,7 +217,7 @@ export function parseSubmission(body = {}, member = null) {
     muted: body.muted === true,
     target: String(body.target || '').toLowerCase().replace(/[^a-z0-9_-]/g, '').slice(0, 48) || null,
     targetName: String(body.targetName || '').trim().slice(0, 40) || null,
-    from: { name: String(member.name).slice(0, 40), avatar: allowedAvatar(member.avatar) },
+    from: { id: String(member.id), name: String(member.name).slice(0, 40), avatar: allowedAvatar(member.avatar) },
   };
 }
 
