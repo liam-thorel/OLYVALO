@@ -177,3 +177,16 @@ test('Discord : écrans en ligne et nettoyage de la file', () => {
   assert.equal(normalizeItem('e', { ...item, createdAt: NOW }).from.id, 'liam');
   assert.deepEqual(bot.staleQueueKeys({ old: { createdAt: NOW - 3_600_000 }, fresh: { createdAt: NOW }, broken: {} }, NOW), ['old', 'broken']);
 });
+
+test('un extrait vidéo choisi sur le site est validé', () => {
+  const VIDEO = 'https://olycity-livechat.olycity.workers.dev/m/abcdef12.mp4';
+  const clip = normalizeItem('v', { createdAt: NOW, media: { url: VIDEO, kind: 'video' }, trim: { startMs: 3000.4, endMs: 8900 } });
+  assert.deepEqual(clip.trim, { startMs: 3000, endMs: 8900 });
+  const at = trim => normalizeItem('v', { createdAt: NOW, media: { url: VIDEO, kind: 'video' }, trim }).trim;
+  assert.equal(at({ startMs: 5000, endMs: 5100 }), null, 'extrait trop court');
+  assert.equal(at({ startMs: -1, endMs: 5000 }), null);
+  assert.equal(at({ startMs: 'x', endMs: 5000 }), null);
+  assert.equal(at(null), null);
+  const image = normalizeItem('i', { createdAt: NOW, media: { url: CDN }, trim: { startMs: 0, endMs: 5000 } });
+  assert.equal(image.trim, null, 'pas d’extrait pour une image');
+});

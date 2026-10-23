@@ -44,6 +44,19 @@ const SIZE_PRESETS = {
 
 const KINDS = new Set(['image', 'gif', 'video']);
 
+// Un extrait vidéo choisi sur le site : début et fin en millisecondes.
+const MAX_TRIM_MS = 60 * 60 * 1000;
+const MIN_CLIP_MS = 300;
+
+function normalizeTrim(trim, kind) {
+  if (kind !== 'video' || !trim || typeof trim !== 'object') return null;
+  const startMs = Math.round(Number(trim.startMs));
+  const endMs = Math.round(Number(trim.endMs));
+  if (!Number.isFinite(startMs) || startMs < 0 || startMs > MAX_TRIM_MS) return null;
+  if (!Number.isFinite(endMs) || endMs - startMs < MIN_CLIP_MS || endMs > MAX_TRIM_MS) return null;
+  return { startMs, endMs };
+}
+
 function clamp(value, min, max, fallback) {
   const number = Number(value);
   if (!Number.isFinite(number)) return fallback;
@@ -117,6 +130,7 @@ function normalizeItem(id, raw) {
     textPos: raw.textPos === 'haut' ? 'haut' : 'bas',
     durationMs: raw.durationMs == null ? null : clamp(raw.durationMs, 2000, 30000, null),
     muted: raw.muted === true,
+    trim: normalizeTrim(raw.trim, media?.kind),
     target,
   };
 }
@@ -239,6 +253,7 @@ module.exports = {
   layoutFor,
   mediaKind,
   normalizeItem,
+  normalizeTrim,
   parseLiveChatConfig,
   shouldDisplay,
 };

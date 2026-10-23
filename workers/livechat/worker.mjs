@@ -37,6 +37,10 @@ const MAX_TEXT_LENGTH = 220;
 const SIZES = new Set(['grand', 'moyen', 'petit', 'custom']);
 const SIZE_LABELS = { grand: 'grand', moyen: 'moyen', petit: 'petit', custom: 'perso' };
 const MIN_INTERVAL_MS = 3000;
+// Extrait vidéo choisi sur la page : le fichier reste entier, le Live ne
+// joue que de startMs à endMs.
+const MAX_TRIM_MS = 60 * 60 * 1000;
+const MIN_CLIP_MS = 300;
 const EXTENSIONS = {
   'image/png': 'png', 'image/jpeg': 'jpg', 'image/webp': 'webp', 'image/gif': 'gif', 'image/bmp': 'bmp',
   'video/mp4': 'mp4', 'video/webm': 'webm', 'video/quicktime': 'mov',
@@ -215,14 +219,32 @@ export function parseSubmission(body = {}, member = null) {
     textPos: body.textPos === 'haut' ? 'haut' : 'bas',
     durationMs: Number.isFinite(duration) && duration > 0 ? clamp(duration, 2000, 30000, null) : null,
     muted: body.muted === true,
+    trim: parseTrim(body.trim),
     target: String(body.target || '').toLowerCase().replace(/[^a-z0-9_-]/g, '').slice(0, 48) || null,
     targetName: String(body.targetName || '').trim().slice(0, 40) || null,
     from: { id: String(member.id), name: String(member.name).slice(0, 40), avatar: allowedAvatar(member.avatar) },
   };
 }
 
+export function parseTrim(trim) {
+  if (!trim || typeof trim !== 'object') return null;
+  const startMs = Math.round(Number(trim.startMs));
+  const endMs = Math.round(Number(trim.endMs));
+  if (!Number.isFinite(startMs) || !Number.isFinite(endMs)) return null;
+  if (startMs < 0 || endMs > MAX_TRIM_MS || endMs - startMs < MIN_CLIP_MS) return null;
+  return { startMs, endMs };
+}
+
+const clock = ms => {
+  const seconds = Math.round(ms / 100) / 10;
+  const minutes = Math.floor(seconds / 60);
+  const rest = (seconds - minutes * 60).toFixed(1).replace(/\.0$/, '');
+  return `${minutes}:${rest.padStart(rest.includes('.') ? 4 : 2, '0')}`;
+};
+
 export function discordContent(submission, mediaUrl = null) {
   const details = [SIZE_LABELS[submission.size]];
+  if (submission.trim) details.push(`extrait ${clock(submission.trim.startMs)} → ${clock(submission.trim.endMs)}`);
   if (submission.targetName) details.push(`pour ${submission.targetName}`);
   const lines = [];
   if (submission.text) lines.push(submission.text);
@@ -243,6 +265,7 @@ export function queueItem(submission, media, discordMessageId = null) {
     textPos: submission.textPos,
     ...(submission.durationMs ? { durationMs: submission.durationMs } : {}),
     ...(submission.muted ? { muted: true } : {}),
+    ...(submission.trim && media?.kind === 'video' ? { trim: submission.trim } : {}),
     target: submission.target,
     ...(discordMessageId ? { discordMessageId } : {}),
   };
@@ -376,6 +399,10 @@ export async function handleRequest(request, env, { now = Date.now() } = {}) {
       if (!head || !kind) return json({ error: 'Média introuvable, renvoie-le.' }, 404, cors);
       mediaUrl = `${url.origin}/m/${submission.mediaKey}`;
       mediaInfo = { url: mediaUrl, kind };
+      // Un extrait n'a de sens que pour une vidéo.
+      if (kind !== 'video') submission.trim = null;
+    } else {
+      submission.trim = null;
     }
 
     const discordMessageId = await announceOnDiscord(env, submission, mediaUrl);

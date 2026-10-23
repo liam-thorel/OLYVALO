@@ -265,6 +265,9 @@ function createLiveChat({ firebaseHost, getIdentity, putFB, log, installDir = __
             durationMs,
             maxVideoMs: config.maxVideoSeconds * 1000,
             volume: item.muted ? 0 : config.volume / 100,
+            // Un GIF Tenor livré en vidéo n'a jamais d'extrait : il boucle en entier.
+            startMs: item.trim && !shape.loop ? item.trim.startMs : 0,
+            endMs: item.trim && !shape.loop ? item.trim.endMs : 0,
           });
           log(`📺 ${item.from.name} → ${shape.kind}${item.text ? ` « ${item.text.slice(0, 40)} »` : ''} (${item.size})`);
           // Garde-fou : la fenêtre répond toujours, mais un blocage ne doit
