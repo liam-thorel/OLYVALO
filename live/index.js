@@ -26,6 +26,7 @@ const { ownPresence, decodedPresence, valorantActivity } = require('./riot-activ
 const { resolveRiotIdentity } = require('./riot-identity.js');
 const { valorantHistorySummary } = require('./history-index.js');
 const { createLiveChat } = require('./livechat.js');
+const { watchReleaseSignal } = require('./release-signal.js');
 const {
   normalizeValorantMode,
   valorantModeLabel,
@@ -34,7 +35,7 @@ const {
 } = require('./valorant-mode-utils.js');
 
 const FIREBASE_URL = 'https://realtime-database-5bb9f-default-rtdb.europe-west1.firebasedatabase.app';
-const SCRIPT_VERSION = '4.23.2';
+const SCRIPT_VERSION = '4.23.3';
 const INSTANCE_LOCK_PATH = path.join(__dirname, '.olycity-live.lock');
 const LOG_PATH = path.join(__dirname, 'olycity.log');
 const MAX_LOG_BYTES = 5 * 1024 * 1024;
@@ -1885,6 +1886,16 @@ async function start() {
   }, 10000);
   identityWatcher.unref?.();
   setInterval(updateAndRestart, 30 * 60 * 1000);
+  // Une release publiée prévient tous les postes (liveControl/release) : la
+  // mise à jour part tout de suite au lieu d'attendre la vérification suivante.
+  if (process.env.OLYCITY_SKIP_UPDATE !== '1') {
+    watchReleaseSignal({
+      firebaseHost: new URL(FIREBASE_URL).hostname,
+      currentVersion: SCRIPT_VERSION,
+      onRelease: () => { updateAndRestart().catch(() => {}); },
+      log: message => console.log(`[${ts()}] ${message}`),
+    });
+  }
   liveChat.start();
   pollValorantOnce();
   pollLolOnce();

@@ -18,17 +18,16 @@ const {
   LIVECHAT_RECEIVERS_PATH,
   MAX_MEDIA_BYTES,
   applyQueueEvent,
-  createSseParser,
   displayDurationMs,
   isAllowedMediaUrl,
   normalizeItem,
   parseLiveChatConfig,
   shouldDisplay,
 } = require('./livechat-utils.js');
+const { openFirebaseStream } = require('./firebase-stream.js');
 
 const CONFIG_FILENAME = 'olycity-livechat.json';
 const HOST_SOURCE = 'livechat-host.cs';
-const STREAM_STALL_MS = 90 * 1000;
 const HOST_IDLE_MS = 3 * 60 * 1000;
 const HEARTBEAT_MS = 2 * 60 * 1000;
 const MAX_PENDING = 12;
@@ -148,8 +147,6 @@ function createLiveChat({ firebaseHost, getIdentity, putFB, log, installDir = __
   const seen = new Set();
   const pending = [];
   let stream = null;
-  let lastEventAt = 0;
-  let reconnectDelay = 2000;
   let pumping = false;
   let host = null;
   let hostIdleTimer = null;
@@ -295,48 +292,6 @@ function createLiveChat({ firebaseHost, getIdentity, putFB, log, installDir = __
     else if (item) remember(item.id);
   }
 
-  // ─── Flux Firebase ────────────────────────────────────────────────────
-
-  function connect(url = `https://${firebaseHost}/${LIVECHAT_QUEUE_PATH}.json`, redirects = 3) {
-    if (stopped) return;
-    const parse = createSseParser(({ event, data }) => {
-      lastEventAt = Date.now();
-      if (event === 'put' || event === 'patch') {
-        reconnectDelay = 2000;
-        applyQueueEvent(queue, event, data).forEach(consider);
-      } else if (event === 'cancel' || event === 'auth_revoked') {
-        stream?.destroy();
-      }
-    });
-    const request = https.get(url, { headers: { Accept: 'text/event-stream' } }, res => {
-      // Firebase redirige parfois le flux vers un autre serveur.
-      if ([301, 302, 307, 308].includes(res.statusCode) && res.headers.location && redirects > 0) {
-        res.resume();
-        connect(new URL(res.headers.location, url).toString(), redirects - 1);
-        return;
-      }
-      if (res.statusCode !== 200) { res.resume(); request.destroy(new Error(`HTTP ${res.statusCode}`)); return; }
-      lastEventAt = Date.now();
-      res.setEncoding('utf8');
-      res.on('data', parse);
-      res.on('end', retry);
-      res.on('error', () => {});
-    });
-    request.on('error', () => {});
-    request.on('close', retry);
-    stream = request;
-
-    let retried = false;
-    function retry() {
-      if (retried || stopped || stream !== request) return;
-      retried = true;
-      stream = null;
-      const delay = reconnectDelay;
-      reconnectDelay = Math.min(reconnectDelay * 2, 60000);
-      setTimeout(() => connect(), delay).unref?.();
-    }
-  }
-
   async function heartbeat() {
     const identity = getIdentity();
     if (!identity?.memberId) return;
@@ -350,12 +305,11 @@ function createLiveChat({ firebaseHost, getIdentity, putFB, log, installDir = __
 
   function start() {
     if (process.platform !== 'win32') return;
-    connect();
-    // Une connexion morte sans erreur (Wi-Fi reconnecté) ne se rouvre jamais
-    // seule : Firebase envoie un keep-alive toutes les ~30 s.
-    setInterval(() => {
-      if (stream && Date.now() - lastEventAt > STREAM_STALL_MS) stream.destroy();
-    }, 15000).unref?.();
+    stream = openFirebaseStream({
+      host: firebaseHost,
+      path: LIVECHAT_QUEUE_PATH,
+      onEvent: (event, data) => applyQueueEvent(queue, event, data).forEach(consider),
+    });
     heartbeat().catch(() => {});
     setInterval(() => heartbeat().catch(() => {}), HEARTBEAT_MS).unref?.();
     // Restes d'un arrêt brutal pendant un affichage.
@@ -364,7 +318,7 @@ function createLiveChat({ firebaseHost, getIdentity, putFB, log, installDir = __
 
   function stop() {
     stopped = true;
-    stream?.destroy();
+    stream?.stop();
     send({ cmd: 'quit' });
   }
 
