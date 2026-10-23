@@ -13,7 +13,7 @@ export function mountMusicPlayer({ musicOrigin = 'https://musique.olycity.fr', m
   const styles = document.createElement('style');
   styles.textContent = `
     #oly-music-remote{position:fixed;z-index:650;left:18px;bottom:18px;width:min(420px,calc(100vw - 36px));filter:drop-shadow(0 8px 20px #0005)}
-    #oly-music-remote iframe{display:block;width:100%;height:120px;border:0;border-radius:12px;background:transparent}
+    #oly-music-remote iframe{display:block;width:100%;height:120px;border:0;border-radius:12px;background:transparent;color-scheme:dark}
     #oly-music-remote[data-collapsed=true]{width:128px}
     #oly-music-remote a{display:inline-flex;align-items:center;min-height:44px;padding:0 15px;border:1px solid #514065;border-radius:9px;background:#10131a;color:#e2e5ee;font:600 12px system-ui,sans-serif;text-decoration:none}
     #oly-music-remote a:focus-visible{outline:2px solid #a87fff;outline-offset:3px}
