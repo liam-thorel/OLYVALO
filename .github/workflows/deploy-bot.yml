@@ -82,6 +82,12 @@ jobs:
           state="$(docker inspect -f '{{.State.Running}} {{.RestartCount}}' "$CONTAINER")"
           if [ "$state" = "true 0" ]; then
             echo "✅ $CONTAINER est en ligne"
+            # Les commandes slash ne se déclarent pas toutes seules : sans ça,
+            # une nouvelle commande (/compte…) n'apparaît pas dans Discord.
+            # Non bloquant : le bot tourne déjà, seules les commandes seraient en retard.
+            echo "→ Enregistrement des commandes slash"
+            docker compose exec -T bot node deploy-commands.js \
+              || echo "::warning::Commandes slash non enregistrées — lancer npm run deploy-commands"
           else
             echo "::error::$CONTAINER n'est pas en ligne après le déploiement ($state)"
             docker logs --tail 40 "$CONTAINER" || true

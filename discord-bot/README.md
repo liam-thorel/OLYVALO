@@ -65,7 +65,9 @@ il a crashé sans ouvrir les logs du panel d'hébergement).
 
 ## 3. Enregistrer les commandes slash
 
-À faire une fois, puis à chaque fois qu'une commande change :
+Fait automatiquement par le déploiement (voir plus bas) à chaque merge qui
+touche `discord-bot/**`. À la main, en local ou si le déploiement a prévenu
+d'un échec :
 
 ```bash
 npm run deploy-commands
