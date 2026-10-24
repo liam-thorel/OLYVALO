@@ -152,6 +152,10 @@ permission Discord **Gérer les salons**.
 une game suivie démarre, fenêtre de 5 minutes :
 - `/bet choix:<Victoire|Défaite> montant:<points>` — parier sur la game en
   cours dans le salon (alternative aux boutons).
+- `/compte` — ton compte OLYCITY : le membre du roster relié à ton compte
+  Discord (ou « hors roster »), ton solde, et le lien du site. Le site se
+  connecte avec le même compte Discord (`accounts/<id Discord>` dans
+  Firebase) : un compte par personne, le même partout.
 - `/balance` — solde de points (500 crédités par jour, au premier contact).
 - `/mybets` — historique de tes paris et ROI.
 - `/leaderboard` — classement général des points.

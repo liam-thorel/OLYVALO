@@ -28,11 +28,18 @@ function parse(url) {
   }
 }
 
+// Connexion au site avec Discord : l'autorisation, et la page de connexion
+// vers laquelle Discord renvoie quand on n'y est pas encore connecté. Ouvertes
+// dans le navigateur, elles y déposeraient le jeton au lieu de l'overlay. Rien
+// d'autre de discord.com : ni les salons, ni l'application web.
+const DISCORD_LOGIN_PATHS = new Set(['/oauth2/authorize', '/login']);
+
 /** Navigation autorisée À L'INTÉRIEUR de l'overlay. */
 function isAllowedUrl(url) {
   const parsed = parse(url);
   if (!parsed) return false;
   if (OWN_ORIGINS.has(parsed.origin)) return true;
+  if (parsed.origin === 'https://discord.com') return DISCORD_LOGIN_PATHS.has(parsed.pathname.replace(/\/$/, ''));
   if (parsed.origin !== SITE_ORIGIN) return false;
   // Même origine ne suffit pas : github.io héberge les pages de tous les
   // dépôts de l'utilisateur, on reste sur celui d'OLYCITY.

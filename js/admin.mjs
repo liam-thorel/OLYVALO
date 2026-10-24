@@ -18,6 +18,7 @@ import { validateLineup, lineupCoverage, mergeLineups } from './lineup-utils.mjs
 import { fetchJsonWithRetry, fetchJsonWithTimeout } from './request-utils.mjs?v=20260930-consistent-live';
 import { isLiveRecordExpired, liveDataStore, staleLiveRecords } from './live-data-store.mjs?v=20261005-return-live';
 import { mergeMemberProfiles } from './member-profiles.mjs?v=20260823-profile-picker';
+import { unlinkedAccounts } from './discord-account.mjs?v=20261024-discord';
 import { readSiteVitals } from './site-telemetry.mjs?v=20260825-site-health';
 import { attributionRows, attributionWarnings, deletionPlan, reassignPlan, roleOf, isValidPuuid, knownPuuidFor,
   overlayKeyFor, duplicateLabel, adoptionPlan } from './admin-attribution.mjs?v=20260920-attribution';
@@ -36,6 +37,7 @@ let overlayAccounts = {};
 let overlayHiddenMembers = {};
 let ignoredAccounts = {};
 let discovered = {};
+let discordAccounts = {};
 let lolClients = {};
 let lolSessions = {};
 let valorantClients = {};
@@ -115,11 +117,12 @@ async function fbDelete(path) {
 function allMembers() {
   const staticList = staticRoster.map(player => ({
     id: slugify(player.name), name: player.name, role: player.role || '', avatar: player.avatar || '',
+    discordId: player.discordId || '',
   }));
   const staticIds = new Set(staticList.map(member => member.id));
   const overlayList = Object.entries(overlayMembers)
     .filter(([id]) => !staticIds.has(id))
-    .map(([id, member]) => ({ id, name: member.name, role: member.role || '', avatar: member.avatar || '' }));
+    .map(([id, member]) => ({ id, name: member.name, role: member.role || '', avatar: member.avatar || '', discordId: member.discordId || '' }));
   return [...staticList, ...overlayList].filter(member => !overlayHiddenMembers[member.id]);
 }
 
@@ -137,11 +140,12 @@ function applyLiveSnapshot(snapshot = {}) {
 }
 
 async function loadAll(signal) {
-  const [roster, members, overlay, discoveredData, liveSnapshot, updateManifest] = await Promise.all([
+  const [roster, members, overlay, discoveredData, accountsData, liveSnapshot, updateManifest] = await Promise.all([
     fetchJsonWithRetry(`./data/roster.json?v=${Date.now()}`, { signal, timeoutMs:6_000, attempts:2 }),
     fetchJsonWithRetry(`./data/members.json?v=${Date.now()}`, { signal, timeoutMs:6_000, attempts:2 }),
     fbGet('rosterOverlay', signal).catch(() => null),
     fbGet('discovered', signal).catch(() => null),
+    fbGet('accounts', signal).catch(() => null),
     liveDataStore.refresh({ timeoutMs:ADMIN_LOAD_TIMEOUT_MS }).catch(() => liveDataStore.snapshot()),
     fetchJsonWithTimeout(`./live/update-manifest.json?v=${Date.now()}`, { signal, timeoutMs: ADMIN_LOAD_TIMEOUT_MS }).catch(() => null),
   ]);
@@ -155,6 +159,7 @@ async function loadAll(signal) {
     ignoredAccounts = overlay?.ignoredAccounts || {};
   }
   if (discoveredData !== null) discovered = discoveredData || {};
+  if (accountsData !== null) discordAccounts = accountsData || {};
   applyLiveSnapshot(liveSnapshot);
   await loadLineupState().catch(() => {});
   if (updateManifest?.version) latestScriptVersion = updateManifest.version;
@@ -425,6 +430,22 @@ function renderAttributionHTML() {
   return `${avertissements}${reprise}${purge}<div class="admin-attr-grid">${cartes}</div>`;
 }
 
+/**
+ * Personnes connectées au site avec un compte Discord qui n'est relié à aucun
+ * membre. Les ajouter au roster écrit leur identifiant Discord sur la fiche :
+ * le site, le bot et le livechat les reconnaissent alors partout.
+ */
+function renderDiscordAccountsHTML() {
+  const rows = unlinkedAccounts(discordAccounts, allMembers());
+  if (!rows.length) return '<span class="admin-dim">Aucun nouveau compte : tous les comptes connectés sont reliés au roster.</span>';
+  return rows.map(account => `
+    <div class="admin-account-row" data-discord-id="${escapeHTML(account.discordId)}">
+      ${account.avatar ? `<img class="admin-member-avatar" src="${escapeHTML(account.avatar)}" alt="">` : ''}
+      <div class="admin-account-details"><strong>${escapeHTML(account.name || '?')}</strong><small>${account.username ? `@${escapeHTML(account.username)} · ` : ''}Discord ${escapeHTML(account.discordId)} · vu il y a ${timeAgo(account.lastLoginAt)}</small></div>
+      <button type="button" class="admin-btn admin-btn-small" data-action="add-discord-member">+ Ajouter au roster</button>
+    </div>`).join('');
+}
+
 function renderMembersHTML() {
   return allMembers().map(member => {
     const accounts = accountsForMember(member.id);
@@ -603,6 +624,14 @@ function render() {
       <section class="admin-section">
         <h3>Comptes détectés non assignés</h3>
         <div id="admin-discovered">${renderDiscoveredHTML()}</div>
+      </section>
+
+      <section class="admin-section">
+        <div class="admin-section-head">
+          <h3>Nouveaux comptes Discord</h3>
+          <span class="admin-dim">Connectés au site, hors roster</span>
+        </div>
+        <div id="admin-discord-accounts">${renderDiscordAccountsHTML()}</div>
       </section>
 
       <section class="admin-section">
@@ -968,6 +997,27 @@ function wireEvents(root) {
       source: 'manual', addedAt: Date.now(),
     });
     await reloadAndRender(root);
+  });
+
+  root.querySelector('#admin-discord-accounts')?.addEventListener('click', async event => {
+    const button = event.target.closest('[data-action="add-discord-member"]');
+    if (!button) return;
+    const account = discordAccounts[button.closest('[data-discord-id]')?.dataset.discordId];
+    if (!account) return;
+    const name = String(prompt('Nom affiché dans le roster', account.name || '') || '').trim();
+    if (!name) return;
+    const id = slugify(name);
+    if (allMembers().some(member => member.id === id)) { alert('Un membre avec ce nom existe déjà.'); return; }
+    button.disabled = true;
+    try {
+      await fbPut(`rosterOverlay/members/${id}`, { name, role: '', avatar: account.avatar || '', discordId: account.discordId });
+      await fbDelete(`rosterOverlay/hiddenMembers/${id}`);
+      await fbPut(`accounts/${account.discordId}/memberId`, id);
+      await reloadAndRender(root);
+    } catch (error) {
+      button.disabled = false;
+      alert(`Ajout impossible : ${error.message}`);
+    }
   });
 
   root.querySelector('#admin-add-member-btn')?.addEventListener('click', () => {

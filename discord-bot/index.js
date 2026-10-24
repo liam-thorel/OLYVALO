@@ -78,6 +78,7 @@ process.on('uncaughtException', error => {
   './commands/awards.js',
   './commands/balance.js',
   './commands/bet.js',
+  './commands/compte.js',
   './commands/leaderboard.js',
   './commands/leaderboard-channel.js',
   './commands/leaderboard-lol-solo.js',

@@ -1009,6 +1009,24 @@ body.profile-picker-open { overflow: hidden; }
 .profile-picker-header p {
   margin: 12px 0 0; color: rgba(235,234,246,.56); font-size: 14px; letter-spacing: .2px;
 }
+/* Connexion Discord */
+.discord-login-btn {
+  display: inline-flex; align-items: center; gap: 10px; padding: 14px 26px;
+  border: 0; border-radius: 6px; background: #5865f2; color: #fff; cursor: pointer;
+  font-family: 'Tomorrow', sans-serif; font-size: 14px; font-weight: 650; letter-spacing: .4px;
+  transition: background .15s, transform .15s;
+}
+.discord-login-btn:hover, .discord-login-btn:focus-visible { background: #4752c4; transform: translateY(-2px); outline: none; }
+.discord-login-btn svg { width: 22px; height: 22px; }
+.account-problem { margin: 14px 0 0; color: #ff8a95; font-size: 13px; text-align: center; }
+.account-card {
+  display: flex; align-items: center; gap: 16px; padding: 14px 22px 14px 14px;
+  border: 1px solid var(--border2); background: rgba(255,255,255,.035);
+}
+.account-card .profile-avatar { width: 64px; height: 64px; }
+.account-card-text { display: flex; flex-direction: column; gap: 4px; }
+.account-card-text strong { color: #fff; font-family: 'Tomorrow', sans-serif; font-size: 16px; letter-spacing: .6px; }
+.account-card-text small { color: var(--muted); font-size: 12px; }
 .profile-grid {
   width: 100%; display: grid; grid-template-columns: repeat(auto-fit, minmax(112px, 1fr));
   gap: 14px; max-width: 860px;

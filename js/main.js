@@ -20,11 +20,12 @@ import { rosterHTML, guestCardHTML, mapSectionHTML, agentPageHTML, navMapsHTML, 
 import { initTheme, initTilt, initParallax, initKeyboard, initHeroParticles, initWheelLogos, initLivePage, initHistoryPage } from './interactions.js?v=20261006-puuid-lol';
 import { storage } from './storage.js';
 import { avatarLayersHTML } from './avatars.mjs';
-import { initAdminPage } from './admin.mjs?v=20261005-return-live';
-import { initBettingPage } from './betting-page.mjs?v=20260930-consistent-live';
+import { initAdminPage } from './admin.mjs?v=20261024-discord';
+import { initBettingPage } from './betting-page.mjs?v=20261024-discord';
 import { initRrCurvePage } from './rr-curve-page.mjs?v=20261006-proprietaire';
 import { initSiteSwitcher } from './site-switcher.mjs?v=20261005-game-picker';
 import { sharedProfileId, rememberSharedProfile } from './shared-profile.mjs';
+import { loadAccount, clearAccount, startDiscordLogin, completeDiscordLogin, profileForAccount, recordAccount } from './discord-account.mjs?v=20261024-discord';
 import { getGameMode, initGameMode, setGameMode } from './game-mode.mjs?v=20261005-game-picker';
 import { initLolHistoryPage, initLolLivePage } from './lol-pages.mjs?v=20261008-peak';
 import { initLolRosterPages } from './lol-roster.mjs?v=20261006-puuid-lol';
@@ -564,48 +565,55 @@ window.OLYCITY = {
 
 
 
-  _showProfilePicker() {
+  /**
+   * Écran de connexion. Une seule façon d'être quelqu'un sur le site : son
+   * compte Discord, relié au membre du roster par son identifiant Discord.
+   * Choisir le profil d'un autre n'est plus possible ; sans compte, on
+   * consulte en invité.
+   */
+  _showProfilePicker(problem = '') {
     const picker = document.getElementById('profile-picker');
     if (!picker) return;
-    const current = resolveMemberProfile(state.MEMBERS, {
-      id: localStorage.getItem('olycity-member-id'),
-      name: localStorage.getItem('olycity-profile'),
-    });
-    const selectionRequired = !current && localStorage.getItem('olycity-profile') !== 'Guest';
-    const canOpenAdmin = ['nico', 'liam'].includes(current?.id);
+    const account = loadAccount();
+    const profile = profileForAccount(account, state.MEMBERS, memberId);
+    const isGuest = !profile && localStorage.getItem('olycity-profile') === 'Guest';
+    const selectionRequired = !profile && !isGuest;
+    const canOpenAdmin = ['nico', 'liam'].includes(profile?.id);
     const escape = value => String(value ?? '')
       .replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;')
       .replaceAll('"', '&quot;').replaceAll("'", '&#39;');
+    const discordIcon = '<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M20.3 4.4A19.6 19.6 0 0 0 15.4 3l-.6 1.3a18 18 0 0 0-5.6 0L8.6 3a19.5 19.5 0 0 0-4.9 1.4C.6 9 0 13.6.3 18.1a19.8 19.8 0 0 0 6 3l1.3-2a12.7 12.7 0 0 1-2-1l.5-.4a14 14 0 0 0 11.9 0l.5.4-2 1 1.3 2a19.7 19.7 0 0 0 6-3c.5-5.2-.8-9.7-3.5-13.7ZM8.7 15.3c-1.2 0-2.1-1.1-2.1-2.4s.9-2.4 2.1-2.4 2.2 1.1 2.1 2.4c0 1.3-.9 2.4-2.1 2.4Zm6.6 0c-1.2 0-2.1-1.1-2.1-2.4s.9-2.4 2.1-2.4 2.2 1.1 2.1 2.4c0 1.3-.9 2.4-2.1 2.4Z"/></svg>';
+
+    const body = profile ? `
+        <div class="account-card">
+          <span class="profile-avatar">${avatarLayersHTML(profile.name, profile.avatar)}</span>
+          <span class="account-card-text">
+            <strong>${escape(profile.name)}</strong>
+            <small>${account.username ? `@${escape(account.username)} · ` : ''}${profile.discordOnly ? 'compte Discord, hors roster' : 'membre du roster'}</small>
+          </span>
+        </div>
+        <button class="profile-guest-btn" type="button" data-account-logout>Se déconnecter</button>` : `
+        <button class="discord-login-btn" type="button" data-account-login>${discordIcon}Se connecter avec Discord</button>
+        ${problem ? `<p class="account-problem" role="alert">${escape(problem)}</p>` : ''}
+        <button class="profile-guest-btn${isGuest ? ' is-current' : ''}" type="button" data-profile-id="guest">
+          Continuer sans compte
+        </button>`;
 
     picker.innerHTML = `
       <div class="profile-picker-shell">
         ${selectionRequired ? '' : '<button class="profile-picker-close" type="button" aria-label="Fermer">×</button>'}
         <header class="profile-picker-header">
           <span>OLYCITY</span>
-          <h1 id="profile-picker-title">Qui es-tu ?</h1>
-          <p>Choisis ton profil pour voter et personnaliser le site.</p>
+          <h1 id="profile-picker-title">${profile ? 'Ton compte' : 'Connexion'}</h1>
+          <p>${profile ? 'Tu es connecté avec Discord, sur le site comme sur le bot.' : 'Un compte par personne : ton compte Discord, le même que sur le bot. Sans compte, le site reste consultable.'}</p>
         </header>
-        <div class="profile-grid">
-          ${state.MEMBERS.map(profile => {
-            const isCurrent = current?.id === profile.id;
-            const isOnline = window._activeProfiles?.has(profile.name);
-            return `<button class="profile-card${isCurrent ? ' is-current' : ''}" type="button" data-profile-id="${escape(profile.id)}" aria-label="Continuer avec ${escape(profile.name)}">
-              <span class="profile-avatar">${avatarLayersHTML(profile.name, profile.avatar, valorantApi.agentImg(profile.mains?.[0]))}</span>
-              <span class="profile-name">${escape(profile.name)}</span>
-              <span class="profile-status${isOnline ? ' is-online' : ''}">${isCurrent ? 'Profil actuel' : isOnline ? 'En ligne' : 'Disponible'}</span>
-              ${isCurrent ? '<span class="profile-current-mark" aria-hidden="true">✓</span>' : ''}
-            </button>`;
-          }).join('')}
-        </div>
-        <button class="profile-guest-btn${localStorage.getItem('olycity-profile') === 'Guest' ? ' is-current' : ''}" type="button" data-profile-id="guest">
-          Continuer en invité
-        </button>
+        ${body}
         ${canOpenAdmin ? '<button class="profile-admin-btn" type="button" data-profile-admin>⚙ Administration</button>' : ''}
       </div>`;
 
-    picker.querySelectorAll('[data-profile-id]').forEach(button => {
-      button.addEventListener('click', () => window.OLYCITY._selectProfile(button.dataset.profileId));
-    });
+    picker.querySelector('[data-account-login]')?.addEventListener('click', () => startDiscordLogin());
+    picker.querySelector('[data-account-logout]')?.addEventListener('click', () => window.OLYCITY._logout());
+    picker.querySelector('[data-profile-id="guest"]')?.addEventListener('click', () => window.OLYCITY._selectProfile('guest'));
     picker.querySelector('.profile-picker-close')?.addEventListener('click', () => window.OLYCITY._hideProfilePicker());
     picker.querySelector('[data-profile-admin]')?.addEventListener('click', () => {
       window.OLYCITY._hideProfilePicker();
@@ -613,7 +621,7 @@ window.OLYCITY = {
     });
     picker.hidden = false;
     document.body.classList.add('profile-picker-open');
-    picker.querySelector('.profile-card.is-current, .profile-card, .profile-guest-btn')?.focus();
+    picker.querySelector('[data-account-login], [data-account-logout], .profile-guest-btn')?.focus();
   },
 
   _refreshPickerDots() {
@@ -630,19 +638,38 @@ window.OLYCITY = {
     document.body.classList.remove('profile-picker-open');
   },
 
+  /** Seul l'invité se choisit encore à la main ; un compte vient de Discord. */
   _selectProfile(profileId) {
-    const profile = profileId === 'guest'
-      ? { id:'guest', name:'Guest', avatar:'' }
-      : resolveMemberProfile(state.MEMBERS, { id:profileId, name:profileId });
-    if (!profile) return;
+    if (profileId !== 'guest') return;
+    window.OLYCITY._useProfile({ id:'guest', name:'Guest', avatar:'' });
+    window.OLYCITY._hideProfilePicker();
+  },
+
+  _useProfile(profile) {
+    // La présence et les modules de page ont démarré avec le profil déjà
+    // enregistré : on ne les relance que s'il change vraiment.
+    const changed = localStorage.getItem('olycity-profile') !== profile.name;
     localStorage.setItem('olycity-member-id', profile.id);
-    rememberSharedProfile(profile.id);
+    rememberSharedProfile(profile.discordOnly ? 'guest' : profile.id);
     localStorage.setItem('olycity-profile', profile.name);
     state.currentProfile = profile.name;
+    state.currentAccountAvatar = profile.discordOnly ? profile.avatar : '';
     window.OLYCITY._applyProfileIndicator(profile.name);
+    if (!changed) return;
     window._changePresence?.(profile.name);
     window.dispatchEvent(new CustomEvent('olycity:profile-change', { detail:profile }));
-    window.OLYCITY._hideProfilePicker();
+  },
+
+  _logout() {
+    clearAccount();
+    localStorage.removeItem('olycity-member-id');
+    localStorage.removeItem('olycity-profile');
+    state.currentProfile = null;
+    state.currentAccountAvatar = '';
+    const el = document.getElementById('profile-indicator');
+    if (el) el.innerHTML = '<span class="profile-indicator-name">Connexion</span>';
+    window.dispatchEvent(new CustomEvent('olycity:profile-change', { detail:null }));
+    window.OLYCITY._showProfilePicker();
   },
 
   _applyProfileIndicator(name) {
@@ -650,7 +677,9 @@ window.OLYCITY = {
     if (!el) return;
     const player = state.MEMBERS.find(p => p.name === name);
     const agentFallback = valorantApi.agentImg(player?.mains?.[0]);
-    const img = `<span class="profile-indicator-avatar">${avatarLayersHTML(name, player?.avatar, agentFallback)}</span>`;
+    // Un compte hors roster n'a d'avatar que celui de Discord.
+    const avatar = player?.avatar || state.currentAccountAvatar || '';
+    const img = `<span class="profile-indicator-avatar">${avatarLayersHTML(name, avatar, agentFallback)}</span>`;
     el.innerHTML = `${img}<span class="profile-indicator-name">${name}</span>`;
   },
 
@@ -942,7 +971,7 @@ function renderAll() {
 const KEEP_ACROSS_VERSIONS = new Set([
   // Saisi ou choisi par l'utilisateur — jamais reconstructible.
   'olycity-henrik-key', 'olycity-custom-players', 'olycity-theme',
-  'olycity-profile', 'olycity-member-id', 'olycity-game',
+  'olycity-profile', 'olycity-member-id', 'olycity-game', 'olycity-account', 'olycity-discord-state',
   // Coûteux à refaire (une synchro Henrik complète par joueur).
   'olycity-player-stats', 'olycity-account-stats',
   // Caches conservés parce qu'ils accélèrent le premier écran.
@@ -1155,22 +1184,22 @@ async function boot() {
     check();
   });
 
-  // Profile system
-  const sharedId = sharedProfileId();
-  const savedMember = sharedId === 'guest' ? null : resolveMemberProfile(state.MEMBERS, {
-    id:sharedId || localStorage.getItem('olycity-member-id'),
-    name:sharedId ? '' : localStorage.getItem('olycity-profile'),
-  });
-  const savedGuest = sharedId === 'guest' || (!sharedId && localStorage.getItem('olycity-profile') === 'Guest');
-  if (savedMember || savedGuest) {
-    const profile = savedMember || { id:'guest', name:'Guest' };
-    rememberSharedProfile(profile.id);
-    localStorage.setItem('olycity-member-id', profile.id);
-    localStorage.setItem('olycity-profile', profile.name);
-    state.currentProfile = profile.name;
-    window.OLYCITY._applyProfileIndicator(profile.name);
+  // Compte : retour de Discord d'abord (le jeton est dans l'adresse), puis le
+  // compte déjà connu de ce navigateur. Les anciens profils choisis à la main
+  // ne valent plus rien : chacun se reconnecte une fois avec Discord.
+  const loginReturn = await completeDiscordLogin(state.MEMBERS);
+  const account = loadAccount();
+  const accountProfile = profileForAccount(account, state.MEMBERS, memberId);
+  const savedGuest = !accountProfile && !loginReturn?.error && (sharedProfileId() === 'guest' || localStorage.getItem('olycity-profile') === 'Guest');
+  if (accountProfile) {
+    window.OLYCITY._useProfile(accountProfile);
+    if (loginReturn?.account) void recordAccount(account, FIREBASE_URL);
+  } else if (savedGuest) {
+    window.OLYCITY._useProfile({ id:'guest', name:'Guest', avatar:'' });
   } else {
-    window.OLYCITY._showProfilePicker();
+    localStorage.removeItem('olycity-profile');
+    localStorage.removeItem('olycity-member-id');
+    window.OLYCITY._showProfilePicker(loginReturn?.error || '');
   }
   window.OLYCITY._refreshHenrikKeyBtn();
   window.OLYCITY.showMap(0, null);

@@ -106,20 +106,23 @@ export function mediaKind(contentType) {
 
 // ─── Identité ─────────────────────────────────────────────────────────
 
-/** Le roster ne connaît l'identifiant Discord que par l'URL d'avatar. */
+/** Identifiant Discord tiré d'une URL d'avatar, quand aucun n'est déclaré. */
 export function discordIdFromAvatar(url) {
   return String(url || '').match(/\/avatars\/(\d+)\//)?.[1] || null;
 }
 
 export function rosterMembers(list, overlay) {
   const members = new Map();
+  const declared = m => (/^\d{15,22}$/.test(String(m?.discordId || '')) ? String(m.discordId) : null);
   (Array.isArray(list) ? list : []).forEach(m => {
-    if (m?.id && m?.name) members.set(m.id, { id: m.id, name: m.name, avatar: m.avatar || null });
+    if (m?.id && m?.name) members.set(m.id, { id: m.id, name: m.name, avatar: m.avatar || null, declaredId: declared(m) });
   });
   Object.entries(overlay || {}).forEach(([id, m]) => {
-    if (!members.has(id) && m?.name) members.set(id, { id, name: m.name, avatar: m.avatar || null });
+    if (!members.has(id) && m?.name) members.set(id, { id, name: m.name, avatar: m.avatar || null, declaredId: declared(m) });
   });
-  return [...members.values()].map(m => ({ ...m, discordId: discordIdFromAvatar(m.avatar) }));
+  // L'identifiant déclaré (members.json, fiche ajoutée depuis l'admin) prime
+  // sur celui de l'URL d'avatar.
+  return [...members.values()].map(({ declaredId, ...m }) => ({ ...m, discordId: declaredId || discordIdFromAvatar(m.avatar) }));
 }
 
 async function loadRoster(env, now) {
