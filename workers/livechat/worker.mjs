@@ -212,8 +212,9 @@ export async function authenticate(request, env, now = Date.now()) {
       member: {
         id: member.id,
         name: member.name,
-        avatar: allowedAvatar(member.avatar)
-          || (user.avatar ? `https://cdn.discordapp.com/avatars/${user.id}/${user.avatar}.png?size=128` : null),
+        // La photo Discord du moment passe avant celle du roster, parfois périmée.
+        avatar: (user.avatar ? `https://cdn.discordapp.com/avatars/${user.id}/${user.avatar}.png?size=128` : null)
+          || allowedAvatar(member.avatar),
       },
       discordId: String(user.id),
     }

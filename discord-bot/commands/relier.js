@@ -3,6 +3,7 @@ const { LIVECHAT_ADMIN_IDS } = require('../config.js');
 const { fbGet, fbPut } = require('../firebase.js');
 const { ensureRoster, memberByDiscordId, memberById, memberByName } = require('../roster.js');
 const { linkAccount, linkPlan } = require('../account-link.js');
+const { PROFILES_PATH, profileFromUser } = require('../discord-profiles.js');
 
 /**
  * Relie le compte Discord de quelqu'un à son membre du roster : typiquement
@@ -36,6 +37,8 @@ module.exports = {
     for (const [path, value] of plan.writes) await fbPut(path, value);
     await ensureRoster(true).catch(() => {});
     await linkAccount({ user, member: { ...member, discordId: user.id }, fbGet, fbPut });
+    // Sa photo Discord tout de suite, sans attendre le rafraîchissement des 6 h.
+    await fbPut(`${PROFILES_PATH}/${member.id}`, { ...profileFromUser(user), updatedAt: Date.now() }).catch(() => {});
     await interaction.editReply(
       `🔗 **${member.name}** est maintenant relié à <@${user.id}>. `
       + 'Le site, le bot et le livechat le reconnaissent : il peut se connecter avec Discord sur https://tracker.olycity.fr.',

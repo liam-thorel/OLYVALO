@@ -1,3 +1,11 @@
+<!-- version: 4.24.1 -->
+### Correctif : les nouveaux membres apparaissent bien sur le site
+
+- Une personne ajoutée depuis OLYCITY Live (« nouvelle personne ») pouvait ne jamais apparaître sur le site si Firebase était injoignable au moment du choix. Le script annonçait un nouvel essai au démarrage suivant, mais ne le faisait pas. C'est maintenant vérifié à chaque démarrage, sans jamais écraser une fiche existante (photo, compte Discord relié).
+- À la création d'une nouvelle personne, le Live explique comment relier son compte Discord : se connecter sur le tracker, puis demander à Liam.
+
+La mise à jour du script se télécharge automatiquement en arrière-plan. Si une partie est en cours, OLYCITY Live attend sa fin avant de redémarrer.
+
 <!-- version: 4.24.0 -->
 ### Livechat : liens YouTube, extension navigateur et touches à choisir
 

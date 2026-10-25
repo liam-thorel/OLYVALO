@@ -70,9 +70,31 @@ export function homeDashboardState(snapshot = {}, now = Date.now(), context = {}
   };
 }
 
+const escapeAttr = value => String(value ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+
+/**
+ * Tous ceux qui ont l'appli : le roster, plus toute personne dont OLYCITY Live
+ * s'est signalé (Valorant ou LoL) sans figurer au roster chargé. Un membre
+ * créé par le Live dont l'inscription a échoué, ou un roster partagé lu trop
+ * tard, ne disparaît ainsi plus de l'accueil.
+ */
+export function appMembers(members = [], snapshot = {}) {
+  const known = new Set(members.map(member => String(member.id || '').toLowerCase()));
+  const extra = new Map();
+  [snapshot.valorantClients, snapshot.lolClients].forEach(clients => {
+    Object.values(clients || {}).forEach(client => {
+      const id = String(client?.memberId || '').trim().toLowerCase();
+      if (!/^[a-z0-9_-]{1,48}$/.test(id) || known.has(id) || extra.has(id)) return;
+      const name = String(client.member || client.memberName || id).trim().slice(0, 32) || id;
+      extra.set(id, { id, name, avatar: '' });
+    });
+  });
+  return [...members, ...[...extra.values()].sort((a, b) => a.name.localeCompare(b.name, 'fr'))];
+}
+
 function memberFaces(members, onlineIds) {
   return members.map(member => `
-    <span class="home-member-face${onlineIds.has(String(member.id || '').toLowerCase()) ? ' online' : ''}" title="${member.name}">
+    <span class="home-member-face${onlineIds.has(String(member.id || '').toLowerCase()) ? ' online' : ''}" title="${escapeAttr(member.name)}">
       ${avatarLayersHTML(member.name, member.avatar)}
     </span>`).join('');
 }
@@ -88,7 +110,7 @@ function renderSnapshot(snapshot, members, context = {}) {
   if (!card || !kicker || !title || !detail || !action || !faces || !onlineLabel) return;
 
   const model = homeDashboardState(snapshot, Date.now(), { ...context, game:getGameMode() });
-  faces.innerHTML = memberFaces(members, model.onlineIds);
+  faces.innerHTML = memberFaces(appMembers(members, snapshot), model.onlineIds);
   onlineLabel.textContent = `${model.onlineIds.size} en ligne`;
   card.dataset.state = model.state;
   kicker.textContent = model.kicker;

@@ -7,9 +7,10 @@ const { DISCORD_TOKEN, DISCORD_LOG_CHANNEL_ID, RESULT_DELETE_ALLOWED_IDS } = req
 const { createResultGuard } = require('./result-guard.js');
 const { ensureRoster, memberByIdentity, memberByDiscordId } = require('./roster.js');
 const { handleLiveChatMessage, startLiveChatCleanup } = require('./livechat.js');
+const { startDiscordProfilesRefresh } = require('./discord-profiles.js');
 const { startTrackerSync, loadTrackersOnce, trackersForPlayerGame } = require('./trackers.js');
 const { recordDiscovered } = require('./discovered.js');
-const { watchNode, fbGet } = require('./firebase.js');
+const { watchNode, fbGet, fbPut } = require('./firebase.js');
 const { buildItemsImage } = require('./build-image.js');
 const {
   openRound, closeRound, resolveRound, cancelRound, roundsForMatch, placeBet, attachMessage, BETTING_WINDOW_MS,
@@ -1383,6 +1384,8 @@ client.once('ready', async () => {
   startValoMonthlyRecapScheduler(client);
   startLeaderboardScheduler(client);
   startLiveChatCleanup();
+  // Photos de profil Discord actuelles des membres reliés (site, bot, livechat).
+  startDiscordProfilesRefresh({ client, ensureRoster, fbGet, fbPut });
   console.log('👂 Écoute des sessions Valorant et LoL en cours...');
 });
 
