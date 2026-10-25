@@ -117,7 +117,7 @@ test('Tracker home is game-scoped, with two visual worlds and no redundant hub p
   assert.match(homeStyles, /valorant-keyart\.webp/);
   assert.match(homeStyles, /league-champions-group\.webp/);
   assert.match(homeStyles, /peak-keyart\.webp/);
-  assert.match(page, /home\.css\?v=20261005-tracker-home/);
+  assert.match(page, /home\.css\?v=20261025-strip-select/);
   assert.match(page, /design-system\.css\?v=20261005-tracker-home/);
   assert.match(page, /<span class="hero-title-frame">OLYCITY<\/span>/);
   assert.doesNotMatch(page, /id="hero-eyebrow"/);

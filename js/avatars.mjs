@@ -21,10 +21,10 @@ export function avatarLayersHTML(name, avatarUrl = '', fallbackImageUrl = '') {
   const safeLabel = escapeAttribute(label);
   const color = AVATAR_COLORS[label] || '#8992aa';
   const fallbackImage = fallbackImageUrl
-    ? `<img class="user-avatar-fallback-image" src="${escapeAttribute(fallbackImageUrl)}" alt="" onerror="this.remove()">`
+    ? `<img class="user-avatar-fallback-image" src="${escapeAttribute(fallbackImageUrl)}" alt="" draggable="false" onerror="this.remove()">`
     : '';
   const primaryImage = avatarUrl
-    ? `<img class="user-avatar-primary" src="${escapeAttribute(avatarUrl)}" alt="Photo de ${safeLabel}" onerror="this.remove()">`
+    ? `<img class="user-avatar-primary" src="${escapeAttribute(avatarUrl)}" alt="Photo de ${safeLabel}" draggable="false" onerror="this.remove()">`
     : '';
 
   return `<span class="user-avatar-initial" style="--avatar-color:${color}">${initial}</span>${fallbackImage}${primaryImage}`;
