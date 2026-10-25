@@ -88,6 +88,24 @@ export function routeLiveRootEvent(message = {}) {
   }));
 }
 
+/**
+ * Relit les quatre canaux du Live, chacun à son adresse, et rend un objet
+ * de la forme du nœud `live` ({ clients, sessions, lolClients, lolSessions }).
+ *
+ * Surtout pas `live.json` : le nœud contient aussi tout l'historique des
+ * parties (live/history, live/lolHistory), qui grossit à chaque game. Lu en
+ * entier, il finissait par dépasser le délai de lecture : la page Live
+ * restait bloquée sur « Reconnexion au Live » alors que les scripts
+ * tournaient.
+ */
+export async function fetchLiveChannels(fetchJson, firebaseUrl, options = {}) {
+  const entries = await Promise.all(Object.values(LIVE_CHANNELS).map(async path => [
+    path.split('/').at(-1),
+    await fetchJson(`${firebaseUrl}/${path}.json`, options),
+  ]));
+  return Object.fromEntries(entries);
+}
+
 export function createLiveDataStore({
   fetchJson = fetchJsonWithTimeout,
   EventSourceImpl = globalThis.EventSource,
@@ -216,7 +234,7 @@ export function createLiveDataStore({
     const events = Object.fromEntries(Object.keys(LIVE_CHANNELS).map(channel => [channel, []]));
     refreshEvents = events;
     refreshController = new AbortController();
-    refreshPromise = fetchJson(`${firebaseUrl}/live.json`, { timeoutMs, signal:refreshController.signal }).then(incomingRoot => {
+    refreshPromise = fetchLiveChannels(fetchJson, firebaseUrl, { timeoutMs, signal:refreshController.signal }).then(incomingRoot => {
       if (requestGeneration !== generation) return;
       Object.entries(LIVE_CHANNELS).forEach(([channel, path]) => {
         const incoming = incomingRoot?.[path.split('/').at(-1)] || {};
@@ -233,7 +251,10 @@ export function createLiveDataStore({
       });
     }).catch(error => {
       if (requestGeneration !== generation) return;
+      // Le flux temps réel connecté fait foi : une relecture ponctuelle qui
+      // échoue ne doit pas afficher « Reconnexion » par-dessus des données à jour.
       Object.keys(channelState).forEach(channel => {
+        if (channelState[channel].connected && channelState[channel].loaded) return;
         channelState[channel].error = error?.message || 'unavailable';
       });
     }).then(() => {
