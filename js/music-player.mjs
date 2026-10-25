@@ -36,8 +36,12 @@ export function mountMusicPlayer({ musicOrigin = 'https://musique.olycity.fr', m
   fallback.href = musicOrigin; fallback.target = '_blank'; fallback.rel = 'noopener noreferrer';
   fallback.textContent = '♫ Musique ↗'; fallback.hidden = true;
   container.append(frame,fallback);
+  // Room for the fixed remote at the very bottom of the page. Inside the
+  // footer, so the extra space keeps the footer's background instead of
+  // leaving an empty band to scroll into below it.
   const spacer = document.createElement('div'); spacer.id = 'oly-music-space'; spacer.setAttribute('aria-hidden','true');
-  document.body.append(container,spacer);
+  document.body.append(container);
+  (document.querySelector('body > footer, footer.footer') || document.body).append(spacer);
   let ready = false;
   let height = 120;
   let collapsed = false;
@@ -52,7 +56,8 @@ export function mountMusicPlayer({ musicOrigin = 'https://musique.olycity.fr', m
     const visibleHeight = Math.min(height,Math.max(120,innerHeight - navHeight - 36));
     frame.style.height = `${visibleHeight}px`;
     container.dataset.collapsed = String(collapsed);
-    root.style.setProperty('--oly-music-space',`${mobile ? visibleHeight + 16 : 140}px`);
+    // Sized to the remote as shown: the collapsed button needs far less than the open player.
+    root.style.setProperty('--oly-music-space',`${visibleHeight + (mobile ? 16 : 18)}px`);
     // Keep the remote out of modal/profile selection and installation dialogs.
     const modal = document.querySelector('[aria-modal="true"]:not([hidden])');
     const hide = Boolean(modal && modal.getBoundingClientRect().width && getComputedStyle(modal).visibility !== 'hidden');
