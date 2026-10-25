@@ -49,4 +49,25 @@ function accountMessage({ record, isNew, balance = null }) {
     + `Connecte-toi sur ${SITE_URL} avec Discord. Un admin peut te relier au roster depuis l'admin du site.`;
 }
 
-module.exports = { SITE_URL, accountRecord, linkAccount, accountMessage, discordAvatarUrl };
+/**
+ * Relier un compte Discord à un membre ajouté depuis le Live ou l'admin
+ * (rosterOverlay/members), qui n'en a pas encore. Rend { writes } ou { error }.
+ * Les membres de roster.json ont leur identifiant déclaré dans le dépôt.
+ */
+function linkPlan({ user, member, owner = null }) {
+  if (!member) return { error: 'Membre introuvable dans le roster.' };
+  if (owner && owner.id !== member.id) return { error: `Ce compte Discord est déjà relié à **${owner.name}**.` };
+  if (member.discordId === String(user.id)) return { error: `**${member.name}** est déjà relié à ce compte.` };
+  if (member.discordId) return { error: `**${member.name}** est déjà relié à un autre compte Discord.` };
+  if (member.source === 'roster') return { error: `**${member.name}** est dans data/roster.json : son identifiant Discord se déclare dans le dépôt.` };
+  const base = `rosterOverlay/members/${member.id}`;
+  const avatar = member.avatar ? null : discordAvatarUrl(user);
+  return {
+    writes: [
+      [`${base}/discordId`, String(user.id)],
+      ...(avatar ? [[`${base}/avatar`, avatar]] : []),
+    ],
+  };
+}
+
+module.exports = { SITE_URL, accountRecord, linkAccount, linkPlan, accountMessage, discordAvatarUrl };

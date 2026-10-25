@@ -154,6 +154,10 @@ async function main() {
       console.log(registered
         ? `  Nouveau membre "${selected.memberName}" ajoute au roster OLYCITY.`
         : `  [!] Membre enregistre en local ; l'ajout au roster partage se fera au prochain demarrage.`);
+      // Le Live ne connaît que le prénom : le compte Discord se relie à part,
+      // sinon le site, le bot et le livechat ne reconnaissent pas la personne.
+      console.log('  Pour etre reconnu sur le site et le bot : connecte-toi avec Discord sur');
+      console.log('  https://tracker.olycity.fr, puis demande a Liam de relier ton compte.');
     }
 
     writeIdentity({ ...selected, chosenAt: Date.now() }, INSTALL_DIR);

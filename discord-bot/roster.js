@@ -102,7 +102,7 @@ function indexRoster(roster, overlay) {
   const owners = declaredOwners(roster, slugify);
 
   const staticMembers = roster.map(player => ({
-    id: slugify(player.name), name: player.name, avatar: player.avatar || null,
+    id: slugify(player.name), name: player.name, avatar: player.avatar || null, source: 'roster',
     discordId: discordIdOf(player), riotIds: riotIdsFromRoster(player),
     mainRiotId: mainRiotIdFromRoster(player), lolMainRiotId: lolMainRiotIdFromRoster(player),
     // Le PUUID fait foi pour désigner le principal : un compte renommé garde
@@ -115,7 +115,7 @@ function indexRoster(roster, overlay) {
   const staticIds = new Set(staticMembers.map(m => m.id));
   const extraMembers = Object.entries(overlayMembers)
     .filter(([id]) => !staticIds.has(id))
-    .map(([id, m]) => ({ id, name: m.name, avatar: m.avatar || null, discordId: discordIdOf(m), riotIds: [], mainRiotId: null, lolMainRiotId: null, mainPuuid: null, lolMainPuuid: null, puuids: [] }));
+    .map(([id, m]) => ({ id, name: m.name, avatar: m.avatar || null, source: 'overlay', discordId: discordIdOf(m), riotIds: [], mainRiotId: null, lolMainRiotId: null, mainPuuid: null, lolMainPuuid: null, puuids: [] }));
 
   members = [...staticMembers, ...extraMembers];
 

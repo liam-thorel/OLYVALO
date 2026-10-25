@@ -5,7 +5,7 @@ import { createRequire } from 'node:module';
 import {
   DISCORD_CLIENT_ID, authorizeUrl, parseOAuthReturn, discordIdOf, memberForDiscordId, discordAvatarUrl,
   accountFromDiscordUser, profileForAccount, fetchDiscordAccount, completeDiscordLogin, recordAccount,
-  loadAccount, saveAccount, unlinkedAccounts,
+  loadAccount, saveAccount, unlinkedAccounts, linkableMembers, suggestedMember, linkWrites, refreshAccount,
 } from '../js/discord-account.mjs';
 import { memberId } from '../js/member-profiles.mjs';
 import { rosterMembers } from '../workers/livechat/worker.mjs';
@@ -193,4 +193,52 @@ test('la page Paris montre le solde du compte connecté', async () => {
   assert.match(myWalletLine({ discordId: LIAM_ID }, {}), /\/compte/);
   assert.equal(myWalletLine({ discordId: LIAM_ID }, { [LIAM_ID]: { balance: 1200, weekStartBalance: 1000 } }),
     'Ton solde : <strong>1200 pts</strong> · +200 cette semaine');
+});
+
+// ─── Relier un membre créé par le Live (ex. Max) ─────────────────────────────
+const MAX_ID = '123456789012345678';
+const withMax = [...members, { id: 'max', name: 'Max', avatar: '', createdBy: 'olycity-live' }];
+
+test('un membre créé par le Live se relie à son compte Discord', () => {
+  assert.deepEqual(linkableMembers(withMax).map(m => m.id), ['max'], 'seuls ceux sans compte Discord');
+  const account = { discordId: MAX_ID, username: 'max.gg', name: 'Max', avatar: 'https://cdn.discordapp.com/avatars/1/a.png' };
+  assert.equal(suggestedMember(account, withMax, memberId)?.id, 'max', 'même nom : suggéré');
+  assert.equal(suggestedMember({ ...account, name: 'Autre', username: 'autre' }, withMax, memberId), null);
+  assert.deepEqual(linkWrites(account, withMax.at(-1)), [
+    ['rosterOverlay/members/max/discordId', MAX_ID],
+    ['rosterOverlay/members/max/avatar', account.avatar],
+    [`accounts/${MAX_ID}/memberId`, 'max'],
+  ]);
+  assert.deepEqual(linkWrites(account, { id: 'max', avatar: 'deja.png' }).map(([path]) => path), [
+    'rosterOverlay/members/max/discordId', `accounts/${MAX_ID}/memberId`,
+  ], 'un avatar existant est gardé');
+  assert.deepEqual(linkWrites({ discordId: 'x' }, { id: 'max' }), []);
+  const admin = fs.readFileSync(new URL('../js/admin.mjs', import.meta.url), 'utf8');
+  assert.match(admin, /for \(const \[path, value\] of linkWrites\(account, member\)\) await fbPut\(path, value\);/);
+});
+
+test('un compte relié depuis est reconnu sans reconnexion', () => {
+  const stored = { discordId: MAX_ID, username: 'max.gg', name: 'Max', avatar: 'a', memberId: null };
+  const linked = [...members, { id: 'max', name: 'Max', avatar: 'a', discordId: MAX_ID }];
+  assert.deepEqual(refreshAccount(stored, linked), { ...stored, memberId: 'max' });
+  assert.equal(refreshAccount(stored, withMax), stored, 'pas encore relié : inchangé');
+  assert.equal(refreshAccount({ ...stored, memberId: 'max' }, withMax).memberId, null, 'membre retiré');
+  const main = fs.readFileSync(new URL('../js/main.js', import.meta.url), 'utf8');
+  assert.match(main, /const account = refreshAccount\(storedAccount, state\.MEMBERS\);\s*if \(account !== storedAccount\) saveAccount\(account\);/);
+});
+
+test('bot : /relier réservé à Liam, sans écraser un compte existant', () => {
+  const { linkPlan } = require('../discord-bot/account-link.js');
+  const user = { id: MAX_ID, avatar: 'h' };
+  assert.deepEqual(linkPlan({ user, member: { id: 'max', name: 'Max', avatar: '', source: 'overlay', discordId: null } }).writes, [
+    ['rosterOverlay/members/max/discordId', MAX_ID],
+    ['rosterOverlay/members/max/avatar', `https://cdn.discordapp.com/avatars/${MAX_ID}/h.png?size=256`],
+  ]);
+  assert.match(linkPlan({ user, member: null }).error, /introuvable/);
+  assert.match(linkPlan({ user, member: { id: 'max', name: 'Max', discordId: '999999999999999999', source: 'overlay' } }).error, /autre compte/);
+  assert.match(linkPlan({ user, member: { id: 'max', name: 'Max', source: 'overlay' }, owner: { id: 'nico', name: 'Nico' } }).error, /déjà relié à \*\*Nico/);
+  assert.match(linkPlan({ user, member: { id: 'liam', name: 'Liam', source: 'roster' } }).error, /roster\.json/);
+  const command = fs.readFileSync(new URL('../discord-bot/commands/relier.js', import.meta.url), 'utf8');
+  assert.match(command, /if \(!LIVECHAT_ADMIN_IDS\.includes\(interaction\.user\.id\)\)/);
+  assert.match(fs.readFileSync(new URL('../discord-bot/index.js', import.meta.url), 'utf8'), /'\.\/commands\/relier\.js'/);
 });

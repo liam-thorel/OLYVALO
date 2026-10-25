@@ -18,7 +18,7 @@ import { validateLineup, lineupCoverage, mergeLineups } from './lineup-utils.mjs
 import { fetchJsonWithRetry, fetchJsonWithTimeout } from './request-utils.mjs?v=20260930-consistent-live';
 import { isLiveRecordExpired, liveDataStore, staleLiveRecords } from './live-data-store.mjs?v=20261005-return-live';
 import { mergeMemberProfiles } from './member-profiles.mjs?v=20260823-profile-picker';
-import { unlinkedAccounts } from './discord-account.mjs?v=20261024-discord';
+import { linkableMembers, linkWrites, suggestedMember, unlinkedAccounts } from './discord-account.mjs?v=20261025-relier';
 import { readSiteVitals } from './site-telemetry.mjs?v=20260825-site-health';
 import { attributionRows, attributionWarnings, deletionPlan, reassignPlan, roleOf, isValidPuuid, knownPuuidFor,
   overlayKeyFor, duplicateLabel, adoptionPlan } from './admin-attribution.mjs?v=20260920-attribution';
@@ -436,14 +436,27 @@ function renderAttributionHTML() {
  * le site, le bot et le livechat les reconnaissent alors partout.
  */
 function renderDiscordAccountsHTML() {
-  const rows = unlinkedAccounts(discordAccounts, allMembers());
-  if (!rows.length) return '<span class="admin-dim">Aucun nouveau compte : tous les comptes connectés sont reliés au roster.</span>';
-  return rows.map(account => `
+  const members = allMembers();
+  const rows = unlinkedAccounts(discordAccounts, members);
+  // Un membre créé par le Live (« nouvelle personne ») n'a pas de compte
+  // Discord : on le relie ici plutôt que d'en créer un second.
+  const linkable = linkableMembers(members);
+  const pending = linkable.length
+    ? `<p class="admin-dim">Sans compte Discord : ${escapeHTML(linkable.map(member => member.name).join(', '))}. Relie-les ci-dessous quand ils se connectent au site, ou avec <code>/relier</code> sur Discord.</p>`
+    : '';
+  if (!rows.length) return `${pending}<span class="admin-dim">Aucun nouveau compte : tous les comptes connectés sont reliés au roster.</span>`;
+  return pending + rows.map(account => {
+    const suggestion = suggestedMember(account, members, slugify);
+    const options = linkable.map(member => `<option value="${escapeHTML(member.id)}"${member.id === suggestion?.id ? ' selected' : ''}>${escapeHTML(member.name)}</option>`).join('');
+    return `
     <div class="admin-account-row" data-discord-id="${escapeHTML(account.discordId)}">
       ${account.avatar ? `<img class="admin-member-avatar" src="${escapeHTML(account.avatar)}" alt="">` : ''}
       <div class="admin-account-details"><strong>${escapeHTML(account.name || '?')}</strong><small>${account.username ? `@${escapeHTML(account.username)} · ` : ''}Discord ${escapeHTML(account.discordId)} · vu il y a ${timeAgo(account.lastLoginAt)}</small></div>
-      <button type="button" class="admin-btn admin-btn-small" data-action="add-discord-member">+ Ajouter au roster</button>
-    </div>`).join('');
+      ${linkable.length ? `<select class="admin-select-member" data-link-member title="Membre à relier"><option value="">Relier à…</option>${options}</select>
+      <button type="button" class="admin-btn admin-btn-small" data-action="link-discord-member">Relier</button>` : ''}
+      <button type="button" class="admin-btn admin-btn-small" data-action="add-discord-member">+ Nouveau membre</button>
+    </div>`;
+  }).join('');
 }
 
 function renderMembersHTML() {
@@ -1000,6 +1013,23 @@ function wireEvents(root) {
   });
 
   root.querySelector('#admin-discord-accounts')?.addEventListener('click', async event => {
+    const link = event.target.closest('[data-action="link-discord-member"]');
+    if (link) {
+      const row = link.closest('[data-discord-id]');
+      const account = discordAccounts[row?.dataset.discordId];
+      const member = allMembers().find(entry => entry.id === row?.querySelector('[data-link-member]')?.value);
+      if (!account || !member) { alert('Choisis le membre à relier.'); return; }
+      if (!confirm(`Relier le compte Discord « ${account.name}${account.username ? ` (@${account.username})` : ''} » à ${member.name} ?`)) return;
+      link.disabled = true;
+      try {
+        for (const [path, value] of linkWrites(account, member)) await fbPut(path, value);
+        await reloadAndRender(root);
+      } catch (error) {
+        link.disabled = false;
+        alert(`Liaison impossible : ${error.message}`);
+      }
+      return;
+    }
     const button = event.target.closest('[data-action="add-discord-member"]');
     if (!button) return;
     const account = discordAccounts[button.closest('[data-discord-id]')?.dataset.discordId];
