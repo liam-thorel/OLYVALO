@@ -103,6 +103,10 @@ qui gardait la connexion). Tout discord.com y est accepté le temps de la
 connexion : captcha, double authentification, code par e-mail. Dès que
 Discord renvoie vers le site, la fenêtre se ferme et l'overlay est connecté.
 
+Depuis la 1.2.11, le bouton « Connexion » du lecteur musique passe par la même
+fenêtre. Et la connexion est unique : le site, la page livechat et la musique
+partagent la même connexion Discord (cookie sur olycity.fr), une seule suffit.
+
 ## Le raccourci ne fait rien dans LoL
 
 LoL bloque les raccourcis Windows (RegisterHotKey) tant qu'il a le focus : la

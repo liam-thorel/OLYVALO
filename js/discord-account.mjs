@@ -7,8 +7,11 @@
  * retrouve le membre du roster par son identifiant Discord. Quelqu'un qui
  * n'est pas dans le roster obtient un compte à son nom Discord.
  *
- * Le jeton ne sert qu'à ce moment : seul le compte (identifiant, nom, avatar,
- * membre relié) est gardé dans le navigateur, jusqu'à la déconnexion.
+ * Le compte (identifiant, nom, avatar, membre relié) est gardé dans le
+ * navigateur jusqu'à la déconnexion. Le jeton, lui, est partagé entre les
+ * sites d'OLYCITY par un cookie posé sur olycity.fr (voir « Connexion
+ * unique » plus bas) : une connexion ici vaut pour la page livechat et la
+ * musique, et inversement.
  *
  * Le portefeuille de paris du bot est rangé sous le même identifiant Discord
  * (betting/wallets/<id>) : site et bot parlent du même compte.
@@ -55,7 +58,8 @@ export function parseOAuthReturn(hash, expectedState) {
     return { error: 'Connexion Discord refusée (état invalide), réessaie.' };
   }
   const token = params.get('access_token');
-  return token ? { token } : { error: 'Discord n’a pas renvoyé de jeton.' };
+  const expiresIn = Number(params.get('expires_in')) || 0;
+  return token ? { token, expiresIn } : { error: 'Discord n’a pas renvoyé de jeton.' };
 }
 
 /** Identifiant Discord d'un membre : déclaré, sinon tiré de son avatar. */
@@ -139,6 +143,76 @@ export async function fetchDiscordAccount(token, members = [], fetchImpl = globa
   throw new Error(body?.error || 'Discord injoignable, réessaie dans un instant.');
 }
 
+// ─── Connexion unique ───────────────────────────────────────────────────────
+// Le site, la page livechat (olycity.fr) et la musique (musique.olycity.fr)
+// avaient chacun leur connexion Discord. Un cookie posé sur tout olycity.fr
+// porte maintenant le jeton : le premier site où l'on se connecte connecte
+// les autres, et se déconnecter quelque part déconnecte partout.
+//
+// Lisible par les pages de *.olycity.fr, qui sont toutes à OLYCITY. Le jeton
+// ne donne que l'identité Discord (portée « identify ») : ni messages, ni
+// serveurs. Ailleurs (github.io, localhost), rien n'est partagé.
+//
+// Format, le même partout : v1|<expiration en ms>|<jeton>.
+export const SHARED_COOKIE = 'olycity_discord';
+const SHARED_DOMAIN = 'olycity.fr';
+const DEFAULT_TOKEN_LIFETIME_S = 7 * 24 * 3600; // durée d'un jeton Discord « implicite »
+
+export function sharedCookieDomain(hostname = '') {
+  const host = String(hostname).toLowerCase();
+  return host === SHARED_DOMAIN || host.endsWith(`.${SHARED_DOMAIN}`) ? SHARED_DOMAIN : null;
+}
+
+/** Jeton partagé encore valide, ou null. */
+export function readSharedLogin(cookies = globalThis.document?.cookie || '', now = Date.now()) {
+  const entry = String(cookies).split(/;\s*/).find(part => part.startsWith(`${SHARED_COOKIE}=`));
+  if (!entry) return null;
+  let value = '';
+  try { value = decodeURIComponent(entry.slice(SHARED_COOKIE.length + 1)); } catch { return null; }
+  const match = /^v1\|(\d{10,16})\|([A-Za-z0-9._~-]{16,200})$/.exec(value);
+  if (!match || Number(match[1]) <= now) return null;
+  return { token: match[2], expiresAt: Number(match[1]) };
+}
+
+/** Pose le jeton pour tous les sites d'OLYCITY. Rend false hors olycity.fr. */
+export function writeSharedLogin(token, expiresIn, { doc = globalThis.document, loc = globalThis.location, now = Date.now() } = {}) {
+  const domain = sharedCookieDomain(loc?.hostname);
+  if (!domain || !doc || !/^[A-Za-z0-9._~-]{16,200}$/.test(String(token || ''))) return false;
+  // Une minute de marge : un jeton qui expire pendant une requête échouerait.
+  const seconds = Math.max(60, (Number(expiresIn) || DEFAULT_TOKEN_LIFETIME_S) - 60);
+  const value = encodeURIComponent(`v1|${now + seconds * 1000}|${token}`);
+  doc.cookie = `${SHARED_COOKIE}=${value}; Domain=${domain}; Path=/; Max-Age=${seconds}; Secure; SameSite=Lax`;
+  return true;
+}
+
+export function clearSharedLogin({ doc = globalThis.document, loc = globalThis.location } = {}) {
+  const domain = sharedCookieDomain(loc?.hostname);
+  if (!domain || !doc) return;
+  doc.cookie = `${SHARED_COOKIE}=; Domain=${domain}; Path=/; Max-Age=0; Secure; SameSite=Lax`;
+}
+
+/**
+ * Pas encore de compte ici, mais une connexion faite ailleurs (livechat,
+ * musique) : le compte s'en déduit sans repasser par Discord. Rend null ou
+ * { account }.
+ */
+export async function adoptSharedLogin(members, {
+  storage = globalThis.localStorage, doc = globalThis.document, loc = globalThis.location, fetchImpl = globalThis.fetch, now = Date.now(),
+} = {}) {
+  if (loadAccount(storage)) return null;
+  const shared = readSharedLogin(doc?.cookie, now);
+  if (!shared) return null;
+  try {
+    const account = await fetchDiscordAccount(shared.token, members, fetchImpl);
+    saveAccount(account, storage);
+    return { account };
+  } catch (error) {
+    // Jeton révoqué : il ne doit plus connecter personne.
+    if (/expirée/.test(error.message)) clearSharedLogin({ doc, loc });
+    return null;
+  }
+}
+
 export function loadAccount(storage = globalThis.localStorage) {
   try {
     const account = JSON.parse(storage.getItem(ACCOUNT_KEY) || 'null');
@@ -170,6 +244,7 @@ export function startDiscordLogin({ storage = globalThis.localStorage, loc = glo
  */
 export async function completeDiscordLogin(members, {
   storage = globalThis.localStorage, loc = globalThis.location, history = globalThis.history, fetchImpl = globalThis.fetch,
+  doc = globalThis.document, now = Date.now(),
 } = {}) {
   let expected = null;
   try { expected = storage.getItem(STATE_KEY); storage.removeItem(STATE_KEY); } catch { /* navigation privée */ }
@@ -180,6 +255,7 @@ export async function completeDiscordLogin(members, {
   try {
     const account = await fetchDiscordAccount(result.token, members, fetchImpl);
     saveAccount(account, storage);
+    writeSharedLogin(result.token, result.expiresIn, { doc, loc, now });
     return { account };
   } catch (error) {
     return { error: error.message };

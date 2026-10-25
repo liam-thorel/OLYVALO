@@ -27,7 +27,7 @@ const { execFile } = require('child_process');
 const { detectGames, gameTransition, nextPollDelay, anyGameRunning } = require('./lib/game-watch.js');
 const { createOverlayState, reduce } = require('./lib/overlay-state.js');
 const { parseSettings, sanitize } = require('./lib/settings.js');
-const { discordLoginStep, isAllowedUrl, isDiscordUrl, isSafeExternalUrl, siteUrl, LIVECHAT_PAGE } = require('./lib/url-policy.js');
+const { discordLoginStep, isAllowedUrl, isDiscordUrl, isMusicLogin, isSafeExternalUrl, siteUrl, LIVECHAT_PAGE } = require('./lib/url-policy.js');
 const { createLogger } = require('./lib/logger.js');
 const { setupAutoUpdate, shouldCheck, shouldInstallNow, updateLabel, FIRST_CHECK_DELAY_MS } = require('./lib/updater.js');
 const { loginItemVerdict, unblockCommand, verdictMessage, STARTUP_SETTINGS_URL } = require('./lib/login-item.js');
@@ -192,7 +192,8 @@ function createWindow() {
       else if (isSafeExternalUrl(url)) shell.openExternal(url);
     });
     contents.setWindowOpenHandler(({ url }) => {
-      if (isDiscordUrl(url)) openDiscordLogin(url, contents);
+      // « Connexion » du lecteur musique : un nouvel onglet, depuis son cadre.
+      if (isDiscordUrl(url) || isMusicLogin(url)) openDiscordLogin(url, contents);
       else if (isSafeExternalUrl(url) && !isAllowedUrl(url)) shell.openExternal(url);
       return { action: 'deny' }; // jamais de seconde fenêtre au-dessus du jeu
     });
@@ -444,6 +445,10 @@ function syncKeyPoller(running) {
 // (connexion, captcha, double authentification), puis rend l'adresse de
 // retour à la vue du site : c'est elle qui a posé l'état à vérifier, et c'est
 // dans SON stockage que le compte doit être enregistré.
+//
+// La connexion de la musique passe aussi par ici : son serveur pose la session
+// (et le jeton partagé avec le site) dans la même session Electron, il ne
+// reste qu'à recharger la page.
 let discordLoginWindow = null;
 
 function openDiscordLogin(url, target) {
@@ -463,20 +468,27 @@ function openDiscordLogin(url, target) {
   contents.setUserAgent(contents.getUserAgent().replace(/\s(Electron|olycity[\w-]*)\/\S+/gi, ''));
 
   let returned = false;
+  // returnUrl : l'adresse de retour du site ; null : recharger la page.
   const backToSite = returnUrl => {
     if (returned) return;
     returned = true;
     log('[discord] connexion terminée, retour au site');
-    if (target && !target.isDestroyed()) target.loadURL(returnUrl).catch(() => {});
+    if (target && !target.isDestroyed()) {
+      if (returnUrl) target.loadURL(returnUrl).catch(() => {});
+      else target.reload();
+    }
     if (!login.isDestroyed()) login.close();
   };
   const guard = (event, url) => {
     const step = discordLoginStep(url);
-    if (step === 'stay') return;
+    // 'done' arrive par la redirection qui pose la session musique : on la
+    // laisse aboutir (cookies compris), la fenêtre se ferme une fois arrivée.
+    if (step === 'stay' || step === 'done') return;
     event.preventDefault();
     if (step === 'return') backToSite(url);
     else if (step === 'external') shell.openExternal(url);
   };
+  contents.on('did-navigate', (_event, url) => { if (discordLoginStep(url) === 'done') backToSite(null); });
   contents.on('will-navigate', (event, url) => guard(event, event.url || url));
   // Discord peut aussi renvoyer par une redirection du serveur. Les cadres
   // (captcha) vont où ils veulent : seule la page compte.

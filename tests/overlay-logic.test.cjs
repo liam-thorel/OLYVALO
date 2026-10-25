@@ -5,7 +5,7 @@ const { detectGames, anyGameRunning, gameTransition, nextPollDelay,
   IDLE_POLL_MS, ACTIVE_POLL_MS } = require('../overlay/lib/game-watch.js');
 const { createOverlayState, reduce } = require('../overlay/lib/overlay-state.js');
 const { sanitize, parseSettings, isValidHotkey, DEFAULTS, MIN_OPACITY } = require('../overlay/lib/settings.js');
-const { discordLoginStep, isAllowedUrl, isDiscordUrl, isSafeExternalUrl, siteUrl, LIVECHAT_PAGE } = require('../overlay/lib/url-policy.js');
+const { discordLoginStep, isAllowedUrl, isDiscordUrl, isMusicLogin, isSafeExternalUrl, siteUrl, LIVECHAT_PAGE } = require('../overlay/lib/url-policy.js');
 
 // ─── Détection du jeu ────────────────────────────────────────────────────────
 // Sortie réelle de tasklist : colonnes alignées, casse variable.
@@ -187,6 +187,13 @@ assert.equal(discordLoginStep(`${LIVECHAT_PAGE}#access_token=abc&state=s`), 'ret
 assert.equal(discordLoginStep('https://support.discord.com/hc'), 'external');
 assert.equal(discordLoginStep('https://discord.com.evil.fr/#access_token=abc'), 'external', 'jamais de jeton rendu à une autre origine');
 assert.equal(discordLoginStep('discord://app'), 'block');
+// Connexion de la musique : son serveur fait l'aller-retour avec Discord.
+assert.equal(isMusicLogin('https://musique.olycity.fr/auth/login?redirect=%2F'), true);
+assert.equal(isMusicLogin('https://musique.olycity.fr/?guild=1'), false, '« Ouvrir Musique » part dans le navigateur');
+assert.equal(isMusicLogin('https://musique.olycity.fr.evil.fr/auth/login'), false);
+assert.equal(isAllowedUrl('https://musique.olycity.fr/'), false);
+assert.equal(discordLoginStep('https://musique.olycity.fr/auth/callback?code=c&state=s'), 'stay');
+assert.equal(discordLoginStep('https://musique.olycity.fr/'), 'done', 'connectée : on recharge le site');
 assert.equal(discordLoginStep('file:///C:/'), 'block');
 assert.equal(isAllowedUrl('https://liam-thorel.github.io/AutreProjet/'), false);
 // Un chemin qui commence par les mêmes lettres n'est pas le même dépôt.

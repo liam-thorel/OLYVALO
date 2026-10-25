@@ -50,15 +50,29 @@ function isDiscordUrl(url) {
   return !!parsed && parsed.origin === 'https://discord.com';
 }
 
+// La musique (lecteur en bas du site) se connecte par son serveur :
+// /auth/login part chez Discord, /auth/callback revient avec la session. Le
+// reste de musique.olycity.fr n'a rien à faire dans l'overlay.
+const MUSIC_ORIGIN = 'https://musique.olycity.fr';
+
+function isMusicLogin(url) {
+  const parsed = parse(url);
+  return !!parsed && parsed.origin === MUSIC_ORIGIN && parsed.pathname === '/auth/login';
+}
+
 /**
  * Sort d'une navigation dans la fenêtre de connexion Discord :
- *   'stay'     une page de Discord, elle s'ouvre dans la fenêtre ;
+ *   'stay'     une page de Discord (ou de la connexion musique), elle s'ouvre
+ *              dans la fenêtre ;
  *   'return'   le retour vers le site, jeton compris : il revient à l'overlay ;
+ *   'done'     la musique est connectée : il suffit de recharger le site ;
  *   'external' un lien d'aide ou autre, pour le navigateur ;
  *   'block'    tout le reste (file:, protocoles…).
  */
 function discordLoginStep(url) {
   if (isDiscordUrl(url)) return 'stay';
+  const parsed = parse(url);
+  if (parsed?.origin === MUSIC_ORIGIN) return parsed.pathname.startsWith('/auth/') ? 'stay' : 'done';
   if (isAllowedUrl(url)) return 'return';
   return isSafeExternalUrl(url) ? 'external' : 'block';
 }
@@ -88,4 +102,4 @@ function siteUrl(hash = '') {
 // Page d'envoi du livechat (hub olycity.fr), ouverte dans l'overlay.
 const LIVECHAT_PAGE = 'https://olycity.fr/livechat/';
 
-module.exports = { discordLoginStep, isAllowedUrl, isDiscordUrl, isSafeExternalUrl, siteUrl, LIVECHAT_PAGE, SITE_ORIGIN, SITE_PATH_PREFIX, OWN_ORIGINS, SITE_HOME };
+module.exports = { discordLoginStep, isAllowedUrl, isDiscordUrl, isMusicLogin, isSafeExternalUrl, siteUrl, LIVECHAT_PAGE, SITE_ORIGIN, SITE_PATH_PREFIX, OWN_ORIGINS, SITE_HOME };

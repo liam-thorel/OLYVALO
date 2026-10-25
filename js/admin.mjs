@@ -18,7 +18,7 @@ import { validateLineup, lineupCoverage, mergeLineups } from './lineup-utils.mjs
 import { fetchJsonWithRetry, fetchJsonWithTimeout } from './request-utils.mjs?v=20260930-consistent-live';
 import { isLiveRecordExpired, liveDataStore, staleLiveRecords } from './live-data-store.mjs?v=20261005-return-live';
 import { mergeMemberProfiles } from './member-profiles.mjs?v=20260823-profile-picker';
-import { linkableMembers, linkWrites, suggestedMember, unlinkedAccounts } from './discord-account.mjs?v=20261025-relier';
+import { linkableMembers, linkWrites, suggestedMember, unlinkedAccounts } from './discord-account.mjs?v=20261025-connexion';
 import { readSiteVitals } from './site-telemetry.mjs?v=20260825-site-health';
 import { attributionRows, attributionWarnings, deletionPlan, reassignPlan, roleOf, isValidPuuid, knownPuuidFor,
   overlayKeyFor, duplicateLabel, adoptionPlan } from './admin-attribution.mjs?v=20260920-attribution';
