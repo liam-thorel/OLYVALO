@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <title>OLYCITY Livechat</title>
+  <style>
+    * { box-sizing: border-box; font-family: 'Segoe UI', system-ui, sans-serif; }
+    body { margin: 0; width: 300px; padding: 14px; background: #12151c; color: #e8e8ee; font-size: 13px; }
+    h1 { margin: 0 0 4px; font-size: 15px; letter-spacing: .4px; }
+    p { margin: 6px 0; color: #9aa0ad; line-height: 1.45; }
+    .account { display: flex; align-items: center; gap: 8px; margin: 12px 0; padding: 8px; border-radius: 8px; background: rgba(255,255,255,.04); }
+    .account img { width: 28px; height: 28px; border-radius: 50%; }
+    button { width: 100%; border: 0; border-radius: 6px; padding: 9px; font-weight: 600; cursor: pointer; font-size: 13px; }
+    .discord { background: #5865f2; color: #fff; }
+    .ghost { background: #1b1f29; color: #c8cad2; border: 1px solid rgba(255,255,255,.14); margin-top: 6px; }
+    .admin { margin-top: 14px; padding-top: 12px; border-top: 1px solid rgba(255,255,255,.1); }
+    .admin h2 { font-size: 13px; margin: 0 0 6px; }
+    select { width: 100%; margin: 6px 0; background: #1b1f29; color: inherit; border: 1px solid rgba(255,255,255,.14); border-radius: 6px; padding: 7px; }
+    .red { background: #ff4655; color: #fff; }
+    .status { min-height: 16px; margin-top: 8px; font-size: 12px; color: #9aa0ad; }
+    .status.err { color: #ff8a95; }
+    .status.ok { color: #6bd990; }
+  </style>
+</head>
+<body>
+  <h1>📺 OLYCITY Livechat</h1>
+  <p>Survole une vidéo (YouTube, Twitch, X, Reddit, TikTok…) : clique sur le logo rouge en haut à droite pour l’envoyer sur l’écran des membres.</p>
+  <div class="account" id="account">Chargement…</div>
+  <div class="admin" id="admin" hidden>
+    <h2>Réactiver le livechat</h2>
+    <p>Chez ceux qui l’ont coupé. 🔇 = coupé en ce moment.</p>
+    <select id="who"><option value="all">Tout le monde</option></select>
+    <button class="red" id="reenable" type="button">Réactiver</button>
+  </div>
+  <div class="status" id="status"></div>
+  <script src="popup.js"></script>
+</body>
+</html>

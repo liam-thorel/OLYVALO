@@ -17,6 +17,16 @@ function extractDiscordId(avatarUrl) {
   return match ? match[1] : null;
 }
 
+/**
+ * Identifiant Discord d'un membre : le champ `discordId` s'il est déclaré
+ * (roster.json, ou fiche ajoutée depuis l'admin à partir d'un compte Discord
+ * connecté au site), sinon celui de son URL d'avatar.
+ */
+function discordIdOf(member) {
+  const declared = String(member?.discordId || '').trim();
+  return /^\d{15,22}$/.test(declared) ? declared : extractDiscordId(member?.avatar);
+}
+
 function slugify(name) {
   return String(name || '')
     .normalize('NFD').replace(/[̀-ͯ]/g, '')
@@ -93,7 +103,7 @@ function indexRoster(roster, overlay) {
 
   const staticMembers = roster.map(player => ({
     id: slugify(player.name), name: player.name, avatar: player.avatar || null,
-    discordId: extractDiscordId(player.avatar), riotIds: riotIdsFromRoster(player),
+    discordId: discordIdOf(player), riotIds: riotIdsFromRoster(player),
     mainRiotId: mainRiotIdFromRoster(player), lolMainRiotId: lolMainRiotIdFromRoster(player),
     // Le PUUID fait foi pour désigner le principal : un compte renommé garde
     // le sien, alors que son Riot ID dans roster.json devient périmé.
@@ -105,7 +115,7 @@ function indexRoster(roster, overlay) {
   const staticIds = new Set(staticMembers.map(m => m.id));
   const extraMembers = Object.entries(overlayMembers)
     .filter(([id]) => !staticIds.has(id))
-    .map(([id, m]) => ({ id, name: m.name, avatar: m.avatar || null, discordId: extractDiscordId(m.avatar), riotIds: [], mainRiotId: null, lolMainRiotId: null, mainPuuid: null, lolMainPuuid: null, puuids: [] }));
+    .map(([id, m]) => ({ id, name: m.name, avatar: m.avatar || null, discordId: discordIdOf(m), riotIds: [], mainRiotId: null, lolMainRiotId: null, mainPuuid: null, lolMainPuuid: null, puuids: [] }));
 
   members = [...staticMembers, ...extraMembers];
 
@@ -197,7 +207,7 @@ function memberByPuuid(puuid) {
   return puuidIndex[String(puuid || '')] || null;
 }
 
-// L'identifiant Discord n'est connu que par l'URL d'avatar du roster.
+// Identifiant Discord : déclaré dans le roster, sinon tiré de l'URL d'avatar.
 function memberByDiscordId(discordId) {
   if (!discordId) return null;
   return members.find(member => member.discordId === String(discordId)) || null;

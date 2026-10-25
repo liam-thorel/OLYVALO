@@ -8,10 +8,15 @@
  * et écrit lui-même dans la file : le bot ignore donc les messages de webhook.
  */
 const { fbGet, fbPost, fbDelete, fbPut } = require('./firebase.js');
+const { normalizeVideoLink, parseTimecode } = require('./video-links.js');
 
 const LIVECHAT_CHANNEL_PATH = 'discordConfig/livechatChannelId';
 const LIVECHAT_QUEUE_PATH = 'livechat/queue';
 const LIVECHAT_RECEIVERS_PATH = 'livechat/receivers';
+const LIVECHAT_CONTROL_PATH = 'livechat/control';
+// Extrait d'un lien : 30 s depuis le début choisi quand la fin n'est pas dite.
+const DEFAULT_CLIP_MS = 30 * 1000;
+const MAX_CLIP_MS = 10 * 60 * 1000;
 // Un élément n'est plus affiché après 90 s (live/livechat-utils.js) : la file
 // ne garde que de quoi rattraper une reconnexion.
 const QUEUE_TTL_MS = 10 * 60 * 1000;
@@ -92,7 +97,36 @@ function cleanText(text) {
   return String(text || '').replace(/\s+/g, ' ').trim().slice(0, MAX_TEXT_LENGTH);
 }
 
-function buildLiveChatItem({ from, text = '', media = null, size = 'moyen', target = null, source = 'discord', discordMessageId = null }) {
+/**
+ * Extrait d'une vidéo : { startMs, endMs } à partir de deux temps (« 1:20 »,
+ * « 80 », « 1m20s »), ou null. Sans fin, 30 s depuis le début.
+ */
+function clipFromTimes(start, end, fallbackStartMs = null) {
+  const startMs = parseTimecode(start) ?? fallbackStartMs;
+  if (startMs == null) return null;
+  let endMs = parseTimecode(end);
+  if (endMs == null || endMs <= startMs) endMs = startMs + DEFAULT_CLIP_MS;
+  return { startMs, endMs: Math.min(endMs, startMs + MAX_CLIP_MS) };
+}
+
+// « 1:20-1:35 », « 80 → 95 », « 1m20s à 1m35s » dans un message.
+const RANGE = /(?:^|\s)(\d+(?::\d{1,2}){0,2}(?:\.\d+)?|\d+h\d*m?\d*s?|\d+m\d*s?|\d+s)\s*(?:-|–|→|->|>|à)\s*(\d+(?::\d{1,2}){0,2}(?:\.\d+)?|\d+h\d*m?\d*s?|\d+m\d*s?|\d+s)(?=\s|$)/i;
+
+/** Premier lien vidéo accepté d'un texte, avec l'extrait indiqué à côté. */
+function linkFromText(text) {
+  for (const candidate of String(text || '').match(/https?:\/\/\S+/g) || []) {
+    const link = normalizeVideoLink(candidate.replace(/[>)\].,!?]+$/, ''));
+    if (!link) continue;
+    const rest = String(text).replace(candidate, ' ');
+    const range = rest.match(RANGE);
+    const trim = range ? clipFromTimes(range[1], range[2]) : clipFromTimes(null, null, link.startMs);
+    const cleaned = (range ? rest.replace(range[0], ' ') : rest).replace(/\s+/g, ' ').trim();
+    return { link, trim, text: cleaned };
+  }
+  return null;
+}
+
+function buildLiveChatItem({ from, text = '', media = null, link = null, trim = null, size = 'moyen', target = null, source = 'discord', discordMessageId = null }) {
   return {
     createdAt: { '.sv': 'timestamp' },
     source,
@@ -104,6 +138,9 @@ function buildLiveChatItem({ from, text = '', media = null, size = 'moyen', targ
     },
     text: cleanText(text),
     media: media && isAllowedMediaUrl(media.url) ? { url: media.url, kind: media.kind } : null,
+    // Lien YouTube, clip… : lu par chaque Live avec yt-dlp.
+    ...(!media && link ? { link: { url: link } } : {}),
+    ...((media?.kind === 'video' || (!media && link)) && trim ? { trim } : {}),
     size: SIZES.includes(size) ? size : 'moyen',
     target: target || null,
     ...(discordMessageId ? { discordMessageId } : {}),
@@ -123,6 +160,24 @@ function onlineReceivers(receivers, now = Date.now()) {
 
 async function fetchOnlineReceivers() {
   return onlineReceivers(await fbGet(LIVECHAT_RECEIVERS_PATH).catch(() => null));
+}
+
+/** Membres en ligne qui ont coupé leur livechat. */
+function mutedReceivers(receivers, now = Date.now()) {
+  return Object.entries(receivers || {})
+    .filter(([, receiver]) => receiver && receiver.enabled === false && now - Number(receiver.ts || 0) <= RECEIVER_FRESH_MS)
+    .map(([memberId, receiver]) => ({ memberId, name: String(receiver.name || memberId) }));
+}
+
+/**
+ * Réactive le livechat chez tout le monde ou chez une personne. Chaque Live
+ * écoute livechat/control et applique l'ordre s'il est plus récent que le
+ * dernier qu'il a suivi.
+ */
+async function requestReenable(target, by) {
+  const path = target ? `${LIVECHAT_CONTROL_PATH}/members/${target}` : `${LIVECHAT_CONTROL_PATH}/all`;
+  await fbPut(path, { enableAt: { '.sv': 'timestamp' }, by: String(by || 'Liam').slice(0, 40) });
+  return path;
 }
 
 function staleQueueKeys(queue, now = Date.now()) {
@@ -194,8 +249,11 @@ function parseLiveChatMessage(message, { memberByDiscordId }) {
     }
   }
 
-  const media = mediaFromAttachments([...(message.attachments?.values?.() || [])])
-    || mediaFromEmbeds(message.embeds || []);
+  const attached = mediaFromAttachments([...(message.attachments?.values?.() || [])]);
+  // Un lien YouTube/Twitch/… passe avant son aperçu Discord (une miniature).
+  const linked = attached ? null : linkFromText(text);
+  const media = attached || (linked ? null : mediaFromEmbeds(message.embeds || []));
+  if (linked) text = linked.text;
   // Le lien d'un GIF collé n'a rien à faire dans la légende.
   if (media && !message.attachments?.size) text = text.replace(/https?:\/\/\S+/g, '');
   // Les autres mentions deviennent des noms lisibles à l'écran.
@@ -204,7 +262,7 @@ function parseLiveChatMessage(message, { memberByDiscordId }) {
     return memberByDiscordId(id)?.name || user?.globalName || user?.username || '';
   }).replace(/<a?:(\w+):\d+>/g, ':$1:');
 
-  return { size, text: cleanText(text), media, target, targetName };
+  return { size, text: cleanText(text), media, link: linked?.link.url || null, trim: linked?.trim || null, target, targetName };
 }
 
 function senderFor(user, guildMember, memberByDiscordId) {
@@ -224,17 +282,19 @@ async function handleLiveChatMessage(message, { memberByDiscordId, ensureRoster 
 
   // Discord ajoute l'embed d'un lien Tenor quelques instants après l'envoi.
   let parsed = parseLiveChatMessage(message, { memberByDiscordId });
-  if (!parsed.media && /https?:\/\//.test(message.content || '')) {
+  if (!parsed.media && !parsed.link && /https?:\/\//.test(message.content || '')) {
     await new Promise(resolve => setTimeout(resolve, 1500));
     const fresh = await message.fetch().catch(() => message);
     parsed = parseLiveChatMessage(fresh, { memberByDiscordId });
   }
-  if (!parsed.media && !parsed.text) return false;
+  if (!parsed.media && !parsed.link && !parsed.text) return false;
 
   const item = buildLiveChatItem({
     from: senderFor(message.author, message.member, memberByDiscordId),
     text: parsed.text,
     media: parsed.media,
+    link: parsed.link,
+    trim: parsed.trim,
     size: parsed.size,
     target: parsed.target,
     discordMessageId: message.id,
@@ -247,6 +307,11 @@ async function handleLiveChatMessage(message, { memberByDiscordId, ensureRoster 
 }
 
 module.exports = {
+  LIVECHAT_CONTROL_PATH,
+  clipFromTimes,
+  linkFromText,
+  mutedReceivers,
+  requestReenable,
   LIVECHAT_CHANNEL_PATH,
   LIVECHAT_QUEUE_PATH,
   LIVECHAT_RECEIVERS_PATH,

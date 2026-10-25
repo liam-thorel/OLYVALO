@@ -6,6 +6,11 @@
  * .NET Framework fourni avec Windows : aucun binaire à distribuer, ~25 Ko, et
  * rien ne tourne tant que personne ne poste. Elle est lancée au premier
  * élément puis fermée après quelques minutes d'inactivité.
+ *
+ * À côté, livechat-keys (compilé de la même façon, sans fenêtre) surveille en
+ * permanence la touche qui coupe ou réactive le livechat. Les liens vidéo
+ * (YouTube, clips…) passent par yt-dlp (voir ytdlp.js), et livechat/control
+ * permet à Liam de réactiver le livechat à distance (/livechat-reactiver).
  */
 const https = require('https');
 const fs = require('fs');
@@ -16,18 +21,24 @@ const { spawn, execFile } = require('child_process');
 const {
   LIVECHAT_QUEUE_PATH,
   LIVECHAT_RECEIVERS_PATH,
+  LIVECHAT_CONTROL_PATH,
   MAX_MEDIA_BYTES,
   applyQueueEvent,
   displayDurationMs,
+  hotkeyLabel,
   isAllowedMediaUrl,
   normalizeItem,
   parseLiveChatConfig,
+  pendingControl,
   shouldDisplay,
 } = require('./livechat-utils.js');
 const { openFirebaseStream } = require('./firebase-stream.js');
+const { createYtDlp } = require('./ytdlp.js');
 
 const CONFIG_FILENAME = 'olycity-livechat.json';
 const HOST_SOURCE = 'livechat-host.cs';
+const KEYS_SOURCE = 'livechat-keys.cs';
+const CONFIG_POLL_MS = 3000;
 const HOST_IDLE_MS = 3 * 60 * 1000;
 const HEARTBEAT_MS = 2 * 60 * 1000;
 const MAX_PENDING = 12;
@@ -104,49 +115,76 @@ function hostKind(item, contentType, file) {
   return { kind: 'image', loop: false };
 }
 
-async function compileHost(log = () => {}) {
-  const source = fs.readFileSync(path.join(__dirname, HOST_SOURCE));
+// Programmes compilés sur place : la fenêtre (WPF) et la surveillance des
+// touches (sans fenêtre). Le nom porte l'empreinte du source : une mise à
+// jour du script recompile d'elle-même.
+const PROGRAMS = {
+  host: { source: HOST_SOURCE, prefix: 'livechat-host', wpf: true },
+  keys: { source: KEYS_SOURCE, prefix: 'livechat-keys', wpf: false },
+};
+
+async function compileProgram(name, log = () => {}) {
+  const program = PROGRAMS[name];
+  const source = fs.readFileSync(path.join(__dirname, program.source));
   const hash = crypto.createHash('sha1').update(source).digest('hex').slice(0, 12);
-  const exe = path.join(cacheDir(), `livechat-host-${hash}.exe`);
+  const exe = path.join(cacheDir(), `${program.prefix}-${hash}.exe`);
   if (fs.existsSync(exe)) return exe;
   const fw = frameworkDir();
   if (!fw) throw new Error('.NET Framework 4 introuvable');
   fs.mkdirSync(cacheDir(), { recursive: true });
-  const refs = [
+  const refs = program.wpf ? [
     path.join(fw, 'WPF', 'PresentationFramework.dll'),
     path.join(fw, 'WPF', 'PresentationCore.dll'),
     path.join(fw, 'WPF', 'WindowsBase.dll'),
     path.join(fw, 'System.Xaml.dll'),
     'System.Drawing.dll',
     'System.Web.Extensions.dll',
-  ];
+  ] : ['System.Web.Extensions.dll'];
   const tmp = `${exe}.tmp`;
   await new Promise((resolve, reject) => {
     execFile(path.join(fw, 'csc.exe'), [
       '-nologo', '-target:winexe', '-optimize+', `-out:${tmp}`,
       ...refs.map(ref => `-r:${ref}`),
-      path.join(__dirname, HOST_SOURCE),
+      path.join(__dirname, program.source),
     ], { windowsHide: true, timeout: 60000 }, (error, stdout) => {
       if (error) reject(new Error(`compilation : ${String(stdout || error.message).trim().slice(0, 400)}`));
       else resolve();
     });
   });
   fs.renameSync(tmp, exe);
-  // Les versions précédentes ne servent plus.
+  // Les versions précédentes ne servent plus (un exe en cours d'exécution
+  // résiste à la suppression : il partira la fois suivante).
+  const stale = new RegExp(`^${program.prefix}-.*\\.exe$`);
   fs.readdirSync(cacheDir())
-    .filter(name => /^livechat-host-.*\.exe$/.test(name) && path.join(cacheDir(), name) !== exe)
-    .forEach(name => fs.rm(path.join(cacheDir(), name), { force: true }, () => {}));
-  log(`fenêtre livechat compilée (${path.basename(exe)})`);
+    .filter(file => stale.test(file) && path.join(cacheDir(), file) !== exe)
+    .forEach(file => fs.rm(path.join(cacheDir(), file), { force: true }, () => {}));
+  log(`${program.prefix} compilé (${path.basename(exe)})`);
   return exe;
+}
+
+const compileHost = log => compileProgram('host', log);
+
+/** Arguments de la touche « passer » pour la fenêtre (0 : aucune). */
+function skipArgs(key) {
+  if (!key) return { skipVk: 0 };
+  return { skipVk: key.vk, skipCtrl: key.ctrl, skipShift: key.shift, skipAlt: key.alt, skipWin: key.win };
 }
 
 function createLiveChat({ firebaseHost, getIdentity, putFB, log, installDir = __dirname, scriptVersion = '' }) {
   const configPath = path.join(installDir, CONFIG_FILENAME);
   const workDir = path.join(cacheDir(), 'media');
+  const ytdlp = createYtDlp({ dir: cacheDir(), log });
   const queue = {};
+  const control = {};
   const seen = new Set();
   const pending = [];
   let stream = null;
+  let controlStream = null;
+  let keys = null;
+  let keysBrokenUntil = 0;
+  let keysSignature = '';
+  let configWatch = null;
+  let current = null; // élément affiché en ce moment
   let pumping = false;
   let host = null;
   let hostIdleTimer = null;
@@ -157,6 +195,14 @@ function createLiveChat({ firebaseHost, getIdentity, putFB, log, installDir = __
   const readConfig = () => {
     try { return parseLiveChatConfig(fs.readFileSync(configPath, 'utf8')); }
     catch { return parseLiveChatConfig(''); }
+  };
+
+  // Écrit seulement les champs modifiés : LIVECHAT.bat peut avoir réglé le
+  // reste entre-temps.
+  const writeConfig = changes => {
+    let raw = {};
+    try { raw = JSON.parse(fs.readFileSync(configPath, 'utf8')) || {}; } catch { raw = {}; }
+    fs.writeFileSync(configPath, `${JSON.stringify({ ...raw, ...changes }, null, 2)}\n`, 'utf8');
   };
 
   const remember = id => {
@@ -217,9 +263,16 @@ function createLiveChat({ firebaseHost, getIdentity, putFB, log, installDir = __
   function prepare(item) {
     fs.mkdirSync(workDir, { recursive: true });
     const base = item.id.replace(/[^A-Za-z0-9_-]/g, '');
-    const media = item.media
-      ? download(item.media.url, workDir, base).catch(error => ({ error }))
-      : Promise.resolve(null);
+    let media = Promise.resolve(null);
+    if (item.media?.link) {
+      media = ytdlp.resolve(item.media.url, { workDir, base, site: item.media.site })
+        .then(found => (found.stream
+          ? { file: found.stream, remote: true, contentType: 'video/mp4' }
+          : { file: found.file, contentType: 'video/mp4' }))
+        .catch(error => ({ error }));
+    } else if (item.media) {
+      media = download(item.media.url, workDir, base).catch(error => ({ error }));
+    }
     const avatar = item.from.avatar
       ? download(item.from.avatar, workDir, `${base}-avatar`).catch(() => null)
       : Promise.resolve(null);
@@ -233,58 +286,98 @@ function createLiveChat({ firebaseHost, getIdentity, putFB, log, installDir = __
     pump();
   }
 
+  /**
+   * Message local, affiché même livechat coupé et avant le reste de la file :
+   * c'est la confirmation d'une touche ou d'une réactivation à distance.
+   */
+  function notify(text) {
+    const item = {
+      id: `local-${Date.now().toString(36)}`, from: { id: null, name: 'OLYCITY Livechat', avatar: null },
+      text, media: null, size: 'petit', layout: { cx: 0.83, cy: 0.12, w: 0.3, h: 0.1 },
+      textPos: 'bas', durationMs: 2600, muted: true, trim: null,
+    };
+    pending.unshift({ item, ready: Promise.resolve([null, null]), local: true });
+    if (current) send({ cmd: 'skip' });
+    pump();
+  }
+
   async function pump() {
     if (pumping) return;
     pumping = true;
     try {
       while (pending.length && !stopped) {
-        const { item, ready } = pending.shift();
-        const [media, avatar] = await ready;
-        const files = [media?.file, avatar?.file].filter(Boolean);
+        const entry = pending.shift();
+        const { item, ready } = entry;
+        let [media, avatar] = await ready;
+        // Une adresse lue en continu n'est pas un fichier à effacer.
+        const cleanup = [media && !media.remote ? media.file : null, avatar?.file].filter(Boolean);
         try {
           if (media?.error) { log(`média de ${item.from.name} ignoré : ${media.error.message}`); if (!item.text) continue; }
           const config = readConfig();
-          if (!config.enabled) continue;
+          if (!config.enabled && !entry.local) continue;
           const child = await ensureHost();
           if (!child) continue;
           clearTimeout(hostIdleTimer);
-          const shape = media?.file ? hostKind(item, media.contentType, media.file) : { kind: 'text', loop: false };
-          const done = new Promise(resolve => { waiter = { id: item.id, resolve }; });
-          const durationMs = displayDurationMs(item);
-          send({
-            cmd: 'show',
-            id: item.id,
-            kind: shape.kind,
-            loop: shape.loop,
-            path: media?.file || '',
-            text: item.text,
-            textPos: item.textPos,
-            fromName: item.from.name,
-            avatarPath: avatar?.file || '',
-            ...item.layout,
-            durationMs,
-            maxVideoMs: config.maxVideoSeconds * 1000,
-            volume: item.muted ? 0 : config.volume / 100,
-            // Un GIF Tenor livré en vidéo n'a jamais d'extrait : il boucle en entier.
-            startMs: item.trim && !shape.loop ? item.trim.startMs : 0,
-            endMs: item.trim && !shape.loop ? item.trim.endMs : 0,
-          });
-          log(`📺 ${item.from.name} → ${shape.kind}${item.text ? ` « ${item.text.slice(0, 40)} »` : ''} (${item.size})`);
-          // Garde-fou : la fenêtre répond toujours, mais un blocage ne doit
-          // pas figer la file pour de bon.
-          const limit = Math.max(durationMs, config.maxVideoSeconds * 1000) + 20000;
-          const guard = new Promise(resolve => { const t = setTimeout(() => resolve('timeout'), limit); t.unref?.(); });
-          const reason = await Promise.race([done, guard]);
-          waiter = null;
-          if (reason === 'timeout') { log('fenêtre livechat bloquée, redémarrage'); host?.kill(); host = null; }
+          const shape = media?.file
+            ? (item.media?.link ? { kind: 'video', loop: false } : hostKind(item, media.contentType, media.file))
+            : { kind: 'text', loop: false };
+          let reason = await display(item, media, avatar, shape, config);
+          // Une vidéo YouTube lue en continu qui refuse de s'ouvrir : on la
+          // télécharge et on réessaie, une fois.
+          if (reason === 'error' && media?.remote && !stopped) {
+            log(`lecture en continu impossible, téléchargement de la vidéo de ${item.from.name}`);
+            const base = `${item.id.replace(/[^A-Za-z0-9_-]/g, '')}-dl`;
+            media = await ytdlp.download(item.media.url, { workDir, base }).then(file => ({ file, contentType: 'video/mp4' }), error => ({ error }));
+            if (media.file) { cleanup.push(media.file); reason = await display(item, media, avatar, shape, readConfig()); }
+            else log(`vidéo de ${item.from.name} ignorée : ${media.error.message}`);
+          }
         } finally {
-          files.forEach(file => fs.rm(file, { force: true }, () => {}));
+          cleanup.forEach(file => fs.rm(file, { force: true }, () => {}));
         }
       }
     } finally {
       pumping = false;
       if (host) scheduleHostIdle();
     }
+  }
+
+  /** Fait afficher un élément et attend la fin : rend la raison (end, skip, error…). */
+  async function display(item, media, avatar, shape, config) {
+    current = item;
+    const done = new Promise(resolve => { waiter = { id: item.id, resolve }; });
+    const durationMs = displayDurationMs(item);
+    send({
+      cmd: 'show',
+      id: item.id,
+      kind: shape.kind,
+      loop: shape.loop,
+      path: media?.file || '',
+      text: item.text,
+      textPos: item.textPos,
+      fromName: item.from.name,
+      avatarPath: avatar?.file || '',
+      ...item.layout,
+      durationMs,
+      maxVideoMs: config.maxVideoSeconds * 1000,
+      volume: item.muted ? 0 : config.volume / 100,
+      // Un GIF Tenor livré en vidéo n'a jamais d'extrait : il boucle en entier.
+      startMs: item.trim && !shape.loop ? item.trim.startMs : 0,
+      endMs: item.trim && !shape.loop ? item.trim.endMs : 0,
+      ...skipArgs(config.skipKey),
+    });
+    if (!item.id.startsWith('local-')) {
+      log(`📺 ${item.from.name} → ${item.media?.link ? `lien ${item.media.site}` : shape.kind}${item.text ? ` « ${item.text.slice(0, 40)} »` : ''} (${item.size})`);
+    }
+    // Garde-fou : la fenêtre répond toujours, mais un blocage ne doit
+    // pas figer la file pour de bon. Une vidéo lue en continu a 15 s de
+    // plus pour s'ouvrir.
+    const limit = Math.max(durationMs, config.maxVideoSeconds * 1000) + (media?.remote ? 35000 : 20000);
+    const guard = new Promise(resolve => { const t = setTimeout(() => resolve('timeout'), limit); t.unref?.(); });
+    const reason = await Promise.race([done, guard]);
+    waiter = null;
+    current = null;
+    if (reason === 'timeout') { log('fenêtre livechat bloquée, redémarrage'); host?.kill(); host = null; }
+    return reason;
   }
 
   function consider(id) {
@@ -306,6 +399,75 @@ function createLiveChat({ firebaseHost, getIdentity, putFB, log, installDir = __
     });
   }
 
+  // ─── Couper / réactiver ───────────────────────────────────────────────
+
+  function setEnabled(enabled, why) {
+    const config = readConfig();
+    if (config.enabled === enabled) return;
+    writeConfig({ enabled });
+    log(`livechat ${enabled ? 'réactivé' : 'coupé'} (${why})`);
+    // Coupé : la file en attente part avec (les messages locaux restent).
+    if (!enabled) pending.splice(0, pending.length, ...pending.filter(entry => entry.local));
+    const key = config.toggleKey ? hotkeyLabel(config.toggleKey) : null;
+    notify(enabled
+      ? `Livechat réactivé${why.startsWith('par ') ? ` ${why}` : ''}`
+      : `Livechat coupé${key ? ` · ${key} pour le réactiver` : ''}`);
+    heartbeat().catch(() => {});
+  }
+
+  // Surveillance permanente de la touche « couper / réactiver ».
+  async function ensureKeys() {
+    if (keys || Date.now() < keysBrokenUntil) return keys;
+    try {
+      const exe = await compileProgram('keys', log);
+      const child = spawn(exe, [], { stdio: ['pipe', 'pipe', 'ignore'], windowsHide: true });
+      let buffer = '';
+      child.stdout.setEncoding('utf8');
+      child.stdout.on('data', chunk => {
+        buffer += chunk;
+        let index;
+        while ((index = buffer.indexOf('\n')) !== -1) {
+          const line = buffer.slice(0, index).trim();
+          buffer = buffer.slice(index + 1);
+          let message = null;
+          try { message = JSON.parse(line); } catch { continue; }
+          if (message.evt === 'key' && message.action === 'toggle') setEnabled(!readConfig().enabled, 'touche');
+        }
+      });
+      child.on('exit', () => {
+        if (keys === child) { keys = null; keysSignature = ''; }
+        if (!stopped) keysBrokenUntil = Date.now() + 60 * 1000;
+      });
+      child.on('error', error => log(`touches livechat : ${error.message}`));
+      child.stdin.on('error', () => {});
+      keys = child;
+      keysSignature = '';
+      return child;
+    } catch (error) {
+      keysBrokenUntil = Date.now() + 30 * 60 * 1000;
+      log(`touches livechat indisponibles : ${error.message}`);
+      return null;
+    }
+  }
+
+  // Les réglages de LIVECHAT.bat sont relus sans redémarrer le script.
+  async function syncKeys() {
+    const config = readConfig();
+    const signature = JSON.stringify(config.toggleKey);
+    const child = config.toggleKey ? await ensureKeys() : keys;
+    if (!child || signature === keysSignature) return;
+    try { child.stdin.write(`${JSON.stringify({ cmd: 'keys', toggle: config.toggleKey })}\n`); } catch { return; }
+    keysSignature = signature;
+  }
+
+  function applyControl() {
+    const config = readConfig();
+    const order = pendingControl(control, { memberId: getIdentity()?.memberId || '', appliedAt: config.controlAppliedAt });
+    if (!order) return;
+    writeConfig({ controlAppliedAt: order.at });
+    if (!config.enabled) setEnabled(true, `par ${order.by}`);
+  }
+
   function start() {
     if (process.platform !== 'win32') return;
     stream = openFirebaseStream({
@@ -313,8 +475,19 @@ function createLiveChat({ firebaseHost, getIdentity, putFB, log, installDir = __
       path: LIVECHAT_QUEUE_PATH,
       onEvent: (event, data) => applyQueueEvent(queue, event, data).forEach(consider),
     });
+    controlStream = openFirebaseStream({
+      host: firebaseHost,
+      path: LIVECHAT_CONTROL_PATH,
+      onEvent: (event, data) => { applyQueueEvent(control, event, data); applyControl(); },
+    });
     heartbeat().catch(() => {});
     setInterval(() => heartbeat().catch(() => {}), HEARTBEAT_MS).unref?.();
+    syncKeys().catch(() => {});
+    configWatch = setInterval(() => syncKeys().catch(() => {}), CONFIG_POLL_MS);
+    configWatch.unref?.();
+    // yt-dlp prêt avant le premier lien : 18 Mo, une fois, en arrière-plan.
+    const warm = setTimeout(() => { if (readConfig().enabled) ytdlp.ensure().catch(error => log(`yt-dlp indisponible : ${error.message}`)); }, 60 * 1000);
+    warm.unref?.();
     // Restes d'un arrêt brutal pendant un affichage.
     fs.rm(workDir, { recursive: true, force: true }, () => {});
   }
@@ -322,10 +495,13 @@ function createLiveChat({ firebaseHost, getIdentity, putFB, log, installDir = __
   function stop() {
     stopped = true;
     stream?.stop();
+    controlStream?.stop();
+    clearInterval(configWatch);
     send({ cmd: 'quit' });
+    try { keys?.stdin.end(); } catch { /* déjà fermé */ }
   }
 
-  return { start, stop };
+  return { start, stop, setEnabled };
 }
 
-module.exports = { createLiveChat, compileHost, hostKind, extensionFor };
+module.exports = { createLiveChat, compileHost, compileProgram, hostKind, extensionFor, skipArgs };

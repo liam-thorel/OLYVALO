@@ -85,25 +85,43 @@ lorsque plusieurs games sont suivies en même temps.
 
 ## Livechat
 
-Ce qui est posté dans le salon **#livechat** du Discord, avec **/livechat** ou
-sur **olycity.fr/livechat** s'affiche par-dessus l'écran : image, GIF, vidéo
-ou texte, avec le nom de l'expéditeur. Trois formats (grand, moyen, petit),
-ou une position libre depuis le site.
+Ce qui est posté dans le salon **#livechat** du Discord, avec **/livechat**,
+sur **olycity.fr/livechat** ou avec l'**extension navigateur** (voir
+`extension/README.md`) s'affiche par-dessus l'écran : image, GIF, vidéo, lien
+vidéo ou texte, avec le nom de l'expéditeur. Trois formats (grand, moyen,
+petit), ou une position libre depuis le site.
 
 - La fenêtre ne prend jamais le focus et laisse passer les clics : la partie
-  reste jouable. **Ctrl + Maj + F9** fait disparaître le média en cours.
-- **LIVECHAT.bat** coupe ou réactive l'affichage sur ce PC et règle le volume
-  des vidéos (réglage gardé dans `olycity-livechat.json`, conservé par les
-  mises à jour).
+  reste jouable.
+- **Ctrl + Maj + F9** passe le média en cours. **Ctrl + Maj + F10** coupe ou
+  réactive le livechat, avec une petite confirmation à l'écran.
+- **LIVECHAT.bat** règle tout sur ce PC : couper/réactiver, volume, durée
+  maximale d'une vidéo, et **les deux touches**. On les choisit en appuyant
+  dessus, avec ou sans Ctrl/Maj/Alt/Win. Les boutons 4/5 de la souris
+  marchent aussi. Le réglage est gardé dans `olycity-livechat.json`, conservé
+  par les mises à jour, et pris en compte sans redémarrer.
+- **Liens vidéo** : YouTube, clips et rediffusions Twitch/Kick, X, Reddit,
+  TikTok, Instagram, Streamable, Vimeo, Dailymotion, Medal. Ils sont lus par
+  **yt-dlp**, téléchargé au premier besoin depuis sa release GitHub officielle
+  (empreinte SHA-256 vérifiée), puis mis à jour tous les trois jours. Il n'y a
+  pas de ffmpeg : YouTube est lu en continu, avec un saut direct au début de
+  l'extrait ; les autres sites sont téléchargés en entier.
+- **Liam** peut réactiver le livechat chez quelqu'un qui l'a coupé
+  (`/livechat-reactiver`, ou depuis l'extension). Le Live écoute
+  `livechat/control` et n'applique chaque ordre qu'une fois, dans les 12 h.
 - Comme l'overlay, il faut que le jeu soit en **plein écran fenêtré** : rien
   ne peut s'afficher par-dessus un plein écran exclusif.
 
 La fenêtre est un petit programme WPF (`livechat-host.cs`) compilé sur le PC,
 au premier média reçu, par le `csc.exe` du .NET Framework livré avec Windows.
-Il est rangé dans `%LOCALAPPDATA%\OLYCITY\livechat`, ne tourne que lorsqu'un
-média arrive et se ferme après 3 minutes sans rien afficher. Les médias ne sont
-téléchargés que depuis Discord, Tenor, Giphy, Imgur et le Worker du site
-(500 Mo maximum).
+Elle ne tourne que lorsqu'un média arrive et se ferme après 3 minutes sans
+rien afficher. Les touches sont surveillées par un second programme compilé
+de la même façon, sans fenêtre (`livechat-keys.cs`). Il lit seulement si la
+combinaison choisie est enfoncée (GetAsyncKeyState) : ce n'est ni un hook
+clavier ni RegisterHotKey, que LoL bloque. Tout est rangé dans
+`%LOCALAPPDATA%\OLYCITY\livechat`. Les médias ne sont téléchargés que depuis
+Discord, Tenor, Giphy, Imgur et le Worker du site (500 Mo maximum), et les
+liens que depuis les sites listés plus haut.
 
 ## Désinstaller
 

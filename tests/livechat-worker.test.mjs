@@ -101,7 +101,7 @@ test('envoi complet : connexion vérifiée, morceaux, puis file et Discord', asy
   try {
     const anonymous = await call('/me', { headers: { Origin: 'https://olycity.fr', Authorization: 'Bearer faux' } });
     assert.equal(anonymous.status, 401);
-    assert.deepEqual(await (await call('/me', { headers: headers() })).json(), { member: { id: 'liam', name: 'Liam', avatar: LIAM.avatar } });
+    assert.deepEqual(await (await call('/me', { headers: headers() })).json(), { member: { id: 'liam', name: 'Liam', avatar: LIAM.avatar }, admin: false });
 
     const start = await (await call('/upload/start', {
       method: 'POST', headers: headers({ 'Content-Type': 'application/json' }), body: JSON.stringify({ type: 'image/png', size: 3 }),

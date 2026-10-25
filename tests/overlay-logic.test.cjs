@@ -172,6 +172,13 @@ assert.equal(isAllowedUrl(siteUrl()), true);
 assert.equal(isAllowedUrl(siteUrl('#live')), true);
 assert.equal(isAllowedUrl('https://liam-thorel.github.io/OLYVALO/data/roster.json'), true);
 assert.equal(isAllowedUrl('https://liam-thorel.github.io/'), false, 'la racine héberge d’autres dépôts');
+// Connexion Discord dans l'overlay : l'autorisation et la page de connexion,
+// rien d'autre de discord.com.
+assert.equal(isAllowedUrl('https://discord.com/oauth2/authorize?client_id=1&response_type=token'), true);
+assert.equal(isAllowedUrl('https://discord.com/login?redirect_to=%2Foauth2%2Fauthorize'), true);
+assert.equal(isAllowedUrl('https://discord.com/channels/@me'), false);
+assert.equal(isAllowedUrl('https://discord.com/'), false);
+assert.equal(isAllowedUrl('https://discord.com.evil.fr/oauth2/authorize'), false);
 assert.equal(isAllowedUrl('https://liam-thorel.github.io/AutreProjet/'), false);
 // Un chemin qui commence par les mêmes lettres n'est pas le même dépôt.
 assert.equal(isAllowedUrl('https://liam-thorel.github.io/OLYVALO-autre/'), false);

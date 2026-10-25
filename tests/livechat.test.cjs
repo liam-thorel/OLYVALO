@@ -90,8 +90,13 @@ test('durées : le texte seul se lit, le grand format reste plus longtemps', () 
 });
 
 test('les réglages du poste ont des valeurs par défaut sûres', () => {
-  assert.deepEqual(parseLiveChatConfig(''), { enabled: true, volume: 60, maxVideoSeconds: 30 });
-  assert.deepEqual(parseLiveChatConfig('{"enabled":false,"volume":300}'), { enabled: false, volume: 100, maxVideoSeconds: 30 });
+  const touches = {
+    skipKey: { vk: 0x78, ctrl: true, shift: true, alt: false, win: false },
+    toggleKey: { vk: 0x79, ctrl: true, shift: true, alt: false, win: false },
+    controlAppliedAt: 0,
+  };
+  assert.deepEqual(parseLiveChatConfig(''), { enabled: true, volume: 60, maxVideoSeconds: 30, ...touches });
+  assert.deepEqual(parseLiveChatConfig('{"enabled":false,"volume":300}'), { enabled: false, volume: 100, maxVideoSeconds: 30, ...touches });
   assert.equal(parseLiveChatConfig('pas du json').enabled, true);
 });
 

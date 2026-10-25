@@ -6,6 +6,7 @@
 
 import { mergeFirebaseEvent } from './lol-utils.mjs?v=20260930-consistent-live';
 import { fetchJsonWithRetry } from './request-utils.mjs?v=20260930-consistent-live';
+import { loadAccount } from './discord-account.mjs?v=20261024-discord';
 
 const FIREBASE_URL = 'https://realtime-database-5bb9f-default-rtdb.europe-west1.firebasedatabase.app';
 const BETTING_CACHE_KEY = 'olycity-betting-wallets-cache-v1';
@@ -85,12 +86,30 @@ function renderWallets({ offline = false } = {}) {
           Valorant/LoL du roster OLYCITY suivies par le bot (<code>/bet</code> ou les boutons sur la
           notification de game). Classement mis à jour en temps réel.
         </p>
+        ${myWalletHTML()}
         <div class="betting-grid">
           ${renderLeaderboard('🏆 Classement général', overall, 'Personne n\'a encore parié.')}
           ${renderLeaderboard('📅 Cette semaine', weekly, 'Pas encore de mouvement cette semaine.')}
           ${renderLeaderboard('🔥 Meilleures séries', bestStreak, 'Aucune série gagnante enregistrée.')}
         </div>
       </div>`;
+}
+
+/**
+ * Le portefeuille du bot est rangé sous l'identifiant Discord : connecté au
+ * site avec le même compte, on voit le sien.
+ */
+export function myWalletLine(account, wallets) {
+  if (!account?.discordId) return null;
+  const wallet = wallets?.[account.discordId];
+  if (!wallet) return 'Pas encore de points : utilise le bot une fois (<code>/compte</code> ou <code>/balance</code>) pour recevoir tes 500 premiers.';
+  const delta = (wallet.balance || 0) - (wallet.weekStartBalance ?? wallet.balance ?? 0);
+  return `Ton solde : <strong>${Number(wallet.balance) || 0} pts</strong>${delta ? ` · ${delta > 0 ? '+' : ''}${delta} cette semaine` : ''}`;
+}
+
+function myWalletHTML() {
+  const line = myWalletLine(loadAccount(), walletsState);
+  return line ? `<p class="betting-mine">${line}</p>` : '';
 }
 
 async function loadAndRender({ quiet = false } = {}) {
@@ -204,6 +223,8 @@ const BETTING_CSS = `
 .betting-wrap{max-width:960px;margin:0 auto}
 .betting-intro{color:rgba(232,232,236,.7);font-size:13px;line-height:1.6;margin-bottom:24px;max-width:640px}
 .betting-intro code{background:rgba(255,255,255,.08);padding:2px 6px;border-radius:4px}
+.betting-mine{display:inline-block;margin:0 0 20px;padding:10px 14px;border:1px solid rgba(88,101,242,.45);border-radius:6px;background:rgba(88,101,242,.1);font-size:13px}
+.betting-mine code{background:rgba(255,255,255,.08);padding:2px 6px;border-radius:4px}
 .betting-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:16px}
 .betting-board{background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.08);border-radius:8px;padding:16px}
 .betting-board h3{font-family:Tomorrow,sans-serif;font-size:13px;letter-spacing:1px;text-transform:uppercase;margin:0 0 12px}

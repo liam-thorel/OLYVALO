@@ -18,13 +18,45 @@
   <link href="https://fonts.googleapis.com/css2?family=Tomorrow:wght@400;500;600;700&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="./css/tokens.css?v=20260824-page-shell">
   <link rel="stylesheet" href="./css/layout.css?v=20261004-hub-link">
-  <link rel="stylesheet" href="./css/components.css?v=20260920-puuid-accounts">
+  <link rel="stylesheet" href="./css/components.css?v=20261024-discord">
   <link rel="stylesheet" href="./css/home.css?v=20261005-tracker-home">
   <link rel="stylesheet" href="./css/agent-page.css?v=20260720-avatars">
   <link rel="stylesheet" href="./css/responsive.css?v=20261003-party-count">
   <link rel="stylesheet" href="./css/lol-mode.css?v=20261008-peak">
   <link rel="stylesheet" href="./css/curse.css?v=20260818-curse-lifecycle">
   <link rel="stylesheet" href="./css/design-system.css?v=20261005-tracker-home">
+  <script>
+    // Une feuille de style qui échoue ne se recharge jamais seule. L'overlay
+    // ouvre le site au démarrage de Windows, parfois avant que le réseau soit
+    // prêt, et le garde ouvert des jours : sans home.css, les avatars de
+    // l'accueil recouvraient toute la page. Ce script s'exécute une fois les
+    // feuilles ci-dessus chargées ou en échec.
+    (() => {
+      const MAX_ATTEMPTS = 5;
+      // Chromium garde une feuille vide et illisible pour un échec, d'où le
+      // test sur cssRules plutôt que sur link.sheet seul.
+      const loaded = link => {
+        try { return Boolean(link.sheet && link.sheet.cssRules.length); } catch { return false; }
+      };
+      const retry = (failed, attempt) => {
+        const next = failed.cloneNode();
+        const url = new URL(failed.href);
+        url.searchParams.set('retry', String(attempt));
+        next.href = url.href;
+        next.addEventListener('error', () => {
+          if (attempt < MAX_ATTEMPTS) window.setTimeout(() => retry(next, attempt + 1), attempt * 2000);
+        }, { once: true });
+        failed.after(next);
+        failed.remove();
+      };
+      document.querySelectorAll('link[rel="stylesheet"]').forEach(link => {
+        // Les polices Google ne sont pas vitales, et un paramètre inconnu
+        // pourrait leur être refusé.
+        if (!link.href.startsWith(window.location.origin) || loaded(link)) return;
+        window.setTimeout(() => retry(link, 1), 1000);
+      });
+    })();
+  </script>
 </head>
 <body>
   <svg class="oly-icon-sprite" aria-hidden="true" focusable="false">
@@ -192,7 +224,7 @@
           </div>
         </details>
         <!-- Profile indicator -->
-        <button class="profile-indicator" id="profile-indicator" type="button" onclick="window.OLYCITY._showProfilePicker()" title="Changer de profil" aria-label="Changer de profil">
+        <button class="profile-indicator" id="profile-indicator" type="button" onclick="window.OLYCITY._showProfilePicker()" title="Mon compte" aria-label="Mon compte">
           <span class="profile-indicator-name">—</span>
         </button>
 
@@ -437,6 +469,10 @@
           <a href="https://github.com/liam-thorel/OLYVALO/releases/latest" target="_blank" rel="noopener noreferrer" class="live-download-link live-download-secondary" id="overlay-download-link" title="Voir les fichiers de l’overlay sur GitHub (nouvel onglet)">
             <span>Overlay · GitHub</span><span aria-hidden="true">↗</span>
           </a>
+          <!-- Assemblée au déploiement du site depuis extension/ (pages.yml). -->
+          <a href="./downloads/olycity-livechat-extension.zip" download class="live-download-link live-download-secondary" id="extension-download-link" title="Extension Chrome / Edge : envoyer la vidéo que tu regardes sur le livechat">
+            <span>Extension livechat</span><span aria-hidden="true">↓</span>
+          </a>
         </div>
       </div>
       <div class="live-waiting" id="live-waiting">
@@ -514,7 +550,7 @@
   <!-- Firebase SDK -->
   <!-- Présence Firebase -->
   <script src="./js/presence.js?v=20261005-return-live"></script>
-  <script type="module" src="./js/main.js?v=20261008-peak"></script>
+  <script type="module" src="./js/main.js?v=20261024-discord"></script>
   <script type="module" src="./js/music-player.mjs"></script>
 </body>
 </html>

@@ -48,6 +48,10 @@ jobs:
           # à faire sur Pages : il est distribué par les Releases GitHub.
           mkdir -p _site/live
           cp live/update-manifest.json _site/live/
+          # Extension navigateur du livechat, à charger « non empaquetée » :
+          # un zip du dossier, sans rien d'autre.
+          mkdir -p _site/downloads
+          (cd extension && zip -qr ../_site/downloads/olycity-livechat-extension.zip . -x 'README.md')
           # Un Service Worker au contenu identique n'émet aucun updatefound.
           # Le SHA rend chaque déploiement détectable, y compris dans la PWA
           # mobile ou dans un onglet resté ouvert plusieurs heures.

@@ -144,7 +144,7 @@ test('profile selection is accessible, stable and does not reload the site', () 
   assert.match(components, /\.profile-grid[\s\S]*grid-template-columns/);
   assert.match(components, /\.profile-guest-btn/);
   assert.match(components, /\.profile-admin-btn/);
-  assert.match(main, /\['nico', 'liam'\]\.includes\(current\?\.id\)/);
+  assert.match(main, /\['nico', 'liam'\]\.includes\(profile\?\.id\)/);
   assert.match(main, /data-profile-admin[\s\S]*?nav\('admin'\)/);
   assert.match(fs.readFileSync(new URL('../data/members.json', import.meta.url), 'utf8'), /"id": "logan"/);
   assert.match(presence, /sessionRef\?\.set/);
@@ -580,4 +580,34 @@ test('Valorant sync results are shared through Firebase, not trapped per browser
   // L'URL n'est plus recopiée à chaque appel.
   assert.ok((main.match(/realtime-database-5bb9f/g) || []).length === 1,
     'une seule définition de l’URL Firebase');
+});
+
+test('une feuille de style perdue ne laisse plus un avatar recouvrir l’accueil', () => {
+  // Sans home.css (chargement raté dans l'overlay, lancé avant le réseau),
+  // les calques d'avatar en position absolue remplissaient toute la page.
+  assert.match(components, /:where\(:has\(> \.user-avatar-initial\)\) \{ position: relative; \}/,
+    'filet de sécurité à spécificité nulle');
+  const lastSheet = page.lastIndexOf('<link rel="stylesheet"');
+  const retryAt = page.indexOf("searchParams.set('retry'");
+  assert.ok(retryAt > lastSheet, 'la relance suit les feuilles : elles sont chargées ou en échec quand elle s’exécute');
+  assert.ok(retryAt < page.indexOf('<body>'), 'avant tout rendu');
+  assert.match(page, /link\.sheet\.cssRules\.length/, 'Chromium garde une feuille vide pour un échec');
+  assert.match(page, /link\.href\.startsWith\(window\.location\.origin\)/, 'les polices Google ne sont pas relancées');
+  assert.match(page, /attempt < MAX_ATTEMPTS/, 'relance bornée');
+});
+
+test('on n’est quelqu’un sur le site qu’avec son compte Discord', () => {
+  // Choisir le profil d'un autre n'est plus possible : seul l'invité se choisit.
+  assert.doesNotMatch(main, /state\.MEMBERS\.map\(profile => \{[\s\S]{0,200}class="profile-card/, 'plus de grille de membres à choisir');
+  assert.match(main, /_selectProfile\(profileId\) \{\s*if \(profileId !== 'guest'\) return;/);
+  assert.match(main, /data-account-login[\s\S]*?startDiscordLogin\(\)/);
+  assert.match(main, /data-account-logout[\s\S]*?_logout\(\)/);
+  // Le retour de Discord est traité avant le choix du profil.
+  const boot = main.slice(main.indexOf('async function boot()'));
+  assert.ok(boot.indexOf('completeDiscordLogin(state.MEMBERS)') < boot.indexOf('profileForAccount(account'), 'retour Discord d’abord');
+  assert.match(boot, /localStorage\.removeItem\('olycity-profile'\);\s*localStorage\.removeItem\('olycity-member-id'\);\s*window\.OLYCITY\._showProfilePicker\(loginReturn\?\.error \|\| ''\)/,
+    'un ancien profil choisi à la main ne vaut plus rien');
+  assert.match(main, /'olycity-account', 'olycity-discord-state'/, 'le compte survit aux mises à jour du site');
+  assert.match(page, /title="Mon compte"/);
+  assert.match(components, /\.discord-login-btn \{/);
 });
