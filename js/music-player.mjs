@@ -18,7 +18,7 @@ export function mountMusicPlayer({ musicOrigin = 'https://musique.olycity.fr', m
     #oly-music-remote a{display:inline-flex;align-items:center;min-height:44px;padding:0 15px;border:1px solid #514065;border-radius:9px;background:#10131a;color:#e2e5ee;font:600 12px system-ui,sans-serif;text-decoration:none}
     #oly-music-remote a:focus-visible{outline:2px solid #a87fff;outline-offset:3px}
     #oly-music-remote [hidden]{display:none!important}
-    #oly-music-space{height:var(--oly-music-space,0px);flex-shrink:0}
+    #oly-music-space{height:var(--oly-music-space,0px);flex:0 0 100%;width:100%}
     @media(max-width:768px){#oly-music-remote{left:8px;bottom:calc(var(--oly-music-nav,0px) + 8px + env(safe-area-inset-bottom));width:calc(100vw - 16px)}#oly-music-remote[data-collapsed=true]{left:auto;right:8px;width:128px}}
     @media print{#oly-music-remote,#oly-music-space{display:none!important}}
   `;
