@@ -19,7 +19,7 @@
  * un hook : aucune frappe ne nous passe sous les yeux. Voir lib/key-poll.js.
  */
 
-const { app, BaseWindow, WebContentsView, globalShortcut, Tray, Menu, shell, ipcMain, screen, dialog } = require('electron');
+const { app, BaseWindow, BrowserWindow, WebContentsView, globalShortcut, Tray, Menu, shell, ipcMain, screen, dialog } = require('electron');
 const fs = require('fs');
 const path = require('path');
 const { execFile } = require('child_process');
@@ -35,6 +35,7 @@ const { hotkeyOptions, hotkeyLabel, hotkeyStatusLabel } = require('./lib/hotkey.
 const { lolConfigPaths, lolWindowMode, displayHint } = require('./lib/display-mode.js');
 const { acceleratorKeys, createKeyPoller, createDebounce } = require('./lib/key-poll.js');
 const { centeredBounds } = require('./lib/placement.js');
+const livechatKeys = require('./lib/livechat-keys.js');
 
 const TITLEBAR_HEIGHT = 36;
 // La vue compacte est dessinée pour une colonne étroite posée sur le côté de
@@ -434,6 +435,44 @@ function syncKeyPoller(running) {
   if (keyPoller.start()) log('[raccourci]', hotkeyLabel(settings.hotkey), '— lecture directe active (LoL bloque les raccourcis Windows)');
 }
 
+// ─── Touches du livechat ─────────────────────────────────────────────────────
+// Les touches d'OLYCITY Live (couper/réactiver, passer) réglées ici plutôt
+// que dans LIVECHAT.bat : voir lib/livechat-keys.js.
+let livechatWindow = null;
+
+function openLivechatKeys() {
+  if (livechatWindow && !livechatWindow.isDestroyed()) { livechatWindow.show(); livechatWindow.focus(); return; }
+  livechatWindow = new BrowserWindow({
+    width: 440, height: 430, resizable: false, minimizable: false, maximizable: false,
+    alwaysOnTop: true, autoHideMenuBar: true, title: 'Touches du livechat', backgroundColor: '#12151c',
+    webPreferences: { preload: path.join(__dirname, 'preload-livechat.js'), contextIsolation: true, nodeIntegration: false, sandbox: true },
+  });
+  livechatWindow.setMenu(null);
+  livechatWindow.loadFile(path.join(__dirname, 'ui', 'livechat.html')).catch(() => {});
+  // Une page locale : aucune navigation, aucune fenêtre ouverte depuis elle.
+  livechatWindow.webContents.on('will-navigate', event => event.preventDefault());
+  livechatWindow.webContents.setWindowOpenHandler(() => ({ action: 'deny' }));
+  livechatWindow.on('closed', () => { livechatWindow = null; });
+}
+
+function registerLivechatKeysIpc() {
+  const write = (action, key) => {
+    const result = livechatKeys.writeLivechatKey(action, key);
+    if (result.ok) log('[livechat] touche', action, '→', livechatKeys.hotkeyLabel(key));
+    return result;
+  };
+  ipcMain.handle('livechat:read', () => livechatKeys.readLivechatKeys());
+  ipcMain.handle('livechat:capture', (_event, action, source, raw) => {
+    const captured = source === 'mouse' ? livechatKeys.keyFromMouseEvent(raw) : livechatKeys.keyFromKeyboardEvent(raw);
+    if (!captured) return null;
+    if (captured.cancel) return { cancel: true };
+    return write(action, captured.key);
+  });
+  ipcMain.handle('livechat:remove', (_event, action) => write(action, null));
+  ipcMain.handle('livechat:reset', (_event, action) => write(action,
+    action === 'toggle' ? livechatKeys.DEFAULT_TOGGLE_KEY : livechatKeys.DEFAULT_SKIP_KEY));
+}
+
 /**
  * Ramène la fenêtre au milieu de l'écran où se trouve la souris. Une position
  * mémorisée sur un second écran éteint ou tourné ailleurs laisse sinon
@@ -655,6 +694,7 @@ function refreshTrayMenu() {
       { label: updateLabel(updater.pending()), click: () => { app.isQuitting = true; updater.installNow(); } },
       { type: 'separator' },
     ] : []),
+    { label: 'Touches du livechat…', click: openLivechatKeys },
     { label: 'Ramener la fenêtre sur cet écran', click: bringWindowHere },
     // Le site est chargé une fois au démarrage et reste ouvert des jours.
     { label: 'Recharger la page', click: () => siteView?.webContents.reloadIgnoringCache() },
@@ -732,6 +772,7 @@ if (!app.requestSingleInstanceLock()) {
   });
 
   ipcMain.on('overlay:hide', () => apply(reduce(state, 'hide')));
+  registerLivechatKeysIpc();
   ipcMain.on('overlay:opacity', (_event, value) => {
     settings.opacity = sanitize({ ...settings, opacity: value }).opacity;
     window_?.setOpacity(settings.opacity);

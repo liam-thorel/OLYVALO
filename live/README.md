@@ -95,6 +95,8 @@ petit), ou une position libre depuis le site.
   reste jouable.
 - **Ctrl + Maj + F9** passe le média en cours. **Ctrl + Maj + F10** coupe ou
   réactive le livechat, avec une petite confirmation à l'écran.
+- Les deux touches se changent aussi depuis l'**overlay** (clic droit sur
+  son icône → Touches du livechat…).
 - **LIVECHAT.bat** règle tout sur ce PC : couper/réactiver, volume, durée
   maximale d'une vidéo, et **les deux touches**. On les choisit en appuyant
   dessus, avec ou sans Ctrl/Maj/Alt/Win. Les boutons 4/5 de la souris

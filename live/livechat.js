@@ -55,6 +55,17 @@ function cacheDir() {
   return path.join(base, 'OLYCITY', 'livechat');
 }
 
+// Emplacement fixe où le Live indique où sont ses réglages : l'overlay, qui
+// ne sait pas où le Live a été dézippé, y lit et y modifie les touches.
+const SETTINGS_POINTER = 'settings-location.json';
+
+function publishSettingsLocation(configPath, version) {
+  try {
+    fs.mkdirSync(cacheDir(), { recursive: true });
+    fs.writeFileSync(path.join(cacheDir(), SETTINGS_POINTER), `${JSON.stringify({ configPath, version, updatedAt: Date.now() }, null, 2)}\n`, 'utf8');
+  } catch { /* l'overlay ne pourra simplement pas régler les touches */ }
+}
+
 function extensionFor(contentType, url) {
   const type = String(contentType || '').toLowerCase();
   if (type.includes('gif')) return '.gif';
@@ -470,6 +481,7 @@ function createLiveChat({ firebaseHost, getIdentity, putFB, log, installDir = __
 
   function start() {
     if (process.platform !== 'win32') return;
+    publishSettingsLocation(configPath, scriptVersion);
     stream = openFirebaseStream({
       host: firebaseHost,
       path: LIVECHAT_QUEUE_PATH,
@@ -504,4 +516,4 @@ function createLiveChat({ firebaseHost, getIdentity, putFB, log, installDir = __
   return { start, stop, setEnabled };
 }
 
-module.exports = { createLiveChat, compileHost, compileProgram, hostKind, extensionFor, skipArgs };
+module.exports = { createLiveChat, compileHost, compileProgram, hostKind, extensionFor, skipArgs, SETTINGS_POINTER };
