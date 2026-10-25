@@ -85,7 +85,11 @@ async function loadData() {
     console.warn('[OLYCITY] Données statiques restaurées depuis le cache');
   }
   const [comps, roster, members, roles, agentsFr, lineups, meta] = bundle;
-  const memberOverlay = await fetchJsonWithTimeout(`${FIREBASE_URL}/rosterOverlay.json`, { timeoutMs:2_500 }).catch(() => null);
+  const [memberOverlay, discordProfiles] = await Promise.all([
+    fetchJsonWithTimeout(`${FIREBASE_URL}/rosterOverlay.json`, { timeoutMs:2_500 }).catch(() => null),
+    // Photos Discord actuelles, publiées par le bot (discord-bot/discord-profiles.js).
+    fetchJsonWithTimeout(`${FIREBASE_URL}/discordProfiles.json`, { timeoutMs:2_500 }).catch(() => null),
+  ]);
   // Lineups ajoutés depuis le site, hors déploiement. Indisponibles = on
   // affiche ceux du dépôt, ce qui reste la situation d'avant.
   const addedLineups = await fetchJsonWithTimeout(`${FIREBASE_URL}/lineups.json`, { timeoutMs:2_500 }).catch(() => null);
@@ -93,7 +97,7 @@ async function loadData() {
   state.COMPS_DATA = comps;
   state.ROSTER = roster;
   state.ROSTER_OVERLAY = memberOverlay || null;
-  state.MEMBERS = mergeMemberProfiles({ roster, members, overlay: memberOverlay || {} });
+  state.MEMBERS = mergeMemberProfiles({ roster, members, overlay: memberOverlay || {}, profiles: discordProfiles });
   state.ROLES = roles.roles;
   state.ROLE_LABEL = { D: 'Duel', I: 'Init', S: 'Sent', C: 'Ctrl' };
   state.ROLE_FULL  = roles.labels;

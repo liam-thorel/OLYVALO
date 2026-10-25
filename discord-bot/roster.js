@@ -96,7 +96,7 @@ function lolMainRiotIdFromRoster(player) {
   return formatRosterAccount(player?.lol);
 }
 
-function indexRoster(roster, overlay) {
+function indexRoster(roster, overlay, profiles = null) {
   const overlayMembers = overlay?.members || {};
   const overlayAccounts = overlay?.accounts || {};
   const owners = declaredOwners(roster, slugify);
@@ -118,6 +118,14 @@ function indexRoster(roster, overlay) {
     .map(([id, m]) => ({ id, name: m.name, avatar: m.avatar || null, source: 'overlay', discordId: discordIdOf(m), riotIds: [], mainRiotId: null, lolMainRiotId: null, mainPuuid: null, lolMainPuuid: null, puuids: [] }));
 
   members = [...staticMembers, ...extraMembers];
+
+  // Photo Discord actuelle (discord-profiles.js) plutôt que l'adresse figée
+  // du roster, qui casse dès que la personne change sa photo.
+  members.forEach(member => {
+    const profile = profiles?.[member.id];
+    const discordAvatar = /^https:\/\/cdn\.discordapp\.com\/(avatars|embed\/avatars)\//.test(String(profile?.avatar || ''));
+    if (discordAvatar && (!member.discordId || profile.discordId === member.discordId)) member.avatar = profile.avatar;
+  });
 
   members.forEach(member => {
     const accounts = overlayAccounts[member.id];
@@ -177,12 +185,13 @@ function indexRoster(roster, overlay) {
 
 async function ensureRoster(force = false) {
   if (!force && members.length && Date.now() - lastFetch < REFRESH_MS) return members;
-  const [rosterRes, overlay] = await Promise.all([
+  const [rosterRes, overlay, profiles] = await Promise.all([
     fetch(ROSTER_URL),
     fbGet('rosterOverlay').catch(() => null),
+    fbGet('discordProfiles').catch(() => null),
   ]);
   if (!rosterRes.ok) throw new Error(`Impossible de charger le roster (${rosterRes.status})`);
-  indexRoster(await rosterRes.json(), overlay);
+  indexRoster(await rosterRes.json(), overlay, profiles);
   lastFetch = Date.now();
   return members;
 }

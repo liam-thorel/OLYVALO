@@ -270,7 +270,9 @@ function senderFor(user, guildMember, memberByDiscordId) {
   return {
     id: member?.id || null,
     name: member?.name || guildMember?.displayName || user.globalName || user.username,
-    avatar: member?.avatar || user.displayAvatarURL?.({ extension: 'png', size: 128 }) || null,
+    // La photo Discord du moment passe avant celle du roster, parfois périmée.
+    avatar: (user.avatar && user.displayAvatarURL?.({ extension: 'png', size: 128 }))
+      || member?.avatar || user.displayAvatarURL?.({ extension: 'png', size: 128 }) || null,
   };
 }
 

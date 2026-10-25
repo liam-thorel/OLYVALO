@@ -26,6 +26,7 @@ const { ownPresence, decodedPresence, valorantActivity } = require('./riot-activ
 const { resolveRiotIdentity } = require('./riot-identity.js');
 const { valorantHistorySummary } = require('./history-index.js');
 const { createLiveChat } = require('./livechat.js');
+const { ensureMemberRegistered } = require('./member-registration.js');
 const { watchReleaseSignal } = require('./release-signal.js');
 const {
   normalizeValorantMode,
@@ -35,7 +36,7 @@ const {
 } = require('./valorant-mode-utils.js');
 
 const FIREBASE_URL = 'https://realtime-database-5bb9f-default-rtdb.europe-west1.firebasedatabase.app';
-const SCRIPT_VERSION = '4.24.0';
+const SCRIPT_VERSION = '4.24.1';
 const INSTANCE_LOCK_PATH = path.join(__dirname, '.olycity-live.lock');
 const LOG_PATH = path.join(__dirname, 'olycity.log');
 const MAX_LOG_BYTES = 5 * 1024 * 1024;
@@ -372,11 +373,21 @@ function openIdentityPrompt() {
   }
 }
 
+// Une fois par démarrage : une personne créée sur ce PC figure bien au roster.
+let memberRegistrationChecked = false;
+function checkMemberRegistration(current) {
+  if (memberRegistrationChecked || !current) return;
+  memberRegistrationChecked = true;
+  ensureMemberRegistered({ identity: current, getFB, putFB, log: message => console.log(`[${ts()}] ${message}`) })
+    .catch(error => console.log(`[${ts()}] Inscription au roster impossible — ${error.message}`));
+}
+
 function ensureIdentity() {
-  if (identity) return identity;
+  if (identity) { checkMemberRegistration(identity); return identity; }
   identity = readIdentity(__dirname);
   if (identity) {
     console.log(`[${ts()}] 👤 Identité OLYCITY : ${identity.memberName}`);
+    checkMemberRegistration(identity);
     return identity;
   }
   const now = Date.now();

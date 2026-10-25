@@ -1,5 +1,5 @@
 {
-  "version": "4.24.0",
+  "version": "4.24.1",
   "files": [
     "index.js",
     "lol-watcher.js",
@@ -24,6 +24,7 @@
     "ask-identity.js",
     "http-redirect.js",
     "account-binding.js",
+    "member-registration.js",
     "maintenance.js",
     "presence-schema.js",
     "riot-identity.js",
