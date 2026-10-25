@@ -14,6 +14,7 @@ module.exports = {
       + 's\'affiche sur l\'écran de tous ceux qui ont OLYCITY Live.\n'
       + '• Format : commence par `g:` (grand), `m:` (moyen, par défaut) ou `p:` (petit).\n'
       + '• Pour une seule personne : commence par sa mention, ex. `g: @Nico regarde ça`.\n'
+      + '• Un lien YouTube, Twitch, X, Reddit, TikTok… marche aussi : ajoute `1:20-1:35` pour n\'en garder qu\'un extrait.\n'
       + '• Ou utilise `/livechat`. Sur le site : https://olycity.fr/livechat',
     );
   },

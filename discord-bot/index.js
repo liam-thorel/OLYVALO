@@ -86,6 +86,7 @@ process.on('uncaughtException', error => {
   './commands/list.js',
   './commands/livechat.js',
   './commands/livechat-salon.js',
+  './commands/livechat-reactiver.js',
   './commands/mybets.js',
   './commands/recap-channel.js',
   './commands/recap-lol-flex.js',

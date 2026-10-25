@@ -1,5 +1,5 @@
 {
-  "version": "4.23.4",
+  "version": "4.24.0",
   "files": [
     "index.js",
     "lol-watcher.js",
@@ -42,6 +42,9 @@
     "livechat.js",
     "livechat-utils.js",
     "livechat-host.cs",
+    "livechat-keys.cs",
+    "ytdlp.js",
+    "video-links.js",
     "livechat-settings.js",
     "LIVECHAT.bat",
     "update-manifest.json",

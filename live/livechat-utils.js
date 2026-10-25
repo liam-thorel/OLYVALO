@@ -9,8 +9,15 @@
  * dans livechat.js et livechat-host.cs.
  */
 
+const { normalizeVideoLink } = require('./video-links.js');
+
 const LIVECHAT_QUEUE_PATH = 'livechat/queue';
 const LIVECHAT_RECEIVERS_PATH = 'livechat/receivers';
+// Réactivation à distance (/livechat-reactiver, réservée à Liam).
+const LIVECHAT_CONTROL_PATH = 'livechat/control';
+// Une réactivation plus vieille ne s'applique plus : un PC rallumé trois
+// jours après ne doit pas défaire un choix fait entre-temps.
+const CONTROL_MAX_AGE_MS = 12 * 60 * 60 * 1000;
 
 // Au-delà, un élément est considéré comme raté : on ne fait pas surgir un
 // mème de la veille au démarrage du PC.
@@ -109,6 +116,10 @@ function normalizeItem(id, raw) {
   let media = null;
   if (raw.media && typeof raw.media === 'object' && isAllowedMediaUrl(raw.media.url)) {
     media = { url: String(raw.media.url), kind: mediaKind(raw.media.kind, raw.media.url) };
+  } else if (raw.link && typeof raw.link === 'object') {
+    // Lien YouTube, clip Twitch… : lu par yt-dlp, uniquement sur les sites connus.
+    const link = normalizeVideoLink(raw.link.url);
+    if (link) media = { url: link.url, kind: 'video', link: true, site: link.site };
   }
   if (!media && !text) return null;
 
@@ -166,14 +177,82 @@ function shouldDisplay(item, { memberId = '', now = Date.now(), seen = new Set()
  * Réglages propres au poste (olycity-livechat.json, hors manifeste pour
  * survivre aux mises à jour). Activé par défaut : c'est tout l'intérêt.
  */
+// Touches par défaut. Ctrl+Maj+F9 passait déjà un affichage ; F8 et F7
+// appartiennent à l'overlay.
+const DEFAULT_SKIP_KEY = { vk: 0x78, ctrl: true, shift: true, alt: false, win: false };
+const DEFAULT_TOGGLE_KEY = { vk: 0x79, ctrl: true, shift: true, alt: false, win: false };
+// Touches qui ne peuvent pas être la touche principale d'un raccourci : les
+// modificateurs eux-mêmes, et les clics gauche/droit (on ne doit pas pouvoir
+// couper le livechat en cliquant dans le jeu).
+const MODIFIER_VKS = new Set([0x10, 0x11, 0x12, 0x5b, 0x5c, 0xa0, 0xa1, 0xa2, 0xa3, 0xa4, 0xa5]);
+const FORBIDDEN_VKS = new Set([0x01, 0x02]);
+
+/** Raccourci valide { vk, ctrl, shift, alt, win }, null (aucun) ou le défaut. */
+function normalizeHotkey(raw, fallback) {
+  if (raw === null) return null;
+  if (!raw || typeof raw !== 'object') return fallback;
+  const vk = Math.round(Number(raw.vk));
+  if (!Number.isInteger(vk) || vk < 1 || vk > 254 || MODIFIER_VKS.has(vk) || FORBIDDEN_VKS.has(vk)) return fallback;
+  return { vk, ctrl: raw.ctrl === true, shift: raw.shift === true, alt: raw.alt === true, win: raw.win === true };
+}
+
+const VK_NAMES = {
+  0x03: 'Pause/Attn', 0x04: 'Clic molette', 0x05: 'Souris 4', 0x06: 'Souris 5',
+  0x08: 'Retour arrière', 0x09: 'Tab', 0x0d: 'Entrée', 0x13: 'Pause', 0x14: 'Verr. Maj',
+  0x1b: 'Échap', 0x20: 'Espace', 0x21: 'Page préc.', 0x22: 'Page suiv.', 0x23: 'Fin', 0x24: 'Début',
+  0x25: 'Gauche', 0x26: 'Haut', 0x27: 'Droite', 0x28: 'Bas', 0x2c: 'Impr. écran', 0x2d: 'Inser', 0x2e: 'Suppr',
+  0x5d: 'Menu', 0x6a: 'Pavé *', 0x6b: 'Pavé +', 0x6d: 'Pavé -', 0x6e: 'Pavé .', 0x6f: 'Pavé /',
+  0x90: 'Verr. Num', 0x91: 'Arrêt défil', 0xad: 'Muet', 0xae: 'Volume -', 0xaf: 'Volume +',
+  0xb0: 'Piste suivante', 0xb1: 'Piste précédente', 0xb3: 'Lecture/Pause',
+  0xba: '$', 0xbb: '=', 0xbc: ',', 0xbe: ';', 0xbf: ':', 0xc0: 'ù', 0xdb: ')', 0xdc: '*', 0xdd: '^', 0xde: '²', 0xdf: '!', 0xe2: '<',
+};
+
+function vkName(vk) {
+  if (vk >= 0x70 && vk <= 0x87) return `F${vk - 0x6f}`;
+  if ((vk >= 0x30 && vk <= 0x39) || (vk >= 0x41 && vk <= 0x5a)) return String.fromCharCode(vk);
+  if (vk >= 0x60 && vk <= 0x69) return `Pavé ${vk - 0x60}`;
+  return VK_NAMES[vk] || `Touche ${vk}`;
+}
+
+/** « Ctrl+Maj+F9 », pour les menus et les messages. */
+function hotkeyLabel(key) {
+  if (!key) return 'aucune';
+  return [key.ctrl && 'Ctrl', key.shift && 'Maj', key.alt && 'Alt', key.win && 'Win', vkName(key.vk)].filter(Boolean).join('+');
+}
+
+function sameHotkey(a, b) {
+  return Boolean(a && b) && a.vk === b.vk && a.ctrl === b.ctrl && a.shift === b.shift && a.alt === b.alt && a.win === b.win;
+}
+
 function parseLiveChatConfig(raw) {
   let parsed = {};
   try { parsed = JSON.parse(String(raw || '{}')) || {}; } catch { parsed = {}; }
+  const skipKey = normalizeHotkey(parsed.skipKey, DEFAULT_SKIP_KEY);
+  let toggleKey = normalizeHotkey(parsed.toggleKey, DEFAULT_TOGGLE_KEY);
+  // Une même combinaison ne peut pas faire deux choses : passer l'emporte.
+  if (sameHotkey(skipKey, toggleKey)) toggleKey = null;
   return {
     enabled: parsed.enabled !== false,
     volume: Math.round(clamp(parsed.volume, 0, 100, 60)),
     maxVideoSeconds: Math.round(clamp(parsed.maxVideoSeconds, 5, 120, 30)),
+    skipKey,
+    toggleKey,
+    // Dernière réactivation à distance déjà appliquée sur ce PC.
+    controlAppliedAt: Math.max(0, Number(parsed.controlAppliedAt) || 0),
   };
+}
+
+/**
+ * Réactivation à distance qui concerne ce PC et n'a pas encore été appliquée :
+ * la plus récente entre « tous » et « ce membre », ou null.
+ */
+function pendingControl(control, { memberId = '', appliedAt = 0, now = Date.now() } = {}) {
+  if (!control || typeof control !== 'object') return null;
+  const candidates = [control.all, memberId ? control.members?.[memberId] : null]
+    .filter(entry => entry && typeof entry === 'object')
+    .map(entry => ({ at: Number(entry.enableAt) || 0, by: String(entry.by || 'un admin').slice(0, 40) }))
+    .filter(entry => entry.at > appliedAt && now - entry.at <= CONTROL_MAX_AGE_MS && entry.at - now <= CONTROL_MAX_AGE_MS);
+  return candidates.sort((a, b) => b.at - a.at)[0] || null;
 }
 
 /**
@@ -242,6 +321,14 @@ function applyQueueEvent(queue, event, data) {
 module.exports = {
   LIVECHAT_QUEUE_PATH,
   LIVECHAT_RECEIVERS_PATH,
+  LIVECHAT_CONTROL_PATH,
+  DEFAULT_SKIP_KEY,
+  DEFAULT_TOGGLE_KEY,
+  hotkeyLabel,
+  normalizeHotkey,
+  pendingControl,
+  sameHotkey,
+  vkName,
   MAX_ITEM_AGE_MS,
   MAX_MEDIA_BYTES,
   MEDIA_HOSTS,

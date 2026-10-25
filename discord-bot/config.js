@@ -14,7 +14,12 @@ const DISCORD_LOG_CHANNEL_ID = process.env.DISCORD_LOG_CHANNEL_ID || null;
 const RESULT_DELETE_ALLOWED_IDS = String(process.env.RESULT_DELETE_ALLOWED_IDS || '')
   .split(',').map(id => id.trim()).filter(Boolean);
 
+// Comptes Discord qui peuvent réactiver le livechat chez les autres
+// (/livechat-reactiver). Par défaut : Liam (toasterliam).
+const LIVECHAT_ADMIN_IDS = String(process.env.LIVECHAT_ADMIN_IDS || '292778302278598656')
+  .split(',').map(id => id.trim()).filter(Boolean);
+
 if (!DISCORD_TOKEN) throw new Error('DISCORD_TOKEN manquant — copie .env.example vers .env et remplis-le.');
 if (!DISCORD_CLIENT_ID) throw new Error('DISCORD_CLIENT_ID manquant — copie .env.example vers .env et remplis-le.');
 
-module.exports = { FIREBASE_URL, ROSTER_URL, ROLES_URL, DISCORD_TOKEN, DISCORD_CLIENT_ID, DISCORD_GUILD_ID, DISCORD_LOG_CHANNEL_ID, RESULT_DELETE_ALLOWED_IDS };
+module.exports = { FIREBASE_URL, ROSTER_URL, ROLES_URL, DISCORD_TOKEN, DISCORD_CLIENT_ID, DISCORD_GUILD_ID, DISCORD_LOG_CHANNEL_ID, RESULT_DELETE_ALLOWED_IDS, LIVECHAT_ADMIN_IDS };

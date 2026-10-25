@@ -10,13 +10,19 @@
  *   POST /upload/start      { type, size }            → { key, uploadId, partSize }
  *   PUT  /upload/part?key=&uploadId=&part=N  (morceau)  → { partNumber, etag }
  *   POST /upload/complete   { key, uploadId, parts }  → { key }
- *   POST /send              { fromName, text, mediaKey, size, … } → { ok, id }
+ *   POST /send              { text, mediaKey | link, trim, size, … } → { ok, id }
  *   GET  /me                membre du roster reconnu derrière le jeton Discord
+ *   POST /control           { target: 'all' | membre } → réactive le livechat
+ *                           chez tous ou chez une personne (Liam uniquement)
  *   GET  /m/<clé>           lecture publique, avec plages (Range)
  *
  * /send écrit l'élément dans livechat/queue, que les OLYCITY Live écoutent, et
  * annonce l'envoi dans le salon #livechat par webhook. Le bot ignore les
  * messages de webhook : sans cela, chaque envoi s'afficherait deux fois.
+ *
+ * Un lien vidéo (YouTube, clip Twitch, X…) part tel quel dans la file : ce
+ * sont les Live qui le lisent avec yt-dlp, uniquement sur les sites connus.
+ * L'extension navigateur (extension/) envoie par les mêmes routes.
  *
  * Toute écriture exige la connexion Discord de la page (jeton OAuth2,
  * `Authorization: Bearer …`). Le Worker demande à Discord à qui il appartient
@@ -28,6 +34,8 @@ const DEFAULT_FIREBASE = 'https://realtime-database-5bb9f-default-rtdb.europe-we
 const DEFAULT_MEMBERS_URL = 'https://tracker.olycity.fr/data/members.json';
 const DISCORD_API = 'https://discord.com/api/v10';
 const IDENTITY_TTL_MS = 10 * 60 * 1000;
+// Seul ce compte Discord (toasterliam) peut réactiver le livechat à distance.
+const DEFAULT_ADMIN_IDS = ['292778302278598656'];
 const ROSTER_TTL_MS = 10 * 60 * 1000;
 const MAX_BYTES = 500 * 1024 * 1024;
 // Sous la limite de 100 Mo par requête du plan gratuit, au-dessus du minimum
@@ -49,6 +57,43 @@ const EXTENSIONS = {
 // Le Live n'accepte que ces hôtes : l'avatar envoyé par le site doit en être.
 const AVATAR_HOSTS = ['cdn.discordapp.com', 'media.discordapp.net'];
 
+// Extension navigateur OLYCITY Livechat (identifiant fixé par sa clé publique).
+const EXTENSION_ORIGINS = ['chrome-extension://enlemeekfaobchkhfgealebaiabpmdgm'];
+
+// Même liste que live/video-links.js : le Live refuse tout autre site.
+export const VIDEO_LINK_HOSTS = [
+  'youtube.com', 'youtu.be', 'youtube-nocookie.com', 'twitch.tv', 'x.com', 'twitter.com',
+  'reddit.com', 'redd.it', 'tiktok.com', 'instagram.com', 'streamable.com', 'vimeo.com',
+  'dailymotion.com', 'dai.ly', 'kick.com', 'medal.tv',
+];
+const MAX_LINK_LENGTH = 500;
+
+/**
+ * Lien vidéo accepté, sous forme canonique (YouTube ramené à watch?v=ID),
+ * ou null. Même règle que live/video-links.js.
+ */
+export function normalizeVideoLink(input) {
+  const raw = String(input || '').trim();
+  if (!raw || raw.length > MAX_LINK_LENGTH) return null;
+  let parsed;
+  try { parsed = new URL(raw); } catch { return null; }
+  if (parsed.protocol !== 'https:' && parsed.protocol !== 'http:') return null;
+  if (parsed.username || parsed.password || (parsed.port && parsed.port !== '443')) return null;
+  const host = parsed.hostname.toLowerCase();
+  if (!VIDEO_LINK_HOSTS.some(allowed => host === allowed || host.endsWith(`.${allowed}`))) return null;
+  if (/youtu/.test(host)) {
+    const bare = host.replace(/^(www|m|music)\./, '');
+    let id = null;
+    if (bare === 'youtu.be') id = parsed.pathname.split('/')[1];
+    else if (parsed.pathname === '/watch') id = parsed.searchParams.get('v');
+    else id = parsed.pathname.match(/^\/(?:shorts|embed|live|v)\/([^/?#]+)/)?.[1] || null;
+    return /^[A-Za-z0-9_-]{11}$/.test(String(id || '')) ? `https://www.youtube.com/watch?v=${id}` : null;
+  }
+  parsed.protocol = 'https:';
+  parsed.hash = '';
+  return parsed.toString();
+}
+
 const lastActionByIp = new Map();
 const identities = new Map();
 let rosterCache = { members: null, at: 0 };
@@ -67,7 +112,9 @@ export function siteOrigins(env) {
 }
 
 function originAllowed(origin, env) {
-  return siteOrigins(env).includes(origin) || /^http:\/\/(127\.0\.0\.1|localhost)(:\d+)?$/.test(origin);
+  return siteOrigins(env).includes(origin)
+    || EXTENSION_ORIGINS.includes(origin)
+    || /^http:\/\/(127\.0\.0\.1|localhost)(:\d+)?$/.test(origin);
 }
 
 function corsHeaders(request, env) {
@@ -168,11 +215,31 @@ export async function authenticate(request, env, now = Date.now()) {
         avatar: allowedAvatar(member.avatar)
           || (user.avatar ? `https://cdn.discordapp.com/avatars/${user.id}/${user.avatar}.png?size=128` : null),
       },
+      discordId: String(user.id),
     }
     : { error: 'Ton compte Discord ne fait pas partie du roster OLYCITY.', status: 403 };
   identities.set(hash, { result, at: now });
   if (identities.size > 500) identities.clear();
   return result;
+}
+
+export function adminIds(env) {
+  const list = String(env?.LIVECHAT_ADMIN_IDS || '').split(',').map(id => id.trim()).filter(Boolean);
+  return list.length ? list : DEFAULT_ADMIN_IDS;
+}
+
+export function isAdmin(identity, env) {
+  return Boolean(identity?.discordId) && adminIds(env).includes(identity.discordId);
+}
+
+/** Chemin et contenu d'une réactivation à distance, ou { error }. */
+export function controlWrite(target, by) {
+  const who = String(target || '').toLowerCase();
+  if (who !== 'all' && !/^[a-z0-9_-]{1,48}$/.test(who)) return { error: 'Destinataire invalide.' };
+  return {
+    path: who === 'all' ? 'livechat/control/all' : `livechat/control/members/${who}`,
+    value: { enableAt: { '.sv': 'timestamp' }, by: String(by || 'Liam').slice(0, 40) },
+  };
 }
 
 /** Clés créées par /upload/start uniquement : pas de chemin, pas de « .. ». */
@@ -199,7 +266,11 @@ export function parseSubmission(body = {}, member = null) {
   const text = String(body.text || '').replace(/\s+/g, ' ').trim().slice(0, MAX_TEXT_LENGTH);
   const mediaKey = body.mediaKey ? String(body.mediaKey) : null;
   if (mediaKey && !isValidKey(mediaKey)) return { error: 'Média introuvable.' };
-  if (!mediaKey && !text) return { error: 'Il faut un média, un texte, ou les deux.' };
+  const link = !mediaKey && body.link ? normalizeVideoLink(body.link) : null;
+  if (!mediaKey && body.link && !link) {
+    return { error: 'Lien non pris en charge : YouTube, Twitch, X, Reddit, TikTok, Instagram, Streamable, Vimeo, Dailymotion, Kick ou Medal.' };
+  }
+  if (!mediaKey && !link && !text) return { error: 'Il faut un média, un lien, un texte, ou les deux.' };
 
   if (!member?.name) return { error: 'Connecte-toi avec Discord.', status: 401 };
   const size = SIZES.has(body.size) ? body.size : 'moyen';
@@ -216,6 +287,7 @@ export function parseSubmission(body = {}, member = null) {
   const duration = Number(body.durationMs);
   return {
     mediaKey,
+    link,
     text,
     size,
     box,
@@ -224,6 +296,7 @@ export function parseSubmission(body = {}, member = null) {
     muted: body.muted === true,
     trim: parseTrim(body.trim),
     target: String(body.target || '').toLowerCase().replace(/[^a-z0-9_-]/g, '').slice(0, 48) || null,
+    via: body.via === 'extension' ? 'extension' : 'site',
     targetName: String(body.targetName || '').trim().slice(0, 40) || null,
     from: { id: String(member.id), name: String(member.name).slice(0, 40), avatar: allowedAvatar(member.avatar) },
   };
@@ -252,7 +325,9 @@ export function discordContent(submission, mediaUrl = null) {
   const lines = [];
   if (submission.text) lines.push(submission.text);
   if (mediaUrl) lines.push(mediaUrl);
-  lines.push(`-# 📺 envoyé depuis olycity.fr/livechat · ${details.join(' · ')}`);
+  // Le lien sans aperçu Discord : l'historique reste lisible.
+  if (submission.link) lines.push(`<${submission.link}>`);
+  lines.push(`-# 📺 envoyé depuis ${submission.via === 'extension' ? 'l’extension navigateur' : 'olycity.fr/livechat'} · ${details.join(' · ')}`);
   return lines.join('\n');
 }
 
@@ -263,12 +338,13 @@ export function queueItem(submission, media, discordMessageId = null) {
     from: submission.from,
     text: submission.text,
     media,
+    ...(submission.link ? { link: { url: submission.link } } : {}),
     size: submission.size,
     ...(submission.box ? { box: submission.box } : {}),
     textPos: submission.textPos,
     ...(submission.durationMs ? { durationMs: submission.durationMs } : {}),
     ...(submission.muted ? { muted: true } : {}),
-    ...(submission.trim && media?.kind === 'video' ? { trim: submission.trim } : {}),
+    ...(submission.trim && (media?.kind === 'video' || submission.link) ? { trim: submission.trim } : {}),
     target: submission.target,
     ...(discordMessageId ? { discordMessageId } : {}),
   };
@@ -346,7 +422,21 @@ export async function handleRequest(request, env, { now = Date.now() } = {}) {
   if (identity.error) return json({ error: identity.error }, identity.status, cors);
 
   // La page affiche le membre tel que le Worker le reconnaît.
-  if (url.pathname === '/me' && request.method === 'GET') return json({ member: identity.member }, 200, cors);
+  if (url.pathname === '/me' && request.method === 'GET') {
+    return json({ member: identity.member, admin: isAdmin(identity, env) }, 200, cors);
+  }
+
+  if (url.pathname === '/control' && request.method === 'POST') {
+    if (!isAdmin(identity, env)) return json({ error: 'Réservé à Liam.' }, 403, cors);
+    const order = controlWrite((await readJson(request) || {}).target, identity.member.name);
+    if (order.error) return json({ error: order.error }, 400, cors);
+    const firebase = String(env.FIREBASE_ROOT || DEFAULT_FIREBASE).replace(/\/$/, '');
+    const res = await fetch(`${firebase}/${order.path}.json`, {
+      method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(order.value),
+    });
+    if (!res.ok) return json({ error: `Firebase a refusé (HTTP ${res.status}).` }, 502, cors);
+    return json({ ok: true }, 200, cors);
+  }
 
   if (url.pathname === '/upload/start' && request.method === 'POST') {
     if (rateLimited(request, now, 'start')) return json({ error: 'Doucement : un envoi toutes les 3 secondes.' }, 429, cors);
@@ -404,7 +494,7 @@ export async function handleRequest(request, env, { now = Date.now() } = {}) {
       mediaInfo = { url: mediaUrl, kind };
       // Un extrait n'a de sens que pour une vidéo.
       if (kind !== 'video') submission.trim = null;
-    } else {
+    } else if (!submission.link) {
       submission.trim = null;
     }
 

@@ -19,6 +19,9 @@ for (const m of workflow.matchAll(/^\s*cp (?:-r )?([^\n|>]+?) _site\/?(\S*)$/gm)
 }
 // cp live/update-manifest.json _site/live/
 for (const m of workflow.matchAll(/^\s*cp ([^\s]+) _site\/(\S+)\/$/gm)) published.add(m[1]);
+// (cd extension && zip -qr ../_site/downloads/…zip .) : l'extension du livechat.
+for (const m of workflow.matchAll(/zip -qr \.\.\/_site\/([^/\s]+)\//g)) published.add(m[1]);
+assert.ok(published.has('downloads'), 'le zip de l’extension est publié dans downloads/');
 
 // ─── Tout ce que le site référence doit être publié ──────────────────────────
 const sources = ['index.html', 'overlay.html', ...fs.readdirSync(path.join(root, 'js')).map(f => `js/${f}`)];

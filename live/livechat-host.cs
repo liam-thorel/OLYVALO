@@ -109,6 +109,9 @@ namespace OlyLiveChat
         public int StartMs;
         public int EndMs;
         public double Volume;
+        // Touche « passer » choisie dans LIVECHAT.bat (0 : aucune).
+        public int SkipVk;
+        public bool SkipCtrl, SkipShift, SkipAlt, SkipWin;
     }
 
     class Overlay : Window
@@ -129,7 +132,7 @@ namespace OlyLiveChat
         readonly Canvas root = new Canvas();
         readonly DispatcherTimer endTimer = new DispatcherTimer();
         readonly DispatcherTimer frameTimer = new DispatcherTimer();
-        // Pendant l'affichage : raccourci « passer » (Ctrl+Maj+F9) et retour
+        // Pendant l'affichage : raccourci « passer » (Ctrl+Maj+F9 par défaut) et retour
         // au premier plan si le jeu est repassé devant. Lecture de l'état des
         // touches plutôt que RegisterHotKey, que LoL bloque quand il a le focus.
         readonly DispatcherTimer watchTimer = new DispatcherTimer();
@@ -202,6 +205,11 @@ namespace OlyLiveChat
             item.StartMs = Math.Max(0, (int)Num(cmd, "startMs", 0));
             item.EndMs = Math.Max(0, (int)Num(cmd, "endMs", 0));
             item.Volume = Num(cmd, "volume", 0.6);
+            item.SkipVk = (int)Num(cmd, "skipVk", 0x78);
+            item.SkipCtrl = Num(cmd, "skipCtrl", 1) > 0;
+            item.SkipShift = Num(cmd, "skipShift", 1) > 0;
+            item.SkipAlt = Num(cmd, "skipAlt", 0) > 0;
+            item.SkipWin = Num(cmd, "skipWin", 0) > 0;
 
             if (current != null) Finish("replaced");
             current = item;
@@ -354,7 +362,9 @@ namespace OlyLiveChat
             media.Play();
 
             var timeout = new DispatcherTimer();
-            timeout.Interval = TimeSpan.FromSeconds(10);
+            // Une vidéo lue en continu depuis Internet (lien YouTube) met plus
+            // de temps à démarrer qu'un fichier déjà téléchargé.
+            timeout.Interval = TimeSpan.FromSeconds(item.Path.StartsWith("http") ? 25 : 10);
             timeout.Tick += delegate
             {
                 timeout.Stop();
@@ -525,11 +535,18 @@ namespace OlyLiveChat
             frameTimer.Interval = TimeSpan.FromMilliseconds(delays[frameIndex]);
         }
 
-        static bool KeysDown()
+        static bool Down(int vk) { return (GetAsyncKeyState(vk) & 0x8000) != 0; }
+
+        // Modificateurs exacts : « F9 » seul ne se déclenche pas sur Ctrl+F9.
+        bool KeysDown()
         {
-            return (GetAsyncKeyState(0x11) & 0x8000) != 0
-                && (GetAsyncKeyState(0x10) & 0x8000) != 0
-                && (GetAsyncKeyState(0x78) & 0x8000) != 0;
+            var item = current;
+            if (item == null || item.SkipVk <= 0) return false;
+            return Down(item.SkipVk)
+                && Down(0x11) == item.SkipCtrl
+                && Down(0x10) == item.SkipShift
+                && Down(0x12) == item.SkipAlt
+                && (Down(0x5B) || Down(0x5C)) == item.SkipWin;
         }
 
         void Watch()

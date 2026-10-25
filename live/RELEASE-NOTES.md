@@ -1,3 +1,14 @@
+<!-- version: 4.24.0 -->
+### Livechat : liens YouTube, extension navigateur et touches à choisir
+
+- **Liens vidéo** : un lien YouTube, un clip Twitch, un tweet, un post Reddit, un TikTok… posté sur #livechat (ou avec `/livechat lien:`) s'affiche maintenant sur les écrans. Ajoute `1:20-1:35` au message pour n'en garder qu'un extrait. Au premier lien, ton PC télécharge **yt-dlp** (18 Mo, une seule fois, depuis sa page GitHub officielle, empreinte vérifiée), puis le met à jour tout seul.
+- **Extension navigateur** : au survol d'une vidéo, un logo rouge apparaît en haut à droite. Un clic, tu choisis le début et la fin sur la vidéo, et c'est envoyé. Elle se télécharge sur la page Live du tracker.
+- **Couper ou réactiver le livechat d'une touche** : **Ctrl+Maj+F10** par défaut. Une petite confirmation s'affiche en haut à droite.
+- **Toutes les touches se choisissent** dans `LIVECHAT.bat` en appuyant simplement dessus : couper/réactiver, et passer la vidéo en cours (Ctrl+Maj+F9 par défaut). Ctrl, Maj, Alt, Win et les boutons 4/5 de la souris marchent aussi.
+- Liam peut réactiver le livechat chez quelqu'un qui l'a coupé (`/livechat-reactiver` sur Discord, ou depuis l'extension).
+
+La mise à jour du script se télécharge automatiquement en arrière-plan. Si une partie est en cours, OLYCITY Live attend sa fin avant de redémarrer.
+
 <!-- version: 4.23.4 -->
 ### Livechat : des extraits de vidéo
 

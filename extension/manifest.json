@@ -1,0 +1,23 @@
+{
+  "manifest_version": 3,
+  "name": "OLYCITY Livechat",
+  "version": "1.0.0",
+  "description": "Envoie la vidéo que tu regardes (YouTube, Twitch, X, Reddit…) sur l'écran des membres OLYCITY, avec début et fin au choix.",
+  "key": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAsrzqzFhkURPng3HqFoUId+hpINb4NnxaoU3Dmg0UOkXsAX6sQDgjDAwp7RLgO0UHcc4SqsnQWOzaHr1TyzKUaYJb5yQLprgNc7noghmB0vJWfWuGJvbFLP+UKIREnKSkZNpConUBVby/k4C09FUBEqY8zrujuRAsWKfX45MVrAXpCpoGce1dFsaJp87s2d3EN+2ZZXzAngQhDpPRAdp/n5NNtql4w+yLII2EiTZhqL8hW5xTtoCwId/IlF6kApxydy/6lVEAWFLXORCeaRctjWBYKC3w0GaQad3AJLoOpmlVy18p6CjDtpjCkqpo+W/2pNJt0ZlEDEQtTPKsUQRXEwIDAQAB",
+  "permissions": ["storage", "identity"],
+  "host_permissions": ["<all_urls>"],
+  "background": { "service_worker": "background.js" },
+  "content_scripts": [
+    {
+      "matches": ["http://*/*", "https://*/*"],
+      "js": ["video-links.js", "content.js"],
+      "run_at": "document_idle"
+    }
+  ],
+  "action": {
+    "default_title": "OLYCITY Livechat",
+    "default_popup": "popup.html",
+    "default_icon": { "16": "icons/icon16.png", "32": "icons/icon32.png", "48": "icons/icon48.png", "128": "icons/icon128.png" }
+  },
+  "icons": { "16": "icons/icon16.png", "32": "icons/icon32.png", "48": "icons/icon48.png", "128": "icons/icon128.png" }
+}
