@@ -101,3 +101,9 @@ test('le Live inscrit au roster une personne créée sur ce PC, sans rien écras
   assert.deepEqual((await run({ identity: { memberId: 'liam', memberName: 'Liam', isNewMember: false } })).writes, [], 'membre du roster : rien à faire');
   assert.ok(JSON.parse(read('live/update-manifest.json')).files.includes('member-registration.js'));
 });
+
+test('la bande de membres ne se sélectionne pas, les photos ne se glissent pas', () => {
+  assert.match(read('css/home.css'), /\.home-member-strip\{-webkit-user-select:none;user-select:none\}/);
+  assert.match(read('css/components.css'), /\.user-avatar-fallback-image, \.user-avatar-primary \{ -webkit-user-drag: none; \}/);
+  assert.equal((read('js/avatars.mjs').match(/draggable="false"/g) || []).length, 2);
+});

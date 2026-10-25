@@ -1066,6 +1066,8 @@ body.profile-picker-open { overflow: hidden; }
   font-size: 28px; font-weight: 700; text-transform: uppercase;
 }
 .user-avatar-fallback-image { z-index: 1; object-fit: cover; object-position: center top; }
+/* Un clic glissé sur une photo de profil lançait le glisser-déposer de l'image. */
+.user-avatar-fallback-image, .user-avatar-primary { -webkit-user-drag: none; }
 .user-avatar-primary { z-index: 2; object-fit: cover; object-position: center top; }
 .profile-avatar img {
   width: 100%; height: 100%; object-fit: cover; object-position: top center;
