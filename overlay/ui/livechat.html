@@ -3,89 +3,160 @@
 <head>
   <meta charset="utf-8">
   <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'; script-src 'unsafe-inline'">
-  <title>Touches du livechat</title>
+  <title>Livechat</title>
   <style>
     * { box-sizing: border-box; font-family: 'Segoe UI', system-ui, sans-serif; }
     body { margin: 0; padding: 18px; background: #12151c; color: #e8e8ee; font-size: 13px; user-select: none; }
-    h1 { margin: 0 0 4px; font-size: 15px; }
-    p { margin: 0 0 14px; color: #9aa0ad; line-height: 1.45; }
+    h1 { margin: 0 0 12px; font-size: 16px; }
+    h2 { margin: 18px 0 8px; font-size: 12px; letter-spacing: 1px; text-transform: uppercase; color: #9aa0ad; }
+    p { margin: 0 0 10px; color: #9aa0ad; line-height: 1.45; }
     .row { display: grid; grid-template-columns: 1fr auto; gap: 6px 10px; align-items: center; padding: 12px; margin-bottom: 10px; border: 1px solid rgba(255,255,255,.1); border-radius: 8px; background: rgba(255,255,255,.03); }
     .row strong { font-size: 13px; }
+    .row small { grid-column: 1 / -1; color: #9aa0ad; line-height: 1.4; }
     .row kbd { justify-self: end; padding: 4px 9px; border: 1px solid rgba(255,255,255,.2); border-bottom-width: 2px; border-radius: 6px; background: #1b1f29; font: 600 12px 'Segoe UI', sans-serif; }
     .row kbd.wait { border-color: #ff4655; color: #ff8a95; }
+    .row output { justify-self: end; font-weight: 600; font-variant-numeric: tabular-nums; }
+    .row input[type=range] { grid-column: 1 / -1; width: 100%; accent-color: #ff4655; }
+    .row.off { border-color: rgba(255,70,85,.5); background: rgba(255,70,85,.08); }
     .actions { grid-column: 1 / -1; display: flex; gap: 6px; }
     button { border: 1px solid rgba(255,255,255,.16); border-radius: 6px; background: #1b1f29; color: inherit; padding: 6px 10px; cursor: pointer; font-size: 12px; }
     button:hover { border-color: rgba(255,255,255,.4); }
     button.main { background: #ff4655; border-color: #ff4655; color: #fff; font-weight: 600; }
-    .status { min-height: 18px; color: #9aa0ad; font-size: 12px; }
+    button.wide { width: 100%; padding: 10px; font-size: 13px; }
+    .switch { justify-self: end; min-width: 92px; font-weight: 600; }
+    .switch.on { background: #1f7a44; border-color: #2a9d5a; color: #fff; }
+    .status { min-height: 18px; margin-top: 4px; color: #9aa0ad; font-size: 12px; }
     .status.err { color: #ff8a95; }
     .status.ok { color: #6bd990; }
     .missing { padding: 12px; border-radius: 8px; background: rgba(255,70,85,.1); color: #ffb3ba; line-height: 1.45; }
   </style>
 </head>
 <body>
-  <h1>📺 Touches du livechat</h1>
-  <p>Le livechat d'OLYCITY Live sur ce PC. Clique sur « Changer », puis appuie sur la touche ou la combinaison voulue (Ctrl, Maj, Alt, Win et les boutons 4/5 de la souris marchent). Échap annule.</p>
-  <div id="content"></div>
+  <h1>📺 Livechat</h1>
+
+  <button type="button" class="main wide" id="send">📤 Envoyer un livechat</button>
+  <p style="margin-top:8px">Ouvre la page d'envoi dans l'overlay : fichier, lien YouTube, webcam, extrait. Pour Liam, la réactivation chez les autres est sur cette page.</p>
+
+  <h2>Sur ce PC</h2>
+  <div id="settings"></div>
+
+  <h2>Touches</h2>
+  <p>« Changer », puis appuie sur la touche ou la combinaison voulue (Ctrl, Maj, Alt, Win et les boutons 4/5 de la souris marchent). Échap annule.</p>
+  <div id="keys"></div>
+
   <div class="status" id="status" aria-live="polite"></div>
   <script>
     const ACTIONS = { toggle: 'Couper / réactiver le livechat', skip: 'Passer la vidéo en cours' };
     const $ = id => document.getElementById(id);
     let waiting = null;
+    let sliding = false;
+    let shown = '';
 
     const status = (text, kind = '') => { $('status').textContent = text; $('status').className = `status ${kind}`; };
 
-    async function render() {
-      const state = await window.livechatKeys.read();
-      if (!state.found) {
-        $('content').innerHTML = '<div class="missing">OLYCITY Live introuvable sur ce PC, ou trop ancien (4.24.2 nécessaire). Lance-le une fois : il se met à jour tout seul, puis rouvre cette fenêtre. Sinon, les touches se règlent avec LIVECHAT.bat dans son dossier.</div>';
-        return;
-      }
-      $('content').innerHTML = Object.entries(ACTIONS).map(([action, label]) => `
+    function settingsHtml(state) {
+      return `
+        <div class="row ${state.enabled ? '' : 'off'}">
+          <strong>${state.enabled ? 'Livechat activé' : 'Livechat coupé'}</strong>
+          <button type="button" class="switch ${state.enabled ? 'on' : ''}" id="enabled">${state.enabled ? 'Activé' : 'Coupé'}</button>
+          <small>${state.enabled
+            ? 'Les livechats du groupe s\'affichent sur ce PC, les tiens compris.'
+            : 'Rien ne s\'affiche sur ce PC, même ce que tu envoies toi-même. Les autres continuent de recevoir.'}</small>
+        </div>
+        <div class="row">
+          <strong>Volume des vidéos</strong>
+          <output id="volume-value">${state.volume} %</output>
+          <input type="range" id="volume" min="0" max="100" step="5" value="${state.volume}">
+        </div>
+        <div class="row">
+          <strong>Durée maximale d'une vidéo</strong>
+          <output id="duration-value">${state.maxVideoSeconds} s</output>
+          <input type="range" id="duration" min="5" max="120" step="5" value="${state.maxVideoSeconds}">
+          <small>Au-delà, la vidéo est coupée. Un extrait choisi à l'envoi reste plus court.</small>
+        </div>`;
+    }
+
+    function keysHtml(state) {
+      return Object.entries(ACTIONS).map(([action, label]) => `
         <div class="row">
           <strong>${label}</strong>
-          <kbd id="kbd-${action}" class="${waiting === action ? 'wait' : ''}">${waiting === action ? 'Appuie sur une touche…' : state.labels[action]}</kbd>
+          <kbd class="${waiting === action ? 'wait' : ''}">${waiting === action ? 'Appuie sur une touche…' : state.labels[action]}</kbd>
           <div class="actions">
             <button type="button" class="main" data-change="${action}">Changer</button>
             <button type="button" data-reset="${action}">Par défaut</button>
             <button type="button" data-remove="${action}">Retirer</button>
           </div>
-        </div>`).join('') + `<p>Livechat actuellement ${state.enabled ? '<b>activé</b>' : '<b>coupé</b>'} sur ce PC. Les changements sont pris en compte en quelques secondes, sans redémarrer.</p>`;
+        </div>`).join('');
     }
 
-    async function finish(result) {
+    async function render(force = true) {
+      const state = await window.livechatKeys.read();
+      const signature = JSON.stringify([state, waiting]);
+      // Relu toutes les 3 s (la touche « couper » change l'état depuis le
+      // jeu) : on ne redessine que s'il a changé, jamais pendant un réglage.
+      if (!force && (signature === shown || sliding)) return;
+      shown = signature;
+      if (!state.found) {
+        $('settings').innerHTML = '<div class="missing">OLYCITY Live introuvable sur ce PC, ou trop ancien (4.24.2 nécessaire). Lance-le une fois : il se met à jour tout seul, puis rouvre cette fenêtre. Sinon, le livechat se règle avec LIVECHAT.bat dans son dossier.</div>';
+        $('keys').innerHTML = '';
+        return;
+      }
+      $('settings').innerHTML = settingsHtml(state);
+      $('keys').innerHTML = keysHtml(state);
+    }
+
+    async function finish(result, done = 'Enregistré.') {
       waiting = null;
       if (result?.error) status(result.error, 'err');
-      else if (result?.ok) status('Touche enregistrée.', 'ok');
+      else if (result?.ok) status(`${done} Pris en compte en quelques secondes, sans redémarrer.`, 'ok');
       else if (result?.cancel) status('Annulé.');
       await render();
     }
 
     document.addEventListener('click', async event => {
+      if (event.target.closest('#send')) { await window.livechatKeys.openPage(); return; }
+      if (event.target.closest('#enabled')) {
+        const on = !event.target.closest('#enabled').classList.contains('on');
+        await finish(await window.livechatKeys.set({ enabled: on }), on ? 'Livechat activé.' : 'Livechat coupé.');
+        return;
+      }
       const change = event.target.closest('[data-change]');
       const reset = event.target.closest('[data-reset]');
       const remove = event.target.closest('[data-remove]');
       if (change) { waiting = change.dataset.change; status(''); await render(); return; }
-      if (reset) await finish(await window.livechatKeys.reset(reset.dataset.reset));
-      if (remove) await finish(await window.livechatKeys.remove(remove.dataset.remove));
+      if (reset) await finish(await window.livechatKeys.reset(reset.dataset.reset), 'Touche enregistrée.');
+      if (remove) await finish(await window.livechatKeys.remove(remove.dataset.remove), 'Touche retirée.');
+    });
+
+    // Curseurs : la valeur suit pendant le glissement, l'écriture se fait au lâcher.
+    document.addEventListener('input', event => {
+      sliding = true;
+      if (event.target.id === 'volume') $('volume-value').textContent = `${event.target.value} %`;
+      if (event.target.id === 'duration') $('duration-value').textContent = `${event.target.value} s`;
+    });
+    document.addEventListener('change', async event => {
+      sliding = false;
+      if (event.target.id === 'volume') await finish(await window.livechatKeys.set({ volume: Number(event.target.value) }), 'Volume enregistré.');
+      if (event.target.id === 'duration') await finish(await window.livechatKeys.set({ maxVideoSeconds: Number(event.target.value) }), 'Durée enregistrée.');
     });
 
     document.addEventListener('keydown', async event => {
       if (!waiting) return;
       event.preventDefault();
       const result = await window.livechatKeys.captureKeyboard(waiting, event);
-      if (result) await finish(result); // null : un modificateur seul, on attend la suite
+      if (result) await finish(result, 'Touche enregistrée.'); // null : un modificateur seul, on attend la suite
     });
 
     // Boutons 4/5 et molette : sans ça, « précédent » ferait aussi naviguer.
     document.addEventListener('mousedown', async event => {
       if (!waiting || ![1, 3, 4].includes(event.button)) return;
       event.preventDefault();
-      await finish(await window.livechatKeys.captureMouse(waiting, event));
+      await finish(await window.livechatKeys.captureMouse(waiting, event), 'Touche enregistrée.');
     });
     document.addEventListener('mouseup', event => { if ([3, 4].includes(event.button)) event.preventDefault(); });
 
     render();
+    setInterval(() => { if (!waiting) render(false).catch(() => {}); }, 3000);
   </script>
 </body>
 </html>

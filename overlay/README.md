@@ -75,15 +75,33 @@ installés avant la 1.2.4.
 Une fenêtre fermée à la main ne revient pas toute seule : elle attend la partie
 suivante. Un choix explicite n'est jamais écrasé par l'automatisme.
 
-## Touches du livechat
+## Livechat
 
-Clic droit sur l'icône → **Touches du livechat…**. On y choisit la touche qui
-coupe ou réactive le livechat d'OLYCITY Live, et celle qui passe la vidéo en
-cours : « Changer », puis on appuie sur la touche ou la combinaison voulue
-(boutons 4/5 de la souris compris, Échap annule). L'overlay modifie les
-réglages du Live (`olycity-livechat.json`), que le Live publie dans
-`%LOCALAPPDATA%\OLYCITY\livechat\settings-location.json` (Live 4.24.2 ou
-plus récent). C'est la même chose que `LIVECHAT.bat`.
+Bouton **📺 Livechat** dans la barre de l'overlay (ou clic droit sur l'icône →
+**Livechat…**). La fenêtre regroupe tout :
+
+- **Envoyer un livechat** ouvre la page d'envoi (`olycity.fr/livechat/`) dans
+  l'overlay : fichier, lien YouTube, webcam, extrait. Pour Liam, la
+  réactivation chez les autres est sur cette page.
+- **Activé / Coupé** sur ce PC. Coupé, rien ne s'affiche, pas même ce qu'on
+  envoie soi-même.
+- **Volume** des vidéos et **durée maximale** d'une vidéo.
+- Les **touches** qui coupent ou réactivent le livechat et qui passent la
+  vidéo en cours : « Changer », puis on appuie sur la touche ou la combinaison
+  voulue (boutons 4/5 de la souris compris, Échap annule).
+
+L'overlay modifie les réglages du Live (`olycity-livechat.json`), que le Live
+publie dans `%LOCALAPPDATA%\OLYCITY\livechat\settings-location.json` (Live
+4.24.2 ou plus récent) et relit toutes les 3 secondes. C'est la même chose que
+`LIVECHAT.bat`.
+
+## Connexion Discord
+
+Le bouton Discord du site ouvre une petite fenêtre de connexion par-dessus
+l'overlay (avant la 1.2.10, une partie du parcours partait dans le navigateur,
+qui gardait la connexion). Tout discord.com y est accepté le temps de la
+connexion : captcha, double authentification, code par e-mail. Dès que
+Discord renvoie vers le site, la fenêtre se ferme et l'overlay est connecté.
 
 ## Le raccourci ne fait rien dans LoL
 
