@@ -233,9 +233,10 @@ window.OLYCITY = {
         window._liveCleanup = initLivePage();
       }
       if (!window._lolLiveCleanup) window._lolLiveCleanup = initLolLivePage();
-      // Une navigation SPA ne recrée pas la page comme un F5. Relire le petit
-      // nœud Live garantit donc un état frais même si le flux SSE du navigateur
-      // a été suspendu en arrière-plan ou pendant un changement de page.
+      // Une navigation SPA ne recrée pas la page comme un F5. Relire les
+      // quatre canaux du Live (pas tout le nœud : il contient l'historique)
+      // garantit un état frais même si le flux SSE du navigateur a été
+      // suspendu en arrière-plan ou pendant un changement de page.
       void liveDataStore.refresh({ timeoutMs:3_500 });
     }
     if (page === 'history') {
