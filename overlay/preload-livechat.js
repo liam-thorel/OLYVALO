@@ -1,5 +1,5 @@
 /**
- * Pont de la fenêtre « Touches du livechat ». Comme preload.js : quelques
+ * Pont de la fenêtre « Livechat ». Comme preload.js : quelques
  * messages, aucun accès à Node. Les évènements clavier/souris ne passent que
  * réduits à leurs codes ; c'est le processus principal qui les traduit et
  * écrit les réglages du Live.
@@ -17,4 +17,8 @@ contextBridge.exposeInMainWorld('livechatKeys', {
   captureMouse: (action, event) => ipcRenderer.invoke('livechat:capture', action, 'mouse', pick(event)),
   remove: action => ipcRenderer.invoke('livechat:remove', action),
   reset: action => ipcRenderer.invoke('livechat:reset', action),
+  set: changes => ipcRenderer.invoke('livechat:set', {
+    enabled: changes?.enabled, volume: changes?.volume, maxVideoSeconds: changes?.maxVideoSeconds,
+  }),
+  openPage: () => ipcRenderer.invoke('livechat:open-page'),
 });

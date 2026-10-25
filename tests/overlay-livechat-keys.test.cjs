@@ -43,6 +43,8 @@ const fsImpl = fakeFs({ [pointer]: JSON.stringify({ configPath: config }), [conf
 const state = keys.readLivechatKeys({ env, fsImpl });
 assert.equal(state.found, true);
 assert.equal(state.enabled, false);
+assert.equal(state.volume, 40);
+assert.equal(state.maxVideoSeconds, 30, 'durée par défaut du Live');
 assert.deepEqual(state.labels, { toggle: 'Ctrl+Maj+F10', skip: 'Ctrl+Maj+F9' });
 
 assert.deepEqual(keys.writeLivechatKey('toggle', { vk: 0x05 }, { env, fsImpl }), { ok: true });
@@ -55,12 +57,37 @@ assert.deepEqual(keys.writeLivechatKey('skip', null, { env, fsImpl }), { ok: tru
 assert.equal(live.parseLiveChatConfig(fsImpl.files[config]).skipKey, null, 'touche retirée');
 assert.match(keys.writeLivechatKey('skip', { vk: 1 }, { env, fsImpl }).error, /non utilisable/);
 assert.match(keys.writeLivechatKey('autre', null, { env, fsImpl }).error, /inconnue/);
+// Activé, volume, durée : bornés comme le Live les lit.
+assert.deepEqual(keys.writeLivechatSettings({ enabled: true, volume: 250, maxVideoSeconds: 1 }, { env, fsImpl }),
+  { ok: true, written: { enabled: true, volume: 100, maxVideoSeconds: 5 } });
+const reread = live.parseLiveChatConfig(fsImpl.files[config]);
+assert.equal(reread.enabled, true);
+assert.equal(reread.volume, 100);
+assert.equal(reread.maxVideoSeconds, 5);
+assert.equal(reread.toggleKey.vk, 0x05, 'les touches sont gardées');
+assert.deepEqual(keys.writeLivechatSettings({ enabled: 'non', volume: 'fort', autre: 1 }, { env, fsImpl }), { error: 'Rien à changer.' });
+assert.deepEqual(keys.writeLivechatSettings({ enabled: false }, { env, fsImpl }).written, { enabled: false });
+assert.equal(live.parseLiveChatConfig(fsImpl.files[config]).enabled, false);
+for (const raw of [{}, { volume: -5, maxVideoSeconds: 500 }, { volume: 33.4, maxVideoSeconds: 61.6 }, { volume: 'x' }]) {
+  const file = fakeFs({ [pointer]: JSON.stringify({ configPath: config }), [config]: JSON.stringify(raw) });
+  const read = keys.readLivechatKeys({ env, fsImpl: file });
+  const parsed = live.parseLiveChatConfig(JSON.stringify(raw));
+  assert.deepEqual([read.volume, read.maxVideoSeconds], [parsed.volume, parsed.maxVideoSeconds], JSON.stringify(raw));
+}
+assert.match(keys.writeLivechatSettings({ enabled: true }, { env, fsImpl: fakeFs({}) }).error, /introuvable/);
 const evil = fakeFs({ [pointer]: JSON.stringify({ configPath: 'C:\\Windows\\system32\\drivers\\etc\\hosts' }) });
 assert.equal(keys.findSettingsFile({ env, fsImpl: evil }), null, 'seul le fichier de réglages du livechat est modifiable');
 
 // ─── Câblage ─────────────────────────────────────────────────────────────────
 const main = readFileSync(path.join(__dirname, '..', 'overlay', 'main.js'), 'utf8');
-assert.match(main, /\{ label: 'Touches du livechat…', click: openLivechatKeys \}/);
+assert.match(main, /\{ label: 'Livechat…', click: openLivechatWindow \}/);
+assert.match(main, /\{ label: 'Envoyer un livechat', click: openLivechatPage \}/);
+assert.match(main, /ipcMain\.on\('overlay:livechat', \(\) => openLivechatWindow\(\)\);/);
+assert.match(readFileSync(path.join(__dirname, '..', 'overlay', 'ui', 'shell.html'), 'utf8'), /window\.overlay\.openLivechat\(\)/, 'bouton dans la barre de titre');
+// Connexion Discord : sa fenêtre, et le retour rendu à la vue du site.
+assert.match(main, /if \(isDiscordUrl\(url\)\) openDiscordLogin\(url, contents\);/);
+assert.match(main, /if \(step === 'return'\) backToSite\(url\);/);
+assert.match(main, /target\.loadURL\(returnUrl\)/);
 assert.match(main, /preload: path\.join\(__dirname, 'preload-livechat\.js'\), contextIsolation: true, nodeIntegration: false, sandbox: true/);
 assert.match(main, /registerLivechatKeysIpc\(\);/);
 const pkg = JSON.parse(readFileSync(path.join(__dirname, '..', 'overlay', 'package.json'), 'utf8'));
@@ -69,4 +96,4 @@ const liveSource = readFileSync(path.join(__dirname, '..', 'live', 'livechat.js'
 assert.match(liveSource, /publishSettingsLocation\(configPath, scriptVersion\);/, 'le Live publie où sont ses réglages');
 assert.match(liveSource, /const SETTINGS_POINTER = 'settings-location\.json';/);
 
-console.log('overlay-livechat-keys: touches du livechat réglables depuis l’overlay, au format du Live');
+console.log('overlay-livechat-keys: livechat (état, volume, durée, touches) réglable depuis l’overlay, au format du Live');

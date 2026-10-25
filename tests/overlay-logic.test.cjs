@@ -5,7 +5,7 @@ const { detectGames, anyGameRunning, gameTransition, nextPollDelay,
   IDLE_POLL_MS, ACTIVE_POLL_MS } = require('../overlay/lib/game-watch.js');
 const { createOverlayState, reduce } = require('../overlay/lib/overlay-state.js');
 const { sanitize, parseSettings, isValidHotkey, DEFAULTS, MIN_OPACITY } = require('../overlay/lib/settings.js');
-const { isAllowedUrl, isSafeExternalUrl, siteUrl } = require('../overlay/lib/url-policy.js');
+const { discordLoginStep, isAllowedUrl, isDiscordUrl, isSafeExternalUrl, siteUrl, LIVECHAT_PAGE } = require('../overlay/lib/url-policy.js');
 
 // ─── Détection du jeu ────────────────────────────────────────────────────────
 // Sortie réelle de tasklist : colonnes alignées, casse variable.
@@ -172,13 +172,22 @@ assert.equal(isAllowedUrl(siteUrl()), true);
 assert.equal(isAllowedUrl(siteUrl('#live')), true);
 assert.equal(isAllowedUrl('https://liam-thorel.github.io/OLYVALO/data/roster.json'), true);
 assert.equal(isAllowedUrl('https://liam-thorel.github.io/'), false, 'la racine héberge d’autres dépôts');
-// Connexion Discord dans l'overlay : l'autorisation et la page de connexion,
-// rien d'autre de discord.com.
-assert.equal(isAllowedUrl('https://discord.com/oauth2/authorize?client_id=1&response_type=token'), true);
-assert.equal(isAllowedUrl('https://discord.com/login?redirect_to=%2Foauth2%2Fauthorize'), true);
+// Discord n'est jamais chargé dans la vue du site : la connexion a sa fenêtre.
+assert.equal(isAllowedUrl('https://discord.com/oauth2/authorize?client_id=1&response_type=token'), false);
 assert.equal(isAllowedUrl('https://discord.com/channels/@me'), false);
-assert.equal(isAllowedUrl('https://discord.com/'), false);
-assert.equal(isAllowedUrl('https://discord.com.evil.fr/oauth2/authorize'), false);
+// Fenêtre de connexion : tout discord.com y reste (captcha, double
+// authentification…), le retour vers le site revient à l'overlay.
+assert.equal(isDiscordUrl('https://discord.com/oauth2/authorize?client_id=1'), true);
+assert.equal(isDiscordUrl('https://discord.com.evil.fr/oauth2/authorize'), false);
+assert.equal(isDiscordUrl('http://discord.com/login'), false, 'http n’est pas https');
+assert.equal(discordLoginStep('https://discord.com/login?redirect_to=%2Foauth2%2Fauthorize'), 'stay');
+assert.equal(discordLoginStep('https://discord.com/login/mfa'), 'stay');
+assert.equal(discordLoginStep('https://tracker.olycity.fr/#access_token=abc&state=s'), 'return');
+assert.equal(discordLoginStep(`${LIVECHAT_PAGE}#access_token=abc&state=s`), 'return', 'la page livechat aussi');
+assert.equal(discordLoginStep('https://support.discord.com/hc'), 'external');
+assert.equal(discordLoginStep('https://discord.com.evil.fr/#access_token=abc'), 'external', 'jamais de jeton rendu à une autre origine');
+assert.equal(discordLoginStep('discord://app'), 'block');
+assert.equal(discordLoginStep('file:///C:/'), 'block');
 assert.equal(isAllowedUrl('https://liam-thorel.github.io/AutreProjet/'), false);
 // Un chemin qui commence par les mêmes lettres n'est pas le même dépôt.
 assert.equal(isAllowedUrl('https://liam-thorel.github.io/OLYVALO-autre/'), false);

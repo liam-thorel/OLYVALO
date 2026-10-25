@@ -27,7 +27,7 @@ const { execFile } = require('child_process');
 const { detectGames, gameTransition, nextPollDelay, anyGameRunning } = require('./lib/game-watch.js');
 const { createOverlayState, reduce } = require('./lib/overlay-state.js');
 const { parseSettings, sanitize } = require('./lib/settings.js');
-const { isAllowedUrl, isSafeExternalUrl, siteUrl } = require('./lib/url-policy.js');
+const { discordLoginStep, isAllowedUrl, isDiscordUrl, isSafeExternalUrl, siteUrl, LIVECHAT_PAGE } = require('./lib/url-policy.js');
 const { createLogger } = require('./lib/logger.js');
 const { setupAutoUpdate, shouldCheck, shouldInstallNow, updateLabel, FIRST_CHECK_DELAY_MS } = require('./lib/updater.js');
 const { loginItemVerdict, unblockCommand, verdictMessage, STARTUP_SETTINGS_URL } = require('./lib/login-item.js');
@@ -183,14 +183,17 @@ function createWindow() {
   // La fenêtre flotte au-dessus du jeu et démarre avec Windows : elle ne doit
   // pas pouvoir devenir un navigateur généraliste. Tout ce qui sort du site
   // part dans le navigateur par défaut, et seulement en http(s).
+  // La connexion Discord a sa propre fenêtre (voir openDiscordLogin).
   const confine = contents => {
     contents.on('will-navigate', (event, url) => {
       if (isAllowedUrl(url)) return;
       event.preventDefault();
-      if (isSafeExternalUrl(url)) shell.openExternal(url);
+      if (isDiscordUrl(url)) openDiscordLogin(url, contents);
+      else if (isSafeExternalUrl(url)) shell.openExternal(url);
     });
     contents.setWindowOpenHandler(({ url }) => {
-      if (isSafeExternalUrl(url) && !isAllowedUrl(url)) shell.openExternal(url);
+      if (isDiscordUrl(url)) openDiscordLogin(url, contents);
+      else if (isSafeExternalUrl(url) && !isAllowedUrl(url)) shell.openExternal(url);
       return { action: 'deny' }; // jamais de seconde fenêtre au-dessus du jeu
     });
   };
@@ -435,19 +438,81 @@ function syncKeyPoller(running) {
   if (keyPoller.start()) log('[raccourci]', hotkeyLabel(settings.hotkey), '— lecture directe active (LoL bloque les raccourcis Windows)');
 }
 
-// ─── Touches du livechat ─────────────────────────────────────────────────────
-// Les touches d'OLYCITY Live (couper/réactiver, passer) réglées ici plutôt
-// que dans LIVECHAT.bat : voir lib/livechat-keys.js.
+// ─── Connexion Discord ───────────────────────────────────────────────────────
+// Le site part vers discord.com/oauth2/authorize et Discord y renvoie avec le
+// jeton dans l'adresse. Cette fenêtre accueille tout le parcours chez Discord
+// (connexion, captcha, double authentification), puis rend l'adresse de
+// retour à la vue du site : c'est elle qui a posé l'état à vérifier, et c'est
+// dans SON stockage que le compte doit être enregistré.
+let discordLoginWindow = null;
+
+function openDiscordLogin(url, target) {
+  if (discordLoginWindow && !discordLoginWindow.isDestroyed()) discordLoginWindow.close();
+  const login = new BrowserWindow({
+    width: 520, height: 780, minimizable: false, maximizable: false, autoHideMenuBar: true,
+    alwaysOnTop: true, title: 'Connexion Discord', backgroundColor: '#313338',
+    // Même session que la vue du site : Discord se souvient de la connexion.
+    webPreferences: { contextIsolation: true, nodeIntegration: false, sandbox: true },
+  });
+  discordLoginWindow = login;
+  login.setMenu(null);
+  // Au-dessus de l'overlay, lui-même au niveau le plus haut.
+  login.setAlwaysOnTop(true, 'screen-saver');
+  // Le captcha de Discord se méfie d'un navigateur qui se dit « Electron ».
+  const contents = login.webContents;
+  contents.setUserAgent(contents.getUserAgent().replace(/\s(Electron|olycity[\w-]*)\/\S+/gi, ''));
+
+  let returned = false;
+  const backToSite = returnUrl => {
+    if (returned) return;
+    returned = true;
+    log('[discord] connexion terminée, retour au site');
+    if (target && !target.isDestroyed()) target.loadURL(returnUrl).catch(() => {});
+    if (!login.isDestroyed()) login.close();
+  };
+  const guard = (event, url) => {
+    const step = discordLoginStep(url);
+    if (step === 'stay') return;
+    event.preventDefault();
+    if (step === 'return') backToSite(url);
+    else if (step === 'external') shell.openExternal(url);
+  };
+  contents.on('will-navigate', (event, url) => guard(event, event.url || url));
+  // Discord peut aussi renvoyer par une redirection du serveur. Les cadres
+  // (captcha) vont où ils veulent : seule la page compte.
+  contents.on('will-redirect', (event, url, _inPlace, isMainFrame) => {
+    if ((event.isMainFrame ?? isMainFrame) === false) return;
+    guard(event, event.url || url);
+  });
+  contents.setWindowOpenHandler(({ url }) => {
+    if (discordLoginStep(url) === 'external') shell.openExternal(url);
+    return { action: 'deny' };
+  });
+  login.on('closed', () => { if (discordLoginWindow === login) discordLoginWindow = null; });
+  log('[discord] fenêtre de connexion ouverte');
+  login.loadURL(url).catch(() => {});
+}
+
+/** Ouvre la page d'envoi du livechat dans l'overlay. */
+function openLivechatPage() {
+  siteView?.webContents.loadURL(LIVECHAT_PAGE).catch(() => {});
+  apply(reduce(state, 'show'));
+}
+
+// ─── Livechat ────────────────────────────────────────────────────────────────
+// Le livechat d'OLYCITY Live réglé ici plutôt que dans LIVECHAT.bat : activé
+// ou coupé, volume, durée, touches (voir lib/livechat-keys.js).
 let livechatWindow = null;
 
-function openLivechatKeys() {
+function openLivechatWindow() {
   if (livechatWindow && !livechatWindow.isDestroyed()) { livechatWindow.show(); livechatWindow.focus(); return; }
   livechatWindow = new BrowserWindow({
-    width: 440, height: 430, resizable: false, minimizable: false, maximizable: false,
-    alwaysOnTop: true, autoHideMenuBar: true, title: 'Touches du livechat', backgroundColor: '#12151c',
+    width: 460, height: 720, minWidth: 380, minHeight: 360, minimizable: false, maximizable: false,
+    alwaysOnTop: true, autoHideMenuBar: true, title: 'Livechat', backgroundColor: '#12151c',
     webPreferences: { preload: path.join(__dirname, 'preload-livechat.js'), contextIsolation: true, nodeIntegration: false, sandbox: true },
   });
   livechatWindow.setMenu(null);
+  livechatWindow.setAlwaysOnTop(true, 'screen-saver');
   livechatWindow.loadFile(path.join(__dirname, 'ui', 'livechat.html')).catch(() => {});
   // Une page locale : aucune navigation, aucune fenêtre ouverte depuis elle.
   livechatWindow.webContents.on('will-navigate', event => event.preventDefault());
@@ -468,6 +533,12 @@ function registerLivechatKeysIpc() {
     if (captured.cancel) return { cancel: true };
     return write(action, captured.key);
   });
+  ipcMain.handle('livechat:set', (_event, changes) => {
+    const result = livechatKeys.writeLivechatSettings(changes);
+    if (result.ok) log('[livechat] réglages', JSON.stringify(result.written));
+    return result;
+  });
+  ipcMain.handle('livechat:open-page', () => { openLivechatPage(); return { ok: true }; });
   ipcMain.handle('livechat:remove', (_event, action) => write(action, null));
   ipcMain.handle('livechat:reset', (_event, action) => write(action,
     action === 'toggle' ? livechatKeys.DEFAULT_TOGGLE_KEY : livechatKeys.DEFAULT_SKIP_KEY));
@@ -694,7 +765,10 @@ function refreshTrayMenu() {
       { label: updateLabel(updater.pending()), click: () => { app.isQuitting = true; updater.installNow(); } },
       { type: 'separator' },
     ] : []),
-    { label: 'Touches du livechat…', click: openLivechatKeys },
+    { label: 'Livechat…', click: openLivechatWindow },
+    { label: 'Envoyer un livechat', click: openLivechatPage },
+    // La page d'envoi est sur le hub : de quoi revenir au tracker en un clic.
+    { label: 'Revenir au tracker', click: () => siteView?.webContents.loadURL(siteUrl()).catch(() => {}) },
     { label: 'Ramener la fenêtre sur cet écran', click: bringWindowHere },
     // Le site est chargé une fois au démarrage et reste ouvert des jours.
     { label: 'Recharger la page', click: () => siteView?.webContents.reloadIgnoringCache() },
@@ -772,6 +846,7 @@ if (!app.requestSingleInstanceLock()) {
   });
 
   ipcMain.on('overlay:hide', () => apply(reduce(state, 'hide')));
+  ipcMain.on('overlay:livechat', () => openLivechatWindow());
   registerLivechatKeysIpc();
   ipcMain.on('overlay:opacity', (_event, value) => {
     settings.opacity = sanitize({ ...settings, opacity: value }).opacity;

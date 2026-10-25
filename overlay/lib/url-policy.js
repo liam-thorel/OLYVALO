@@ -28,22 +28,39 @@ function parse(url) {
   }
 }
 
-// Connexion au site avec Discord : l'autorisation, et la page de connexion
-// vers laquelle Discord renvoie quand on n'y est pas encore connecté. Ouvertes
-// dans le navigateur, elles y déposeraient le jeton au lieu de l'overlay. Rien
-// d'autre de discord.com : ni les salons, ni l'application web.
-const DISCORD_LOGIN_PATHS = new Set(['/oauth2/authorize', '/login']);
-
 /** Navigation autorisée À L'INTÉRIEUR de l'overlay. */
 function isAllowedUrl(url) {
   const parsed = parse(url);
   if (!parsed) return false;
   if (OWN_ORIGINS.has(parsed.origin)) return true;
-  if (parsed.origin === 'https://discord.com') return DISCORD_LOGIN_PATHS.has(parsed.pathname.replace(/\/$/, ''));
   if (parsed.origin !== SITE_ORIGIN) return false;
   // Même origine ne suffit pas : github.io héberge les pages de tous les
   // dépôts de l'utilisateur, on reste sur celui d'OLYCITY.
   return parsed.pathname === SITE_PATH_PREFIX || parsed.pathname.startsWith(`${SITE_PATH_PREFIX}/`);
+}
+
+// Connexion au site avec Discord. Ouverte dans le navigateur, elle y
+// déposait le jeton au lieu de l'overlay ; ouverte sur place, la moindre page
+// de Discord hors de l'autorisation (captcha, double authentification, code
+// envoyé par e-mail…) repartait dans le navigateur au milieu du parcours. Elle
+// a donc sa propre fenêtre, qui accepte tout discord.com le temps de la
+// connexion et se ferme dès que Discord renvoie vers le site.
+function isDiscordUrl(url) {
+  const parsed = parse(url);
+  return !!parsed && parsed.origin === 'https://discord.com';
+}
+
+/**
+ * Sort d'une navigation dans la fenêtre de connexion Discord :
+ *   'stay'     une page de Discord, elle s'ouvre dans la fenêtre ;
+ *   'return'   le retour vers le site, jeton compris : il revient à l'overlay ;
+ *   'external' un lien d'aide ou autre, pour le navigateur ;
+ *   'block'    tout le reste (file:, protocoles…).
+ */
+function discordLoginStep(url) {
+  if (isDiscordUrl(url)) return 'stay';
+  if (isAllowedUrl(url)) return 'return';
+  return isSafeExternalUrl(url) ? 'external' : 'block';
 }
 
 /**
@@ -68,4 +85,7 @@ function siteUrl(hash = '') {
   return `${SITE_HOME}/${hash}`;
 }
 
-module.exports = { isAllowedUrl, isSafeExternalUrl, siteUrl, SITE_ORIGIN, SITE_PATH_PREFIX, OWN_ORIGINS, SITE_HOME };
+// Page d'envoi du livechat (hub olycity.fr), ouverte dans l'overlay.
+const LIVECHAT_PAGE = 'https://olycity.fr/livechat/';
+
+module.exports = { discordLoginStep, isAllowedUrl, isDiscordUrl, isSafeExternalUrl, siteUrl, LIVECHAT_PAGE, SITE_ORIGIN, SITE_PATH_PREFIX, OWN_ORIGINS, SITE_HOME };

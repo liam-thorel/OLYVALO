@@ -1,5 +1,6 @@
 /**
- * Touches du livechat réglées depuis l'overlay.
+ * Livechat réglé depuis l'overlay : activé ou coupé, volume, durée maximale
+ * d'une vidéo, et les deux touches.
  *
  * Les réglages appartiennent à OLYCITY Live (olycity-livechat.json, dans son
  * dossier d'installation) : le Live publie où ils sont dans
@@ -7,7 +8,8 @@
  * toutes les 3 secondes. L'overlay n'écrit que les champs qu'il change.
  *
  * Même format et mêmes règles que live/livechat-utils.js (un test vérifie
- * que les noms de touches concordent) : { vk, ctrl, shift, alt, win }.
+ * qu'ils concordent) : touches { vk, ctrl, shift, alt, win }, volume de 0 à
+ * 100, durée de 5 à 120 secondes.
  */
 const fs = require('fs');
 const path = require('path');
@@ -18,6 +20,13 @@ const DEFAULT_TOGGLE_KEY = { vk: 0x79, ctrl: true, shift: true, alt: false, win:
 const MODIFIER_VKS = new Set([0x10, 0x11, 0x12, 0x5b, 0x5c, 0xa0, 0xa1, 0xa2, 0xa3, 0xa4, 0xa5]);
 const FORBIDDEN_VKS = new Set([0x01, 0x02]);
 const FIELDS = { toggle: 'toggleKey', skip: 'skipKey' };
+const MISSING = 'OLYCITY Live introuvable sur ce PC (version 4.24.2 ou plus récente nécessaire).';
+const LIMITS = { volume: [0, 100, 60], maxVideoSeconds: [5, 120, 30] };
+
+function clamp(value, [min, max, fallback]) {
+  const number = Number(value);
+  return Math.round(Number.isFinite(number) ? Math.min(max, Math.max(min, number)) : fallback);
+}
 
 const VK_NAMES = {
   0x03: 'Pause/Attn', 0x04: 'Clic molette', 0x05: 'Souris 4', 0x06: 'Souris 5',
@@ -93,7 +102,7 @@ function readRaw(file, fsImpl = fs) {
   try { return JSON.parse(fsImpl.readFileSync(file, 'utf8')) || {}; } catch { return {}; }
 }
 
-/** État à afficher : { found, enabled, toggle, skip, labels }. */
+/** État à afficher : { found, enabled, volume, maxVideoSeconds, toggle, skip, labels }. */
 function readLivechatKeys({ env, fsImpl = fs } = {}) {
   const file = findSettingsFile({ env, fsImpl });
   if (!file) return { found: false };
@@ -104,6 +113,8 @@ function readLivechatKeys({ env, fsImpl = fs } = {}) {
   return {
     found: true,
     enabled: raw.enabled !== false,
+    volume: clamp(raw.volume, LIMITS.volume),
+    maxVideoSeconds: clamp(raw.maxVideoSeconds, LIMITS.maxVideoSeconds),
     toggle, skip,
     labels: { toggle: hotkeyLabel(toggle), skip: hotkeyLabel(skip) },
   };
@@ -118,7 +129,7 @@ function writeLivechatKey(action, key, { env, fsImpl = fs } = {}) {
   const field = FIELDS[action];
   if (!field) return { error: 'Action inconnue.' };
   const file = findSettingsFile({ env, fsImpl });
-  if (!file) return { error: 'OLYCITY Live introuvable sur ce PC (version 4.24.2 ou plus récente nécessaire).' };
+  if (!file) return { error: MISSING };
   const value = key === null ? null : normalizeHotkey(key, undefined);
   if (value === undefined) return { error: 'Touche non utilisable.' };
   const current = readLivechatKeys({ env, fsImpl });
@@ -129,7 +140,25 @@ function writeLivechatKey(action, key, { env, fsImpl = fs } = {}) {
   return { ok: true };
 }
 
+/**
+ * Change les autres réglages : `enabled` (oui/non), `volume`, `maxVideoSeconds`.
+ * Les valeurs hors limites sont ramenées dans les limites, les champs
+ * inconnus ignorés. Rend { ok, written } ou { error }.
+ */
+function writeLivechatSettings(changes, { env, fsImpl = fs } = {}) {
+  const file = findSettingsFile({ env, fsImpl });
+  if (!file) return { error: MISSING };
+  const written = {};
+  if (typeof changes?.enabled === 'boolean') written.enabled = changes.enabled;
+  for (const field of Object.keys(LIMITS)) {
+    if (changes?.[field] !== undefined && Number.isFinite(Number(changes[field]))) written[field] = clamp(changes[field], LIMITS[field]);
+  }
+  if (!Object.keys(written).length) return { error: 'Rien à changer.' };
+  fsImpl.writeFileSync(file, `${JSON.stringify({ ...readRaw(file, fsImpl), ...written }, null, 2)}\n`, 'utf8');
+  return { ok: true, written };
+}
+
 module.exports = {
   DEFAULT_SKIP_KEY, DEFAULT_TOGGLE_KEY, findSettingsFile, hotkeyLabel, keyFromKeyboardEvent, keyFromMouseEvent,
-  normalizeHotkey, pointerPath, readLivechatKeys, sameHotkey, vkName, writeLivechatKey,
+  normalizeHotkey, pointerPath, readLivechatKeys, sameHotkey, vkName, writeLivechatKey, writeLivechatSettings,
 };

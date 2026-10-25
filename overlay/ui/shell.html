@@ -31,10 +31,12 @@
 <span class="spacer"></span>
 <span class="hint" id="hint">Valorant doit être en « Plein écran fenêtré »</span>
 <label>Opacité <input id="opacity" type="range" min="0.3" max="1" step="0.05" value="0.95"></label>
+<button id="livechat" title="Livechat : envoyer, couper, volume, touches">📺 Livechat</button>
 <button id="hide" title="Masquer (Ctrl+Shift+F8)">✕</button>
 
 <script>
   document.getElementById('hide').onclick = () => window.overlay.hide();
+  document.getElementById('livechat').onclick = () => window.overlay.openLivechat();
   // Appelé par le processus principal selon le jeu lancé (lib/display-mode.js).
   window.setHint = (text, warn) => {
     const hint = document.getElementById('hint');
