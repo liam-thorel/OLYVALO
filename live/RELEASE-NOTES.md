@@ -1,3 +1,11 @@
+<!-- version: 4.24.2 -->
+### Les touches du livechat se règlent depuis l'overlay
+
+- Clic droit sur l'icône de l'overlay → **Touches du livechat…** : tu choisis la touche qui coupe ou réactive le livechat et celle qui passe la vidéo en cours, en appuyant simplement dessus. `LIVECHAT.bat` marche toujours.
+- Pour ça, OLYCITY Live indique à l'overlay où il range ses réglages (dans `%LOCALAPPDATA%\OLYCITY\livechat`).
+
+La mise à jour du script se télécharge automatiquement en arrière-plan. Si une partie est en cours, OLYCITY Live attend sa fin avant de redémarrer.
+
 <!-- version: 4.24.1 -->
 ### Correctif : les nouveaux membres apparaissent bien sur le site
 

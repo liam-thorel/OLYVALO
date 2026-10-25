@@ -75,6 +75,16 @@ installés avant la 1.2.4.
 Une fenêtre fermée à la main ne revient pas toute seule : elle attend la partie
 suivante. Un choix explicite n'est jamais écrasé par l'automatisme.
 
+## Touches du livechat
+
+Clic droit sur l'icône → **Touches du livechat…**. On y choisit la touche qui
+coupe ou réactive le livechat d'OLYCITY Live, et celle qui passe la vidéo en
+cours : « Changer », puis on appuie sur la touche ou la combinaison voulue
+(boutons 4/5 de la souris compris, Échap annule). L'overlay modifie les
+réglages du Live (`olycity-livechat.json`), que le Live publie dans
+`%LOCALAPPDATA%\OLYCITY\livechat\settings-location.json` (Live 4.24.2 ou
+plus récent). C'est la même chose que `LIVECHAT.bat`.
+
 ## Le raccourci ne fait rien dans LoL
 
 LoL bloque les raccourcis Windows (RegisterHotKey) tant qu'il a le focus : la
