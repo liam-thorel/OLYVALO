@@ -20,12 +20,12 @@ import { rosterHTML, guestCardHTML, mapSectionHTML, agentPageHTML, navMapsHTML, 
 import { initTheme, initTilt, initParallax, initKeyboard, initHeroParticles, initWheelLogos, initLivePage, initHistoryPage } from './interactions.js?v=20261006-puuid-lol';
 import { storage } from './storage.js';
 import { avatarLayersHTML } from './avatars.mjs';
-import { initAdminPage } from './admin.mjs?v=20261024-discord';
-import { initBettingPage } from './betting-page.mjs?v=20261024-discord';
+import { initAdminPage } from './admin.mjs?v=20261025-relier';
+import { initBettingPage } from './betting-page.mjs?v=20261025-relier';
 import { initRrCurvePage } from './rr-curve-page.mjs?v=20261006-proprietaire';
 import { initSiteSwitcher } from './site-switcher.mjs?v=20261005-game-picker';
 import { sharedProfileId, rememberSharedProfile } from './shared-profile.mjs';
-import { loadAccount, clearAccount, startDiscordLogin, completeDiscordLogin, profileForAccount, recordAccount } from './discord-account.mjs?v=20261024-discord';
+import { loadAccount, saveAccount, refreshAccount, clearAccount, startDiscordLogin, completeDiscordLogin, profileForAccount, recordAccount } from './discord-account.mjs?v=20261025-relier';
 import { getGameMode, initGameMode, setGameMode } from './game-mode.mjs?v=20261005-game-picker';
 import { initLolHistoryPage, initLolLivePage } from './lol-pages.mjs?v=20261008-peak';
 import { initLolRosterPages } from './lol-roster.mjs?v=20261006-puuid-lol';
@@ -1188,7 +1188,10 @@ async function boot() {
   // compte déjà connu de ce navigateur. Les anciens profils choisis à la main
   // ne valent plus rien : chacun se reconnecte une fois avec Discord.
   const loginReturn = await completeDiscordLogin(state.MEMBERS);
-  const account = loadAccount();
+  // Un compte relié au roster depuis (admin, /relier) est reconnu sans reconnexion.
+  const storedAccount = loadAccount();
+  const account = refreshAccount(storedAccount, state.MEMBERS);
+  if (account !== storedAccount) saveAccount(account);
   const accountProfile = profileForAccount(account, state.MEMBERS, memberId);
   const savedGuest = !accountProfile && !loginReturn?.error && (sharedProfileId() === 'guest' || localStorage.getItem('olycity-profile') === 'Guest');
   if (accountProfile) {

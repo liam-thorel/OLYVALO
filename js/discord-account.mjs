@@ -219,3 +219,47 @@ export function unlinkedAccounts(accounts = {}, members = []) {
     .filter(account => /^\d{15,22}$/.test(String(account?.discordId || '')) && !linked.has(String(account.discordId)))
     .sort((a, b) => (Number(b.lastLoginAt) || 0) - (Number(a.lastLoginAt) || 0));
 }
+
+/** Membres qu'un compte Discord peut encore rejoindre : ceux qui n'en ont pas. */
+export function linkableMembers(members = []) {
+  return members.filter(member => member?.id && member?.name && !discordIdOf(member));
+}
+
+/**
+ * Membre sans compte Discord qui porte le nom du compte (nom affiché ou
+ * pseudo) : celui que l'admin a toutes les chances de vouloir relier. Une
+ * suggestion seulement, jamais appliquée seule : n'importe qui peut
+ * s'appeler « Max » sur Discord.
+ */
+export function suggestedMember(account, members = [], toId = value => value) {
+  const names = [account?.name, account?.username].filter(Boolean).map(toId);
+  return linkableMembers(members).find(member => names.includes(toId(member.name)) || names.includes(member.id)) || null;
+}
+
+/**
+ * Écritures Firebase qui relient un compte Discord à un membre ajouté depuis
+ * le Live ou l'admin (rosterOverlay/members) : son identifiant Discord, son
+ * avatar s'il n'en a pas, et le membre sur la fiche du compte.
+ */
+export function linkWrites(account, member) {
+  if (!/^\d{15,22}$/.test(String(account?.discordId || '')) || !member?.id) return [];
+  const base = `rosterOverlay/members/${member.id}`;
+  return [
+    [`${base}/discordId`, String(account.discordId)],
+    ...(!member.avatar && account.avatar ? [[`${base}/avatar`, account.avatar]] : []),
+    [`accounts/${account.discordId}/memberId`, member.id],
+  ];
+}
+
+/**
+ * Compte gardé dans le navigateur, remis à jour d'après le roster : un
+ * compte « hors roster » relié depuis par l'admin devient son membre sans
+ * reconnexion, et un membre retiré redevient un compte simple.
+ */
+export function refreshAccount(account, members = []) {
+  if (!account?.discordId) return account;
+  const member = memberForDiscordId(members, account.discordId);
+  if (member?.id === account.memberId && (!member || member.name === account.name)) return account;
+  if (member) return { ...account, memberId: member.id, name: member.name, avatar: member.avatar || account.avatar };
+  return account.memberId ? { ...account, memberId: null } : account;
+}

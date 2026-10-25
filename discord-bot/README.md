@@ -154,6 +154,10 @@ permission Discord **Gérer les salons**.
 une game suivie démarre, fenêtre de 5 minutes :
 - `/bet choix:<Victoire|Défaite> montant:<points>` — parier sur la game en
   cours dans le salon (alternative aux boutons).
+- `/relier compte:@personne membre:<nom>` — (Liam) relie le compte Discord
+  de quelqu'un à son membre du roster, typiquement une personne créée par
+  OLYCITY Live, qui n'a que son prénom. Aussi possible depuis l'admin du site
+  (« Nouveaux comptes Discord » → Relier).
 - `/compte` — ton compte OLYCITY : le membre du roster relié à ton compte
   Discord (ou « hors roster »), ton solde, et le lien du site. Le site se
   connecte avec le même compte Discord (`accounts/<id Discord>` dans
