@@ -27,6 +27,7 @@
     ],
     "win": {
       "target": [{ "target": "nsis", "arch": ["x64"] }],
+      "icon": "build/icon.ico",
       "artifactName": "OLYCITY-Overlay-Setup.exe"
     },
     "nsis": {
