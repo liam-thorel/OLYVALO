@@ -21,7 +21,10 @@ export function normalizeHistoryEntries(data = {}) {
       const owner = String(report.playerPuuid || report.player || `unknown-${byOwner.size}`).toLowerCase();
       byOwner.set(owner, report);
     });
-    const reports = [...byOwner.values()];
+    // Firebase rend un tableau à trous sous forme d'objet : les joueurs
+    // doivent rester une liste, sinon tout `.filter` derrière échoue.
+    const reports = [...byOwner.values()].map(report => (report.players && !Array.isArray(report.players)
+      ? { ...report, players: Object.values(report.players).filter(Boolean) } : report));
     if (!reports.length) return null;
     const representative = [...reports].sort((a, b) => {
       const detailedA = (a.players || []).filter(player => player?.stats).length;

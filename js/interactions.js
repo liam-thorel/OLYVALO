@@ -20,14 +20,15 @@ import { updateScriptDownload } from './downloads.mjs?v=20260912-separate-downlo
 import { PLAYERS as LOL_ROSTER_PLAYERS } from './lol-roster.mjs?v=20261006-puuid-lol';
 import { serverVisual } from './server-visuals.mjs?v=20260809-live-server-local';
 import { avatarLayersHTML } from './avatars.mjs?v=20260720-avatars';
-import { filterHistoryGames, historyGameForOwner, historyMode, historyOwnerKey, historyOwnerLabel, historyPlayerName, historyPlayerPerformance, historyPlayerPerformances, historyRankedPlayers, historyReports, historyScoreText, historyTrackerUrl, isHistorySelf, normalizeHistoryEntries } from './history-utils.mjs?v=20261005-sites-history';
+import { filterHistoryGames, historyGameForOwner, historyMode, historyOwnerKey, historyOwnerLabel, historyPlayerName, historyPlayerPerformance, historyPlayerPerformances, historyRankedPlayers, historyReports, historyScoreText, historyTrackerUrl, isHistorySelf, normalizeHistoryEntries } from './history-utils.mjs?v=20261031-acte';
 import { initCurse } from './curse.mjs?v=20260828-page-stream-lifecycle';
 import { fetchJsonWithTimeout } from './request-utils.mjs?v=20260930-consistent-live';
 import { liveDataStore, liveTimestamp } from './live-data-store.mjs?v=20261005-return-live';
 import { createHistoryPager } from './history-pager.mjs?v=20261031-saison';
 import { rosterAccounts } from './roster-card-utils.mjs?v=20261006-proprietaire';
 import { inAct, loadCurrentAct } from './valorant-act.mjs?v=20261031-saison';
-import { featuredPerformance, gameDurationMs, trackedPerformances, historyAgentStats, historyDayGroups, historyMapStats, historyMemberStats, historyOverview, historyRosterMember, valorantTierIcon, valorantTierLabel } from './history-overview.mjs?v=20261031-saison';
+import { statsKey } from './account-stats.mjs?v=20260920-puuid';
+import { actAgentStats, actMapStats, actOverview, actRecords, valorantTierFromName, featuredPerformance, gameDurationMs, trackedPerformances, historyAgentStats, historyDayGroups, historyMapStats, historyMemberStats, historyOverview, historyRosterMember, valorantTierIcon, valorantTierLabel } from './history-overview.mjs?v=20261031-acte';
 import { createHistoryDisclosureState } from './history-disclosure-state.mjs';
 import { liveScoreKey, liveScoreView } from './live-score.mjs?v=20260930-consistent-live';
 
@@ -1616,11 +1617,48 @@ export async function initHistoryPage() {
   const renderHistory = games => {
   const roster = state.ROSTER;
   const statsGames = seasonGames();
-  const overview = historyOverview(statsGames);
-  const agentStats = historyAgentStats(statsGames).slice(0, 6);
-  const mapStats = historyMapStats(statsGames);
-  const memberStats = historyMemberStats(statsGames, roster);
+  const localOverview = historyOverview(statsGames);
+  const localMembers = historyMemberStats(statsGames, roster);
+
+  // Tout l'acte : la synchro Henrik (rosterStats) connaît toutes les
+  // compétitives de chaque compte, OLYCITY Live seulement celles jouées
+  // pendant qu'il tournait. Elle fait foi quand elle est là.
+  const accountScope = roster.flatMap(member => rosterAccounts(member, state.ROSTER_OVERLAY, roster)
+    .map(account => ({ member, account, key:statsKey(account).toLowerCase() })))
+    .filter(entry => entry.key);
+  const scopeKeys = historyUI.owner === 'all' ? accountScope.map(entry => entry.key) : [historyUI.owner];
+  const records = actRecords(state.ACCOUNT_STATS || {}, scopeKeys, currentActInfo?.uuid || null);
+  const actView = actOverview(records);
+  const fromSync = Boolean(actView);
+  const overview = fromSync ? { ...actView, recent:actView.recent || localOverview.recent } : localOverview;
+  const syncedAt = Math.max(0, ...records.map(record => Number(record.syncedAt) || 0));
+  const actAgents = fromSync ? actAgentStats(records) : [];
+  const actMaps = fromSync ? actMapStats(records) : [];
+  const agentStats = (actAgents.length ? actAgents : historyAgentStats(statsGames)).slice(0, 6);
+  const mapStats = actMaps.length ? actMaps : historyMapStats(statsGames);
+  const recordFor = key => records.find(record => String(record.key || '').toLowerCase() === key);
+  const memberStats = fromSync && historyUI.owner === 'all'
+    ? accountScope.filter(entry => recordFor(entry.key)).map(entry => {
+      const record = recordFor(entry.key);
+      const kd = Number.isFinite(Number(record.kills)) && Number.isFinite(Number(record.deaths))
+        ? Number(record.kills) / Math.max(1, Number(record.deaths)) : Number(record.kd);
+      return {
+        key:entry.key,
+        label:entry.account.isMain ? entry.member.name : `${entry.member.name} · smurf`,
+        avatar:entry.member.avatar || '',
+        riotId:record.riotId || entry.account.riotId || '',
+        games:Number(record.wrGames ?? record.games) || 0,
+        winrate:Number.isFinite(Number(record.wr)) ? Number(record.wr) : null,
+        kd:Number.isFinite(kd) ? kd : null,
+        tier:valorantTierFromName(record.rank),
+        rr:record.rr ?? null,
+      };
+    }).sort((a, b) => b.games - a.games || a.label.localeCompare(b.label, 'fr'))
+    : localMembers;
   const seasonLabel = currentActInfo ? currentActInfo.label : 'toutes les compétitives enregistrées';
+  const sourceLabel = fromSync
+    ? `toutes les parties de l'acte · synchro ${new Date(syncedAt).toLocaleString('fr-FR', { day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit' })}`
+    : 'parties vues par OLYCITY Live';
   const displayedGames = games.slice(0, historyUI.limit);
   const days = historyDayGroups(displayedGames);
 
@@ -1661,8 +1699,17 @@ export async function initHistoryPage() {
   const sectionHead = (title, extra = '') => `<header class="hx-card-head"><h3>${title}</h3>${extra}</header>`;
 
   // ─── Profil : un joueur, ou tout le groupe ─────────────────────────────
-  const selectedOwner = historyUI.owner !== 'all' ? ownerOptions.find(option => option.key === historyUI.owner) : null;
-  const selectedStats = selectedOwner ? memberStats.find(entry => entry.key === selectedOwner.key) : null;
+  const scopeOption = entry => entry && {
+    key:entry.key, name:entry.member.name, avatar:entry.member.avatar || '',
+    riotId:recordFor(entry.key)?.riotId || entry.account.riotId || '', smurf:!entry.account.isMain,
+  };
+  const selectedOwner = historyUI.owner !== 'all'
+    ? ownerOptions.find(option => option.key === historyUI.owner) || scopeOption(accountScope.find(entry => entry.key === historyUI.owner))
+    : null;
+  const selectedRecord = selectedOwner ? records[0] : null;
+  const selectedStats = selectedRecord
+    ? { tier:valorantTierFromName(selectedRecord.rank), rr:selectedRecord.rr ?? null }
+    : selectedOwner ? localMembers.find(entry => entry.key === selectedOwner.key) : null;
   const modeLabels = { competitive:'Compétitif', deathmatch:'Deathmatch', other:'Autres modes', all:'Tous les modes' };
   const form = overview.recent.length ? `<div class="hx-form" aria-label="Derniers résultats en compétitif">
       <small>Forme</small>
@@ -1694,18 +1741,20 @@ export async function initHistoryPage() {
     </div>`;
   const smallStat = (label, value, tone = '') => `<div class="hx-stat-small ${tone}"><small>${label}</small><strong>${value}</strong></div>`;
   const overviewCard = `<section class="hx-card hx-overview" aria-label="Vue d'ensemble">
-      ${sectionHead("Vue d'ensemble", `<span>Compétitif · ${historyEscape(seasonLabel)} · ${overview.games} partie${overview.games > 1 ? 's' : ''}</span>`)}
+      ${sectionHead("Vue d'ensemble", `<span>Compétitif · ${historyEscape(seasonLabel)} · ${overview.games} partie${overview.games > 1 ? 's' : ''} · ${historyEscape(sourceLabel)}</span>`)}
       <div class="hx-overview-big">
         ${bigStat('Victoires', percent(overview.winrate), overview.wins + overview.losses ? `${overview.wins}V · ${overview.losses}D${overview.draws ? ` · ${overview.draws}É` : ''}` : 'aucune compétitive', wrTone(overview.winrate), overview.winrate)}
-        ${bigStat('Ratio K/D', fixed(overview.kd), `${overview.kills} / ${overview.deaths} / ${overview.assists}`, kdTone(overview.kd), Number.isFinite(overview.kd) ? overview.kd / 2 * 100 : null)}
+        ${bigStat('Ratio K/D', fixed(overview.kd), Number.isFinite(overview.kills) ? `${overview.kills} / ${overview.deaths} / ${overview.assists}` : 'kills par mort', kdTone(overview.kd), Number.isFinite(overview.kd) ? overview.kd / 2 * 100 : null)}
         ${bigStat('ACS moyen', overview.acs ?? '—', 'score de combat par manche', '', Number.isFinite(overview.acs) ? overview.acs / 3.5 : null)}
         ${bigStat('Headshots', percent(overview.hs), 'des balles qui touchent', '', overview.hs)}
       </div>
       <div class="hx-overview-small">
         ${smallStat('Parties', overview.games)}
         ${smallStat('Temps de jeu', durationLabel(overview.durationMs))}
-        ${smallStat('RR net', signed(overview.rrNet), signTone(overview.rrNet))}
-        ${smallStat('Record de kills', overview.performances ? overview.maxKills : '—')}
+        ${fromSync
+          ? selectedRecord ? smallStat('Meilleur rang', historyEscape(valorantTierLabel(valorantTierFromName(selectedRecord.peak)) || selectedRecord.peak || '—')) : smallStat('Comptes', records.length)
+          : smallStat('RR net', signed(overview.rrNet), signTone(overview.rrNet))}
+        ${smallStat('Record de kills', overview.maxKills || '—')}
         ${smallStat('Kills / partie', fixed(overview.killsPerGame, 1))}
         ${smallStat('KDA', fixed(overview.kda))}
       </div>
@@ -1940,12 +1989,16 @@ export async function initHistoryPage() {
   // ─── Filtres ───────────────────────────────────────────────────────────
   const segment = (group, value, label, active) => `<button type="button" class="history-filter-button ${active ? 'active' : ''}" data-history-${group}="${historyEscape(value)}" aria-pressed="${active}">${historyEscape(label)}</button>`;
   const ownerChip = (key, label, title, avatarHTML) => `<button type="button" class="history-filter-button hx-owner-chip ${historyUI.owner === key ? 'active' : ''}" data-history-owner="${historyEscape(key)}" aria-pressed="${historyUI.owner === key}" title="${historyEscape(title)}">${avatarHTML}<span>${historyEscape(label)}</span></button>`;
+  const chipOptions = [...ownerOptions, ...accountScope
+    .filter(entry => !ownerOptions.some(option => option.key === entry.key) && recordFor(entry.key))
+    .map(scopeOption)]
+    .sort((a, b) => a.name.localeCompare(b.name, 'fr') || a.smurf - b.smurf);
   const toolbar = `<div class="history-filters hx-toolbar">
       <div class="history-filter-group hx-owners">
         <span>Joueur</span>
         <div>
           ${ownerChip('all', 'Tout le groupe', 'Tout le groupe', '<span class="hx-chip-icon" aria-hidden="true">✦</span>')}
-          ${ownerOptions.map(owner => ownerChip(owner.key, owner.smurf ? `${owner.name} · smurf` : owner.name, owner.label, avatar(owner.name, owner.avatar, 'hx-chip-avatar'))).join('')}
+          ${chipOptions.map(owner => ownerChip(owner.key, owner.smurf ? `${owner.name} · smurf` : owner.name, owner.label, avatar(owner.name, owner.avatar, 'hx-chip-avatar'))).join('')}
         </div>
       </div>
       <div class="history-filter-group">
@@ -1966,7 +2019,7 @@ export async function initHistoryPage() {
 
   el.innerHTML = `${historySyncMarkup(syncState)}
     ${toolbar}
-    ${games.length || statsGames.length ? `${profile}${overviewCard}
+    ${games.length || statsGames.length || fromSync ? `${profile}${overviewCard}
     <div class="hx-layout">
       <div class="hx-main">
         <div class="hx-main-head"><h3>Parties · ${historyEscape(modeLabels[historyUI.mode])}</h3><span>${Math.min(historyUI.limit, games.length)} sur ${games.length}</span></div>
@@ -2023,15 +2076,23 @@ export async function initHistoryPage() {
       const game = allGames.find(candidate => candidate.historyId === details.dataset.historyId);
       if (!target || !game?.__summary) { details.dataset.detailLoaded = '1'; return; }
       target.innerHTML = '<div class="history-detail-loading">Chargement des détails…</div>';
+      let stage = 'chargement';
       try {
         const raw = await valorantHistoryPager.loadDetail(details.dataset.historyId);
+        stage = 'lecture';
         const full = normalizeHistoryEntries({ [details.dataset.historyId]:raw })[0];
-        if (!full) throw new Error('Détail indisponible');
+        if (!full) throw new Error(raw ? 'partie sans rapport lisible' : 'partie introuvable dans Firebase');
         const shown = historyUI.owner === 'all' ? full : historyGameForOwner(full, historyUI.owner);
+        stage = 'affichage';
         target.innerHTML = gameDetail(shown);
         details.dataset.detailLoaded = '1';
-      } catch {
-        target.innerHTML = '<div class="history-detail-loading error">Détails indisponibles · refermez puis réessayez</div>';
+      } catch (error) {
+        // Ce qu'on sait déjà de la partie plutôt qu'un écran vide, et la
+        // raison exacte : « indisponible » seul ne permettait pas de corriger.
+        console.warn('[historique] détail', details.dataset.historyId, stage, error);
+        let fallback = '';
+        try { fallback = gameDetail(game); } catch { /* rien de plus à montrer */ }
+        target.innerHTML = `${fallback}<div class="history-detail-loading error">Tableau complet indisponible (${historyEscape(stage)} : ${historyEscape(error?.message || 'erreur inconnue')}) · refermez puis réessayez</div>`;
       }
     }));
     historyDisclosures.restore(el);
