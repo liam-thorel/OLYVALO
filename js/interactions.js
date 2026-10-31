@@ -20,11 +20,12 @@ import { updateScriptDownload } from './downloads.mjs?v=20260912-separate-downlo
 import { PLAYERS as LOL_ROSTER_PLAYERS } from './lol-roster.mjs?v=20261006-puuid-lol';
 import { serverVisual } from './server-visuals.mjs?v=20260809-live-server-local';
 import { avatarLayersHTML } from './avatars.mjs?v=20260720-avatars';
-import { filterHistoryGames, historyDailyPerformances, historyGameForOwner, historyMode, historyOwnerAccountLabel, historyOwnerKey, historyOwnerLabel, historyPlayerName, historyPlayerPerformance, historyPlayerPerformances, historyRankedPlayers, historyReports, historyScoreText, historyTrackerUrl, isHistorySelf, normalizeHistoryEntries } from './history-utils.mjs?v=20261005-sites-history';
+import { filterHistoryGames, historyGameForOwner, historyMode, historyOwnerAccountLabel, historyOwnerKey, historyOwnerLabel, historyPlayerName, historyPlayerPerformance, historyPlayerPerformances, historyRankedPlayers, historyReports, historyScoreText, historyTrackerUrl, isHistorySelf, normalizeHistoryEntries } from './history-utils.mjs?v=20261005-sites-history';
 import { initCurse } from './curse.mjs?v=20260828-page-stream-lifecycle';
 import { fetchJsonWithTimeout } from './request-utils.mjs?v=20260930-consistent-live';
 import { liveDataStore, liveTimestamp } from './live-data-store.mjs?v=20261005-return-live';
 import { createHistoryPager } from './history-pager.mjs?v=20261005-sites-history';
+import { featuredPerformance, gameDurationMs, historyAgentStats, historyDayGroups, historyMapStats, historyMemberStats, historyOverview, historyRosterMember, valorantTierIcon, valorantTierLabel } from './history-overview.mjs?v=20261031-tracker';
 import { createHistoryDisclosureState } from './history-disclosure-state.mjs';
 import { liveScoreKey, liveScoreView } from './live-score.mjs?v=20260930-consistent-live';
 
@@ -1548,8 +1549,18 @@ export async function initHistoryPage() {
   const updateOwnerOptions = () => {
     ownerOptions = [...new Map(allGames.flatMap(game => historyReports(game).map(report => {
       const key = historyOwnerKey(report);
-      return [key, { key, label: historyOwnerAccountLabel(report, state.ROSTER) }];
-    }))).values()].sort((a,b) => a.label.localeCompare(b.label, 'fr'));
+      const member = historyRosterMember(report, state.ROSTER);
+      const riotId = String(report?.player || '').trim();
+      return [key, {
+        key,
+        label: historyOwnerAccountLabel(report, state.ROSTER),
+        name: member?.name || riotId.split('#')[0] || 'Inconnu',
+        avatar: member?.avatar || '',
+        riotId,
+        smurf: Boolean(member && String(member.riot?.puuid || '').toLowerCase() !== String(report?.playerPuuid || '').toLowerCase()
+          && String(member.riot?.name || '').toLowerCase() !== riotId.split('#')[0].toLowerCase()),
+      }];
+    }))).values()].sort((a,b) => a.name.localeCompare(b.name, 'fr') || a.label.localeCompare(b.label, 'fr'));
   };
   updateOwnerOptions();
   const historyUI = { view:'matches', owner:'all', period:'all', mode:'all', limit:20 };
@@ -1557,91 +1568,169 @@ export async function initHistoryPage() {
     .map(game => historyUI.owner === 'all' ? game : historyGameForOwner(game, historyUI.owner));
   const refreshHistory = () => renderHistory(visibleGames());
   const renderHistory = games => {
+  const roster = state.ROSTER;
+  const overview = historyOverview(games);
+  const agentStats = historyAgentStats(games).slice(0, 6);
+  const mapStats = historyMapStats(games);
+  const memberStats = historyMemberStats(games, roster);
+  const displayedGames = games.slice(0, historyUI.limit);
+  const days = historyDayGroups(displayedGames);
 
-  const comp = games.filter(g => historyMode(g) === 'competitive');
-  const deathmatches = games.filter(g => historyMode(g) === 'deathmatch');
-  const otherGames = games.filter(g => historyMode(g) === 'other');
-  const withResult = comp.filter(g => g.result === 'win' || g.result === 'loss');
-
-  const byMap = {};
-  withResult.forEach(g => {
-    if (!byMap[g.map]) byMap[g.map] = { w:0, n:0 };
-    byMap[g.map].n++;
-    if (g.result === 'win') byMap[g.map].w++;
-  });
-  const mapStats = Object.entries(byMap).map(([m,s]) => ({map:m, wr:Math.round(s.w/s.n*100), w:s.w, n:s.n}))
-    .sort((a,b) => b.n - a.n);
-
-  const agentCount = {};
-  comp.forEach(g => {
-    historyPlayerPerformances(g).forEach(performance => {
-      const agent = performance.self?.agent;
-      if (agent && agent !== '?') agentCount[agent] = (agentCount[agent]||0)+1;
-    });
-  });
-  const topAgents = Object.entries(agentCount).sort((a,b)=>b[1]-a[1]).slice(0,6);
-
-  const wrColor = v => v >= 55 ? '#3fcf6b' : v <= 45 ? '#ff4656' : '#e0b341';
+  // ─── Petits formats ────────────────────────────────────────────────────
+  const fixed = (value, digits = 2) => Number.isFinite(value) ? value.toFixed(digits) : '—';
+  const percent = value => Number.isFinite(value) ? `${value}%` : '—';
+  const signed = value => Number.isFinite(value) ? `${value > 0 ? '+' : ''}${value}` : '—';
+  const kdTone = value => !Number.isFinite(value) ? '' : value >= 1.15 ? 'is-good' : value < 0.9 ? 'is-bad' : '';
+  const wrTone = value => !Number.isFinite(value) ? '' : value >= 55 ? 'is-good' : value <= 45 ? 'is-bad' : 'is-even';
+  const signTone = value => !Number.isFinite(value) || value === 0 ? '' : value > 0 ? 'is-good' : 'is-bad';
   const durationLabel = ms => {
     if (!ms || ms < 0) return '—';
     const totalMinutes = Math.round(ms / 60000);
-    return `${Math.floor(totalMinutes / 60) ? Math.floor(totalMinutes / 60) + ' h ' : ''}${totalMinutes % 60} min`;
+    return totalMinutes >= 60 ? `${Math.floor(totalMinutes / 60)} h ${String(totalMinutes % 60).padStart(2, '0')}` : `${totalMinutes} min`;
   };
-  const dateLabel = ts => ts ? new Date(ts).toLocaleString('fr-FR', {
-    day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit'
-  }) : '—';
-  const dayKey = ts => {
-    const date = new Date(ts || 0);
-    return `${date.getFullYear()}-${String(date.getMonth()+1).padStart(2,'0')}-${String(date.getDate()).padStart(2,'0')}`;
-  };
-  const todayKey = dayKey(Date.now());
-  const dailyGroups = Object.entries(games.reduce((groups, game) => {
-    const key = dayKey(game.ts);
-    if (!groups[key]) groups[key] = [];
-    groups[key].push(game);
-    return groups;
-  }, {})).sort((a,b) => b[0].localeCompare(a[0]));
-
-  const dailySummary = ([key, dayGames]) => {
-    const compGames = dayGames.filter(game => historyMode(game) === 'competitive');
-    const dmGames = dayGames.filter(game => historyMode(game) === 'deathmatch');
-    const decided = compGames.filter(game => game.result === 'win' || game.result === 'loss');
-    const dayWins = decided.filter(game => game.result === 'win').length;
-    const rrValues = compGames.map(game => game.rr?.delta).filter(value => Number.isFinite(value));
-    const rrTotal = rrValues.reduce((sum, value) => sum + value, 0);
-    const duration = dayGames.reduce((sum, game) => sum + (game.durationMs || Math.max(0, (game.endTs||0) - (game.ts||0))), 0);
-    const maps = [...new Set(dayGames.map(game => game.map).filter(Boolean))];
-    const performances = historyDailyPerformances(dayGames, state.ROSTER);
-    const label = key === todayKey ? "Aujourd'hui" : new Date(`${key}T12:00:00`).toLocaleDateString('fr-FR', {
-      weekday:'long', day:'2-digit', month:'long'
-    });
-    return { key, label, games:dayGames, compGames, dmGames, decided, wins:dayWins, rrValues, rrTotal, duration, maps, performances };
-  };
-  const daily = dailyGroups.map(dailySummary);
-  const sectionTitle = t => `<div class="history-section-title">${t}</div>`;
-
+  const timeLabel = ts => ts ? new Date(ts).toLocaleTimeString('fr-FR', { hour:'2-digit', minute:'2-digit' }) : '';
+  const dateLabel = ts => ts ? new Date(ts).toLocaleString('fr-FR', { day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit' }) : '—';
+  const mapLabel = map => historyEscape(valorantLiveMapLabel(map || '?'));
   const modeLabel = game => historyMode(game) === 'deathmatch' ? 'Deathmatch'
     : historyMode(game) === 'competitive' ? 'Compétitif'
     : valorantLiveModeLabel(game);
-  const playerRow = (game, player, index, rank = '') => {
+  const agentImg = (agent, className = '') => {
+    const src = agentIconFromName(agent);
+    return src ? `<img class="${className}" src="${src}" alt="${historyEscape(agent || '')}" loading="lazy" onerror="this.style.visibility='hidden'">`
+      : `<span class="${className} hx-agent-fallback" aria-hidden="true">${historyEscape(String(agent || '?').slice(0, 2))}</span>`;
+  };
+  const avatar = (name, src, className = 'hx-avatar') => src
+    ? `<img class="${className}" src="${historyEscape(src)}" alt="" loading="lazy" onerror="this.replaceWith(Object.assign(document.createElement('span'),{className:'${className} is-initial',textContent:${historyEscape(JSON.stringify(String(name || '?').slice(0, 1).toUpperCase()))}}))">`
+    : `<span class="${className} is-initial" aria-hidden="true">${historyEscape(String(name || '?').slice(0, 1).toUpperCase())}</span>`;
+  const tierImg = (tier, className = 'hx-tier') => {
+    const src = valorantTierIcon(tier);
+    return src ? `<img class="${className}" src="${src}" alt="${historyEscape(valorantTierLabel(tier))}" title="${historyEscape(valorantTierLabel(tier))}" loading="lazy" onerror="this.remove()">` : '';
+  };
+  const ownerOf = report => historyRosterMember(report, roster);
+  const ownerName = report => ownerOf(report)?.name || String(report?.player || 'Inconnu').split('#')[0];
+  const sectionHead = (title, extra = '') => `<header class="hx-card-head"><h3>${title}</h3>${extra}</header>`;
+
+  // ─── Profil : un joueur, ou tout le groupe ─────────────────────────────
+  const selectedOwner = historyUI.owner !== 'all' ? ownerOptions.find(option => option.key === historyUI.owner) : null;
+  const selectedStats = selectedOwner ? memberStats.find(entry => entry.key === selectedOwner.key) : null;
+  const periodLabel = { today:"Aujourd'hui", '7d':'7 derniers jours', all:'Toutes les parties chargées' }[historyUI.period];
+  const modeFilterLabel = { all:'Tous les modes', competitive:'Compétitif', deathmatch:'Deathmatch' }[historyUI.mode];
+  const form = overview.recent.length ? `<div class="hx-form" aria-label="Derniers résultats en compétitif">
+      <small>Forme</small>
+      <div>${overview.recent.map(result => `<i class="${result === 'win' ? 'is-win' : result === 'loss' ? 'is-loss' : 'is-draw'}" title="${result === 'win' ? 'Victoire' : result === 'loss' ? 'Défaite' : 'Égalité'}">${result === 'win' ? 'V' : result === 'loss' ? 'D' : 'É'}</i>`).join('')}</div>
+    </div>` : '';
+  const profile = selectedOwner ? `<section class="hx-profile">
+      ${avatar(selectedOwner.name, selectedOwner.avatar, 'hx-profile-avatar')}
+      <div class="hx-profile-id">
+        <small>Historique</small>
+        <h3>${historyEscape(selectedOwner.name)}</h3>
+        <span>${historyEscape(selectedOwner.riotId || '')}${selectedOwner.smurf ? ' · Smurf' : ''}</span>
+      </div>
+      ${selectedStats?.tier ? `<div class="hx-profile-rank">${tierImg(selectedStats.tier, 'hx-profile-tier')}<span><small>Rang actuel</small><strong>${historyEscape(valorantTierLabel(selectedStats.tier, selectedStats.rr))}</strong></span></div>` : ''}
+      ${form}
+    </section>` : `<section class="hx-profile is-group">
+      <div class="hx-profile-stack">${memberStats.slice(0, 5).map(entry => avatar(entry.label, entry.avatar, 'hx-profile-avatar')).join('')}</div>
+      <div class="hx-profile-id">
+        <small>Historique du groupe</small>
+        <h3>Five stack OLYCITY</h3>
+        <span>${memberStats.length} compte${memberStats.length > 1 ? 's' : ''} suivi${memberStats.length > 1 ? 's' : ''} · ${historyEscape(periodLabel)}</span>
+      </div>
+      ${form}
+    </section>`;
+
+  // ─── Vue d'ensemble ────────────────────────────────────────────────────
+  const bigStat = (label, value, sub, tone = '', bar = null) => `<div class="hx-stat-big ${tone}">
+      <small>${label}</small><strong>${value}</strong><span>${sub}</span>
+      ${bar === null ? '' : `<i class="hx-meter" aria-hidden="true"><b style="width:${Math.max(0, Math.min(100, bar))}%"></b></i>`}
+    </div>`;
+  const smallStat = (label, value, tone = '') => `<div class="hx-stat-small ${tone}"><small>${label}</small><strong>${value}</strong></div>`;
+  const overviewCard = `<section class="hx-card hx-overview" aria-label="Vue d'ensemble">
+      ${sectionHead("Vue d'ensemble", `<span>${historyEscape(modeFilterLabel)} · ${historyEscape(periodLabel)}</span>`)}
+      <div class="hx-overview-big">
+        ${bigStat('Victoires', percent(overview.winrate), overview.wins + overview.losses ? `${overview.wins}V · ${overview.losses}D${overview.draws ? ` · ${overview.draws}É` : ''}` : 'aucune compétitive', wrTone(overview.winrate), overview.winrate)}
+        ${bigStat('Ratio K/D', fixed(overview.kd), `${overview.kills} / ${overview.deaths} / ${overview.assists}`, kdTone(overview.kd), Number.isFinite(overview.kd) ? overview.kd / 2 * 100 : null)}
+        ${bigStat('ACS moyen', overview.acs ?? '—', 'score de combat par manche', '', Number.isFinite(overview.acs) ? overview.acs / 3.5 : null)}
+        ${bigStat('Headshots', percent(overview.hs), 'des balles qui touchent', '', overview.hs)}
+      </div>
+      <div class="hx-overview-small">
+        ${smallStat('Parties', `${overview.games}<em>${overview.competitive} comp · ${overview.deathmatch} DM</em>`)}
+        ${smallStat('Temps de jeu', durationLabel(overview.durationMs))}
+        ${smallStat('RR net', signed(overview.rrNet), signTone(overview.rrNet))}
+        ${smallStat('Record de kills', overview.performances ? overview.maxKills : '—')}
+        ${smallStat('Kills / partie', fixed(overview.killsPerGame, 1))}
+        ${smallStat('KDA', fixed(overview.kda))}
+      </div>
+    </section>`;
+
+  // ─── Colonne : agents, maps, joueurs ───────────────────────────────────
+  const agentsCard = agentStats.length ? `<section class="hx-card hx-agents">
+      ${sectionHead('Agents', '<span>parties · victoires · K/D · ACS</span>')}
+      <div class="hx-list">
+        ${agentStats.map(agent => `<div class="hx-list-row">
+          ${agentImg(agent.label, 'hx-list-icon')}
+          <span class="hx-list-name"><strong>${historyEscape(agent.label)}</strong><small>${agent.games} partie${agent.games > 1 ? 's' : ''}</small></span>
+          <b class="${wrTone(agent.winrate)}">${percent(agent.winrate)}</b>
+          <b class="${kdTone(agent.kd)}">${fixed(agent.kd)}</b>
+          <b>${agent.acs ?? '—'}</b>
+        </div>`).join('')}
+      </div>
+    </section>` : '';
+  const mapsCard = mapStats.length ? `<section class="hx-card hx-maps">
+      ${sectionHead('Maps', '<span>compétitif</span>')}
+      <div class="hx-map-list">
+        ${mapStats.map(entry => {
+          const splash = valorantApi.mapSplash(entry.map);
+          return `<div class="hx-map-row"${splash ? ` style="--hx-map:url('${splash}')"` : ''}>
+            <span class="hx-map-name"><strong>${mapLabel(entry.map)}</strong><small>${entry.games} partie${entry.games > 1 ? 's' : ''} · ${entry.wins}V ${entry.losses}D</small></span>
+            <span class="hx-map-wr ${wrTone(entry.winrate)}"><strong>${percent(entry.winrate)}</strong><i class="hx-meter" aria-hidden="true"><b style="width:${entry.winrate ?? 0}%"></b></i></span>
+          </div>`;
+        }).join('')}
+      </div>
+    </section>` : '';
+  const membersCard = !selectedOwner && memberStats.length > 1 ? `<section class="hx-card hx-members">
+      ${sectionHead('Joueurs', '<span>cliquer pour filtrer</span>')}
+      <div class="hx-list">
+        ${memberStats.map(entry => `<button type="button" class="hx-list-row hx-member-row" data-history-owner="${historyEscape(entry.key)}" title="${historyEscape(entry.riotId)}">
+          ${avatar(entry.label, entry.avatar, 'hx-list-icon is-round')}
+          <span class="hx-list-name"><strong>${historyEscape(entry.label)}</strong><small>${entry.games} partie${entry.games > 1 ? 's' : ''}${entry.tier ? ` · ${historyEscape(valorantTierLabel(entry.tier))}` : ''}</small></span>
+          ${entry.tier ? tierImg(entry.tier, 'hx-list-tier') : '<span></span>'}
+          <b class="${wrTone(entry.winrate)}">${percent(entry.winrate)}</b>
+          <b class="${kdTone(entry.kd)}">${fixed(entry.kd)}</b>
+        </button>`).join('')}
+      </div>
+    </section>` : '';
+
+  // ─── Détail d'une partie : tableau des joueurs ─────────────────────────
+  const boardRow = (game, player, rankedPlayers) => {
+    const stats = player.stats || {};
+    const rank = rankedPlayers.indexOf(player) + 1;
+    const diff = (stats.kills || 0) - (stats.deaths || 0);
+    const kd = (stats.kills || 0) / Math.max(1, stats.deaths || 0);
     const deathmatch = historyMode(game) === 'deathmatch';
-    const lastMetric = deathmatch ? player.stats?.score : player.stats?.acs;
-    const playerName = historyPlayerName(game, player, index);
-    return `
-    <div class="history-player ${isHistorySelf(game, player) ? 'self' : ''}">
-      ${rank ? `<span class="history-player-rank">${rank}</span>` : `<img src="${agentIconFromName(player.agent)}" alt="${player.agent||''}" onerror="this.style.visibility='hidden'">`}
-      <span class="history-player-name">${historyEscape(playerName)}<small>${historyEscape(player.agent||'?')}</small></span>
-      <strong>${player.stats?.kills||0}/${player.stats?.deaths||0}/${player.stats?.assists||0}</strong>
-      <span>${Number.isFinite(lastMetric) ? lastMetric : '—'} ${deathmatch ? 'PTS' : 'ACS'}</span>
+    return `<div class="hx-board-row ${isHistorySelf(game, player) ? 'self' : ''}">
+      <span class="hx-board-player">
+        ${agentImg(player.agent, 'hx-board-agent')}
+        <span><strong>${historyEscape(historyPlayerName(game, player, Math.max(0, rank - 1)))}</strong><small>${historyEscape(player.agent || '?')}</small></span>
+        ${rank === 1 ? '<b class="hx-badge is-mvp">MVP</b>' : deathmatch ? `<b class="hx-badge">#${rank}</b>` : ''}
+      </span>
+      <span>${deathmatch ? (stats.score ?? '—') : (stats.acs ?? '—')}</span>
+      <span>${stats.kills || 0}</span>
+      <span>${stats.deaths || 0}</span>
+      <span>${stats.assists || 0}</span>
+      <span class="${signTone(diff)}">${signed(diff)}</span>
+      <span class="${kdTone(kd)}">${kd.toFixed(2)}</span>
+      <span>${percent(stats.hsPercent)}</span>
     </div>`;
   };
+  const boardHead = (title, extra = '', deathmatch = false) => `<div class="hx-board-head">
+      <strong>${title}${extra}</strong><span>${deathmatch ? 'Score' : 'ACS'}</span><span>K</span><span>D</span><span>A</span><span>+/−</span><span>K/D</span><span>HS</span>
+    </div>`;
   const gameDetail = game => {
     const kind = historyMode(game);
     const detailedPlayers = (game.players||[]).filter(player => player.stats);
     const rankedPlayers = historyRankedPlayers(game);
     const performances = historyPlayerPerformances(game).filter(entry => entry.self);
     const performance = performances[0] || historyPlayerPerformance(game);
-    const self = performance.self;
     const mvp = rankedPlayers[0] || performance.mvp;
     const splash = valorantApi.mapSplash(game.map);
     const heroStyle = splash ? ` style="--history-map-image:url('${splash}')"` : '';
@@ -1653,7 +1742,7 @@ export async function initHistoryPage() {
       : game.result === 'win' ? 'Victoire' : game.result === 'loss' ? 'Défaite' : game.result === 'draw' ? 'Égalité' : 'Résultat indisponible';
     const resultClass = kind === 'deathmatch' ? 'deathmatch' : game.result === 'win' ? 'win' : game.result === 'loss' ? 'loss' : 'unknown';
     const rrDelta = kind === 'competitive' ? game.rr?.delta : null;
-    const selfName = historyOwnerLabel(game, state.ROSTER);
+    const selfName = historyOwnerLabel(game, roster);
     const mvpIndex = mvp ? rankedPlayers.indexOf(mvp) : -1;
     const trackerUrl = historyTrackerUrl(game);
 
@@ -1663,12 +1752,12 @@ export async function initHistoryPage() {
         const trackedScore = kind === 'deathmatch' ? tracked.stats?.score : tracked.stats?.acs;
         return `<section class="history-performance-card self">
           <div class="history-performance-player">
-            <img src="${agentIconFromName(tracked.agent)}" alt="${tracked.agent||''}" onerror="this.style.display='none'">
-            <span><small>Performance suivie</small><strong>${historyOwnerLabel(entry.report, state.ROSTER)}</strong><em>${historyEscape(historyPlayerName(entry.report, tracked))} · ${historyEscape(tracked.agent||'Agent inconnu')}</em></span>
+            ${agentImg(tracked.agent)}
+            <span><small>Performance suivie</small><strong>${historyEscape(historyOwnerLabel(entry.report, roster))}</strong><em>${historyEscape(historyPlayerName(entry.report, tracked))} · ${historyEscape(tracked.agent||'Agent inconnu')}</em></span>
           </div>
           <div class="history-performance-metrics">
             <div><strong>${tracked.stats?.kills||0}/${tracked.stats?.deaths||0}/${tracked.stats?.assists||0}</strong><span>K / D / A</span></div>
-            <div><strong>${entry.kd?.toFixed(2) || '—'}</strong><span>Ratio K/D</span></div>
+            <div><strong class="${kdTone(entry.kd)}">${fixed(entry.kd)}</strong><span>Ratio K/D</span></div>
             <div><strong>${entry.placement ? `#${entry.placement}/${entry.playerCount}` : '—'}</strong><span>Classement</span></div>
             <div><strong>${Number.isFinite(trackedScore) ? trackedScore : '—'}</strong><span>${kind === 'deathmatch' ? 'Score' : 'ACS'}</span></div>
           </div>
@@ -1676,30 +1765,34 @@ export async function initHistoryPage() {
       }).join('')}
       ${mvp ? `<section class="history-performance-card mvp ${isHistorySelf(game, mvp) ? 'self-mvp' : ''}">
         <span class="history-mvp-label">MVP de la partie</span>
-        <strong>${historyPlayerName(game, mvp, mvpIndex >= 0 ? mvpIndex : 0)}</strong>
-        <small>${mvp.agent||'?'} · ${mvp.stats?.kills||0}/${mvp.stats?.deaths||0}/${mvp.stats?.assists||0}</small>
+        <strong>${historyEscape(historyPlayerName(game, mvp, mvpIndex >= 0 ? mvpIndex : 0))}</strong>
+        <small>${historyEscape(mvp.agent||'?')} · ${mvp.stats?.kills||0}/${mvp.stats?.deaths||0}/${mvp.stats?.assists||0}</small>
       </section>` : ''}
     </div>` : '';
 
     if (detailedPlayers.length && kind === 'deathmatch') {
-      playersHTML = `<div class="history-deathmatch-list">
-        <div class="history-team-heading"><strong>Classement individuel</strong><span>Joueur</span><span>K/D/A</span><span>Score</span></div>
-        ${rankedPlayers.map((player, index) => playerRow(game, player, index, index + 1)).join('')}
+      playersHTML = `<div class="hx-board is-deathmatch">
+        ${boardHead('Classement individuel', '', true)}
+        ${rankedPlayers.map(player => boardRow(game, player, rankedPlayers)).join('')}
       </div>`;
     } else if (detailedPlayers.length) {
-      playersHTML = `<div class="history-teams">
-        ${['ORDER','CHAOS'].map(team => `
-          <div class="history-team">
-            <div class="history-team-heading"><strong>${team === game.selfTeam ? 'Votre équipe' : 'Adversaires'}</strong><span>Joueur</span><span>K/D/A</span><span>ACS</span></div>
+      const self = detailedPlayers.find(player => isHistorySelf(game, player));
+      const selfTeam = String(game.selfTeam || self?.team || 'ORDER').toUpperCase();
+      const { blue, red } = game.score || {};
+      const teamScore = team => (team === 'ORDER' ? blue : red);
+      playersHTML = `<div class="hx-board">
+        ${[selfTeam, selfTeam === 'ORDER' ? 'CHAOS' : 'ORDER'].map(team => `
+          <div class="hx-board-team ${team === selfTeam ? 'is-ally' : 'is-enemy'}">
+            ${boardHead(team === selfTeam ? 'Votre équipe' : 'Adversaires', Number.isInteger(teamScore(team)) ? ` <em>${teamScore(team)}</em>` : '')}
             ${detailedPlayers.filter(player => player.team === team)
               .sort((a,b)=>(b.stats?.score||0)-(a.stats?.score||0))
-              .map(player => playerRow(game, player, rankedPlayers.indexOf(player))).join('')}
+              .map(player => boardRow(game, player, rankedPlayers)).join('')}
           </div>`).join('')}
       </div>`;
     }
 
     const compactHistory = window.matchMedia?.('(max-width: 768px)').matches ?? false;
-    const rosterLabel = kind === 'deathmatch' ? 'Classement complet' : 'Les deux équipes';
+    const rosterLabel = kind === 'deathmatch' ? 'Classement complet' : 'Tableau des scores';
     const rosterContent = detailedPlayers.length ? `<details class="history-roster-disclosure"${compactHistory ? '' : ' open'}>
       <summary>
         <span>${rosterLabel}</span>
@@ -1713,219 +1806,127 @@ export async function initHistoryPage() {
       <aside class="history-map-visual"${heroStyle}>
         <div class="history-match-result ${resultClass}"><span>${resultText}</span><strong>${kind === 'competitive' ? scoreText : performance.placement ? `#${performance.placement}` : 'DM'}</strong></div>
         <span>${modeLabel(game)}</span>
-        <strong>${historyEscape(valorantLiveMapLabel(game.map || '?')).toUpperCase()}</strong>
-        <small>${dateLabel(game.ts)} · ${durationLabel(game.durationMs || ((game.endTs||0)-(game.ts||0)))}</small>
+        <strong>${mapLabel(game.map).toUpperCase()}</strong>
+        <small>${dateLabel(game.ts)} · ${durationLabel(gameDurationMs(game))}</small>
         <div class="history-match-facts">
-          <span>Joueur${historyReports(game).length > 1 ? 's' : ''} <strong>${selfName}</strong></span>
-          ${Number.isFinite(game.rounds) && kind === 'competitive' ? `<span>Manches <strong>${game.rounds}</strong></span>` : ''}
-          ${Number.isFinite(rrDelta) ? `<span>RR <strong class="${rrDelta >= 0 ? 'positive' : 'negative'}">${rrDelta >= 0 ? '+' : ''}${rrDelta}</strong></span>` : ''}
+          <span>Joueur${historyReports(game).length > 1 ? 's' : ''} <strong>${historyEscape(selfName)}</strong></span>
+          ${Number.isFinite(game.rounds) && game.rounds && kind === 'competitive' ? `<span>Manches <strong>${game.rounds}</strong></span>` : ''}
+          ${Number.isFinite(rrDelta) ? `<span>RR <strong class="${rrDelta >= 0 ? 'positive' : 'negative'}">${signed(rrDelta)}</strong></span>` : ''}
         </div>
         ${trackerUrl ? `<a class="history-tracker-link" href="${trackerUrl}" target="_blank" rel="noopener noreferrer">Voir sur Tracker.gg <span aria-hidden="true">↗</span></a>` : ''}
       </aside>
       <div class="history-detail-content">${overviewHTML}<div class="history-detail-players">${rosterContent}</div></div>
     </div>`;
   };
+
+  // ─── Ligne d'une partie ────────────────────────────────────────────────
   const gameCard = game => {
     const kind = historyMode(game);
-    const result = game.result;
-    const resultColor = kind === 'deathmatch' ? '#e0b341'
-      : result === 'win' ? '#3fcf6b' : result === 'loss' ? '#ff4656' : 'var(--dim)';
-    const resultLabel = kind === 'deathmatch' ? 'DM' : result === 'win' ? 'V' : result === 'loss' ? 'D' : '·';
-    const self = (game.players||[]).find(player => isHistorySelf(game, player));
+    const featured = featuredPerformance(game);
+    const stats = featured?.self?.stats || null;
+    const result = kind === 'deathmatch' ? 'is-dm' : game.result === 'win' ? 'is-win' : game.result === 'loss' ? 'is-loss' : 'is-draw';
+    const resultLabel = kind === 'deathmatch' ? 'Deathmatch' : game.result === 'win' ? 'Victoire' : game.result === 'loss' ? 'Défaite' : game.result === 'draw' ? 'Égalité' : '—';
     const score = kind === 'deathmatch'
-      ? self?.stats ? `${self.stats.kills||0}/${self.stats.deaths||0}` : ''
-      : historyScoreText(game);
+      ? featured?.placement && featured.playerCount > 1 ? `#${featured.placement}<em>/${featured.playerCount}</em>` : stats ? `${stats.kills || 0}` : '—'
+      : (historyScoreText(game) || '—').replace('–', '<em>:</em>');
+    const reports = historyReports(game);
+    const owners = reports.map(report => ({ name:ownerName(report), avatar:ownerOf(report)?.avatar || '' }))
+      .filter((owner, index, all) => all.findIndex(other => other.name === owner.name) === index);
+    const rrReport = featured?.report || reports[0];
+    const rrDelta = kind === 'competitive' ? rrReport?.rr?.delta : null;
+    const kd = stats ? (stats.kills || 0) / Math.max(1, stats.deaths || 0) : null;
+    const placement = featured?.playerCount > 1 ? featured.placement : null;
     const detail = game.__summary
       ? '<div class="history-detail-loading">Ouvrez la partie pour charger les détails</div>'
       : gameDetail(game);
-    return `<details class="history-game ${kind}" data-history-id="${historyEscape(game.historyId || '')}" style="--result-color:${resultColor}">
-      <summary class="history-game-summary">
-        <span class="history-result">${resultLabel}</span>
-        <span class="history-game-main">
-          <strong>${historyEscape(valorantLiveMapLabel(game.map || '?')).toUpperCase()}</strong>
-          <small>${modeLabel(game)} · ${historyOwnerLabel(game, state.ROSTER)} · ${dateLabel(game.ts)}</small>
+    return `<details class="history-game hx-match ${result} ${kind}" data-history-id="${historyEscape(game.historyId || '')}">
+      <summary class="hx-row">
+        <span class="hx-row-agent">
+          ${agentImg(featured?.self?.agent, 'hx-row-agent-img')}
+          ${owners.length ? `<span class="hx-row-owners">${owners.slice(0, 3).map(owner => avatar(owner.name, owner.avatar, 'hx-row-owner')).join('')}</span>` : ''}
         </span>
-        ${score ? `<strong class="history-score">${score}</strong>` : '<span class="history-score muted">—</span>'}
-        <span class="history-duration">${durationLabel(game.durationMs || ((game.endTs||0)-(game.ts||0)))}</span>
-        <span class="history-expand">⌄</span>
+        <span class="hx-row-map">
+          <strong>${mapLabel(game.map)}</strong>
+          <small>${modeLabel(game)} · ${timeLabel(game.ts)} · ${durationLabel(gameDurationMs(game))}</small>
+          ${historyUI.owner === 'all' ? `<small class="hx-row-who">${historyEscape(owners.map(owner => owner.name).join(', '))}</small>` : ''}
+        </span>
+        <span class="hx-row-score"><strong>${score}</strong><small>${resultLabel}</small></span>
+        <span class="hx-row-rank">
+          ${kind === 'competitive' && rrReport?.rr?.tier ? tierImg(rrReport.rr.tier, 'hx-row-tier') : ''}
+          ${Number.isFinite(rrDelta) ? `<b class="${signTone(rrDelta)}">${signed(rrDelta)}</b>` : ''}
+        </span>
+        <span class="hx-row-stat hx-row-kda"><strong>${stats ? `${stats.kills || 0} <em>/</em> ${stats.deaths || 0} <em>/</em> ${stats.assists || 0}` : '—'}</strong><small>K / D / A</small></span>
+        <span class="hx-row-stat"><strong class="${kdTone(kd)}">${fixed(kd)}</strong><small>K/D</small></span>
+        <span class="hx-row-stat hx-row-hs"><strong>${percent(stats?.hsPercent)}</strong><small>HS</small></span>
+        <span class="hx-row-stat"><strong>${kind === 'deathmatch' ? (stats?.score ?? '—') : (stats?.acs ?? '—')}</strong><small>${kind === 'deathmatch' ? 'Score' : 'ACS'}</small></span>
+        <span class="hx-row-place">${placement === 1 ? '<b class="hx-badge is-mvp">MVP</b>' : placement ? `<b class="hx-badge">${placement}e</b>` : ''}</span>
+        <span class="hx-row-chevron" aria-hidden="true">⌄</span>
       </summary>
       <div class="history-game-detail" data-history-detail>${detail}</div>
     </details>`;
   };
-  const displayedGames = games.slice(0, historyUI.limit);
-  const displayedComp = displayedGames.filter(game => historyMode(game) === 'competitive');
-  const displayedDeathmatches = displayedGames.filter(game => historyMode(game) === 'deathmatch');
-  const displayedOtherGames = displayedGames.filter(game => historyMode(game) === 'other');
-  const groupWinrate = withResult.length ? Math.round(withResult.filter(game => game.result === 'win').length / withResult.length * 100) : null;
-  const groupMinutes = Math.round(games.reduce((total, game) => total + (game.durationMs || Math.max(0, (game.endTs||0) - (game.ts||0))), 0) / 60_000);
-  const favoriteMap = mapStats[0];
-  const groupRecap = games.length ? `<section class="history-group-recap" aria-label="Récapitulatif du groupe">
-    <div><small>Parties</small><strong>${games.length}</strong><span>${comp.length} comp · ${deathmatches.length} DM</span></div>
-    <div><small>Résultats compétitifs</small><strong>${groupWinrate === null ? '—' : `${groupWinrate}%`}</strong><span>${withResult.filter(game => game.result === 'win').length}V · ${withResult.filter(game => game.result === 'loss').length}D</span></div>
-    <div><small>Temps joué</small><strong>${groupMinutes >= 60 ? `${Math.floor(groupMinutes / 60)}h${String(groupMinutes % 60).padStart(2, '0')}` : `${groupMinutes} min`}</strong><span>sur la période</span></div>
-    <div><small>Map la plus jouée</small><strong>${historyEscape(favoriteMap?.map || '—')}</strong><span>${favoriteMap ? `${favoriteMap.n} partie${favoriteMap.n > 1 ? 's' : ''}` : 'aucune donnée'}</span></div>
-  </section>` : '';
-  const gameSection = (title, sectionGames, className, total) => sectionGames.length ? `
-    <section class="history-mode-section ${className}">
-      ${sectionTitle(`${title} · ${total}`)}
-      <div class="history-game-list">${sectionGames.map(gameCard).join('')}</div>
-    </section>` : '';
-  const filterButton = (group, value, label, active) => `
-    <button type="button" class="history-filter-button ${active ? 'active' : ''}" data-history-${group}="${historyEscape(value)}">${historyEscape(label)}</button>`;
+  const dayBlock = day => `<section class="hx-day">
+      <header class="hx-day-head">
+        <strong>${historyEscape(day.label)}</strong>
+        <span>${day.count} partie${day.count > 1 ? 's' : ''}</span>
+        <span class="hx-day-stats">
+          ${day.wins + day.losses ? `<b><i class="is-good">${day.wins}V</i> · <i class="is-bad">${day.losses}D</i></b>` : ''}
+          ${Number.isFinite(day.rrNet) ? `<b class="${signTone(day.rrNet)}">${signed(day.rrNet)} RR</b>` : ''}
+          ${Number.isFinite(day.kd) ? `<b>K/D <i class="${kdTone(day.kd)}">${fixed(day.kd)}</i></b>` : ''}
+          ${Number.isFinite(day.acs) ? `<b>ACS <i>${day.acs}</i></b>` : ''}
+        </span>
+      </header>
+      <div class="hx-matches">${day.games.map(gameCard).join('')}</div>
+    </section>`;
 
-  el.innerHTML = `${historySyncMarkup(syncState)}${groupRecap}
-    <div class="history-view-tabs" role="tablist" aria-label="Vue de l'historique">
-      ${filterButton('view', 'summary', 'Statistiques', historyUI.view === 'summary')}
-      ${filterButton('view', 'matches', 'Parties', historyUI.view === 'matches')}
-    </div>
-
-    <div class="history-filters">
-      <div class="history-filter-group">
+  // ─── Filtres ───────────────────────────────────────────────────────────
+  const segment = (group, value, label, active) => `<button type="button" class="history-filter-button ${active ? 'active' : ''}" data-history-${group}="${historyEscape(value)}" aria-pressed="${active}">${historyEscape(label)}</button>`;
+  const ownerChip = (key, label, title, avatarHTML) => `<button type="button" class="history-filter-button hx-owner-chip ${historyUI.owner === key ? 'active' : ''}" data-history-owner="${historyEscape(key)}" aria-pressed="${historyUI.owner === key}" title="${historyEscape(title)}">${avatarHTML}<span>${historyEscape(label)}</span></button>`;
+  const toolbar = `<div class="history-filters hx-toolbar">
+      <div class="history-filter-group hx-owners">
         <span>Joueur</span>
         <div>
-          ${filterButton('owner', 'all', 'Tout le groupe', historyUI.owner === 'all')}
-          ${ownerOptions.map(owner => filterButton('owner', owner.key, owner.label, historyUI.owner === owner.key)).join('')}
+          ${ownerChip('all', 'Tout le groupe', 'Tout le groupe', '<span class="hx-chip-icon" aria-hidden="true">✦</span>')}
+          ${ownerOptions.map(owner => ownerChip(owner.key, owner.smurf ? `${owner.name} · smurf` : owner.name, owner.label, avatar(owner.name, owner.avatar, 'hx-chip-avatar'))).join('')}
         </div>
       </div>
       <div class="history-filter-group">
         <span>Période</span>
-        <div>
-          ${filterButton('period', 'today', "Aujourd'hui", historyUI.period === 'today')}
-          ${filterButton('period', '7d', '7 jours', historyUI.period === '7d')}
-          ${filterButton('period', 'all', 'Tout', historyUI.period === 'all')}
+        <div class="hx-segment">
+          ${segment('period', 'today', "Aujourd'hui", historyUI.period === 'today')}
+          ${segment('period', '7d', '7 jours', historyUI.period === '7d')}
+          ${segment('period', 'all', 'Tout', historyUI.period === 'all')}
         </div>
       </div>
-      ${historyUI.view === 'matches' ? `<div class="history-filter-group">
+      <div class="history-filter-group">
         <span>Mode</span>
-        <div>
-          ${filterButton('mode', 'all', 'Tous', historyUI.mode === 'all')}
-          ${filterButton('mode', 'competitive', 'Compétitif', historyUI.mode === 'competitive')}
-          ${filterButton('mode', 'deathmatch', 'Deathmatch', historyUI.mode === 'deathmatch')}
+        <div class="hx-segment">
+          ${segment('mode', 'all', 'Tous', historyUI.mode === 'all')}
+          ${segment('mode', 'competitive', 'Compétitif', historyUI.mode === 'competitive')}
+          ${segment('mode', 'deathmatch', 'Deathmatch', historyUI.mode === 'deathmatch')}
         </div>
-      </div>` : ''}
-    </div>
-
-    <section class="history-view-panel summary ${historyUI.view === 'summary' ? 'active' : ''}">
-    ${daily.length ? `
-    <div class="history-daily-section">
-      ${sectionTitle('Récap quotidien')}
-      <div class="history-daily-grid">
-        ${daily.slice(0,14).map(day => {
-          const winrate = day.decided.length ? Math.round(day.wins / day.decided.length * 100) : null;
-          const losses = day.decided.length - day.wins;
-          const rrLabel = day.rrValues.length ? `${day.rrTotal >= 0 ? '+' : ''}${day.rrTotal} RR` : '';
-          return `
-          <details class="history-day-card">
-            <summary class="history-day-summary">
-              <strong>${day.label}</strong>
-              <span>${day.compGames.length} compétitive${day.compGames.length > 1 ? 's' : ''}</span>
-              ${day.decided.length ? `<b>${day.wins}V · ${losses}D</b><b style="color:${wrColor(winrate)}">${winrate}%</b>` : '<b class="muted">Aucun résultat</b>'}
-              ${rrLabel ? `<b class="${day.rrTotal >= 0 ? 'positive' : 'negative'}">${rrLabel}</b>` : ''}
-              ${day.dmGames.length ? `<span class="history-day-dm">+ ${day.dmGames.length} DM</span>` : ''}
-              <i aria-hidden="true">⌄</i>
-            </summary>
-            <div class="history-day-detail">
-              <div class="history-day-context">
-                <span>${day.games.length} partie${day.games.length > 1 ? 's' : ''}</span>
-                <span>${durationLabel(day.duration)}</span>
-                ${day.maps.length ? `<span>${day.maps.join(' · ')}</span>` : ''}
-              </div>
-            ${day.performances.length ? (() => {
-              const leader = day.performances[0];
-              return `<details class="history-day-performance">
-                <summary>
-                  <span>Performances suivies</span>
-                  <strong>${leader.name} · ${leader.kills}/${leader.deaths}/${leader.assists} · ${leader.kd.toFixed(2)} K/D</strong>
-                  <i aria-hidden="true">⌄</i>
-                </summary>
-                <div class="history-day-performance-list">
-                  ${day.performances.map(player => {
-                    const best = player.best;
-                    const placement = best?.mode === 'deathmatch' && best.placement
-                      ? ` · #${best.placement}/${best.playerCount}` : '';
-                    return `<div class="history-day-player">
-                      <header><strong>${player.name}</strong><span>${player.games} game${player.games > 1 ? 's' : ''} détaillée${player.games > 1 ? 's' : ''} · ${player.mvps} MVP</span></header>
-                      <div class="history-day-player-metrics">
-                        <div><strong>${player.kills}/${player.deaths}/${player.assists}</strong><small>K/D/A cumulé</small></div>
-                        <div><strong>${player.kd.toFixed(2)}</strong><small>Ratio K/D</small></div>
-                        <div><strong>${best ? `${best.kills}/${best.deaths}/${best.assists}` : '—'}</strong><small>Meilleure partie</small></div>
-                      </div>
-                      ${best ? `<div class="history-day-best">${best.map} · ${best.agent}${placement}</div>` : ''}
-                    </div>`;
-                  }).join('')}
-                </div>
-              </details>`;
-            })() : ''}
-            </div>
-          </details>`;
-        }).join('')}
       </div>
-    </div>` : ''}
-
-    ${topAgents.length || mapStats.length ? `
-    <details class="history-analysis">
-      <summary>
-        <span>Analyses détaillées</span>
-        <small>Agents et performances par map</small>
-        <i aria-hidden="true">⌄</i>
-      </summary>
-      <div class="history-analysis-content">` : ''}
-
-    ${topAgents.length ? `
-    <div class="history-agents-section">
-      ${sectionTitle('Agents les plus joués')}
-      <div class="history-agent-list">
-        ${topAgents.map(([a,n]) => `
-          <div class="history-agent-chip">
-            <img src="${agentIconFromName(a)}" alt="${a}" onerror="this.style.display='none'">
-            <div class="history-agent-copy">
-              <strong>${a}</strong>
-              <small>${n} game${n>1?'s':''}</small>
-            </div>
-          </div>`).join('')}
-      </div>
-    </div>` : ''}
-
-    ${mapStats.length ? `
-    <div class="history-maps-section">
-      ${sectionTitle('Winrate par map')}
-      <div class="history-map-stats">
-        ${mapStats.map(s => `
-          <div class="history-map-stat">
-            <strong class="history-map-stat-name">${s.map}</strong>
-            <div class="history-map-stat-track">
-              <div style="width:${s.wr}%;background:${wrColor(s.wr)}"></div>
-            </div>
-            <strong class="history-map-stat-wr" style="color:${wrColor(s.wr)}">${s.wr}%</strong>
-            <span class="history-map-stat-record">${s.w}V ${s.n-s.w}D</span>
-          </div>`).join('')}
-      </div>
-    </div>` : ''}
-
-    ${topAgents.length || mapStats.length ? `</div></details>` : ''}
-
-    </section>
-
-    <section class="history-view-panel matches ${historyUI.view === 'matches' ? 'active' : ''}">
-    <div class="history-latest-sections">
-      ${gameSection('Compétitif', displayedComp, 'competitive', comp.length)}
-      ${gameSection('Deathmatch', displayedDeathmatches, 'deathmatch', deathmatches.length)}
-      ${gameSection('Autres modes', displayedOtherGames, 'other', otherGames.length)}
-      ${games.length ? '' : '<div class="history-empty-filter">Aucune partie ne correspond à ces filtres.</div>'}
-    </div>
-    </section>
-    <div class="history-load-more-wrap">
-      ${historyUI.limit < games.length
-        ? `<button type="button" class="btn btn-primary" data-history-show-more>Afficher 20 parties de plus · ${Math.min(historyUI.limit, games.length)}/${games.length}</button>`
-        : pagerState.hasMore
-          ? `<button type="button" class="btn btn-primary" data-history-load-more>Charger les anciennes · ${pagerState.loaded}/${pagerState.total}</button>`
-          : `<span>${pagerState.loaded} partie${pagerState.loaded > 1 ? 's' : ''} chargée${pagerState.loaded > 1 ? 's' : ''}</span>`}
     </div>`;
 
-    el.querySelectorAll('[data-history-view]').forEach(button => button.addEventListener('click', () => {
-      historyUI.view = button.dataset.historyView;
-      refreshHistory();
-    }));
+  el.innerHTML = `${historySyncMarkup(syncState)}
+    ${toolbar}
+    ${games.length ? `${profile}${overviewCard}
+    <div class="hx-layout">
+      <div class="hx-main">
+        <div class="hx-main-head"><h3>Parties</h3><span>${Math.min(historyUI.limit, games.length)} sur ${games.length}</span></div>
+        ${days.map(dayBlock).join('')}
+        <div class="history-load-more-wrap">
+          ${historyUI.limit < games.length
+            ? `<button type="button" class="btn btn-primary" data-history-show-more>Afficher 20 parties de plus · ${Math.min(historyUI.limit, games.length)}/${games.length}</button>`
+            : pagerState.hasMore
+              ? `<button type="button" class="btn btn-primary" data-history-load-more>Charger les anciennes · ${pagerState.loaded}/${pagerState.total}</button>`
+              : `<span>${pagerState.loaded} partie${pagerState.loaded > 1 ? 's' : ''} chargée${pagerState.loaded > 1 ? 's' : ''}</span>`}
+        </div>
+      </div>
+      <aside class="hx-side">${membersCard}${agentsCard}${mapsCard}</aside>
+    </div>` : `<div class="history-empty-filter">Aucune partie ne correspond à ces filtres.</div>
+    ${pagerState.hasMore ? `<div class="history-load-more-wrap"><button type="button" class="btn btn-primary" data-history-load-more>Charger les anciennes · ${pagerState.loaded}/${pagerState.total}</button></div>` : ''}`}`;
+
     el.querySelectorAll('[data-history-owner]').forEach(button => button.addEventListener('click', () => {
       historyUI.owner = button.dataset.historyOwner;
       historyUI.limit = 20;
@@ -1970,7 +1971,8 @@ export async function initHistoryPage() {
         const raw = await valorantHistoryPager.loadDetail(details.dataset.historyId);
         const full = normalizeHistoryEntries({ [details.dataset.historyId]:raw })[0];
         if (!full) throw new Error('Détail indisponible');
-        target.innerHTML = gameDetail(full);
+        const shown = historyUI.owner === 'all' ? full : historyGameForOwner(full, historyUI.owner);
+        target.innerHTML = gameDetail(shown);
         details.dataset.detailLoaded = '1';
       } catch {
         target.innerHTML = '<div class="history-detail-loading error">Détails indisponibles · refermez puis réessayez</div>';
