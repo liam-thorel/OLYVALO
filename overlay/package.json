@@ -1,7 +1,7 @@
 {
   "name": "olycity-overlay",
   "productName": "OLYCITY Overlay",
-  "version": "1.2.10",
+  "version": "1.2.11",
   "description": "Le site OLYCITY en surimpression, au lancement du jeu ou au raccourci clavier",
   "main": "main.js",
   "private": true,
@@ -27,6 +27,7 @@
     ],
     "win": {
       "target": [{ "target": "nsis", "arch": ["x64"] }],
+      "icon": "build/icon.ico",
       "artifactName": "OLYCITY-Overlay-Setup.exe"
     },
     "nsis": {

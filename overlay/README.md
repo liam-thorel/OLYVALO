@@ -103,6 +103,10 @@ qui gardait la connexion). Tout discord.com y est accepté le temps de la
 connexion : captcha, double authentification, code par e-mail. Dès que
 Discord renvoie vers le site, la fenêtre se ferme et l'overlay est connecté.
 
+Depuis la 1.2.11, le bouton « Connexion » du lecteur musique passe par la même
+fenêtre. Et la connexion est unique : le site, la page livechat et la musique
+partagent la même connexion Discord (cookie sur olycity.fr), une seule suffit.
+
 ## Le raccourci ne fait rien dans LoL
 
 LoL bloque les raccourcis Windows (RegisterHotKey) tant qu'il a le focus : la
@@ -178,3 +182,11 @@ La logique testable — détection du jeu, règles d'affichage, validation des
 réglages, politique de navigation — vit dans `lib/` et est couverte par
 `tests/overlay-logic.test.cjs`. Le reste (fenêtre, raccourci, zone de
 notification) ne peut être vérifié que sur une machine Windows.
+
+## Icônes
+
+La grande roue d'OLYCITY : `build/icon.ico` (application, raccourcis,
+installateur) vient de `assets/pwa-icon.svg` du site, rendu en 16 à 256 px.
+L'icône de la zone de notification (`ui/tray.png`, `tray@1.5x.png`,
+`tray@2x.png`) vient de `build/tray.svg` : la même roue sans fond, aux traits
+épaissis pour rester lisible en 16 px sur une barre claire comme sombre.

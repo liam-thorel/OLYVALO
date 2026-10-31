@@ -86,6 +86,8 @@ assert.match(main, /ipcMain\.on\('overlay:livechat', \(\) => openLivechatWindow\
 assert.match(readFileSync(path.join(__dirname, '..', 'overlay', 'ui', 'shell.html'), 'utf8'), /window\.overlay\.openLivechat\(\)/, 'bouton dans la barre de titre');
 // Connexion Discord : sa fenêtre, et le retour rendu à la vue du site.
 assert.match(main, /if \(isDiscordUrl\(url\)\) openDiscordLogin\(url, contents\);/);
+assert.match(main, /if \(isDiscordUrl\(url\) \|\| isMusicLogin\(url\)\) openDiscordLogin\(url, contents\);/);
+assert.match(main, /if \(discordLoginStep\(url\) === 'done'\) backToSite\(null\);/);
 assert.match(main, /if \(step === 'return'\) backToSite\(url\);/);
 assert.match(main, /target\.loadURL\(returnUrl\)/);
 assert.match(main, /preload: path\.join\(__dirname, 'preload-livechat\.js'\), contextIsolation: true, nodeIntegration: false, sandbox: true/);

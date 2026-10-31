@@ -5,7 +5,8 @@ import { createRequire } from 'node:module';
 import {
   DISCORD_CLIENT_ID, authorizeUrl, parseOAuthReturn, discordIdOf, memberForDiscordId, discordAvatarUrl,
   accountFromDiscordUser, profileForAccount, fetchDiscordAccount, completeDiscordLogin, recordAccount,
-  loadAccount, saveAccount, unlinkedAccounts, linkableMembers, suggestedMember, linkWrites, refreshAccount,
+  loadAccount, saveAccount, unlinkedAccounts, SHARED_COOKIE, sharedCookieDomain, readSharedLogin, writeSharedLogin,
+  clearSharedLogin, adoptSharedLogin, linkableMembers, suggestedMember, linkWrites, refreshAccount,
 } from '../js/discord-account.mjs';
 import { memberId } from '../js/member-profiles.mjs';
 import { rosterMembers } from '../workers/livechat/worker.mjs';
@@ -63,7 +64,8 @@ test('l’autorisation demande seulement l’identité, à l’application OLYBO
 test('le retour de Discord n’est accepté qu’avec l’état posé au départ', () => {
   assert.equal(parseOAuthReturn('#comp-1-2', 's1'), null, 'un lien de comp n’est pas un retour Discord');
   assert.equal(parseOAuthReturn('', 's1'), null);
-  assert.deepEqual(parseOAuthReturn('#access_token=t&state=s1', 's1'), { token: 't' });
+  assert.deepEqual(parseOAuthReturn('#access_token=t&state=s1', 's1'), { token: 't', expiresIn: 0 });
+  assert.deepEqual(parseOAuthReturn('#access_token=t&expires_in=604800&state=s1', 's1'), { token: 't', expiresIn: 604800 });
   assert.match(parseOAuthReturn('#access_token=t&state=autre', 's1').error, /état invalide/);
   assert.match(parseOAuthReturn('#access_token=t&state=s1', null).error, /état invalide/, 'sans départ depuis ce navigateur');
   assert.match(parseOAuthReturn('#error=access_denied&state=s1', 's1').error, /annulée/);
@@ -116,7 +118,7 @@ test('l’identité vient de Discord, avec repli sur le Worker livechat pour les
   await assert.rejects(fetchDiscordAccount('tok', members, nobody), /roster/);
 });
 
-test('le jeton est retiré de l’adresse et seul le compte est gardé', async () => {
+test('le jeton est retiré de l’adresse et seul le compte est gardé dans le navigateur', async () => {
   const storage = memoryStorage({ 'olycity-discord-state': 's1' });
   const loc = { origin: 'https://tracker.olycity.fr', pathname: '/', hash: '#access_token=secret&state=s1' };
   const replaced = [];
@@ -134,6 +136,73 @@ test('le jeton est retiré de l’adresse et seul le compte est gardé', async (
   assert.equal(none, null);
   saveAccount({ discordId: 'nope' }, storage);
   assert.equal(loadAccount(storage), null, 'un compte illisible ne vaut rien');
+});
+
+// ─── Connexion unique ────────────────────────────────────────────────────────
+const TOKEN = 'AbCdEfGhIjKlMnOpQrStUvWxYz0123';
+function cookieJar() {
+  const jar = { cookies: new Map(), written: [] };
+  return Object.defineProperty(jar, 'cookie', {
+    get: () => [...jar.cookies].map(([k, v]) => `${k}=${v}`).join('; '),
+    set: line => {
+      jar.written.push(line);
+      const [pair, ...attrs] = line.split('; ');
+      const [name, value] = [pair.slice(0, pair.indexOf('=')), pair.slice(pair.indexOf('=') + 1)];
+      if (attrs.includes('Max-Age=0')) jar.cookies.delete(name); else jar.cookies.set(name, value);
+    },
+  });
+}
+
+test('le jeton est partagé entre tous les sites d’olycity.fr, et seulement eux', () => {
+  assert.equal(sharedCookieDomain('tracker.olycity.fr'), 'olycity.fr');
+  assert.equal(sharedCookieDomain('olycity.fr'), 'olycity.fr');
+  assert.equal(sharedCookieDomain('musique.olycity.fr'), 'olycity.fr');
+  assert.equal(sharedCookieDomain('olycity.fr.evil.com'), null);
+  assert.equal(sharedCookieDomain('evilolycity.fr'), null);
+  assert.equal(sharedCookieDomain('liam-thorel.github.io'), null);
+
+  const now = 1_800_000_000_000;
+  const doc = cookieJar();
+  assert.equal(writeSharedLogin(TOKEN, 604800, { doc, loc: { hostname: 'liam-thorel.github.io' }, now }), false, 'rien hors olycity.fr');
+  assert.equal(writeSharedLogin('a;b=c', 604800, { doc, loc: { hostname: 'tracker.olycity.fr' }, now }), false, 'jamais de jeton bizarre dans un cookie');
+  assert.equal(writeSharedLogin(TOKEN, 604800, { doc, loc: { hostname: 'tracker.olycity.fr' }, now }), true);
+  assert.match(doc.written.at(-1), new RegExp(`^${SHARED_COOKIE}=.+; Domain=olycity\\.fr; Path=/; Max-Age=604740; Secure; SameSite=Lax$`));
+  assert.deepEqual(readSharedLogin(doc.cookie, now), { token: TOKEN, expiresAt: now + 604740 * 1000 });
+  assert.equal(readSharedLogin(doc.cookie, now + 604800 * 1000), null, 'expiré');
+  assert.equal(readSharedLogin(`autre=1; ${SHARED_COOKIE}=v2%7C1%7Cx`, now), null, 'format inconnu');
+  assert.equal(readSharedLogin('', now), null);
+  clearSharedLogin({ doc, loc: { hostname: 'olycity.fr' } });
+  assert.equal(readSharedLogin(doc.cookie, now), null, 'déconnecté partout');
+});
+
+test('une connexion faite ailleurs connecte le site, une connexion ici connecte les autres', async () => {
+  const now = Date.now();
+  const doc = cookieJar();
+  const loc = { origin: 'https://tracker.olycity.fr', hostname: 'tracker.olycity.fr', pathname: '/', hash: '' };
+  writeSharedLogin(TOKEN, 3600, { doc, loc, now });
+  const storage = memoryStorage();
+  const seen = [];
+  const fetchImpl = async (url, init) => { seen.push(init.headers.Authorization); return json(200, { id: LIAM_ID, username: 'fpt' }); };
+  const adopted = await adoptSharedLogin(members, { storage, doc, loc, fetchImpl, now });
+  assert.equal(adopted.account.memberId, 'liam');
+  assert.deepEqual(seen, [`Bearer ${TOKEN}`]);
+  assert.equal(loadAccount(storage).discordId, LIAM_ID);
+  assert.equal(await adoptSharedLogin(members, { storage, doc, loc, fetchImpl, now }), null, 'déjà connecté : rien à faire');
+
+  const revoked = cookieJar();
+  writeSharedLogin(TOKEN, 3600, { doc: revoked, loc, now });
+  assert.equal(await adoptSharedLogin(members, { storage: memoryStorage(), doc: revoked, loc, fetchImpl: async () => json(401, {}), now }), null);
+  assert.equal(readSharedLogin(revoked.cookie, now), null, 'un jeton révoqué est oublié');
+
+  const fresh = cookieJar();
+  const back = await completeDiscordLogin(members, {
+    storage: memoryStorage({ 'olycity-discord-state': 's1' }),
+    loc: { ...loc, hash: `#access_token=${TOKEN}&expires_in=604800&state=s1` },
+    history: { replaceState() {} }, doc: fresh, now,
+    fetchImpl: async () => json(200, { id: LIAM_ID, username: 'fpt' }),
+  });
+  assert.equal(back.account.memberId, 'liam');
+  assert.equal(readSharedLogin(fresh.cookie, now).token, TOKEN, 'la page livechat et la musique en profitent');
 });
 
 test('le compte est tracé dans Firebase sans écraser sa date de création', async () => {

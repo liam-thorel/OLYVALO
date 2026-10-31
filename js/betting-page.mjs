@@ -6,7 +6,7 @@
 
 import { mergeFirebaseEvent } from './lol-utils.mjs?v=20260930-consistent-live';
 import { fetchJsonWithRetry } from './request-utils.mjs?v=20260930-consistent-live';
-import { loadAccount } from './discord-account.mjs?v=20261025-relier';
+import { loadAccount } from './discord-account.mjs?v=20261025-connexion';
 
 const FIREBASE_URL = 'https://realtime-database-5bb9f-default-rtdb.europe-west1.firebasedatabase.app';
 const BETTING_CACHE_KEY = 'olycity-betting-wallets-cache-v1';
