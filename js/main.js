@@ -10,14 +10,14 @@ import { fetchJsonWithRetry, fetchJsonWithTimeout } from './request-utils.mjs?v=
 const SITE_VERSION = '20260929-champions-comps';
 const FIREBASE_URL = 'https://realtime-database-5bb9f-default-rtdb.europe-west1.firebasedatabase.app';
 const BOOT_RETRY_KEY = 'olycity-boot-retry';
-import { syncAccount as henrikSyncAccount, syncAllPlayers as henrikSyncAll, persistPlayerStats } from './henrik.js?v=20260920-puuid';
+import { syncAccount as henrikSyncAccount, syncAllPlayers as henrikSyncAll, persistPlayerStats } from './henrik.js?v=20261031-acte';
 import { rosterAccounts } from './roster-card-utils.mjs?v=20261006-proprietaire';
 import { initRosterIdentitySync } from './roster-identity-sync.mjs?v=20261005-riot-rename';
 import { statsKey, readStats, writeStats, selectedAccount, toggleSelection, needsSync,
   firebasePath, publishable, remoteStats, mergeStores } from './account-stats.mjs?v=20260922-partage';
 import { setStoredKey, storedKey, forgetCachedKey } from './henrik-key.mjs';
 import { rosterHTML, guestCardHTML, mapSectionHTML, agentPageHTML, navMapsHTML, compHTML, globalNotesHTML } from './render.js?v=20261006-proprietaire';
-import { initTheme, initTilt, initParallax, initKeyboard, initHeroParticles, initWheelLogos, initLivePage, initHistoryPage } from './interactions.js?v=20261031-saison';
+import { initTheme, initTilt, initParallax, initKeyboard, initHeroParticles, initWheelLogos, initLivePage, initHistoryPage } from './interactions.js?v=20261031-acte';
 import { storage } from './storage.js';
 import { avatarLayersHTML } from './avatars.mjs';
 import { initAdminPage } from './admin.mjs?v=20261025-connexion';

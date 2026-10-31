@@ -7,7 +7,7 @@
  * statistiques individuelles (K/D, ACS…) comptent chaque membre, les
  * victoires comptent la partie une seule fois.
  */
-import { historyMode, historyOwnerKey, historyPlayerPerformance, historyReports } from './history-utils.mjs?v=20261005-sites-history';
+import { historyMode, historyOwnerKey, historyPlayerPerformance, historyReports } from './history-utils.mjs?v=20261031-acte';
 import { ladderLabel, valorantLadderPoint } from './rr-curve-utils.mjs?v=20261006-proprietaire';
 
 // Jeu de paliers compétitifs actuel de valorant-api.com (depuis l'épisode 5).
@@ -219,3 +219,134 @@ export function historyDayGroups(games = [], now = Date.now()) {
     return { key, label, ...overview, count: overview.games, games: dayGames };
   });
 }
+
+// ─── Tout l'acte, d'après la synchro Henrik (rosterStats) ────────────────────
+// OLYCITY Live n'enregistre que les parties jouées pendant qu'il tourne. La
+// synchro planifiée (tools/sync-roster-stats.mjs) parcourt, elle, toutes les
+// compétitives de l'acte de chaque compte : c'est elle qui fait foi pour les
+// statistiques quand elle est disponible.
+
+const RANK_NAMES = ['iron', 'bronze', 'silver', 'gold', 'platinum', 'diamond', 'ascendant', 'immortal'];
+
+/** « Immortal 1 » → 24, « Radiant » → 27, sinon null. */
+export function valorantTierFromName(name) {
+  const [rank, division] = String(name || '').trim().toLowerCase().split(/\s+/);
+  if (rank === 'radiant') return 27;
+  const index = RANK_NAMES.indexOf(rank);
+  const level = Number(division);
+  return index >= 0 && level >= 1 && level <= 3 ? 3 + index * 3 + level - 1 : null;
+}
+
+const finite = value => value !== null && value !== undefined && value !== '' && Number.isFinite(Number(value));
+
+/** Enregistrements de l'acte en cours pour ces clés de compte (puuid:…). */
+export function actRecords(store = {}, keys = [], actUuid = null) {
+  const byKey = new Map(Object.entries(store || {}).map(([key, record]) => [key.toLowerCase(), record]));
+  return [...new Set(keys.map(key => String(key || '').toLowerCase()))]
+    .map(key => byKey.get(key))
+    .filter(record => record && Number(record.wrGames ?? record.games) > 0)
+    .filter(record => !actUuid || !record.seasonId || record.seasonId === actUuid);
+}
+
+/**
+ * Vue d'ensemble de l'acte sur un ou plusieurs comptes. Les totaux bruts
+ * s'additionnent ; les anciens enregistrements, qui n'ont que des ratios,
+ * sont pondérés par leur nombre de parties.
+ */
+export function actOverview(records = []) {
+  if (!records.length) return null;
+  let wins = 0; let total = 0; let matches = 0;
+  let kills = 0; let deaths = 0; let assists = 0; let rawCount = 0;
+  let kdWeighted = 0; let kdaWeighted = 0; let kdWeight = 0;
+  let score = 0; let rounds = 0; let acsWeighted = 0; let acsWeight = 0;
+  let head = 0; let shots = 0; let hsWeighted = 0; let hsWeight = 0;
+  let maxKills = 0; let playtimeMs = 0; let rawRecords = 0; let timedRecords = 0; let recordRecords = 0;
+  records.forEach(record => {
+    const games = Number(record.games) || 0;
+    matches += games;
+    const recordTotal = finite(record.wrGames) ? Number(record.wrGames) : (Number(record.matchWins) || 0) + (Number(record.matchLosses) || 0);
+    total += recordTotal;
+    wins += finite(record.wrWins) ? Number(record.wrWins) : Number(record.matchWins) || 0;
+    if (finite(record.kills) && finite(record.deaths)) {
+      kills += Number(record.kills); deaths += Number(record.deaths); assists += Number(record.assists) || 0; rawCount += games; rawRecords += 1;
+    } else if (finite(record.kd)) {
+      kdWeighted += Number(record.kd) * games; kdWeight += games;
+      if (finite(record.kda)) kdaWeighted += Number(record.kda) * games;
+    }
+    if (finite(record.rounds) && Number(record.rounds) > 0) { score += Number(record.score) || 0; rounds += Number(record.rounds); }
+    else if (finite(record.acs)) { acsWeighted += Number(record.acs) * games; acsWeight += games; }
+    const recordShots = (Number(record.headshots) || 0) + (Number(record.bodyshots) || 0) + (Number(record.legshots) || 0);
+    if (recordShots) { head += Number(record.headshots) || 0; shots += recordShots; }
+    else if (finite(record.hsPercent)) { hsWeighted += Number(record.hsPercent) * games; hsWeight += games; }
+    if (finite(record.maxKills)) { maxKills = Math.max(maxKills, Number(record.maxKills)); recordRecords += 1; }
+    if (finite(record.playtimeMs) && Number(record.playtimeMs) > 0) { playtimeMs += Number(record.playtimeMs); timedRecords += 1; }
+  });
+  // Un total qui ne couvre qu'une partie des comptes se lirait comme celui
+  // de tous : on ne l'affiche que s'il est complet.
+  const complete = count => count === records.length;
+  const blend = (exact, exactWeight, approx, approxWeight) => {
+    const weight = exactWeight + approxWeight;
+    return weight ? ((exact ?? 0) * exactWeight + approx) / weight : null;
+  };
+  const exactKd = rawCount ? kills / Math.max(1, deaths) : null;
+  const exactKda = rawCount ? (kills + assists) / Math.max(1, deaths) : null;
+  const exactAcs = rounds ? score / rounds : null;
+  const exactHs = shots ? head / shots * 100 : null;
+  const acsMatches = rounds ? matches - acsWeight : 0;
+  const hsMatches = shots ? matches - hsWeight : 0;
+  const acs = blend(exactAcs, acsMatches, acsWeighted, acsWeight);
+  const hs = blend(exactHs, hsMatches, hsWeighted, hsWeight);
+  return {
+    games: total,
+    matches,
+    wins,
+    losses: Math.max(0, total - wins),
+    winrate: total ? Math.round(wins / total * 100) : null,
+    kills: complete(rawRecords) ? kills : null,
+    deaths: complete(rawRecords) ? deaths : null,
+    assists: complete(rawRecords) ? assists : null,
+    kd: blend(exactKd, rawCount, kdWeighted, kdWeight),
+    kda: blend(exactKda, rawCount, kdaWeighted, kdWeight),
+    acs: acs === null ? null : Math.round(acs),
+    hs: hs === null ? null : Math.round(hs),
+    killsPerGame: complete(rawRecords) && rawCount ? kills / rawCount : null,
+    maxKills: complete(recordRecords) && maxKills ? maxKills : null,
+    durationMs: complete(timedRecords) ? playtimeMs : null,
+    recent: records.length === 1 && Array.isArray(records[0].recent) ? records[0].recent.slice(0, 10) : null,
+  };
+}
+
+function mergeBreakdown(records, field, fallbackField = null) {
+  const merged = new Map();
+  records.forEach(record => {
+    const list = Array.isArray(record[field]) && record[field].length ? record[field]
+      : fallbackField && Array.isArray(record[fallbackField]) ? record[fallbackField] : [];
+    list.forEach(item => {
+      if (!item?.name) return;
+      const entry = merged.get(item.name) || { name: item.name, games: 0, wins: 0, losses: 0, kills: 0, deaths: 0, score: 0, rounds: 0, raw: true };
+      entry.games += Number(item.games) || 0;
+      entry.wins += Number(item.wins) || 0;
+      entry.losses += finite(item.losses) ? Number(item.losses) : Math.max(0, (Number(item.games) || 0) - (Number(item.wins) || 0));
+      if (finite(item.kills)) { entry.kills += Number(item.kills); entry.deaths += Number(item.deaths) || 0; } else entry.raw = false;
+      if (finite(item.rounds) && Number(item.rounds) > 0) { entry.score += Number(item.score) || 0; entry.rounds += Number(item.rounds); }
+      merged.set(item.name, entry);
+    });
+  });
+  return [...merged.values()].map(entry => ({
+    key: entry.name,
+    label: entry.name,
+    map: entry.name,
+    games: entry.games,
+    wins: entry.wins,
+    losses: entry.losses,
+    winrate: entry.wins + entry.losses ? Math.round(entry.wins / (entry.wins + entry.losses) * 100) : null,
+    kd: entry.raw && entry.games ? entry.kills / Math.max(1, entry.deaths) : null,
+    acs: entry.rounds ? Math.round(entry.score / entry.rounds) : null,
+  })).sort((a, b) => b.games - a.games || (b.winrate ?? -1) - (a.winrate ?? -1) || a.label.localeCompare(b.label, 'fr'));
+}
+
+/** Agents de l'acte (les anciens enregistrements n'ont que le top 3). */
+export const actAgentStats = records => mergeBreakdown(records, 'agentStats', 'topAgentStats');
+
+/** Maps de l'acte, si la synchro les fournit. */
+export const actMapStats = records => mergeBreakdown(records, 'mapStats');

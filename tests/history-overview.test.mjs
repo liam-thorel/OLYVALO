@@ -88,3 +88,46 @@ test('rangs Valorant', () => {
   assert.match(valorantTierLabel(14, 40), /^Or 3 · 40 RR$/);
   assert.equal(valorantTierLabel(null), '');
 });
+
+test('tout l’acte d’après la synchro Henrik', async () => {
+  const { actAgentStats, actMapStats, actOverview, actRecords, valorantTierFromName } = await import('../js/history-overview.mjs');
+  assert.equal(valorantTierFromName('Immortal 1'), 24);
+  assert.equal(valorantTierFromName('Iron 1'), 3);
+  assert.equal(valorantTierFromName('Radiant'), 27);
+  assert.equal(valorantTierFromName('Unrated'), null);
+
+  const mathis = {
+    key:'puuid:mair', seasonId:'act6', rank:'Immortal 1', rr:62, wrGames:21, wrWins:13, games:21,
+    kills:373, deaths:331, assists:122, score:4920 * 21, rounds:21 * 21, headshots:406, bodyshots:550, legshots:44,
+    maxKills:32, playtimeMs:21 * 38 * 60_000, recent:['win', 'loss'],
+    agentStats:[{ name:'Neon', games:12, wins:8, losses:4, kills:220, deaths:180, score:60000, rounds:250 }],
+    mapStats:[{ name:'Lotus', games:5, wins:4, losses:1, kills:90, deaths:70, score:24000, rounds:110 }],
+  };
+  const legacy = { key:'puuid:nico', seasonId:'act6', wrGames:10, wrWins:4, games:10, kd:'1.00', kda:'1.50', acs:200, hsPercent:20, topAgentStats:[{ name:'Omen', games:6, wins:3 }] };
+  const old = { key:'puuid:old', seasonId:'act5', wrGames:50, wrWins:25, games:50 };
+  const store = { 'puuid:MAIR':mathis, 'puuid:nico':legacy, 'puuid:old':old };
+
+  assert.deepEqual(actRecords(store, ['puuid:mair'], 'act6'), [mathis], 'clé insensible à la casse');
+  assert.deepEqual(actRecords(store, ['puuid:old'], 'act6'), [], 'acte précédent écarté');
+
+  const solo = actOverview([mathis]);
+  assert.deepEqual([solo.games, solo.wins, solo.losses, solo.winrate], [21, 13, 8, 62]);
+  assert.equal(solo.kd.toFixed(2), '1.13');
+  assert.equal(solo.acs, 234);
+  assert.equal(solo.hs, 41);
+  assert.equal(solo.kda.toFixed(2), '1.50');
+  assert.deepEqual(solo.recent, ['win', 'loss']);
+
+  const group = actOverview([mathis, legacy]);
+  assert.deepEqual([group.games, group.wins], [31, 17]);
+  assert.equal(group.kd.toFixed(2), ((373 / 331) * 21 / 31 + 1 * 10 / 31).toFixed(2), 'ancien format pondéré');
+  assert.equal(group.recent, null, 'pas de forme mélangée entre comptes');
+  assert.deepEqual([group.kills, group.killsPerGame, group.maxKills, group.durationMs], [null, null, null, null], 'pas de total partiel');
+  assert.equal(solo.maxKills, 32);
+  assert.equal(solo.durationMs, 21 * 38 * 60_000);
+
+  assert.deepEqual(actAgentStats([mathis, legacy]).map(a => [a.label, a.games, a.winrate]), [['Neon', 12, 67], ['Omen', 6, 50]]);
+  assert.equal(actAgentStats([legacy])[0].kd, null, 'top 3 sans K/D');
+  assert.deepEqual(actMapStats([mathis]).map(m => [m.map, m.wins, m.losses, m.acs]), [['Lotus', 4, 1, 218]]);
+  assert.equal(actOverview([]), null);
+});

@@ -83,3 +83,18 @@ test('Henrik rate-limit headers choose a bounded automatic retry delay', () => {
   assert.equal(rateLimitDelayMs(draftHeaders), 28_750);
   assert.equal(rateLimitDelayMs(new Headers()), 35_000);
 });
+
+test('season aggregates break down agents and maps for the history page', () => {
+  const withMap = (entry, map, length) => ({ ...entry, metadata: { ...entry.metadata, map: { name: map }, game_length_in_ms: length } });
+  const matches = [
+    withMap(match({ id: 'newer', agent: 'Sage', won: true, kills: 20, deaths: 10, assists: 5, score: 4200, rounds: 20, shots: { head: 10, body: 20, leg: 0 } }), 'Lotus', 2_000_000),
+    withMap(match({ id: 'older', agent: 'Omen', won: false, kills: 31, deaths: 10, assists: 5, score: 3000, rounds: 20, shots: { head: 5, body: 15, leg: 0 } }), 'Lotus', 1_000_000),
+  ];
+  const stats = aggregateCompetitiveMatches(matches, { puuid: 'nico-puuid' });
+  assert.deepEqual(stats.recent, ['win', 'loss'], 'les plus récentes d’abord');
+  assert.equal(stats.maxKills, 31);
+  assert.equal(stats.playtimeMs, 3_000_000);
+  assert.deepEqual([stats.headshots, stats.bodyshots, stats.rounds, stats.score], [15, 35, 40, 7200]);
+  assert.deepEqual(stats.mapStats.map(m => [m.name, m.games, m.wins, m.losses, m.acs]), [['Lotus', 2, 1, 1, 180]]);
+  assert.deepEqual(stats.agentStats.map(a => [a.name, a.kd, a.acs]), [['Sage', 2, 210], ['Omen', 3.1, 150]]);
+});

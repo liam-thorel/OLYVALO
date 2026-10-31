@@ -11,7 +11,7 @@ import {
   rateLimitDelayMs,
   selectActMatches,
   shouldStopMatchPagination,
-} from './valorant-season.mjs?v=20260809-val-roster-season';
+} from './valorant-season.mjs?v=20261031-acte';
 
 import { syncEndpoints, currentRiotId, observedPuuid, wasRenamed } from './henrik-endpoints.mjs?v=20260920-puuid';
 
@@ -191,6 +191,23 @@ export async function syncAccount(account) {
     games: aggregate.games,
     topAgents: aggregate.topAgents,
     topAgentStats: aggregate.topAgentStats,
+    // Totaux bruts de l'acte, pour l'Historique : les pourcentages ne
+    // s'additionnent pas entre comptes, les totaux si.
+    matchWins: aggregate.wins,
+    matchLosses: aggregate.losses,
+    kills: aggregate.kills,
+    deaths: aggregate.deaths,
+    assists: aggregate.assists,
+    score: aggregate.score,
+    rounds: aggregate.rounds,
+    headshots: aggregate.headshots,
+    bodyshots: aggregate.bodyshots,
+    legshots: aggregate.legshots,
+    maxKills: aggregate.maxKills,
+    playtimeMs: aggregate.playtimeMs,
+    recent: aggregate.recent,
+    agentStats: aggregate.agentStats,
+    mapStats: aggregate.mapStats,
     seasonId: matchResult.seasonId,
     matchPages: matchResult.pages,
     truncated: matchResult.truncated,

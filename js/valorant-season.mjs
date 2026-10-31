@@ -65,6 +65,19 @@ function playerMatchesIdentity(player, identity) {
     && (!expectedTag || String(player?.tag || '').toLowerCase() === expectedTag);
 }
 
+function matchMapName(match) {
+  const map = match?.metadata?.map;
+  return String((typeof map === 'string' ? map : map?.name) || '').trim() || null;
+}
+
+function matchLengthMs(match) {
+  const metadata = match?.metadata || {};
+  const ms = Number(metadata.game_length_in_ms ?? metadata.game_length);
+  if (!Number.isFinite(ms) || ms <= 0) return 0;
+  // L'API v3 donnait des secondes, la v4 des millisecondes.
+  return ms < 10_000 ? ms * 1000 : ms;
+}
+
 function teamWon(match, teamId) {
   const team = (Array.isArray(match?.teams) ? match.teams : [])
     .find(candidate => candidate?.team_id === teamId || candidate?.teamId === teamId);
@@ -85,7 +98,14 @@ export function aggregateCompetitiveMatches(matches, identity = {}) {
   let bodyshots = 0;
   let legshots = 0;
 
-  for (const match of Array.isArray(matches) ? matches : []) {
+  const maps = new Map();
+  const recent = [];
+  let maxKills = 0;
+  let playtimeMs = 0;
+
+  // Plus récentes d'abord : la forme se lit sur les dernières parties.
+  const ordered = (Array.isArray(matches) ? matches : []).slice().sort((a, b) => matchStartedAt(b) - matchStartedAt(a));
+  for (const match of ordered) {
     const player = matchPlayers(match).find(candidate => playerMatchesIdentity(candidate, identity));
     if (!player) continue;
 
@@ -108,18 +128,44 @@ export function aggregateCompetitiveMatches(matches, identity = {}) {
     bodyshots += Number(stats.bodyshots) || 0;
     legshots += Number(stats.legshots) || 0;
 
-    if (agentName) {
-      const aggregate = agents.get(agentName) || { name: agentName, games: 0, wins: 0 };
-      aggregate.games += 1;
-      if (won === true) aggregate.wins += 1;
-      agents.set(agentName, aggregate);
-    }
+    maxKills = Math.max(maxKills, Number(stats.kills) || 0);
+    playtimeMs += matchLengthMs(match);
+    if (recent.length < 10 && typeof won === 'boolean') recent.push(won ? 'win' : 'loss');
+
+    const line = (bucket, key) => {
+      const entry = bucket.get(key) || { name: key, games: 0, wins: 0, losses: 0, kills: 0, deaths: 0, assists: 0, score: 0, rounds: 0 };
+      entry.games += 1;
+      if (won === true) entry.wins += 1;
+      if (won === false) entry.losses += 1;
+      entry.kills += Number(stats.kills) || 0;
+      entry.deaths += Number(stats.deaths) || 0;
+      entry.assists += Number(stats.assists) || 0;
+      entry.score += Number(stats.score) || 0;
+      entry.rounds += Number(matchRounds) || 0;
+      bucket.set(key, entry);
+    };
+    if (agentName) line(agents, agentName);
+    const mapName = matchMapName(match);
+    if (mapName) line(maps, mapName);
   }
+
+  // Par agent et par map : de quoi refaire les tableaux de l'Historique sur
+  // tout l'acte, pas seulement sur les parties vues par OLYCITY Live.
+  const breakdown = bucket => [...bucket.values()]
+    .map(entry => ({
+      ...entry,
+      winRatePct: entry.wins + entry.losses ? Math.round((entry.wins / (entry.wins + entry.losses)) * 100) : null,
+      kd: Number((entry.kills / Math.max(1, entry.deaths)).toFixed(2)),
+      acs: entry.rounds ? Math.round(entry.score / entry.rounds) : null,
+    }))
+    .sort((left, right) => right.games - left.games || right.wins - left.wins || left.name.localeCompare(right.name));
 
   const shots = headshots + bodyshots + legshots;
   const topAgentStats = [...agents.values()]
     .map(agent => ({
-      ...agent,
+      name: agent.name,
+      games: agent.games,
+      wins: agent.wins,
       winRatePct: agent.games ? Math.round((agent.wins / agent.games) * 100) : null,
     }))
     .sort((left, right) => right.games - left.games || right.wins - left.wins || left.name.localeCompare(right.name))
@@ -139,6 +185,16 @@ export function aggregateCompetitiveMatches(matches, identity = {}) {
     winRatePct: wins + losses ? Math.round((wins / (wins + losses)) * 100) : null,
     topAgentStats,
     topAgents: topAgentStats.map(agent => agent.name),
+    score,
+    rounds,
+    headshots,
+    bodyshots,
+    legshots,
+    maxKills,
+    playtimeMs,
+    recent,
+    agentStats: breakdown(agents),
+    mapStats: breakdown(maps),
   };
 }
 
