@@ -45,6 +45,8 @@ test('vue d’ensemble : victoires par partie, stats par membre suivi', () => {
   assert.deepEqual(overview.recent, ['win', 'loss']);
   assert.equal(overview.maxKills, 30);
   assert.equal(overview.durationMs, 69 * 60_000);
+  const dmWithAcs = { ...games[2], players:games[2].players.map(p => ({ ...p, stats:{ ...p.stats, acs:p.stats.kills * 300 } })) };
+  assert.equal(historyOverview([games[0], dmWithAcs]).acs, Math.round((320 + 190) / 2), 'l’« ACS » d’un deathmatch ne compte pas');
   assert.equal(historyOverview([]).winrate, null);
   assert.equal(historyOverview([]).kd, null);
 });

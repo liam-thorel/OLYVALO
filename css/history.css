@@ -360,3 +360,13 @@
 }
 #history-content .history-load-more-wrap button:hover { background: var(--red); color: #fff; }
 #history-content .history-load-more-wrap button:disabled { opacity: .6; cursor: wait; }
+
+/* ─── Menu « Mode » ────────────────────────────── */
+#history-content .hx-select {
+  min-width: 170px; min-height: 36px; padding: 0 34px 0 12px; border: 1px solid var(--border2); border-radius: var(--hx-radius);
+  background: var(--bg) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8'%3E%3Cpath d='M1 1l5 5 5-5' fill='none' stroke='%23ff4656' stroke-width='2'/%3E%3C/svg%3E") no-repeat right 12px center;
+  color: var(--text); font: 600 12px 'DM Sans', sans-serif; cursor: pointer; appearance: none;
+}
+#history-content .hx-select:hover, #history-content .hx-select:focus-visible { border-color: var(--red); outline: none; }
+#history-content .hx-select option { background: var(--surf2); color: var(--text); }
+@media (max-width: 768px) { #history-content .hx-select { width: 100%; min-height: 40px; } }

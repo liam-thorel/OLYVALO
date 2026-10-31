@@ -1128,6 +1128,12 @@ body.agent-mode .footer{ display:none; }
 /* `.container` n'a aucune définition de base dans le projet : sans cette
    enveloppe, la page collait aux deux bords de l'écran. */
 .curves-page{ max-width:860px; margin:0 auto; padding:0 20px 40px; }
+/* Même enveloppe que l'accueil pour l'Historique et les Paris : sur un grand
+   écran, les cartes partaient d'un bord à l'autre. Les marges mobiles sont
+   dans responsive.css. */
+#page-history > .container, #page-betting > .container{
+  width:100%; max-width:1280px; margin:0 auto; padding:0 32px 56px; box-sizing:border-box;
+}
 
 .curve-chart-wrap{
   border:1px solid rgba(255,255,255,.1); border-radius:14px;

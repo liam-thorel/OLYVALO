@@ -106,6 +106,14 @@ export function createHistoryPager({
     };
   }
 
+  /**
+   * Tout l'index en résumés, chargé ou non : les statistiques de la saison
+   * portent sur toutes les parties connues, pas seulement sur la page affichée.
+   */
+  function allSummaries() {
+    return Object.fromEntries(index.map(entry => [entry.id, loaded.get(entry.id) || summaryValue(entry.value)]));
+  }
+
   function reset() {
     index = [];
     indexedAt = 0;
@@ -113,5 +121,5 @@ export function createHistoryPager({
     detailCache.clear();
   }
 
-  return { loadDetail, loadIndex, loadNext, refresh, reset, snapshot };
+  return { allSummaries, loadDetail, loadIndex, loadNext, refresh, reset, snapshot };
 }

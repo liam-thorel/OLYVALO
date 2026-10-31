@@ -20,12 +20,14 @@ import { updateScriptDownload } from './downloads.mjs?v=20260912-separate-downlo
 import { PLAYERS as LOL_ROSTER_PLAYERS } from './lol-roster.mjs?v=20261006-puuid-lol';
 import { serverVisual } from './server-visuals.mjs?v=20260809-live-server-local';
 import { avatarLayersHTML } from './avatars.mjs?v=20260720-avatars';
-import { filterHistoryGames, historyGameForOwner, historyMode, historyOwnerAccountLabel, historyOwnerKey, historyOwnerLabel, historyPlayerName, historyPlayerPerformance, historyPlayerPerformances, historyRankedPlayers, historyReports, historyScoreText, historyTrackerUrl, isHistorySelf, normalizeHistoryEntries } from './history-utils.mjs?v=20261005-sites-history';
+import { filterHistoryGames, historyGameForOwner, historyMode, historyOwnerKey, historyOwnerLabel, historyPlayerName, historyPlayerPerformance, historyPlayerPerformances, historyRankedPlayers, historyReports, historyScoreText, historyTrackerUrl, isHistorySelf, normalizeHistoryEntries } from './history-utils.mjs?v=20261005-sites-history';
 import { initCurse } from './curse.mjs?v=20260828-page-stream-lifecycle';
 import { fetchJsonWithTimeout } from './request-utils.mjs?v=20260930-consistent-live';
 import { liveDataStore, liveTimestamp } from './live-data-store.mjs?v=20261005-return-live';
-import { createHistoryPager } from './history-pager.mjs?v=20261005-sites-history';
-import { featuredPerformance, gameDurationMs, trackedPerformances, historyAgentStats, historyDayGroups, historyMapStats, historyMemberStats, historyOverview, historyRosterMember, valorantTierIcon, valorantTierLabel } from './history-overview.mjs?v=20261031-tracker';
+import { createHistoryPager } from './history-pager.mjs?v=20261031-saison';
+import { rosterAccounts } from './roster-card-utils.mjs?v=20261006-proprietaire';
+import { inAct, loadCurrentAct } from './valorant-act.mjs?v=20261031-saison';
+import { featuredPerformance, gameDurationMs, trackedPerformances, historyAgentStats, historyDayGroups, historyMapStats, historyMemberStats, historyOverview, historyRosterMember, valorantTierIcon, valorantTierLabel } from './history-overview.mjs?v=20261031-saison';
 import { createHistoryDisclosureState } from './history-disclosure-state.mjs';
 import { liveScoreKey, liveScoreView } from './live-score.mjs?v=20260930-consistent-live';
 
@@ -1486,6 +1488,37 @@ export function initLivePage() {
   };
 }
 
+/**
+ * Membre et compte derrière un rapport de partie, par PUUID d'abord (il
+ * survit aux renommages), par Riot ID seulement quand l'un des deux PUUID
+ * manque. Mêmes comptes que les cartes du roster (rosterAccounts) : ceux de
+ * roster.json, ceux ajoutés depuis l'admin, et le principal choisi dans
+ * l'admin s'il y en a un — sinon le `riot` de roster.json.
+ */
+function historyAccountOwner(report) {
+  const lower = value => String(value || '').trim().toLowerCase();
+  const puuid = lower(report?.playerPuuid);
+  const riotId = lower(report?.player);
+  const roster = state.ROSTER || [];
+  let byName = null;
+  for (const member of roster) {
+    const accounts = rosterAccounts(member, state.ROSTER_OVERLAY, roster);
+    for (const account of accounts) {
+      const accountPuuid = lower(account.puuid);
+      if (puuid && accountPuuid) {
+        if (puuid === accountPuuid) return { member, account };
+        continue;
+      }
+      if (!byName && riotId && (lower(account.riotId) === riotId || lower(account.riotId).split('#')[0] === riotId.split('#')[0])) {
+        byName = { member, account };
+      }
+    }
+  }
+  if (byName) return byName;
+  const member = historyRosterMember(report, roster);
+  return { member, account:null };
+}
+
 export async function initHistoryPage() {
   const el = document.getElementById('history-content');
   if (!el) return;
@@ -1546,33 +1579,48 @@ export async function initHistoryPage() {
 
   let allGames = games;
   let ownerOptions = [];
+  let currentActInfo = null;
+  // Toutes les parties connues (l'index entier, pas seulement les pages
+  // affichées) : c'est l'échantillon des statistiques de la saison.
+  const knownGames = () => {
+    const summaries = valorantHistoryPager.allSummaries();
+    return Object.keys(summaries).length ? normalizeHistoryEntries(summaries) : allGames;
+  };
   const updateOwnerOptions = () => {
-    ownerOptions = [...new Map(allGames.flatMap(game => historyReports(game).map(report => {
+    ownerOptions = [...new Map(knownGames().flatMap(game => historyReports(game).map(report => {
       const key = historyOwnerKey(report);
-      const member = historyRosterMember(report, state.ROSTER);
+      const { member, account } = historyAccountOwner(report);
       const riotId = String(report?.player || '').trim();
+      const name = member?.name || riotId.split('#')[0] || 'Inconnu';
+      // Smurf seulement si le compte est connu et n'est pas le principal.
+      const smurf = Boolean(account && !account.isMain);
       return [key, {
-        key,
-        label: historyOwnerAccountLabel(report, state.ROSTER),
-        name: member?.name || riotId.split('#')[0] || 'Inconnu',
+        key, name, riotId, smurf,
+        label: `${name}${riotId ? ` · ${riotId}` : ''}${smurf ? ' · Smurf' : ''}`,
         avatar: member?.avatar || '',
-        riotId,
-        smurf: Boolean(member && String(member.riot?.puuid || '').toLowerCase() !== String(report?.playerPuuid || '').toLowerCase()
-          && String(member.riot?.name || '').toLowerCase() !== riotId.split('#')[0].toLowerCase()),
       }];
-    }))).values()].sort((a,b) => a.name.localeCompare(b.name, 'fr') || a.label.localeCompare(b.label, 'fr'));
+    }))).values()].sort((a,b) => a.name.localeCompare(b.name, 'fr') || a.smurf - b.smurf || a.label.localeCompare(b.label, 'fr'));
   };
   updateOwnerOptions();
-  const historyUI = { view:'matches', owner:'all', period:'all', mode:'all', limit:20 };
+  // Compétitif par défaut : les autres modes se choisissent dans « Mode ».
+  const historyUI = { view:'matches', owner:'all', period:'all', mode:'competitive', limit:20 };
+  // Statistiques : le compétitif de l'acte en cours (ou tout le compétitif
+  // enregistré si l'acte est inconnu), pour le joueur choisi.
+  const seasonGames = () => filterHistoryGames(knownGames(), { owner:historyUI.owner, period:'all', view:'matches', mode:'competitive' })
+    .filter(game => !currentActInfo || inAct(game, currentActInfo))
+    .map(game => historyUI.owner === 'all' ? game : historyGameForOwner(game, historyUI.owner))
+    .sort((a,b) => (b.ts||0) - (a.ts||0));
   const visibleGames = () => filterHistoryGames(allGames, historyUI)
     .map(game => historyUI.owner === 'all' ? game : historyGameForOwner(game, historyUI.owner));
   const refreshHistory = () => renderHistory(visibleGames());
   const renderHistory = games => {
   const roster = state.ROSTER;
-  const overview = historyOverview(games);
-  const agentStats = historyAgentStats(games).slice(0, 6);
-  const mapStats = historyMapStats(games);
-  const memberStats = historyMemberStats(games, roster);
+  const statsGames = seasonGames();
+  const overview = historyOverview(statsGames);
+  const agentStats = historyAgentStats(statsGames).slice(0, 6);
+  const mapStats = historyMapStats(statsGames);
+  const memberStats = historyMemberStats(statsGames, roster);
+  const seasonLabel = currentActInfo ? currentActInfo.label : 'toutes les compétitives enregistrées';
   const displayedGames = games.slice(0, historyUI.limit);
   const days = historyDayGroups(displayedGames);
 
@@ -1608,15 +1656,14 @@ export async function initHistoryPage() {
     const src = valorantTierIcon(tier);
     return src ? `<img class="${className}" src="${src}" alt="${historyEscape(valorantTierLabel(tier))}" title="${historyEscape(valorantTierLabel(tier))}" loading="lazy" onerror="this.remove()">` : '';
   };
-  const ownerOf = report => historyRosterMember(report, roster);
+  const ownerOf = report => historyAccountOwner(report).member;
   const ownerName = report => ownerOf(report)?.name || String(report?.player || 'Inconnu').split('#')[0];
   const sectionHead = (title, extra = '') => `<header class="hx-card-head"><h3>${title}</h3>${extra}</header>`;
 
   // ─── Profil : un joueur, ou tout le groupe ─────────────────────────────
   const selectedOwner = historyUI.owner !== 'all' ? ownerOptions.find(option => option.key === historyUI.owner) : null;
   const selectedStats = selectedOwner ? memberStats.find(entry => entry.key === selectedOwner.key) : null;
-  const periodLabel = { today:"Aujourd'hui", '7d':'7 derniers jours', all:'Toutes les parties chargées' }[historyUI.period];
-  const modeFilterLabel = { all:'Tous les modes', competitive:'Compétitif', deathmatch:'Deathmatch' }[historyUI.mode];
+  const modeLabels = { competitive:'Compétitif', deathmatch:'Deathmatch', other:'Autres modes', all:'Tous les modes' };
   const form = overview.recent.length ? `<div class="hx-form" aria-label="Derniers résultats en compétitif">
       <small>Forme</small>
       <div>${overview.recent.map(result => `<i class="${result === 'win' ? 'is-win' : result === 'loss' ? 'is-loss' : 'is-draw'}" title="${result === 'win' ? 'Victoire' : result === 'loss' ? 'Défaite' : 'Égalité'}">${result === 'win' ? 'V' : result === 'loss' ? 'D' : 'É'}</i>`).join('')}</div>
@@ -1635,7 +1682,7 @@ export async function initHistoryPage() {
       <div class="hx-profile-id">
         <small>Historique du groupe</small>
         <h3>Five stack OLYCITY</h3>
-        <span>${memberStats.length} compte${memberStats.length > 1 ? 's' : ''} suivi${memberStats.length > 1 ? 's' : ''} · ${historyEscape(periodLabel)}</span>
+        <span>${memberStats.length} compte${memberStats.length > 1 ? 's' : ''} suivi${memberStats.length > 1 ? 's' : ''} en compétitif · ${historyEscape(seasonLabel)}</span>
       </div>
       ${form}
     </section>`;
@@ -1647,7 +1694,7 @@ export async function initHistoryPage() {
     </div>`;
   const smallStat = (label, value, tone = '') => `<div class="hx-stat-small ${tone}"><small>${label}</small><strong>${value}</strong></div>`;
   const overviewCard = `<section class="hx-card hx-overview" aria-label="Vue d'ensemble">
-      ${sectionHead("Vue d'ensemble", `<span>${historyEscape(modeFilterLabel)} · ${historyEscape(periodLabel)}</span>`)}
+      ${sectionHead("Vue d'ensemble", `<span>Compétitif · ${historyEscape(seasonLabel)} · ${overview.games} partie${overview.games > 1 ? 's' : ''}</span>`)}
       <div class="hx-overview-big">
         ${bigStat('Victoires', percent(overview.winrate), overview.wins + overview.losses ? `${overview.wins}V · ${overview.losses}D${overview.draws ? ` · ${overview.draws}É` : ''}` : 'aucune compétitive', wrTone(overview.winrate), overview.winrate)}
         ${bigStat('Ratio K/D', fixed(overview.kd), `${overview.kills} / ${overview.deaths} / ${overview.assists}`, kdTone(overview.kd), Number.isFinite(overview.kd) ? overview.kd / 2 * 100 : null)}
@@ -1655,7 +1702,7 @@ export async function initHistoryPage() {
         ${bigStat('Headshots', percent(overview.hs), 'des balles qui touchent', '', overview.hs)}
       </div>
       <div class="hx-overview-small">
-        ${smallStat('Parties', `${overview.games}<em>${overview.competitive} comp · ${overview.deathmatch} DM</em>`)}
+        ${smallStat('Parties', overview.games)}
         ${smallStat('Temps de jeu', durationLabel(overview.durationMs))}
         ${smallStat('RR net', signed(overview.rrNet), signTone(overview.rrNet))}
         ${smallStat('Record de kills', overview.performances ? overview.maxKills : '—')}
@@ -1909,23 +1956,21 @@ export async function initHistoryPage() {
           ${segment('period', 'all', 'Tout', historyUI.period === 'all')}
         </div>
       </div>
-      <div class="history-filter-group">
+      <label class="history-filter-group hx-mode">
         <span>Mode</span>
-        <div class="hx-segment">
-          ${segment('mode', 'all', 'Tous', historyUI.mode === 'all')}
-          ${segment('mode', 'competitive', 'Compétitif', historyUI.mode === 'competitive')}
-          ${segment('mode', 'deathmatch', 'Deathmatch', historyUI.mode === 'deathmatch')}
-        </div>
-      </div>
+        <select class="hx-select" data-history-mode-select aria-label="Mode des parties affichées">
+          ${Object.entries(modeLabels).map(([value, label]) => `<option value="${value}"${historyUI.mode === value ? ' selected' : ''}>${label}</option>`).join('')}
+        </select>
+      </label>
     </div>`;
 
   el.innerHTML = `${historySyncMarkup(syncState)}
     ${toolbar}
-    ${games.length ? `${profile}${overviewCard}
+    ${games.length || statsGames.length ? `${profile}${overviewCard}
     <div class="hx-layout">
       <div class="hx-main">
-        <div class="hx-main-head"><h3>Parties</h3><span>${Math.min(historyUI.limit, games.length)} sur ${games.length}</span></div>
-        ${days.map(dayBlock).join('')}
+        <div class="hx-main-head"><h3>Parties · ${historyEscape(modeLabels[historyUI.mode])}</h3><span>${Math.min(historyUI.limit, games.length)} sur ${games.length}</span></div>
+        ${days.length ? days.map(dayBlock).join('') : '<div class="history-empty-filter">Aucune partie ne correspond à ces filtres.</div>'}
         <div class="history-load-more-wrap">
           ${historyUI.limit < games.length
             ? `<button type="button" class="btn btn-primary" data-history-show-more>Afficher 20 parties de plus · ${Math.min(historyUI.limit, games.length)}/${games.length}</button>`
@@ -1948,11 +1993,11 @@ export async function initHistoryPage() {
       historyUI.limit = 20;
       refreshHistory();
     }));
-    el.querySelectorAll('[data-history-mode]').forEach(button => button.addEventListener('click', () => {
-      historyUI.mode = button.dataset.historyMode;
+    el.querySelector('[data-history-mode-select]')?.addEventListener('change', event => {
+      historyUI.mode = event.currentTarget.value;
       historyUI.limit = 20;
       refreshHistory();
-    }));
+    });
     el.querySelector('[data-history-show-more]')?.addEventListener('click', () => {
       historyUI.limit += 20;
       refreshHistory();
@@ -1995,6 +2040,11 @@ export async function initHistoryPage() {
   refreshHistory();
   valorantHistoryRecoveryAttempts = 0;
   clearTimeout(valorantHistoryRecoveryTimer);
+  void loadCurrentAct().then(act => {
+    if (!act || loadSequence !== historyLoadSequence) return;
+    currentActInfo = act;
+    refreshHistory();
+  });
   void agentMapPromise.then(() => {
     if (loadSequence === historyLoadSequence) refreshHistory();
   });

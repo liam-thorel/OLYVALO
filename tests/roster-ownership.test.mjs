@@ -128,7 +128,9 @@ test('données réelles : mains et comptes LoL', () => {
   const by = Object.fromEntries(roster.map(member => [member.name, member]));
   const id = account => `${account.name}#${account.tag}`;
 
-  assert.equal(id(by.Mathis.riot), 'OG ANUNOBY#OLY', 'OG ANUNOBY est le main de Mathis');
+  // M A I R est le main de Mathis (confirmé par Liam), OG ANUNOBY son smurf.
+  assert.equal(id(by.Mathis.riot), 'M A I R#LGND', 'M A I R est le main de Mathis');
+  assert.ok((by.Mathis.smurfs || []).some(account => id(account) === 'OG ANUNOBY#OLY'), 'OG ANUNOBY est son smurf');
   assert.ok(!(by.Nico.smurfs || []).some(account => id(account) === 'OG ANUNOBY#OLY'), 'et plus un smurf de Nico');
   assert.notEqual(id(by.Nico.lol), id(by.Nico.riot), 'le main LoL de Nico diffère de son main Valorant');
 
