@@ -60,7 +60,9 @@ function addPerformance(totals, entry) {
   totals.deaths += stats.deaths || 0;
   totals.assists += stats.assists || 0;
   totals.maxKills = Math.max(totals.maxKills, stats.kills || 0);
-  if (Number.isFinite(stats.acs) && stats.acs > 0) { totals.acsSum += stats.acs; totals.acsCount += 1; }
+  // En deathmatch, « ACS » vaut le score entier (une seule manche) : il
+  // gonflait la moyenne jusqu'à des milliers.
+  if (historyMode(entry.report) !== 'deathmatch' && Number.isFinite(stats.acs) && stats.acs > 0) { totals.acsSum += stats.acs; totals.acsCount += 1; }
   if (Number.isFinite(stats.hsPercent)) { totals.hsSum += stats.hsPercent; totals.hsCount += 1; }
   if (entry.placement === 1 && entry.playerCount > 1) totals.mvps += 1;
 }
