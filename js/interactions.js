@@ -25,7 +25,7 @@ import { initCurse } from './curse.mjs?v=20260828-page-stream-lifecycle';
 import { fetchJsonWithTimeout } from './request-utils.mjs?v=20260930-consistent-live';
 import { liveDataStore, liveTimestamp } from './live-data-store.mjs?v=20261005-return-live';
 import { createHistoryPager } from './history-pager.mjs?v=20261005-sites-history';
-import { featuredPerformance, gameDurationMs, historyAgentStats, historyDayGroups, historyMapStats, historyMemberStats, historyOverview, historyRosterMember, valorantTierIcon, valorantTierLabel } from './history-overview.mjs?v=20261031-tracker';
+import { featuredPerformance, gameDurationMs, trackedPerformances, historyAgentStats, historyDayGroups, historyMapStats, historyMemberStats, historyOverview, historyRosterMember, valorantTierIcon, valorantTierLabel } from './history-overview.mjs?v=20261031-tracker';
 import { createHistoryDisclosureState } from './history-disclosure-state.mjs';
 import { liveScoreKey, liveScoreView } from './live-score.mjs?v=20260930-consistent-live';
 
@@ -1595,7 +1595,9 @@ export async function initHistoryPage() {
     : historyMode(game) === 'competitive' ? 'Compétitif'
     : valorantLiveModeLabel(game);
   const agentImg = (agent, className = '') => {
-    const src = agentIconFromName(agent);
+    // Deux sources : la liste d'agents de valorant-api.com, ou les visuels du
+    // site déjà en cache (valorantApi), si la première ne répond pas.
+    const src = agentIconFromName(agent) || (agent ? valorantApi.agentData(agent)?.icon || '' : '');
     return src ? `<img class="${className}" src="${src}" alt="${historyEscape(agent || '')}" loading="lazy" onerror="this.style.visibility='hidden'">`
       : `<span class="${className} hx-agent-fallback" aria-hidden="true">${historyEscape(String(agent || '?').slice(0, 2))}</span>`;
   };
@@ -1832,6 +1834,12 @@ export async function initHistoryPage() {
     const reports = historyReports(game);
     const owners = reports.map(report => ({ name:ownerName(report), avatar:ownerOf(report)?.avatar || '' }))
       .filter((owner, index, all) => all.findIndex(other => other.name === owner.name) === index);
+    // L'agent de chaque membre présent, le mieux classé d'abord.
+    const picks = trackedPerformances(game)
+      .sort((a, b) => (a === featured ? -1 : b === featured ? 1 : 0))
+      .map(entry => ({ agent:entry.self.agent, name:ownerName(entry.report), avatar:ownerOf(entry.report)?.avatar || '' }))
+      .filter((pick, index, all) => all.findIndex(other => other.name === pick.name) === index);
+    if (!picks.length) picks.push({ agent:featured?.self?.agent, name:owners[0]?.name || '', avatar:owners[0]?.avatar || '' });
     const rrReport = featured?.report || reports[0];
     const rrDelta = kind === 'competitive' ? rrReport?.rr?.delta : null;
     const kd = stats ? (stats.kills || 0) / Math.max(1, stats.deaths || 0) : null;
@@ -1841,9 +1849,12 @@ export async function initHistoryPage() {
       : gameDetail(game);
     return `<details class="history-game hx-match ${result} ${kind}" data-history-id="${historyEscape(game.historyId || '')}">
       <summary class="hx-row">
-        <span class="hx-row-agent">
-          ${agentImg(featured?.self?.agent, 'hx-row-agent-img')}
-          ${owners.length ? `<span class="hx-row-owners">${owners.slice(0, 3).map(owner => avatar(owner.name, owner.avatar, 'hx-row-owner')).join('')}</span>` : ''}
+        <span class="hx-row-agents" aria-label="${historyEscape(picks.map(pick => `${pick.name} : ${pick.agent || 'agent inconnu'}`).join(', '))}">
+          ${picks.slice(0, 3).map(pick => `<span class="hx-row-pick" title="${historyEscape(`${pick.name} · ${pick.agent || '?'}`)}">
+            ${agentImg(pick.agent, 'hx-row-agent-img')}
+            ${pick.name ? avatar(pick.name, pick.avatar, 'hx-row-owner') : ''}
+          </span>`).join('')}
+          ${picks.length > 3 ? `<span class="hx-row-more">+${picks.length - 3}</span>` : ''}
         </span>
         <span class="hx-row-map">
           <strong>${mapLabel(game.map)}</strong>
@@ -1876,7 +1887,7 @@ export async function initHistoryPage() {
           ${Number.isFinite(day.acs) ? `<b>ACS <i>${day.acs}</i></b>` : ''}
         </span>
       </header>
-      <div class="hx-matches">${day.games.map(gameCard).join('')}</div>
+      <div class="hx-matches${historyUI.owner === 'all' ? '' : ' is-solo'}">${day.games.map(gameCard).join('')}</div>
     </section>`;
 
   // ─── Filtres ───────────────────────────────────────────────────────────
