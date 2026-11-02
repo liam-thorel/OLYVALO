@@ -41,20 +41,20 @@
         "label": "Joue comme un pro",
         "tier": "PRO",
         "tierLabel": "PRO",
-        "updatedAt": "Septembre 2026",
+        "updatedAt": "Octobre 2026",
         "patch": "13.06",
         "agents": [
-          "Omen",
           "Sova",
           "Phoenix",
           "Neon",
+          "Omen",
           "Cypher"
         ],
         "source": "Karmine Corp · Valorant Champions 2026 · Groupes",
         "vods": [
           {
-            "label": "KC vs NRG · Haven",
-            "url": "https://www.vlr.gg/753461/karmine-corp-vs-nrg-valorant-champions-2026-winners-d/?game=283204"
+            "label": "KC vs Nongshim RedForce · Haven",
+            "url": "https://www.vlr.gg/753463/karmine-corp-vs-nongshim-redforce-valorant-champions-2026-decider-d/?game=283210"
           }
         ],
         "teamPresets": [
@@ -63,12 +63,12 @@
             "team": "Karmine Corp",
             "tag": "KC",
             "logo": "./assets/teams/kc.png",
-            "agents": ["Omen", "Sova", "Phoenix", "Neon", "Cypher"],
+            "agents": ["Sova", "Phoenix", "Neon", "Omen", "Cypher"],
             "event": "Valorant Champions 2026 · Groupes",
-            "opponent": "NRG",
-            "date": "2026-09-29",
-            "score": "9-13",
-            "url": "https://www.vlr.gg/753461/karmine-corp-vs-nrg-valorant-champions-2026-winners-d/?game=283204",
+            "opponent": "Nongshim RedForce",
+            "date": "2026-10-03",
+            "score": "6-13",
+            "url": "https://www.vlr.gg/753463/karmine-corp-vs-nongshim-redforce-valorant-champions-2026-decider-d/?game=283210",
             "patch": "13.05"
           },
           {
@@ -85,16 +85,16 @@
             "patch": "13.05"
           },
           {
-            "id": "liquid",
-            "team": "Team Liquid",
-            "tag": "TL",
-            "logo": "./assets/teams/liquid.png",
-            "agents": ["Harbor", "Fade", "Killjoy", "Yoru", "Raze"],
-            "event": "Valorant Champions 2026 · Groupes",
-            "opponent": "Paper Rex",
-            "date": "2026-09-24",
-            "score": "13-7",
-            "url": "https://www.vlr.gg/753455/team-liquid-vs-paper-rex-valorant-champions-2026-opening-c/?game=283185",
+            "id": "loud",
+            "team": "LOUD",
+            "tag": "LOUD",
+            "logo": "./assets/teams/loud.png",
+            "agents": ["Omen", "Sova", "Neon", "Viper", "Chamber"],
+            "event": "Valorant Champions 2026 · Finale",
+            "opponent": "Team Vitality",
+            "date": "2026-10-18",
+            "score": "13-10",
+            "url": "https://www.vlr.gg/754737/loud-vs-team-vitality-valorant-champions-2026-gf/?game=283289",
             "patch": "13.05"
           }
         ]
@@ -173,20 +173,20 @@
         "label": "Joue comme un pro",
         "tier": "PRO",
         "tierLabel": "PRO",
-        "updatedAt": "Septembre 2026",
+        "updatedAt": "Octobre 2026",
         "patch": "13.06",
         "agents": [
-          "Astra",
-          "Omen",
+          "Yoru",
           "Sova",
-          "Chamber",
-          "Neon"
+          "Cypher",
+          "Omen",
+          "Waylay"
         ],
-        "source": "Karmine Corp · VCT EMEA Stage 2",
+        "source": "Karmine Corp · Valorant Champions 2026 · Groupes",
         "vods": [
           {
-            "label": "KC vs Enterprise Esports · Abyss",
-            "url": "https://www.vlr.gg/731399/karmine-corp-vs-enterprise-esports-vct-2026-emea-stage-2-ubsf/?game=279407"
+            "label": "KC vs Xi Lai Gaming · Abyss",
+            "url": "https://www.vlr.gg/753459/karmine-corp-vs-xi-lai-gaming-valorant-champions-2026-opening-d/?game=283197"
           }
         ],
         "teamPresets": [
@@ -195,13 +195,13 @@
             "team": "Karmine Corp",
             "tag": "KC",
             "logo": "./assets/teams/kc.png",
-            "agents": ["Astra", "Omen", "Sova", "Chamber", "Neon"],
-            "event": "VCT EMEA Stage 2",
-            "opponent": "Enterprise Esports",
-            "date": "2026-08-21",
-            "score": "9-13",
-            "url": "https://www.vlr.gg/731399/karmine-corp-vs-enterprise-esports-vct-2026-emea-stage-2-ubsf/?game=279407",
-            "patch": "13.04"
+            "agents": ["Yoru", "Sova", "Cypher", "Omen", "Waylay"],
+            "event": "Valorant Champions 2026 · Groupes",
+            "opponent": "Xi Lai Gaming",
+            "date": "2026-09-25",
+            "score": "13-6",
+            "url": "https://www.vlr.gg/753459/karmine-corp-vs-xi-lai-gaming-valorant-champions-2026-opening-d/?game=283197",
+            "patch": "13.05"
           },
           {
             "id": "prx",
@@ -217,16 +217,16 @@
             "patch": "13.04"
           },
           {
-            "id": "liquid",
-            "team": "Team Liquid",
-            "tag": "TL",
-            "logo": "./assets/teams/liquid.png",
-            "agents": ["Omen", "Sova", "Tejo", "Vyse", "Jett"],
-            "event": "VCT EMEA Stage 2",
-            "opponent": "Enterprise Esports",
-            "date": "2026-08-23",
-            "score": "14-12",
-            "url": "https://www.vlr.gg/731404/enterprise-esports-vs-team-liquid-vct-2026-emea-stage-2-lr2/?game=279424",
+            "id": "loud",
+            "team": "LOUD",
+            "tag": "LOUD",
+            "logo": "./assets/teams/loud.png",
+            "agents": ["Omen", "Sova", "Yoru", "Waylay", "Harbor"],
+            "event": "VCT Americas Stage 2 · Finale basse",
+            "opponent": "NRG",
+            "date": "2026-09-05",
+            "score": "13-10",
+            "url": "https://www.vlr.gg/734314/nrg-vs-loud-vct-2026-americas-stage-2-lbf/?game=280058",
             "patch": "13.04"
           }
         ]
@@ -300,7 +300,7 @@
         "label": "Joue comme un pro",
         "tier": "PRO",
         "tierLabel": "PRO",
-        "updatedAt": "Septembre 2026",
+        "updatedAt": "Octobre 2026",
         "patch": "13.06",
         "agents": [
           "Omen",
@@ -335,25 +335,25 @@
             "team": "Paper Rex",
             "tag": "PRX",
             "logo": "./assets/teams/prx.png",
-            "agents": ["Raze", "Fade", "Vyse", "Yoru", "Omen"],
-            "event": "Valorant Champions 2026 · Groupes",
-            "opponent": "G2 Esports",
-            "date": "2026-09-29",
-            "score": "13-9",
-            "url": "https://www.vlr.gg/753456/g2-esports-vs-paper-rex-valorant-champions-2026-winners-c/?game=283189",
+            "agents": ["Yoru", "Vyse", "Raze", "Fade", "Omen"],
+            "event": "Valorant Champions 2026 · Playoffs",
+            "opponent": "T1",
+            "date": "2026-10-09",
+            "score": "7-13",
+            "url": "https://www.vlr.gg/754739/t1-vs-paper-rex-valorant-champions-2026-lr1/?game=283294",
             "patch": "13.05"
           },
           {
-            "id": "liquid",
-            "team": "Team Liquid",
-            "tag": "TL",
-            "logo": "./assets/teams/liquid.png",
-            "agents": ["Harbor", "Fade", "Killjoy", "Yoru", "Raze"],
-            "event": "Valorant Champions 2026 · Groupes",
-            "opponent": "Paper Rex",
-            "date": "2026-09-24",
-            "score": "10-13",
-            "url": "https://www.vlr.gg/753455/team-liquid-vs-paper-rex-valorant-champions-2026-opening-c/?game=283186",
+            "id": "loud",
+            "team": "LOUD",
+            "tag": "LOUD",
+            "logo": "./assets/teams/loud.png",
+            "agents": ["Viper", "Neon", "Fade", "Vyse", "Omen"],
+            "event": "Valorant Champions 2026 · Finale",
+            "opponent": "Team Vitality",
+            "date": "2026-10-18",
+            "score": "8-13",
+            "url": "https://www.vlr.gg/754737/loud-vs-team-vitality-valorant-champions-2026-gf/?game=283287",
             "patch": "13.05"
           }
         ]
@@ -427,7 +427,7 @@
         "label": "Joue comme un pro",
         "tier": "PRO",
         "tierLabel": "PRO",
-        "updatedAt": "Septembre 2026",
+        "updatedAt": "Octobre 2026",
         "patch": "13.06",
         "agents": [
           "Omen",
@@ -462,26 +462,26 @@
             "team": "Paper Rex",
             "tag": "PRX",
             "logo": "./assets/teams/prx.png",
-            "agents": ["Raze", "Viper", "Omen", "Fade", "Yoru"],
-            "event": "Valorant Champions 2026 · Groupes",
-            "opponent": "G2 Esports",
-            "date": "2026-09-29",
+            "agents": ["Yoru", "Raze", "Omen", "Viper", "Fade"],
+            "event": "Valorant Champions 2026 · Playoffs",
+            "opponent": "LOUD",
+            "date": "2026-10-07",
             "score": "9-13",
-            "url": "https://www.vlr.gg/753456/g2-esports-vs-paper-rex-valorant-champions-2026-winners-c/?game=283187",
+            "url": "https://www.vlr.gg/754733/paper-rex-vs-loud-valorant-champions-2026-ubqf/?game=283274",
             "patch": "13.05"
           },
           {
-            "id": "liquid",
-            "team": "Team Liquid",
-            "tag": "TL",
-            "logo": "./assets/teams/liquid.png",
-            "agents": ["Omen", "Viper", "Skye", "Jett", "Raze"],
-            "event": "VCT EMEA Stage 2 · Finale basse",
-            "opponent": "FUT Esports",
-            "date": "2026-08-29",
-            "score": "13-5",
-            "url": "https://www.vlr.gg/731408/fut-esports-vs-team-liquid-vct-2026-emea-stage-2-lbf/?game=279432",
-            "patch": "13.04"
+            "id": "loud",
+            "team": "LOUD",
+            "tag": "LOUD",
+            "logo": "./assets/teams/loud.png",
+            "agents": ["Omen", "Yoru", "Viper", "Fade", "Neon"],
+            "event": "Valorant Champions 2026 · Playoffs",
+            "opponent": "Paper Rex",
+            "date": "2026-10-07",
+            "score": "13-9",
+            "url": "https://www.vlr.gg/754733/paper-rex-vs-loud-valorant-champions-2026-ubqf/?game=283274",
+            "patch": "13.05"
           }
         ]
       },
@@ -559,7 +559,7 @@
         "label": "Joue comme un pro",
         "tier": "PRO",
         "tierLabel": "PRO",
-        "updatedAt": "Septembre 2026",
+        "updatedAt": "Octobre 2026",
         "patch": "13.06",
         "agents": [
           "Cypher",
@@ -594,25 +594,25 @@
             "team": "Paper Rex",
             "tag": "PRX",
             "logo": "./assets/teams/prx.png",
-            "agents": ["Yoru", "Chamber", "Sage", "Omen", "Sova"],
-            "event": "Valorant Champions 2026 · Groupes",
-            "opponent": "Team Liquid",
-            "date": "2026-09-24",
-            "score": "13-4",
-            "url": "https://www.vlr.gg/753455/team-liquid-vs-paper-rex-valorant-champions-2026-opening-c/?game=283184",
+            "agents": ["Sova", "Omen", "Yoru", "Sage", "Chamber"],
+            "event": "Valorant Champions 2026 · Playoffs",
+            "opponent": "T1",
+            "date": "2026-10-09",
+            "score": "13-6",
+            "url": "https://www.vlr.gg/754739/t1-vs-paper-rex-valorant-champions-2026-lr1/?game=283295",
             "patch": "13.05"
           },
           {
-            "id": "liquid",
-            "team": "Team Liquid",
-            "tag": "TL",
-            "logo": "./assets/teams/liquid.png",
-            "agents": ["Omen", "Sova", "Cypher", "Jett", "Phoenix"],
+            "id": "loud",
+            "team": "LOUD",
+            "tag": "LOUD",
+            "logo": "./assets/teams/loud.png",
+            "agents": ["Yoru", "Sova", "Waylay", "Cypher", "Omen"],
             "event": "Valorant Champions 2026 · Groupes",
-            "opponent": "Paper Rex",
-            "date": "2026-09-24",
-            "score": "4-13",
-            "url": "https://www.vlr.gg/753455/team-liquid-vs-paper-rex-valorant-champions-2026-opening-c/?game=283184",
+            "opponent": "Team Vitality",
+            "date": "2026-09-30",
+            "score": "7-13",
+            "url": "https://www.vlr.gg/753451/team-vitality-vs-loud-valorant-champions-2026-winners-b/?game=285206",
             "patch": "13.05"
           }
         ]
@@ -669,19 +669,19 @@
         "tierLabel": "PRO",
         "label": "Joue comme un pro",
         "agents": [
-          "Omen",
           "Viper",
-          "Fade",
           "Chamber",
-          "Neon"
+          "Omen",
+          "Neon",
+          "Fade"
         ],
         "patch": "13.06",
-        "updatedAt": "Septembre 2026",
-        "source": "Karmine Corp · VCT EMEA Stage 2 · Finale",
+        "updatedAt": "Octobre 2026",
+        "source": "Karmine Corp · Valorant Champions 2026 · Groupes",
         "vods": [
           {
-            "label": "KC vs Team Liquid · Sunset",
-            "url": "https://www.vlr.gg/731401/karmine-corp-vs-team-liquid-vct-2026-emea-stage-2-gf/?game=279412"
+            "label": "KC vs Nongshim RedForce · Sunset",
+            "url": "https://www.vlr.gg/753463/karmine-corp-vs-nongshim-redforce-valorant-champions-2026-decider-d/?game=283208"
           }
         ],
         "teamPresets": [
@@ -690,39 +690,39 @@
             "team": "Karmine Corp",
             "tag": "KC",
             "logo": "./assets/teams/kc.png",
-            "agents": ["Omen", "Viper", "Fade", "Chamber", "Neon"],
-            "event": "VCT EMEA Stage 2 · Finale",
-            "opponent": "Team Liquid",
-            "date": "2026-08-30",
-            "score": "13-7",
-            "url": "https://www.vlr.gg/731401/karmine-corp-vs-team-liquid-vct-2026-emea-stage-2-gf/?game=279412",
-            "patch": "13.04"
+            "agents": ["Viper", "Chamber", "Omen", "Neon", "Fade"],
+            "event": "Valorant Champions 2026 · Groupes",
+            "opponent": "Nongshim RedForce",
+            "date": "2026-10-03",
+            "score": "13-9",
+            "url": "https://www.vlr.gg/753463/karmine-corp-vs-nongshim-redforce-valorant-champions-2026-decider-d/?game=283208",
+            "patch": "13.05"
           },
           {
             "id": "prx",
             "team": "Paper Rex",
             "tag": "PRX",
             "logo": "./assets/teams/prx.png",
-            "agents": ["Raze", "Sage", "Viper", "Sova", "Omen"],
-            "event": "VCT Pacific Stage 2 · Playoffs",
-            "opponent": "VARREL",
-            "date": "2026-08-29",
-            "score": "10-13",
-            "url": "https://www.vlr.gg/742484/varrel-vs-paper-rex-vct-2026-pacific-stage-2-lr2/?game=281166",
-            "patch": "13.04"
+            "agents": ["Fade", "Chamber", "Omen", "Raze", "Sage"],
+            "event": "Valorant Champions 2026 · Playoffs",
+            "opponent": "LOUD",
+            "date": "2026-10-07",
+            "score": "13-15",
+            "url": "https://www.vlr.gg/754733/paper-rex-vs-loud-valorant-champions-2026-ubqf/?game=283275",
+            "patch": "13.05"
           },
           {
-            "id": "liquid",
-            "team": "Team Liquid",
-            "tag": "TL",
-            "logo": "./assets/teams/liquid.png",
-            "agents": ["Omen", "Fade", "Cypher", "Neon", "Yoru"],
-            "event": "VCT EMEA Stage 2 · Finale",
-            "opponent": "Karmine Corp",
-            "date": "2026-08-30",
-            "score": "7-13",
-            "url": "https://www.vlr.gg/731401/karmine-corp-vs-team-liquid-vct-2026-emea-stage-2-gf/?game=279412",
-            "patch": "13.04"
+            "id": "loud",
+            "team": "LOUD",
+            "tag": "LOUD",
+            "logo": "./assets/teams/loud.png",
+            "agents": ["Neon", "Sage", "Sova", "Chamber", "Omen"],
+            "event": "Valorant Champions 2026 · Finale",
+            "opponent": "Team Vitality",
+            "date": "2026-10-18",
+            "score": "13-5",
+            "url": "https://www.vlr.gg/754737/loud-vs-team-vitality-valorant-champions-2026-gf/?game=283288",
+            "patch": "13.05"
           }
         ]
       },
@@ -794,19 +794,19 @@
         "tierLabel": "PRO",
         "label": "Joue comme un pro",
         "agents": [
+          "Chamber",
           "Viper",
-          "Omen",
-          "Fade",
           "Neon",
-          "Chamber"
+          "Fade",
+          "Omen"
         ],
         "patch": "13.06",
-        "updatedAt": "Septembre 2026",
+        "updatedAt": "Octobre 2026",
         "source": "Karmine Corp · Valorant Champions 2026 · Groupes",
         "vods": [
           {
-            "label": "KC vs NRG · Summit",
-            "url": "https://www.vlr.gg/753461/karmine-corp-vs-nrg-valorant-champions-2026-winners-d/?game=283203"
+            "label": "KC vs Nongshim RedForce · Summit",
+            "url": "https://www.vlr.gg/753463/karmine-corp-vs-nongshim-redforce-valorant-champions-2026-decider-d/?game=283209"
           }
         ],
         "teamPresets": [
@@ -815,12 +815,12 @@
             "team": "Karmine Corp",
             "tag": "KC",
             "logo": "./assets/teams/kc.png",
-            "agents": ["Viper", "Omen", "Fade", "Neon", "Chamber"],
+            "agents": ["Chamber", "Viper", "Neon", "Fade", "Omen"],
             "event": "Valorant Champions 2026 · Groupes",
-            "opponent": "NRG",
-            "date": "2026-09-29",
-            "score": "11-13",
-            "url": "https://www.vlr.gg/753461/karmine-corp-vs-nrg-valorant-champions-2026-winners-d/?game=283203",
+            "opponent": "Nongshim RedForce",
+            "date": "2026-10-03",
+            "score": "5-13",
+            "url": "https://www.vlr.gg/753463/karmine-corp-vs-nongshim-redforce-valorant-champions-2026-decider-d/?game=283209",
             "patch": "13.05"
           },
           {
@@ -828,26 +828,26 @@
             "team": "Paper Rex",
             "tag": "PRX",
             "logo": "./assets/teams/prx.png",
-            "agents": ["Viper", "Harbor", "Tejo", "Gekko", "Waylay"],
-            "event": "VCT Pacific Stage 2",
-            "opponent": "Team Secret",
-            "date": "2026-07-31",
-            "score": "13-10",
-            "url": "https://www.vlr.gg/698904/team-secret-vs-paper-rex-vct-2026-pacific-stage-2-w3/?game=273259",
-            "patch": "13.01"
+            "agents": ["Sage", "Viper", "Omen", "Neon", "Fade"],
+            "event": "Valorant Champions 2026 · Playoffs",
+            "opponent": "T1",
+            "date": "2026-10-09",
+            "score": "11-13",
+            "url": "https://www.vlr.gg/754739/t1-vs-paper-rex-valorant-champions-2026-lr1/?game=283296",
+            "patch": "13.05"
           },
           {
-            "id": "liquid",
-            "team": "Team Liquid",
-            "tag": "TL",
-            "logo": "./assets/teams/liquid.png",
-            "agents": ["Omen", "Viper", "Sova", "Jett", "Phoenix"],
-            "event": "VCT EMEA Stage 2 · Finale",
-            "opponent": "Karmine Corp",
-            "date": "2026-08-30",
-            "score": "10-13",
-            "url": "https://www.vlr.gg/731401/karmine-corp-vs-team-liquid-vct-2026-emea-stage-2-gf/?game=279415",
-            "patch": "13.04"
+            "id": "loud",
+            "team": "LOUD",
+            "tag": "LOUD",
+            "logo": "./assets/teams/loud.png",
+            "agents": ["Sage", "Omen", "Fade", "Chamber", "Neon"],
+            "event": "Valorant Champions 2026 · Finale",
+            "opponent": "Team Vitality",
+            "date": "2026-10-18",
+            "score": "13-11",
+            "url": "https://www.vlr.gg/754737/loud-vs-team-vitality-valorant-champions-2026-gf/?game=283286",
+            "patch": "13.05"
           }
         ]
       },
