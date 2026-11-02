@@ -131,12 +131,17 @@ async function processRankRecords(env, game, records = {}, notify = true) {
   return sent;
 }
 
+// Le cron tourne chaque minute : lire les historiques entiers coûtait ~700 Ko
+// par passage (~30 Go/mois sur Firebase) et dépassait le temps CPU gratuit.
+// Firebase ne renvoie que les dernières parties (index « ts » dans les règles).
+const RECENT_QUERY = '?orderBy=' + encodeURIComponent('"ts"') + '&limitToLast=40';
+
 export async function runScheduled(env, now = Date.now()) {
   const bootstrapped = Boolean(await env.PUSH_SUBSCRIPTIONS.get('rank-bootstrap:v1'));
   const [reminder, valorant, lol] = await Promise.allSettled([
     processReminder(env, now),
-    firebaseGet(env, 'historyIndex/valorant').then(records => processRankRecords(env, 'valorant', recentRecords(records), bootstrapped)),
-    firebaseGet(env, 'live/lolHistory').then(records => processRankRecords(env, 'lol', recentRecords(records), bootstrapped)),
+    firebaseGet(env, 'historyIndex/valorant', RECENT_QUERY).then(records => processRankRecords(env, 'valorant', recentRecords(records), bootstrapped)),
+    firebaseGet(env, 'live/lolHistory', RECENT_QUERY).then(records => processRankRecords(env, 'lol', recentRecords(records), bootstrapped)),
   ]);
   if (!bootstrapped && valorant.status === 'fulfilled' && lol.status === 'fulfilled') {
     await env.PUSH_SUBSCRIPTIONS.put('rank-bootstrap:v1', String(now));
