@@ -17,32 +17,32 @@
         "label": "Ranked · recommandée",
         "tier": "S",
         "tierLabel": "S-TIER",
-        "updatedAt": "Septembre 2026",
-        "patch": "13.06",
+        "updatedAt": "Novembre 2026",
+        "patch": "13.09",
         "agents": [
-          "Neon",
           "Phoenix",
           "Sova",
           "Clove",
-          "Killjoy"
+          "Killjoy",
+          "Neon"
         ],
-        "source": "MetaBot · 38 278 parties classées",
-        "tip": "<strong>Neon et Phoenix mettent la pression sur deux sites</strong> pendant que Sova garde l'information sur les longues lignes. Clove apporte des smokes simples et rejouables, et Killjoy peut tenir seule un site pendant les rotations.",
+        "source": "MetaBot · 71 352 parties classées",
+        "tip": "<strong>Killjoy a le meilleur taux de victoire de la compo sur Haven (53,5 %).</strong> Chaque agent est le plus gagnant de son rôle parmi ceux joués dans au moins 3 % des parties : Phoenix 53,1 %, Sova 51,9 %, Clove 52,6 %, Killjoy 53,5 %, Neon 52,8 %.",
         "vods": [
           {
             "label": "Statistiques ranked · Haven",
             "url": "https://metabot.gg/en/valorant/map/Haven/agents"
           }
         ],
-        "key": "Sova",
-        "sourcePatch": "13.04"
+        "key": "Killjoy",
+        "sourcePatch": "13.09"
       },
       {
         "label": "Joue comme un pro",
         "tier": "PRO",
         "tierLabel": "PRO",
         "updatedAt": "Octobre 2026",
-        "patch": "13.06",
+        "patch": "13.09",
         "agents": [
           "Sova",
           "Phoenix",
@@ -103,7 +103,7 @@
         "label": "Fun — Brouillard sur 3 sites",
         "tier": "FUN",
         "tierLabel": "FUN",
-        "updatedAt": "Septembre 2026",
+        "updatedAt": "Novembre 2026",
         "agents": [
           "Omen",
           "Clove",
@@ -119,7 +119,7 @@
             "url": "https://www.vlr.gg/221296/point-of-authority-blossom-vs-team-smg-gc-game-changers-2023-asia-pacific-open-2-playoffs-ubqf/?game=155775&tab=overview"
           }
         ],
-        "patch": "13.06",
+        "patch": "13.09",
         "key": "Harbor"
       }
     ],
@@ -149,32 +149,32 @@
         "label": "Ranked · recommandée",
         "tier": "S",
         "tierLabel": "S-TIER",
-        "updatedAt": "Septembre 2026",
-        "patch": "13.06",
+        "updatedAt": "Novembre 2026",
+        "patch": "13.09",
         "agents": [
           "Neon",
-          "Jett",
           "Sova",
           "Clove",
-          "Vyse"
+          "Chamber",
+          "Jett"
         ],
-        "source": "MetaBot · 17 751 parties classées",
-        "tip": "<strong>Neon crée l'espace et Jett prend les premiers duels</strong> sur les longues lignes. Sova révèle les positions profondes, Clove garde les smokes disponibles même après un duel perdu et Vyse verrouille les retakes.",
+        "source": "MetaBot · 40 865 parties classées",
+        "tip": "<strong>Clove a le meilleur taux de victoire de la compo sur Abyss (54,6 %).</strong> Chaque agent est le plus gagnant de son rôle parmi ceux joués dans au moins 3 % des parties : Neon 52,6 %, Sova 52,1 %, Clove 54,6 %, Chamber 51,2 %, Jett 51,7 %.",
         "vods": [
           {
             "label": "Statistiques ranked · Abyss",
             "url": "https://metabot.gg/en/valorant/map/Abyss/agents"
           }
         ],
-        "key": "Sova",
-        "sourcePatch": "13.04"
+        "key": "Clove",
+        "sourcePatch": "13.09"
       },
       {
         "label": "Joue comme un pro",
         "tier": "PRO",
         "tierLabel": "PRO",
         "updatedAt": "Octobre 2026",
-        "patch": "13.06",
+        "patch": "13.09",
         "agents": [
           "Yoru",
           "Sova",
@@ -235,8 +235,8 @@
         "label": "Fun — Tous dans le vide",
         "tier": "FUN",
         "tierLabel": "FUN",
-        "updatedAt": "Septembre 2026",
-        "patch": "13.06",
+        "updatedAt": "Novembre 2026",
+        "patch": "13.09",
         "agents": [
           "Jett",
           "Raze",
@@ -276,32 +276,32 @@
         "label": "Ranked · recommandée",
         "tier": "S",
         "tierLabel": "S-TIER",
-        "updatedAt": "Septembre 2026",
-        "patch": "13.06",
+        "updatedAt": "Novembre 2026",
+        "patch": "13.09",
         "agents": [
-          "Waylay",
           "Neon",
           "Fade",
           "Clove",
-          "Vyse"
+          "Vyse",
+          "Chamber"
         ],
-        "source": "MetaBot · 20 456 parties classées",
-        "tip": "<strong>Waylay et Neon accélèrent les prises d'espace</strong> entre les trois sites. Fade donne l'information sans lineups complexes, Clove offre des smokes faciles à replacer et Vyse bloque les retakes sur le site choisi.",
+        "source": "MetaBot · 46 605 parties classées",
+        "tip": "<strong>Clove a le meilleur taux de victoire de la compo sur Lotus (51,8 %).</strong> Chaque agent est le plus gagnant de son rôle parmi ceux joués dans au moins 3 % des parties : Neon 51,1 %, Fade 51,2 %, Clove 51,8 %, Vyse 51,6 %, Chamber 50,2 %.",
         "vods": [
           {
             "label": "Statistiques ranked · Lotus",
             "url": "https://metabot.gg/en/valorant/map/Lotus/agents"
           }
         ],
-        "key": "Fade",
-        "sourcePatch": "13.04"
+        "key": "Clove",
+        "sourcePatch": "13.09"
       },
       {
         "label": "Joue comme un pro",
         "tier": "PRO",
         "tierLabel": "PRO",
         "updatedAt": "Octobre 2026",
-        "patch": "13.06",
+        "patch": "13.09",
         "agents": [
           "Omen",
           "Viper",
@@ -362,8 +362,8 @@
         "label": "Fun — 5 Initiateurs",
         "tier": "FUN",
         "tierLabel": "FUN",
-        "updatedAt": "Septembre 2026",
-        "patch": "13.06",
+        "updatedAt": "Novembre 2026",
+        "patch": "13.09",
         "agents": [
           "Skye",
           "Fade",
@@ -386,61 +386,60 @@
     ]
   },
   {
-    "map": "Split",
-    "region": "Verticale · Angles mid",
+    "map": "Bind",
+    "region": "Deux sites · Téléporteurs",
     "tags": [
-      "Verticale",
-      "Breach essentiel",
-      "Mid control"
+      "Pas de mid",
+      "Téléporteurs",
+      "Défense favorisée"
     ],
     "stats": {
-      "difficulty": "4.1/5",
-      "sides": "Défenseurs favorisés",
-      "bestSite": "A Ramp"
+      "difficulty": "3.2/5",
+      "sides": "Défense favorisée"
     },
     "comps": [
       {
         "label": "Ranked · recommandée",
         "tier": "S",
         "tierLabel": "S-TIER",
-        "updatedAt": "Septembre 2026",
-        "patch": "13.06",
+        "updatedAt": "Novembre 2026",
+        "patch": "13.09",
         "agents": [
-          "Neon",
+          "Raze",
           "Fade",
-          "Skye",
           "Clove",
-          "Sage"
+          "Chamber",
+          "Skye"
         ],
-        "source": "MetaBot · 38 093 parties classées",
-        "tip": "<strong>Neon profite des flashs de Skye et de l'information de Fade</strong> pour casser les points d'étranglement. Clove simplifie les smokes de Heaven et Sage sécurise Mid ou ralentit une reprise.",
+        "source": "MetaBot · 35 476 parties classées",
+        "tip": "<strong>Fade a le meilleur taux de victoire de la compo sur Bind (53 %).</strong> Chaque agent est le plus gagnant de son rôle parmi ceux joués dans au moins 3 % des parties : Raze 51,6 %, Fade 53 %, Clove 52,6 %, Chamber 50,9 %, Skye 52,4 %.",
         "vods": [
           {
-            "label": "Statistiques ranked · Split",
-            "url": "https://metabot.gg/en/valorant/map/Split/agents"
+            "label": "Statistiques ranked · Bind",
+            "url": "https://metabot.gg/en/valorant/map/Bind/agents"
           }
         ],
         "key": "Fade",
-        "sourcePatch": "13.04"
+        "sourcePatch": "13.09"
       },
       {
         "label": "Joue comme un pro",
         "tier": "PRO",
         "tierLabel": "PRO",
-        "updatedAt": "Octobre 2026",
-        "patch": "13.06",
+        "updatedAt": "Novembre 2026",
+        "patch": "13.09",
         "agents": [
-          "Omen",
+          "Raze",
           "Viper",
-          "Fade",
-          "Sage",
-          "Raze"
+          "Brimstone",
+          "Skye",
+          "Gekko"
         ],
-        "source": "Karmine Corp · VCT EMEA Stage 2",
+        "source": "Karmine Corp · VCT EMEA Stage 1",
         "vods": [
           {
-            "label": "KC vs FNATIC · Split",
-            "url": "https://www.vlr.gg/712815/fnatic-vs-karmine-corp-vct-2026-emea-stage-2-w2/?game=276533"
+            "label": "KC vs FUT Esports · Bind",
+            "url": "https://www.vlr.gg/644731/karmine-corp-vs-fut-esports-vct-2026-emea-stage-1-w4/?game=258404"
           }
         ],
         "teamPresets": [
@@ -449,130 +448,124 @@
             "team": "Karmine Corp",
             "tag": "KC",
             "logo": "./assets/teams/kc.png",
-            "agents": ["Omen", "Viper", "Fade", "Sage", "Raze"],
-            "event": "VCT EMEA Stage 2",
-            "opponent": "FNATIC",
-            "date": "2026-07-22",
-            "score": "15-17",
-            "url": "https://www.vlr.gg/712815/fnatic-vs-karmine-corp-vct-2026-emea-stage-2-w2/?game=276533",
-            "patch": "13.01"
+            "agents": ["Raze", "Viper", "Brimstone", "Skye", "Gekko"],
+            "event": "VCT EMEA Stage 1",
+            "opponent": "FUT Esports",
+            "date": "2026-04-23",
+            "score": "8-13",
+            "url": "https://www.vlr.gg/644731/karmine-corp-vs-fut-esports-vct-2026-emea-stage-1-w4/?game=258404",
+            "patch": "12.07"
           },
           {
             "id": "prx",
             "team": "Paper Rex",
             "tag": "PRX",
             "logo": "./assets/teams/prx.png",
-            "agents": ["Yoru", "Raze", "Omen", "Viper", "Fade"],
-            "event": "Valorant Champions 2026 · Playoffs",
-            "opponent": "LOUD",
-            "date": "2026-10-07",
-            "score": "9-13",
-            "url": "https://www.vlr.gg/754733/paper-rex-vs-loud-valorant-champions-2026-ubqf/?game=283274",
-            "patch": "13.05"
+            "agents": ["Skye", "Brimstone", "Gekko", "Raze", "Harbor"],
+            "event": "Masters Santiago 2026 · Playoffs",
+            "opponent": "NRG",
+            "date": "2026-03-09",
+            "score": "11-13",
+            "url": "https://www.vlr.gg/626542/paper-rex-vs-nrg-valorant-masters-santiago-2026-ubsf/?game=254376",
+            "patch": "12.03"
           },
           {
             "id": "loud",
             "team": "LOUD",
             "tag": "LOUD",
             "logo": "./assets/teams/loud.png",
-            "agents": ["Omen", "Yoru", "Viper", "Fade", "Neon"],
-            "event": "Valorant Champions 2026 · Playoffs",
-            "opponent": "Paper Rex",
-            "date": "2026-10-07",
-            "score": "13-9",
-            "url": "https://www.vlr.gg/754733/paper-rex-vs-loud-valorant-champions-2026-ubqf/?game=283274",
-            "patch": "13.05"
+            "agents": ["Viper", "Raze", "Brimstone", "Skye", "Chamber"],
+            "event": "VCT Americas Stage 1",
+            "opponent": "LEVIATÁN",
+            "date": "2026-05-10",
+            "score": "3-13",
+            "url": "https://www.vlr.gg/645502/loud-vs-leviat-n-vct-2026-americas-stage-1-w5/?game=258659",
+            "patch": "12.07"
           }
         ]
       },
       {
-        "label": "Fun — 5-Stack Rush B",
+        "label": "Fun — Tout par les téléporteurs",
         "tier": "FUN",
         "tierLabel": "FUN",
-        "updatedAt": "Septembre 2026",
+        "updatedAt": "Novembre 2026",
         "agents": [
+          "Yoru",
+          "Chamber",
+          "Omen",
           "Raze",
-          "Breach",
-          "Neon",
-          "Clove",
-          "Sage"
+          "Skye"
         ],
-        "source": "Communauté Valorant · rush coordonné",
-        "tip": "<strong>Rush B, mais avec un vrai plan</strong> : Breach neutralise Heaven, Neon et Raze entrent ensemble, Clove ferme les rotations et Sage pose son mur dès que le site est pris. Interdiction de ralentir avant le plant.",
+        "source": "Idée OLYCITY · pour s’amuser",
+        "tip": "<strong>Chaque exécution passe par un téléporteur.</strong> Yoru simule les sorties, Omen fait réapparaître l’équipe de l’autre côté, Chamber pose son ancre pour revenir en sécurité, Raze et Skye nettoient la sortie. Interdit de marcher jusqu’au site.",
         "vods": [],
-        "patch": "13.06",
-        "key": "Breach"
+        "patch": "13.09",
+        "key": "Yoru"
       }
     ],
     "notes": [
-      "Breach quasi-obligatoire — ses stuns traversent tous les murs de Split",
-      "Mid control est le game-winner — qui contrôle mid contrôle les rotations",
-      "Raze satchels sur les escaliers sont difficiles à contester",
-      "Sage wall B Heaven force des rotations longues",
-      "Cypher one-way cages sur B Site parmi les plus efficaces du jeu"
+      "Pas de mid : les deux téléporteurs relient A et B, et leur bruit trahit les rotations",
+      "Hookah (B) et Showers (A) sont les deux portes d’entrée à prendre avec de l’utilitaire",
+      "MetaBot : la défense gagne 54 % des rounds sur Bind contre 47 % en attaque",
+      "Viper a le meilleur taux de victoire de la carte (53,9 %) mais reste peu jouée (2,2 %)",
+      "Les sentinelles ont le meilleur taux de victoire moyen des rôles sur Bind (53,7 %)"
     ]
   },
   {
-    "map": "Ascent",
-    "region": "Two-site · Map ouverte avec mid central",
+    "map": "Corrode",
+    "region": "Deux sites · Mid à étages",
     "tags": [
-      "Mid control crucial",
-      "Duelliste dominant",
-      "Retakes difficiles"
+      "Lower Mid",
+      "A Link",
+      "Rotations raccourcies"
     ],
     "stats": {
-      "difficulty": "3.8/5",
-      "sides": "Équilibré · léger avantage CT",
-      "bestSite": "A Site"
+      "difficulty": "3.5/5",
+      "sides": "Défense légèrement favorisée"
     },
-    "notes": [
-      "Mid control = victoire — prenez Catwalk ou Market en priorité",
-      "Jett + Sova est le duo le plus fort sur Ascent actuellement",
-      "Les portes A et B permettent de stall — utilisez-les en défense"
-    ],
     "comps": [
       {
         "label": "Ranked · recommandée",
         "tier": "S",
         "tierLabel": "S-TIER",
-        "updatedAt": "Septembre 2026",
-        "patch": "13.06",
+        "updatedAt": "Novembre 2026",
+        "patch": "13.09",
         "agents": [
-          "Jett",
-          "Sova",
-          "KAY/O",
+          "Neon",
+          "Fade",
           "Clove",
-          "Cypher"
+          "Vyse",
+          "Jett"
         ],
-        "source": "MetaBot · 17 829 parties classées",
-        "tip": "<strong>Jett prend les premiers duels après la reconnaissance de Sova</strong>. KAY/O neutralise les défenses de site, Clove garde des smokes simples pour l'exécute ou le retake et Cypher contrôle Mid et les flancs.",
+        "source": "MetaBot · 30 605 parties classées",
+        "tip": "<strong>Neon a le meilleur taux de victoire de la compo sur Corrode (54,2 %).</strong> Chaque agent est le plus gagnant de son rôle parmi ceux joués dans au moins 3 % des parties : Neon 54,2 %, Fade 51,4 %, Clove 52,8 %, Vyse 54,1 %, Jett 51,4 %.",
         "vods": [
           {
-            "label": "Statistiques ranked · Ascent",
-            "url": "https://metabot.gg/en/valorant/map/Ascent/agents"
+            "label": "Statistiques ranked · Corrode",
+            "url": "https://metabot.gg/en/valorant/map/Corrode/agents"
           }
         ],
-        "key": "Sova",
-        "sourcePatch": "13.04"
+        "key": "Neon",
+        "sourcePatch": "13.09"
       },
       {
         "label": "Joue comme un pro",
         "tier": "PRO",
         "tierLabel": "PRO",
-        "updatedAt": "Octobre 2026",
-        "patch": "13.06",
+        "updatedAt": "Novembre 2026",
+        "patch": "13.09",
         "agents": [
-          "Cypher",
-          "Neon",
-          "Phoenix",
+          "Astra",
+          "Tejo",
           "Omen",
-          "Sova"
+          "Fade",
+          "Waylay"
         ],
-        "source": "Karmine Corp · Valorant Champions 2026 · Groupes",
+        "source": "Karmine Corp · VCT EMEA Kickoff · Playoffs",
         "vods": [
           {
-            "label": "KC vs NRG · Ascent",
-            "url": "https://www.vlr.gg/753461/karmine-corp-vs-nrg-valorant-champions-2026-winners-d/?game=283202"
+            "label": "KC vs Team Heretics · Corrode",
+            "url": "https://www.vlr.gg/594763/team-heretics-vs-karmine-corp-vct-2026-emea-kickoff-lr2/?game=244379"
           }
         ],
         "teamPresets": [
@@ -581,88 +574,95 @@
             "team": "Karmine Corp",
             "tag": "KC",
             "logo": "./assets/teams/kc.png",
-            "agents": ["Cypher", "Neon", "Phoenix", "Omen", "Sova"],
-            "event": "Valorant Champions 2026 · Groupes",
-            "opponent": "NRG",
-            "date": "2026-09-29",
-            "score": "13-7",
-            "url": "https://www.vlr.gg/753461/karmine-corp-vs-nrg-valorant-champions-2026-winners-d/?game=283202",
-            "patch": "13.05"
+            "agents": ["Astra", "Tejo", "Omen", "Fade", "Waylay"],
+            "event": "VCT EMEA Kickoff · Playoffs",
+            "opponent": "Team Heretics",
+            "date": "2026-02-05",
+            "score": "11-13",
+            "url": "https://www.vlr.gg/594763/team-heretics-vs-karmine-corp-vct-2026-emea-kickoff-lr2/?game=244379",
+            "patch": "12.00"
           },
           {
             "id": "prx",
             "team": "Paper Rex",
             "tag": "PRX",
             "logo": "./assets/teams/prx.png",
-            "agents": ["Sova", "Omen", "Yoru", "Sage", "Chamber"],
-            "event": "Valorant Champions 2026 · Playoffs",
-            "opponent": "T1",
-            "date": "2026-10-09",
-            "score": "13-6",
-            "url": "https://www.vlr.gg/754739/t1-vs-paper-rex-valorant-champions-2026-lr1/?game=283295",
-            "patch": "13.05"
+            "agents": ["Omen", "Waylay", "Vyse", "Viper", "Fade"],
+            "event": "Masters Santiago 2026 · Finale",
+            "opponent": "Nongshim RedForce",
+            "date": "2026-03-15",
+            "score": "11-13",
+            "url": "https://www.vlr.gg/626544/nongshim-redforce-vs-paper-rex-valorant-masters-santiago-2026-gf/?game=254381",
+            "patch": "12.03"
           },
           {
             "id": "loud",
             "team": "LOUD",
             "tag": "LOUD",
             "logo": "./assets/teams/loud.png",
-            "agents": ["Yoru", "Sova", "Waylay", "Cypher", "Omen"],
-            "event": "Valorant Champions 2026 · Groupes",
-            "opponent": "Team Vitality",
-            "date": "2026-09-30",
-            "score": "7-13",
-            "url": "https://www.vlr.gg/753451/team-vitality-vs-loud-valorant-champions-2026-winners-b/?game=285206",
-            "patch": "13.05"
+            "agents": ["Vyse", "Neon", "Viper", "Omen", "Fade"],
+            "event": "VCT Americas Stage 2 (2025)",
+            "opponent": "NRG",
+            "date": "2025-07-26",
+            "score": "9-13",
+            "url": "https://www.vlr.gg/509810/nrg-vs-loud-vct-2025-americas-stage-2-w2/?game=224741",
+            "patch": "11.00"
           }
         ]
       },
       {
-        "label": "Fun — Wallbang Simulator",
+        "label": "Fun — Mur de métal",
         "tier": "FUN",
         "tierLabel": "FUN",
-        "updatedAt": "Septembre 2026",
-        "patch": "13.06",
+        "updatedAt": "Novembre 2026",
         "agents": [
-          "Sova",
-          "Fade",
-          "Omen",
-          "Cypher",
-          "Killjoy"
+          "Vyse",
+          "Deadlock",
+          "Viper",
+          "Harbor",
+          "Breach"
         ],
-        "source": "Communauté Valorant · Odin et information",
-        "tip": "<strong>Achetez des Odin et tirez à travers tout ce qui bouge</strong>. Sova et Fade révèlent les cibles, Cypher et Killjoy multiplient les informations passives et Omen transforme les spams en duels impossibles à lire.",
+        "source": "Idée OLYCITY · pour s’amuser",
+        "tip": "<strong>Zéro duelliste, que des murs.</strong> Viper et Harbor coupent le mid, Vyse et Deadlock ferment les entrées, Breach assomme tout ce qui traverse. On gagne au temps, pas aux frags.",
         "vods": [],
-        "key": "Sova"
+        "patch": "13.09",
+        "key": "Vyse"
       }
+    ],
+    "notes": [
+      "Patch 13.08 : les défenseurs rejoignent plus vite l’arrière de A et de B",
+      "Lower Mid a de nouvelles caisses et un jump-up vers B : contrôler mid ouvre les deux sites",
+      "Le demi-mur de mid est maintenant en métal : on ne tire plus à travers",
+      "Le post-plant depuis A Link est moins fort depuis le nouveau placement de la zone de plant",
+      "MetaBot : Neon (54,2 %) et Vyse (54,1 %) sont les agents les plus gagnants de la carte"
     ]
   },
   {
     "map": "Sunset",
     "comps": [
       {
+        "label": "Ranked · recommandée",
         "tier": "S",
         "tierLabel": "S-TIER",
-        "label": "Ranked · recommandée",
+        "updatedAt": "Novembre 2026",
+        "patch": "13.09",
         "agents": [
-          "Neon",
-          "Fade",
+          "Phoenix",
           "Sova",
           "Clove",
-          "Cypher"
+          "Cypher",
+          "Neon"
         ],
-        "key": "Fade",
-        "tip": "<strong>Neon exploite les informations combinées de Fade et Sova</strong> pour gagner Mid ou B Main. Clove couvre les lignes de Market et Cypher sécurise les flancs ou verrouille B.",
-        "patch": "13.06",
-        "updatedAt": "Septembre 2026",
-        "source": "MetaBot · 6 739 parties classées",
+        "source": "MetaBot · 26 857 parties classées",
+        "tip": "<strong>Cypher a le meilleur taux de victoire de la compo sur Sunset (52,9 %).</strong> Chaque agent est le plus gagnant de son rôle parmi ceux joués dans au moins 3 % des parties : Phoenix 52,4 %, Sova 52,5 %, Clove 52 %, Cypher 52,9 %, Neon 52,1 %.",
         "vods": [
           {
             "label": "Statistiques ranked · Sunset",
             "url": "https://metabot.gg/en/valorant/map/Sunset/agents"
           }
         ],
-        "sourcePatch": "13.04"
+        "key": "Cypher",
+        "sourcePatch": "13.09"
       },
       {
         "tier": "PRO",
@@ -675,7 +675,7 @@
           "Neon",
           "Fade"
         ],
-        "patch": "13.06",
+        "patch": "13.09",
         "updatedAt": "Octobre 2026",
         "source": "Karmine Corp · Valorant Champions 2026 · Groupes",
         "vods": [
@@ -739,8 +739,8 @@
         ],
         "key": "Breach",
         "tip": "<strong>Chaque joueur peut aveugler l'adversaire</strong>. Enchaînez Paranoia, flash KAY/O, stun Breach puis Phoenix et Yoru dans les angles serrés de Market. Pensez simplement à prévenir vos propres coéquipiers.",
-        "patch": "13.06",
-        "updatedAt": "Septembre 2026",
+        "patch": "13.09",
+        "updatedAt": "Novembre 2026",
         "source": "Communauté Valorant · composition full flash"
       }
     ],
@@ -766,28 +766,28 @@
     "map": "Summit",
     "comps": [
       {
+        "label": "Ranked · recommandée",
         "tier": "S",
         "tierLabel": "S-TIER",
-        "label": "Ranked · recommandée",
+        "updatedAt": "Novembre 2026",
+        "patch": "13.09",
         "agents": [
-          "Neon",
+          "Phoenix",
           "Fade",
-          "Sage",
           "Clove",
-          "Sova"
+          "Sage",
+          "Neon"
         ],
-        "key": "Fade",
-        "tip": "<strong>Neon ouvre les passages après l'information de Fade et Sova</strong>. Clove couvre les lignes libérées par les murs activés, tandis que Sage ralentit les reprises et sécurise le plant sur cette map encore récente.",
-        "patch": "13.06",
-        "updatedAt": "Septembre 2026",
-        "source": "MetaBot · 7 051 parties classées",
+        "source": "MetaBot · 27 490 parties classées",
+        "tip": "<strong>Sage a le meilleur taux de victoire de la compo sur Summit (53 %).</strong> Chaque agent est le plus gagnant de son rôle parmi ceux joués dans au moins 3 % des parties : Phoenix 51,5 %, Fade 51,4 %, Clove 51,3 %, Sage 53 %, Neon 50,8 %.",
         "vods": [
           {
             "label": "Statistiques ranked · Summit",
             "url": "https://metabot.gg/en/valorant/map/Summit/agents"
           }
         ],
-        "sourcePatch": "13.04"
+        "key": "Sage",
+        "sourcePatch": "13.09"
       },
       {
         "tier": "PRO",
@@ -800,7 +800,7 @@
           "Fade",
           "Omen"
         ],
-        "patch": "13.06",
+        "patch": "13.09",
         "updatedAt": "Octobre 2026",
         "source": "Karmine Corp · Valorant Champions 2026 · Groupes",
         "vods": [
@@ -864,8 +864,8 @@
         ],
         "key": "Sage",
         "tip": "<strong>Ajoutez cinq couches de murs aux trois murs de la map</strong>. Harbor et Viper redessinent les lignes de vue, Sage et Deadlock ferment les passages et Vyse piège la seule sortie encore ouverte.",
-        "patch": "13.06",
-        "updatedAt": "Septembre 2026",
+        "patch": "13.09",
+        "updatedAt": "Novembre 2026",
         "source": "Communauté Valorant · défi murs et sentinelles"
       }
     ],

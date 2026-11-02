@@ -781,5 +781,28 @@
         "desc": "Activez pour devenir immunisé aux débuffs ennemis. Votre forme se transforme, libérant tout le potentiel de votre mutation génétique."
       }
     }
+  },
+  "Hush": {
+    "bio": "Agent chinoise, Hush utilise sa télékinésie pour rediriger son utilitaire en plein vol, disperser l’équipe adverse puis la faire léviter avant le coup fatal.",
+    "origin": "Chine",
+    "role": "D",
+    "abilities": {
+      "Flashbulb": {
+        "name": "Ampoule aveuglante",
+        "desc": "Lancée ou préparée, elle explose à l’impact ou après un délai et aveugle tous les joueurs qui la regardent."
+      },
+      "Displacement": {
+        "name": "Déplacement",
+        "desc": "Explose sur n’importe quelle surface ou après un délai et attire les joueurs vers le centre ; se recharge tous les deux kills."
+      },
+      "Flow": {
+        "name": "Flux",
+        "desc": "Crée instantanément une ancre ; après un délai, Hush s’élance vers elle."
+      },
+      "Suspension": {
+        "name": "Suspension",
+        "desc": "Envoyée vers l’avant en suivant le réticule, elle explose et fait léviter tous les joueurs touchés."
+      }
+    }
   }
 }

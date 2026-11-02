@@ -1,7 +1,7 @@
 const IGDB_URL = 'https://api.igdb.com/v4/games';
 const TWITCH_TOKEN_URL = 'https://id.twitch.tv/oauth2/token';
 const STEAM_DETAILS_URL = 'https://store.steampowered.com/api/appdetails';
-const STEAM_REVIEWS_URL = 'https://store.steampowered.com/appreviews';
+const STEAM_ITEMS_URL = 'https://api.steampowered.com/IStoreBrowseService/GetItems/v1/';
 const GAME_INDEX_URL = 'https://app.lizardbyte.dev/GameDB/buckets';
 const IGDB_FIELDS = 'id,name,slug,summary,url,cover.image_id,genres.name,game_modes.name,multiplayer_modes.onlinecoop,multiplayer_modes.offlinecoop,multiplayer_modes.onlinecoopmax,multiplayer_modes.offlinecoopmax,multiplayer_modes.onlinemax,multiplayer_modes.offlinemax,first_release_date,external_games.category,external_games.uid,external_games.url,total_rating_count,follows,hypes';
 
@@ -255,30 +255,78 @@ export function normalizeSteamReviewSummary(appId, payload = {}) {
   };
 }
 
-async function steamReviewSummary(appId, fetchImpl) {
-  const url = new URL(`${STEAM_REVIEWS_URL}/${appId}`);
-  url.searchParams.set('json', '1');
-  url.searchParams.set('filter', 'all');
-  url.searchParams.set('language', 'all');
-  url.searchParams.set('purchase_type', 'all');
-  url.searchParams.set('num_per_page', '1');
-  const response = await fetchImpl(url, {
-    headers: { Accept:'application/json' },
-    cf: { cacheTtl:3600, cacheEverything:true },
-  });
-  if (!response.ok) throw new Error(`STEAM_REVIEWS_HTTP_${response.status}`);
-  return normalizeSteamReviewSummary(appId, await response.json());
+// Valve a retiré /appreviews le 2026-10-22 (redirection 302 vers l'accueil du
+// store). IStoreBrowseService/GetItems renvoie, sans clé et pour plusieurs jeux
+// en un appel, la note des avis, le résumé du store, la date de sortie et les démos.
+export function normalizeSteamStoreItem(appId, item = null) {
+  const summary = item?.reviews?.summary_filtered || null;
+  const totalReviews = Math.max(0, Number(summary?.review_count) || 0);
+  const positivePercent = Math.max(0, Math.min(100, Number(summary?.percent_positive) || 0));
+  const release = item?.release || {};
+  const releaseSeconds = Number(release.steam_release_date) || 0;
+  const demoAppId = String(item?.related_items?.demos?.[0]?.appid || item?.related_items?.demo_appid?.[0] || '');
+  return {
+    steamAppId: String(appId),
+    found: Boolean(item?.success === 1 || item?.name),
+    name: String(item?.name || ''),
+    description: String(item?.basic_info?.short_description || '').replace(/<[^>]+>/g, '').replace(/\s+/g, ' ').trim().slice(0, 400),
+    reviews: {
+      available: Boolean(summary),
+      totalReviews,
+      positivePercent,
+      label: String(summary?.review_score_label || ''),
+    },
+    demo: demoAppId ? { steamAppId:demoAppId, url:`https://store.steampowered.com/app/${demoAppId}/` } : null,
+    release: {
+      date: releaseSeconds ? new Date(releaseSeconds * 1000).toISOString().slice(0, 10) : '',
+      comingSoon: Boolean(release.is_coming_soon),
+      earlyAccess: Boolean(release.is_early_access || item?.is_early_access),
+      precision: String(release.coming_soon_display || ''),
+      message: String(release.custom_release_date_message || ''),
+    },
+  };
+}
+
+export async function steamStoreItems(ids, fetchImpl) {
+  const items = new Map();
+  for (let start = 0; start < ids.length; start += 50) {
+    const chunk = ids.slice(start, start + 50);
+    const url = new URL(STEAM_ITEMS_URL);
+    url.searchParams.set('input_json', JSON.stringify({
+      ids: chunk.map(appid => ({ appid:Number(appid) })),
+      context: { language:'french', country_code:'FR' },
+      data_request: { include_reviews:true, include_basic_info:true, include_release:true },
+    }));
+    try {
+      const response = await fetchImpl(url, {
+        headers: { Accept:'application/json' },
+        cf: { cacheTtl:3600, cacheEverything:true },
+      });
+      if (!response.ok) throw new Error(`STEAM_ITEMS_HTTP_${response.status}`);
+      const payload = await response.json();
+      for (const item of payload?.response?.store_items || []) items.set(String(item.appid || item.id), item);
+    } catch (error) {
+      console.warn('Steam store items unavailable', chunk.join(','), error.message);
+    }
+  }
+  return ids.map(appId => normalizeSteamStoreItem(appId, items.get(String(appId)) || null));
 }
 
 async function steamReviewSummaries(ids, fetchImpl) {
-  return Promise.all(ids.map(async appId => {
-    try {
-      return await steamReviewSummary(appId, fetchImpl);
-    } catch (error) {
-      console.warn('Steam reviews unavailable', appId, error.message);
-      return normalizeSteamReviewSummary(appId);
-    }
+  return (await steamStoreItems(ids, fetchImpl)).map(entry => ({
+    steamAppId: entry.steamAppId,
+    available: entry.reviews.available,
+    reviewScore: 0,
+    reviewScoreDescription: entry.reviews.label,
+    totalPositive: Math.round(entry.reviews.totalReviews * entry.reviews.positivePercent / 100),
+    totalNegative: entry.reviews.totalReviews - Math.round(entry.reviews.totalReviews * entry.reviews.positivePercent / 100),
+    totalReviews: entry.reviews.totalReviews,
+    positivePercent: entry.reviews.positivePercent,
   }));
+}
+
+function steamIdsParam(url, limit = 100) {
+  return [...new Set(String(url.searchParams.get('ids') || '').split(',').filter(id => /^\d{2,10}$/.test(id)))].slice(0, limit);
 }
 
 async function searchBySteam(appId, env, fetchImpl) {
@@ -312,10 +360,19 @@ export async function handleRequest(request, env, fetchImpl = fetch) {
   if (request.method !== 'GET') return json({ error: 'Not found' }, 404, cors);
   try {
     if (url.pathname === '/reviews') {
-      const ids = [...new Set(String(url.searchParams.get('ids') || '').split(',').filter(id => /^\d{2,10}$/.test(id)))].slice(0, 20);
+      const ids = steamIdsParam(url);
       if (!ids.length) return json({ error:'Identifiants Steam invalides' }, 400, cors);
       return json(
         { reviews:await steamReviewSummaries(ids, fetchImpl) },
+        200,
+        { ...cors, 'Cache-Control':'public, max-age=1800' },
+      );
+    }
+    if (url.pathname === '/details') {
+      const ids = steamIdsParam(url);
+      if (!ids.length) return json({ error:'Identifiants Steam invalides' }, 400, cors);
+      return json(
+        { items:await steamStoreItems(ids, fetchImpl) },
         200,
         { ...cors, 'Cache-Control':'public, max-age=1800' },
       );

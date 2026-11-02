@@ -6,6 +6,7 @@ import {
   igdbSearchScore,
   normalizeIgdbGame,
   normalizeSteamReviewSummary,
+  normalizeSteamStoreItem,
   playerRangeFromIgdb,
 } from '../workers/game-catalog/worker.mjs';
 
@@ -69,25 +70,68 @@ test('Steam review totals become a stable positive percentage', () => {
   });
 });
 
-test('the Worker batches Steam review summaries without failing the whole list', async () => {
+const storeItems = {
+  response: {
+    store_items: [
+      {
+        appid:2747330, success:1, name:'Species: Unknown',
+        basic_info:{ short_description:'Un <b>survival-horror</b> en coop de 1 à 4 joueurs.' },
+        reviews:{ summary_filtered:{ review_count:10552, percent_positive:89, review_score_label:'très positives' } },
+        release:{ steam_release_date:1761220827, is_early_access:true },
+        related_items:{ demos:[{ appid:3851240 }] },
+      },
+      {
+        appid:4703930, success:1, name:'Grilluminati',
+        basic_info:{ short_description:'Grillades et complots.' },
+        release:{ steam_release_date:1803801600, is_coming_soon:true, coming_soon_display:'date_month' },
+        related_items:{ demos:[{ appid:5368860 }] },
+      },
+    ],
+  },
+};
+
+test('the store API gives reviews, description, release and demo in one shape', () => {
+  const [species, grill] = storeItems.response.store_items;
+  const entry = normalizeSteamStoreItem('2747330', species);
+  assert.equal(entry.description, 'Un survival-horror en coop de 1 à 4 joueurs.');
+  assert.deepEqual(entry.reviews, { available:true, totalReviews:10552, positivePercent:89, label:'très positives' });
+  assert.deepEqual(entry.demo, { steamAppId:'3851240', url:'https://store.steampowered.com/app/3851240/' });
+  assert.equal(entry.release.earlyAccess, true);
+  assert.equal(entry.release.date, '2025-10-23');
+  const upcoming = normalizeSteamStoreItem('4703930', grill);
+  assert.equal(upcoming.reviews.available, false);
+  assert.equal(upcoming.release.comingSoon, true);
+  assert.equal(upcoming.release.precision, 'date_month');
+  assert.equal(normalizeSteamStoreItem('1').found, false);
+});
+
+test('the Worker batches Steam details in one store call and keeps /reviews compatible', async () => {
   const calls = [];
-  const response = await handleRequest(
-    new Request('https://catalog.example/reviews?ids=1966720,1245620,invalid'),
-    {},
-    async url => {
-      calls.push(String(url));
-      if (String(url).includes('/1245620?')) return new Response('', { status:503 });
-      return new Response(JSON.stringify({ query_summary:{ total_positive:90, total_negative:10, total_reviews:100 } }));
-    },
-  );
+  const fetchImpl = async url => {
+    calls.push(String(url));
+    assert.match(String(url), /IStoreBrowseService\/GetItems/);
+    return new Response(JSON.stringify(storeItems));
+  };
+  const details = await handleRequest(new Request('https://catalog.example/details?ids=2747330,4703930,999,invalid'), {}, fetchImpl);
+  const payload = await details.json();
+  assert.equal(details.status, 200);
+  assert.equal(details.headers.get('Cache-Control'), 'public, max-age=1800');
+  assert.equal(calls.length, 1);
+  assert.deepEqual(payload.items.map(item => item.steamAppId), ['2747330', '4703930', '999']);
+  assert.equal(payload.items[2].found, false);
+
+  const reviews = await (await handleRequest(new Request('https://catalog.example/reviews?ids=2747330,4703930'), {}, fetchImpl)).json();
+  assert.equal(reviews.reviews[0].positivePercent, 89);
+  assert.equal(reviews.reviews[0].available, true);
+  assert.equal(reviews.reviews[1].available, false);
+  assert.equal(reviews.reviews[1].totalReviews, 0);
+});
+
+test('a Steam outage returns empty details instead of failing the page', async () => {
+  const response = await handleRequest(new Request('https://catalog.example/details?ids=2747330'), {}, async () => new Response('', { status:503 }));
   const payload = await response.json();
   assert.equal(response.status, 200);
-  assert.equal(response.headers.get('Cache-Control'), 'public, max-age=1800');
-  assert.equal(calls.length, 2);
-  assert.equal(payload.reviews[0].positivePercent, 90);
-  assert.equal(payload.reviews[0].available, true);
-  assert.equal(payload.reviews[1].available, false);
-  assert.equal(payload.reviews[1].totalReviews, 0);
+  assert.equal(payload.items[0].reviews.available, false);
 });
 
 test('the Worker exposes a CORS-safe normalized search endpoint', async () => {
